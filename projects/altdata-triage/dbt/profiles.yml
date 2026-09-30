@@ -1,0 +1,15 @@
+# Local, zero-infrastructure target. See docs/aws-native.md for the Athena target.
+altdata_triage:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', 'warehouse/altdata.duckdb') }}"
+      threads: 4
+    # athena:            # AWS-native option (pip install dbt-athena-community)
+    #   type: athena
+    #   s3_staging_dir: "s3://{{ env_var('ATHENA_RESULTS_BUCKET') }}/dbt/"
+    #   region_name: us-east-1
+    #   database: awsdatacatalog
+    #   schema: altdata_triage
+    #   work_group: primary

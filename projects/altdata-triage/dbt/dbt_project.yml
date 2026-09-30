@@ -1,0 +1,24 @@
+name: altdata_triage
+version: "1.0.0"
+config-version: 2
+profile: altdata_triage
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+target-path: "target"
+
+vars:
+  as_of_date: "2026-09-25"   # keep in sync with config/settings.yaml (the CLI passes it through)
+
+models:
+  altdata_triage:
+    staging:      {+materialized: view,  +schema: staging}
+    intermediate: {+materialized: view,  +schema: intermediate}
+    marts:        {+materialized: table, +schema: marts}
+
+seeds:
+  altdata_triage:
+    +schema: reference
+    security_master:
+      +column_types: {ticker: varchar, company_name: varchar, sector: varchar, in_core_universe: boolean}

@@ -1,0 +1,55 @@
+site_name: Ruairi Powers — AI Workflow Portfolio
+site_url: https://REPLACE-GITHUB-USER.github.io/ai-portfolio/   # keep in sync with portfolio.yaml
+site_author: Ruairi Powers
+site_description: Governed AI agent and workflow examples for investment firms, each with a runnable repo.
+docs_dir: site
+site_dir: build
+
+theme:
+  name: material
+  features: [navigation.tabs, navigation.sections, content.code.copy, navigation.top]
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue grey
+      toggle: {icon: material/brightness-7, name: Dark mode}
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue grey
+      toggle: {icon: material/brightness-4, name: Light mode}
+
+plugins:
+  - search
+  - blog:
+      blog_dir: blog
+      post_url_format: "{slug}"
+      post_excerpt: required
+      categories: true
+
+hooks:
+  - scripts/mkdocs_hooks.py
+
+markdown_extensions:
+  - tables
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.snippets:
+      base_path: ["."]          # repo root: posts include governance/ and projects/*/docs/
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Home: index.md
+  - Governance: blog/governance/
+  - Blog: blog/index.md
+  - About: about.md
+
+validation:
+  nav:
+    not_found: info      # nav links to blog post URLs (blog/governance/) which the blog plugin generates

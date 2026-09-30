@@ -1,0 +1,46 @@
+# Project spec template. Copy to specs/<slug>.yaml and fill in.
+# Minimum to start a new project: slug, title, domain, use_case. Claude fills the
+# rest as a draft for you to edit, then generates from the edited spec.
+
+slug: my-project                 # kebab-case; becomes repo name and blog URL
+title: "One-line project title"
+status: planned                  # planned | spec-approved | built | published
+domain: "e.g. hedge fund middle office"
+use_case: >
+  One or two sentences: who does what today, and what the AI workflow changes.
+
+business_problem:
+  who: "role(s) affected"
+  pain: "time/cost/risk today, with rough numbers if known"
+  outcome: "what good looks like, measurable"
+
+pattern: workflow                # workflow | agent | rag | multi-agent  (pick the simplest that works)
+risk_tier: medium                # low | medium | high  (HITL-01)
+risk_rationale: "why this tier"
+
+stack:                           # prefer the most common tools; see factory/stack-catalog.md
+  language: python
+  data: dbt + duckdb
+  orchestration: cli
+  llm_access: registry adapter
+  retrieval: none
+  ui: none
+  aws_native: "services used in the AWS variant"
+showcases: []                    # skills this project demonstrates that others don't
+
+functional_requirements: []      # FR-n, 3-6 items
+non_functional_requirements: []  # NFR-n with targets, 4-6 items
+
+governance:
+  deep_dive: []                  # 3-5 control IDs this project goes deepest on (blog highlights these)
+  not_applicable: {}             # CONTROL-ID: reason
+
+synthetic_data:
+  description: ""
+  adversarial_cases: []          # every project needs at least one injection/abuse case and one compliance case
+
+golden_cases: []                 # {id, expected, tags, why}
+
+links:
+  repo: ""                       # filled by scripts/publish_project.sh
+  blog: ""

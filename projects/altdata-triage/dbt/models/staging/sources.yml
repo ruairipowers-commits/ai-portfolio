@@ -1,0 +1,13 @@
+version: 2
+sources:
+  - name: raw
+    description: Landed by `altdata-triage ingest` (Python) from data/incoming/<vendor>/.
+    meta: {owner: data-sourcing, refresh: on vendor delivery}   # DATA-01
+    tables:
+      - name: vendor_panels
+        description: One row per vendor x observation date x vendor ticker code.
+        loaded_at_field: loaded_at
+        freshness:
+          warn_after: {count: 7, period: day}
+      - name: vendor_questionnaires
+        description: Due-diligence questionnaire front matter + free-text notes (UNTRUSTED text).

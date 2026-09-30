@@ -1,0 +1,18 @@
+version: 2
+models:
+  - name: stg_vendor_panels
+    columns:
+      - name: vendor_id
+        tests: [not_null]
+      - name: obs_date
+        tests: [not_null]
+      - name: vendor_ticker
+        tests: [not_null]
+  - name: stg_vendor_questionnaires
+    columns:
+      - name: vendor_id
+        tests: [not_null, unique]
+      - name: license_derived_use
+        tests: [not_null]
+      - name: pii_present
+        tests: [not_null]

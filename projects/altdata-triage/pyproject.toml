@@ -1,0 +1,31 @@
+[project]
+name = "altdata-triage"
+version = "0.1.0"
+description = "Governed AI workflow that triages alternative-data vendor samples (dbt + DuckDB + LLM)"
+requires-python = ">=3.11"
+dependencies = [
+  "duckdb>=1.1,<2",
+  "dbt-duckdb>=1.10,<2",
+  "pydantic>=2.7,<3",
+  "pyyaml>=6,<7",
+]
+
+[project.optional-dependencies]
+anthropic = ["anthropic>=0.40"]
+openai = ["openai>=1.50"]
+aws = ["boto3>=1.35"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+altdata-triage = "altdata_triage.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

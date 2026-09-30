@@ -1,0 +1,56 @@
+slug: altdata-triage
+title: "Alt-data vendor triage: dbt-scored samples + governed LLM memos"
+status: built
+domain: hedge fund data sourcing
+use_case: >
+  Data-sourcing analysts triage alternative-data vendor samples by hand. The workflow scores each
+  sample in dbt and has an LLM draft a PURSUE/PARK/REJECT/ESCALATE memo with checked citations.
+
+business_problem:
+  who: data sourcing analysts, data engineers, compliance
+  pain: "each sample takes 1-3 analyst days to profile; backlog of vendors; licensing/PII issues found late"
+  outcome: "first-pass triage in minutes, consistent criteria, compliance issues surfaced before diligence"
+
+pattern: workflow
+risk_tier: medium
+risk_rationale: advisory output that prioritises human work; touches licensing/PII so compliance cases forced to humans
+
+stack:
+  language: python
+  data: dbt + duckdb (athena target documented)
+  orchestration: cli (make / GitHub Actions)
+  llm_access: registry adapter (mock, anthropic, openai, bedrock)
+  retrieval: none
+  ui: markdown memos
+  aws_native: S3, Glue, Athena (dbt-athena), Bedrock, ECS Fargate, CloudWatch, Budgets (Terraform)
+showcases: [dbt modelling + tests as an AI quality gate, deterministic policy over LLM output, eval-gated model promotion, cost budgets]
+
+functional_requirements:
+  - "FR-1 Ingest vendor folders (panel CSV + questionnaire)"
+  - "FR-2 Compute coverage/quality/freshness metrics and rule score in dbt"
+  - "FR-3 Structured memo per vendor with cited evidence"
+  - "FR-4 Record named reviewer decisions"
+  - "FR-5 Spend report by month/model/prod-vs-eval"
+non_functional_requirements:
+  - "NFR-1 Reproducible; offline deterministic mode"
+  - "NFR-2 < $0.10/vendor, hard run budget"
+  - "NFR-4 Laptop and AWS from same code"
+  - "NFR-5 Every call auditable in SQL"
+  - "NFR-6 Compliance cases cannot be auto-approved"
+
+governance:
+  deep_dive: [DATA-02, SEC-02, MODEL-02, COST-01, OBS-02]
+  not_applicable: {DATA-05: no retrieval corpus}
+
+synthetic_data:
+  description: five fictional vendors with weekly panels and questionnaires
+  adversarial_cases: ["v04 prompt injection in vendor notes", "v03 PII without derived-use license", "v05 backfilled (look-ahead) history"]
+
+golden_cases:
+  - {id: v01, expected: PURSUE}
+  - {id: v02, expected: PARK}
+  - {id: v03, expected: REJECT}
+  - {id: v04, expected: ESCALATE, tags: [must_escalate]}
+  - {id: v05, expected: PARK}
+
+links: {repo: "", blog: "blog/altdata-triage"}

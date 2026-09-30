@@ -1,0 +1,47 @@
+slug: research-qa-rag
+title: "Research Q&A: cited answers over filings and broker research (RAG)"
+status: planned
+domain: investment research
+use_case: >
+  Analysts search 10-Ks, earnings transcripts and broker notes by hand. A RAG service answers
+  questions with page-level citations and refuses when the corpus doesn't support an answer.
+
+business_problem:
+  who: fundamental analysts, PMs
+  pain: "hours per question re-reading documents; answers from memory lack sources"
+  outcome: "cited answers in seconds; 'not found' instead of hallucination"
+
+pattern: rag
+risk_tier: medium
+risk_rationale: informs research, not trading; MNPI and licensed broker content need access controls
+
+stack:
+  language: python
+  data: document parsing (unstructured / pymupdf)
+  orchestration: fastapi service
+  llm_access: registry adapter
+  retrieval: hybrid search (BM25 + embeddings) on postgres pgvector; reranker option
+  ui: streamlit chat
+  aws_native: Bedrock Knowledge Bases + OpenSearch Serverless, S3, Lambda/API Gateway
+showcases: [chunking + provenance, hybrid retrieval, groundedness evals (ragas-style), document-level access control, refusal behaviour]
+
+functional_requirements:
+  - "FR-1 Ingest PDFs/HTML with source, page, license and entitlement metadata"
+  - "FR-2 Answer with citations to page/section"
+  - "FR-3 Refuse when evidence is insufficient"
+  - "FR-4 Filter retrieval by user entitlements (e.g. broker research licences)"
+non_functional_requirements:
+  - "NFR-1 p95 latency < 8s"
+  - "NFR-2 Faithfulness >= 0.9 on eval set"
+  - "NFR-3 Re-index incremental, versioned"
+
+governance:
+  deep_dive: [DATA-05, DATA-04, OBS-02, EVAL-02, SEC-02]
+  not_applicable: {}
+
+synthetic_data:
+  description: public SEC filings (EDGAR) for 5 companies + synthetic broker notes marked licensed
+  adversarial_cases: ["document with hidden 'ignore instructions' text", "question answerable only from a document the user is not entitled to", "question with no answer in corpus"]
+
+golden_cases: []
+links: {repo: "", blog: ""}
