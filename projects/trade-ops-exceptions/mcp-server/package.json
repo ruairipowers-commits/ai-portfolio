@@ -1,0 +1,24 @@
+{
+  "name": "tradeops-mcp-server",
+  "version": "0.1.0",
+  "description": "MCP tool server for the trade-ops exception agent: read-only lookups plus one approval-gated write tool",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": { "tradeops-mcp": "dist/index.js" },
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "build": "tsc -p .",
+    "test": "npm run build && node --test --no-warnings test/*.test.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.31.0",
+    "zod": "^4.0.0"
+  },
+  "optionalDependencies": {
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}
