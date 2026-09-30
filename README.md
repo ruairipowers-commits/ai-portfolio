@@ -67,5 +67,5 @@ python scripts/check_governance.py
 |---|---|
 | altdata-triage | built — ready to publish |
 | eod-heartbeat | planned — align existing Claude Code repo to the standard |
-| trade-ops-exceptions | spec drafted |
+| trade-ops-exceptions | built — ready to publish |
 | research-qa-rag | spec drafted |

@@ -1,0 +1,12 @@
+.env
+warehouse/
+output/
+data/
+mcp-server/node_modules/
+mcp-server/dist/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.venv/
+infra/aws/.terraform/
+*.tfstate*

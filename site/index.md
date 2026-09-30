@@ -15,7 +15,7 @@ same [governance standard](blog/posts/governance.md).
 |---|---|---|---|---|
 | [Alt-data vendor triage](blog/posts/altdata-triage.md) | Analysts spend days profiling vendor samples | Workflow | dbt, DuckDB, Pydantic, Bedrock | ✅ Live |
 | EOD heartbeat | End-of-day pipeline breaks found late, fixed from tribal knowledge | RAG + monitor | Airflow, Postgres/pgvector, dbt | In progress |
-| Trade-ops exception agent | Settlement breaks need lookups across 4 systems | Agent + human approval | LangGraph, MCP (TypeScript), Streamlit | Planned |
+| [Trade-ops exception agent](blog/posts/trade-ops-exceptions.md) | Settlement breaks need lookups across 4 systems | Agent + human approval | LangGraph, MCP (TypeScript), Streamlit, Postgres | ✅ Live |
 | Research Q&A | Analysts re-read filings to answer questions | RAG | FastAPI, hybrid pgvector search, RAGAS-style evals | Planned |
 
 ## What every project includes

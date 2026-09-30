@@ -1,0 +1,9 @@
+warehouse/
+output/
+data/
+.venv/
+.env
+mcp-server/node_modules/
+mcp-server/dist/
+**/__pycache__/
+infra/aws/.terraform/

@@ -1,0 +1,44 @@
+# MODEL-01 registry. Code references aliases only. Pricing: USD per million tokens.
+# Null pricing -> refused unless cost.allow_unpriced_models is true (COST-01).
+aliases:
+  investigator-primary: mock-agent
+  investigator-fallback: mock-agent
+  investigator-candidate: mock-agent
+
+models:
+  mock-agent:                # deterministic scripted investigator: offline demo + free CI
+    provider: mock
+    model_id: mock-investigator-v1
+    input_per_mtok: 1.00     # simulated so cost reporting shows numbers
+    output_per_mtok: 5.00
+    deprecation_date: null
+    approved: true
+  claude-sonnet:
+    provider: anthropic      # pip install '.[anthropic]'
+    model_id: claude-sonnet-5-5
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true
+  claude-haiku:
+    provider: anthropic
+    model_id: claude-haiku-4-5-20251001
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true
+  openai-default:
+    provider: openai         # pip install '.[openai]'
+    model_id: "SET-CURRENT-OPENAI-MODEL-ID"
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: false
+  bedrock-claude:
+    provider: bedrock        # pip install '.[aws]'
+    model_id: "SET-BEDROCK-MODEL-OR-INFERENCE-PROFILE-ID"
+    region: us-east-1
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true
