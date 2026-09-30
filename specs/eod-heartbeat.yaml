@@ -1,0 +1,48 @@
+slug: eod-heartbeat
+title: "EOD heartbeat: fund end-of-day pipeline monitor with an LLM break explainer"
+status: planned   # existing Claude Code project — align it to the standard rather than regenerate
+domain: hedge fund operations (end-of-day NAV / positions / P&L)
+use_case: >
+  Ops engineers chase end-of-day pipeline breaks (late files, position/P&L reconciliation diffs)
+  across logs and runbooks. The workflow detects breaks and an LLM explains likely cause and
+  next action, grounded in runbooks and past incidents via RAG.
+
+business_problem:
+  who: fund operations, data engineering on-call
+  pain: "breaks found late in the evening; triage depends on tribal knowledge; NAV sign-off delayed"
+  outcome: "breaks detected at SLA time with a cited explanation and the right runbook step"
+
+pattern: rag
+risk_tier: medium
+risk_rationale: explains, never fixes; wrong advice could delay NAV, so explanation must cite runbook and humans act
+
+stack:
+  language: python
+  data: postgres + dbt-postgres (recon models)
+  orchestration: apache airflow (docker compose)   # most common orchestrator in finance data teams
+  llm_access: registry adapter
+  retrieval: pgvector over runbooks + incident history
+  ui: slack-style alert message (markdown) + CLI
+  aws_native: MWAA (managed Airflow), RDS Postgres + pgvector, Bedrock, SNS
+showcases: [airflow DAG with SLAs, reconciliation modelling, RAG with provenance, alerting]
+
+functional_requirements:
+  - "FR-1 Detect late/missing files and recon breaks against thresholds"
+  - "FR-2 Retrieve relevant runbook sections and similar past incidents"
+  - "FR-3 Produce explanation + suggested next step with citations"
+  - "FR-4 Post alert; capture on-call feedback (useful / wrong)"
+non_functional_requirements:
+  - "NFR-1 Alert within 5 minutes of SLA breach"
+  - "NFR-2 Every explanation cites >= 1 runbook chunk"
+  - "NFR-3 Runs locally via docker compose"
+
+governance:
+  deep_dive: [DATA-05, OBS-02, HITL-03, MODEL-05, OBS-03]
+  not_applicable: {}
+
+synthetic_data:
+  description: synthetic fund books, positions, prices, P&L with injected breaks; 15 runbook pages; 30 past incidents
+  adversarial_cases: ["runbook page containing an instruction to 'auto-rerun with --force'", "incident note containing a client name (PII)"]
+
+golden_cases: []
+links: {repo: "", blog: ""}

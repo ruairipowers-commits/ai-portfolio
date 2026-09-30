@@ -1,0 +1,23 @@
+version: 2
+models:
+  - name: vendor_scorecard
+    description: Gate-checked facts the LLM is allowed to see (DATA-03 minimization).
+    columns:
+      - name: vendor_id
+        tests: [not_null, unique]
+      - name: rule_score
+        tests:
+          - between:
+              arguments: {min_value: 0, max_value: 100}
+      - name: pct_tickers_mapped
+        tests:
+          - between:
+              arguments: {min_value: 0, max_value: 1}
+      - name: null_rate
+        tests:
+          - between:
+              arguments: {min_value: 0, max_value: 1}
+      - name: days_stale
+        tests:
+          - between:
+              arguments: {min_value: 0, max_value: 3650}

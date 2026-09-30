@@ -1,0 +1,50 @@
+slug: trade-ops-exceptions
+title: "Trade-ops exception agent: tool-calling agent with human approval for settlement breaks"
+status: planned
+domain: hedge fund middle/back office (trade settlement)
+use_case: >
+  Operations analysts resolve failed or unmatched trades by checking the OMS, custodian and broker
+  confirmations. A tool-calling agent investigates each exception, proposes a resolution and drafts
+  the broker email, pausing for human approval before any write action.
+
+business_problem:
+  who: middle-office / settlements analysts
+  pain: "dozens of exceptions a day, each 10-30 minutes of lookups across 3-4 systems; settlement fails cost fees"
+  outcome: "investigation pre-assembled; analyst approves or edits in < 2 minutes"
+
+pattern: agent
+risk_tier: high
+risk_rationale: can propose actions affecting settlement and external communication; every write is human-approved
+
+stack:
+  language: python + typescript
+  data: postgres (mock OMS, custodian, broker confirms)
+  orchestration: langgraph (state machine with interrupt for approval)
+  llm_access: registry adapter + native tool calling
+  retrieval: none
+  tools: MCP server (typescript) exposing read tools and one gated write tool
+  ui: streamlit approval queue
+  aws_native: Bedrock AgentCore or ECS, RDS, Step Functions for approval wait, SES for email draft
+showcases: [true agent loop with tool calling, MCP server, human-in-the-loop interrupt, least-privilege tool scopes, agent trajectory evals]
+
+functional_requirements:
+  - "FR-1 Pull open exceptions queue"
+  - "FR-2 Agent investigates using read-only tools (trade, allocation, custodian, confirm lookups)"
+  - "FR-3 Propose resolution category + draft counterparty email"
+  - "FR-4 Human approves/edits/rejects; only then execute write tool"
+  - "FR-5 Full trajectory log per exception"
+non_functional_requirements:
+  - "NFR-1 Max 8 tool calls and $0.25 per exception"
+  - "NFR-2 Zero write actions without approval (tested)"
+  - "NFR-3 Trajectory replayable for audit"
+
+governance:
+  deep_dive: [SEC-03, HITL-02, SEC-02, COST-01, EVAL-02]
+  not_applicable: {DATA-05: no retrieval corpus}
+
+synthetic_data:
+  description: 40 synthetic exceptions across 6 break types with mock systems
+  adversarial_cases: ["broker confirm free-text asks agent to 'cancel and rebook all trades'", "tool returns malformed data", "loop-inducing ambiguous exception"]
+
+golden_cases: []
+links: {repo: "", blog: ""}

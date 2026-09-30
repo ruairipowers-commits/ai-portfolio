@@ -1,0 +1,15 @@
+.env
+warehouse/
+output/
+data/incoming/
+dbt/seeds/security_master.csv
+dbt/target/
+dbt/logs/
+logs/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.venv/
+infra/aws/.terraform/
+*.tfstate*
+dbt/.user.yml

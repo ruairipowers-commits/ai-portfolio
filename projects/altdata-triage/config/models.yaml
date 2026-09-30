@@ -1,0 +1,54 @@
+# MODEL-01 Model registry. Code only ever references ALIASES.
+# To migrate models: point `triage-candidate` at the new model, run
+#   altdata-triage eval --alias triage-candidate --baseline triage-primary
+# and, if the gate passes, `altdata-triage promote triage-primary <model>`.
+#
+# Pricing is USD per million tokens. Fill it from the provider's pricing page;
+# a model with null pricing is refused unless cost.allow_unpriced_models=true (COST-01).
+
+aliases:
+  triage-primary: mock-local
+  triage-fallback: mock-local
+  triage-candidate: mock-local
+
+models:
+  mock-local:            # deterministic offline stand-in so the repo runs with no keys
+    provider: mock
+    model_id: mock-heuristic-v1
+    input_per_mtok: 1.00      # simulated, so cost reporting has numbers to show
+    output_per_mtok: 5.00
+    deprecation_date: null
+    approved: true
+
+  claude-sonnet:
+    provider: anthropic
+    model_id: claude-sonnet-5-5
+    input_per_mtok: null      # fill from anthropic.com/pricing
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true            # SEC-05: only approved models can be resolved
+
+  claude-haiku:
+    provider: anthropic
+    model_id: claude-haiku-4-5-20251001
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true
+
+  openai-default:
+    provider: openai
+    model_id: "SET-CURRENT-OPENAI-MODEL-ID"
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: false           # flip after legal/security review of provider terms
+
+  bedrock-claude:
+    provider: bedrock
+    model_id: "SET-BEDROCK-MODEL-OR-INFERENCE-PROFILE-ID"   # from the Bedrock console
+    region: us-east-1
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true

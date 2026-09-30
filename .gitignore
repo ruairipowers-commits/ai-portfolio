@@ -1,0 +1,14 @@
+build/
+dist/
+__pycache__/
+.venv/
+projects/*/warehouse/
+projects/*/output/
+projects/*/data/incoming/
+projects/*/dbt/target/
+projects/*/dbt/logs/
+projects/*/dbt/seeds/security_master.csv
+projects/*/logs/
+*.egg-info/
+.pytest_cache/
+projects/*/dbt/.user.yml

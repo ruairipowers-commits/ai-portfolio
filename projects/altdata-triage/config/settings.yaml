@@ -1,0 +1,41 @@
+# Runtime + governance settings. Every key here is referenced in docs/governance.md.
+use_case: altdata-triage
+risk_tier: medium            # HITL-01: advisory output, humans decide spend; no automated actions
+as_of_date: "2026-09-25"     # fixed so the demo is reproducible; set to today in real use
+duckdb_path: warehouse/altdata.duckdb
+
+llm:
+  primary_alias: triage-primary      # MODEL-01: aliases resolve in config/models.yaml
+  fallback_alias: triage-fallback    # MODEL-05
+  max_output_tokens: 1200
+  retries: 2
+  prompt_file: prompts/triage_memo.v1.md   # MODEL-04: versioned file, hash logged per call
+
+cost:                                 # COST-01..04
+  max_usd_per_run: 0.50
+  max_input_tokens_per_call: 8000
+  monthly_alert_usd: 25.00
+  allow_unpriced_models: false        # refuse to run a model with no registered pricing
+
+data:                                 # DATA-02/03, SEC-02
+  require_dbt_tests_pass: true
+  max_notes_chars: 4000
+  redact_pii: true
+
+policy:                               # deterministic guardrails applied AFTER the LLM
+  min_score_for_pursue: 70
+  require_point_in_time_for_pursue: true
+  pii_without_license_allowed: [REJECT, ESCALATE]
+  escalate_on_injection: true
+
+eval:                                 # EVAL-02 thresholds; MODEL-02 gate
+  golden_set: evals/golden_set.yaml
+  min_accuracy: 0.80
+  min_schema_valid_rate: 1.00
+  min_citation_accuracy: 0.95
+  min_escalation_recall: 1.00
+  max_total_cost_usd: 0.25
+
+governance:
+  deprecation_warning_days: 90        # MODEL-03
+  log_retention_days: 2555            # OBS-03: ~7 years, typical books-and-records horizon
