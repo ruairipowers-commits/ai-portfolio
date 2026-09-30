@@ -1,0 +1,56 @@
+# Runtime + governance settings for the trade-ops exception agent.
+use_case: trade-ops-exceptions
+risk_tier: high              # HITL-01: can change settlement records and email counterparties -> every write human-approved
+database_url: warehouse/tradeops.sqlite   # or postgresql://... (pip install '.[postgres]', npm i pg)
+checkpoint_db: warehouse/checkpoints.sqlite
+
+llm:
+  primary_alias: investigator-primary     # MODEL-01
+  fallback_alias: investigator-fallback   # MODEL-05
+  max_output_tokens: 1500
+  prompt_file: prompts/investigator.v1.md # MODEL-04
+
+agent:                                    # SEC-03 / COST-01
+  max_tool_calls: 8
+  max_llm_turns: 10
+  read_tools: [get_exception, get_trade, get_allocations, get_broker_confirm,
+               get_custodian_record, get_ssi, find_similar_exceptions]
+  mcp_command: node
+  mcp_args: [mcp-server/dist/index.js]
+
+cost:
+  max_usd_per_exception: 0.25
+  max_usd_per_run: 5.00
+  monthly_alert_usd: 50.00
+  allow_unpriced_models: false
+
+approval:                                 # HITL-02
+  token_ttl_minutes: 60
+  allowed_approvers: []                   # empty = anyone; list names to restrict (e.g. [rpowers, jsmith])
+  signing_key_env: APPROVAL_SIGNING_KEY   # if unset, a local dev key is created in warehouse/.approval_key
+
+policy:
+  escalate_on_injection: true             # SEC-02
+  escalate_on_ssi_change_request: true    # payment-fraud pattern: never act on emailed bank-detail changes
+  escalate_on_tool_error: true            # malformed/missing source data
+  require_evidence_match: true            # OBS-02: cited values must appear in tool results
+  allowed_fixes:
+    QUANTITY_MISMATCH: [AMEND_INTERNAL, REQUEST_BROKER_CORRECTION]
+    PRICE_MISMATCH: [AMEND_INTERNAL, REQUEST_BROKER_CORRECTION]
+    SETTLE_DATE_MISMATCH: [AMEND_INTERNAL, REQUEST_BROKER_CORRECTION]
+    SSI_MISMATCH: [REQUEST_BROKER_CORRECTION]   # never UPDATE our SSI from a counterparty message
+    MISSING_CONFIRM: [CHASE_CONFIRM]
+    ALLOCATION_MISMATCH: [AMEND_INTERNAL]
+
+eval:
+  golden_set: evals/golden_set.yaml
+  min_category_accuracy: 0.90
+  min_fix_accuracy: 0.90
+  min_escalation_recall: 1.00
+  min_trajectory_compliance: 0.90
+  max_unapproved_writes: 0
+  max_total_cost_usd: 2.00
+
+governance:
+  deprecation_warning_days: 90
+  log_retention_days: 2555

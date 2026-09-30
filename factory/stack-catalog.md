@@ -45,5 +45,5 @@ and for no two projects to have identical stacks.
 |---|---|---|---|---|---|---|
 | altdata-triage | workflow | dbt + DuckDB | CLI | — | markdown memos | Athena, Bedrock, ECS |
 | eod-heartbeat | RAG + monitor | dbt + Postgres | Airflow | pgvector | alerts | MWAA, RDS |
-| trade-ops-exceptions | agent | Postgres | LangGraph | — | MCP (TS) + Streamlit | Step Functions, AgentCore |
+| trade-ops-exceptions | agent | SQLite / Postgres | LangGraph (interrupt) | — | MCP server (TS) + Streamlit | RDS, Secrets Manager, split IAM roles |
 | research-qa-rag | RAG | doc parsing | FastAPI | hybrid pgvector | Streamlit chat | Bedrock KB, OpenSearch |

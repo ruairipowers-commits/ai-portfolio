@@ -1,0 +1,43 @@
+# EVAL-03 / SEC-06: unit + server tests, the offline agent end to end, the eval gate, dependency audit.
+name: ci
+on: [push, pull_request]
+permissions: {contents: read}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "22"}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install -e ".[dev]" pip-audit
+      - run: tradeops build-server
+      - run: cd mcp-server && npm test
+      - run: pytest -q
+      - run: tradeops all && tradeops eval
+      - run: cd mcp-server && npm audit --omit=dev || true   # report-only
+      - run: pip-audit --skip-editable || true               # report-only
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: eval-report, path: output/evals/}
+  postgres:
+    # Same end-to-end run against Postgres 16 (optional backend).
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:16
+        env: {POSTGRES_USER: tradeops, POSTGRES_PASSWORD: tradeops, POSTGRES_DB: tradeops}
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://tradeops:tradeops@localhost:5432/tradeops
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "22"}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install -e ".[postgres]"
+      - run: tradeops build-server
+      - run: tradeops all && tradeops eval
