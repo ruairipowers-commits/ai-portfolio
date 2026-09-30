@@ -11,8 +11,8 @@ SRC="$ROOT/projects/$SLUG"; OUT="$ROOT/dist/$SLUG"
 
 python3 "$ROOT/scripts/check_governance.py" "$SLUG"
 
-read -r SITE OWNER < <(python3 -c "import yaml;c=yaml.safe_load(open('$ROOT/portfolio.yaml'));print(c['site_url'].rstrip('/'), c['github_owner'])")
-if [[ "$OWNER" == REPLACE* ]]; then echo "Set github_owner and site_url in portfolio.yaml first"; exit 1; fi
+read -r SITE OWNER < <(python3 "$ROOT/scripts/portfolio_config.py")
+if [[ "$OWNER" == REPLACE* ]]; then echo "Can't determine GitHub owner: run 'gh auth login' or set PORTFOLIO_GITHUB_OWNER"; exit 1; fi
 TITLE=$(python3 -c "import yaml;print(yaml.safe_load(open('$ROOT/specs/$SLUG.yaml'))['title'])")
 
 rm -rf "$OUT" && mkdir -p "$OUT"

@@ -35,7 +35,9 @@ scripts/                  check_governance.py · publish_project.sh · mkdocs_ho
 ## One-time setup
 
 1. Create a GitHub repo `ai-portfolio`, push this folder.
-2. Edit `portfolio.yaml` and `mkdocs.yml` → replace `REPLACE-GITHUB-USER`.
+2. Nothing to edit: the site workflow fills in your GitHub username and Pages URL from the repo owner,
+   so no personal settings are committed. For a custom domain, add a repository variable `SITE_URL`.
+   Locally, `publish_project.sh` uses your `gh` login (or `PORTFOLIO_GITHUB_OWNER` / `PORTFOLIO_SITE_URL`).
 3. Repo *Settings → Pages → Source: GitHub Actions*. The site deploys on every push to `main`.
 4. Install the GitHub CLI and `gh auth login` (for publishing project repos).
 

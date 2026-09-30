@@ -1,7 +1,12 @@
 # Portfolio-wide settings. Every generator run reads this first.
 author: Ruairi Powers
 tagline: "AI solutions for investment firms — governed, measurable, portable."
-site_url: https://REPLACE-GITHUB-USER.github.io/ai-portfolio   # set once GitHub Pages is on
+# Leave these as placeholders in git. They are resolved at build/publish time from:
+#   1. env PORTFOLIO_SITE_URL / PORTFOLIO_GITHUB_OWNER (CI sets these from the repo owner;
+#      set repo variable SITE_URL for a custom domain), else
+#   2. the GitHub CLI login (`gh api user`) for local publishing, else
+#   3. these values.
+site_url: https://REPLACE-GITHUB-USER.github.io/ai-portfolio
 github_owner: REPLACE-GITHUB-USER
 license: MIT
 default_domain: investment management (hedge fund / asset manager operations and research)

@@ -1,13 +1,17 @@
-"""MkDocs hook: substitute portfolio placeholders ({{SITE_URL}}, {{GITHUB_OWNER}}) from portfolio.yaml.
+"""MkDocs hook: substitute portfolio placeholders ({{SITE_URL}}, {{GITHUB_OWNER}}).
 
-Runs on rendered HTML so it also covers content pulled in by pymdownx.snippets.
+Values come from scripts/portfolio_config.py (env in CI, else gh login, else portfolio.yaml),
+so no personal details need to be committed. Runs on rendered HTML so it also covers
+content pulled in by pymdownx.snippets.
 """
+import sys
 from pathlib import Path
 
-import yaml
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from portfolio_config import resolve  # noqa: E402
 
-_cfg = yaml.safe_load((Path(__file__).resolve().parents[1] / "portfolio.yaml").read_text())
-_SUBS = {"SITE_URL": _cfg["site_url"].rstrip("/"), "GITHUB_OWNER": _cfg["github_owner"]}
+_cfg = resolve()
+_SUBS = {"SITE_URL": _cfg["site_url"], "GITHUB_OWNER": _cfg["github_owner"]}
 
 
 def _sub(text: str) -> str:

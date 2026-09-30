@@ -1,5 +1,5 @@
 site_name: Ruairi Powers — AI Workflow Portfolio
-site_url: https://REPLACE-GITHUB-USER.github.io/ai-portfolio/   # keep in sync with portfolio.yaml
+site_url: !ENV [PORTFOLIO_SITE_URL, 'http://localhost:8000/']   # set by the site workflow from the repo owner
 site_author: Ruairi Powers
 site_description: Governed AI agent and workflow examples for investment firms, each with a runnable repo.
 docs_dir: site
