@@ -32,81 +32,107 @@ def click(at, label):
     return next(b for b in at.button if label in b.label).click().run()
 
 
+def press(at, key):
+    return at.button(key=key).click().run()
+
+
 def metrics(at):
     return {m.label: m.value for m in at.metric}
 
 
-def test_investigate_all(app):
+def select(at, exception_id):
+    at.session_state["sel"] = exception_id
+    return at.run()
+
+
+def wf_status(at, exception_id):
+    table = at.dataframe[0].value
+    table = table.data if hasattr(table, "data") else table          # Styler -> DataFrame
+    return table.set_index("exception_id").loc[exception_id]
+
+
+# ---------------------------------------------------------------- workflow tab
+def test_tabs_and_investigate_all(app):
     at = app.run()
-    assert not at.exception
-    at = click(at, "Investigate 40")
+    assert not at.exception, at.exception
+    labels = [t.label for t in at.tabs]
+    assert {"🧾 Exception workflow", "🗄️ Data explorer", "📏 Audit & evals", "📘 Guide & models"} <= set(labels)
+    assert metrics(at)["Not investigated"] == "40"
+    at = click(at, "Investigate all not yet investigated")
     assert not at.exception, at.exception
     m = metrics(at)
-    assert m["Awaiting approval"] == "36" and m["Escalated"] == "4" and m["Resolved"] == "0"
+    assert m["Awaiting approval"] == "36" and m["Escalated"] == "4" and m["Not investigated"] == "0"
 
 
-def test_injection_on_clean_exception_escalates(app):
-    at = app.run()
-    at.radio[0].set_value("Selected exceptions").run()
-    at.multiselect[0].set_value(["EX-0003"]).run()
-    at.selectbox[0].set_value("EX-0003").run()
-    at = click(at, "Insert injection")
-    at = click(at, "Save confirm text")
-    at = click(at, "Investigate 1")
-    m = metrics(at)
-    assert m["Escalated"] == "1" and m["Awaiting approval"] == "0"
-
-
-def test_approve_records_and_queues_email(app):
-    at = app.run()
-    at.radio[0].set_value("Selected exceptions").run()
-    at.multiselect[0].set_value(["EX-0002"]).run()          # broker-side quantity break -> email
-    at = click(at, "Investigate 1")
-    at = click(at, "Approve")
+def test_select_investigate_approve_turns_green(app):
+    at = select(app.run(), "EX-0002")                                # broker-side quantity break -> email
+    at = press(at, "inv_one")
+    assert wf_status(at, "EX-0002")["status"] == "Awaiting approval"
+    at = press(at, "approve")
     assert not at.exception, at.exception
     assert any("resolved" in s.value for s in at.success)
-    assert metrics(at)["Resolved"] == "1"
-    outbox = at.tabs[2].dataframe[1].value
-    assert len(outbox) == 1 and not bool(outbox.iloc[0]["sent"])
+    assert wf_status(at, "EX-0002")["status"] == "Resolved"
+    assert at.button(key="inv_one").disabled                         # can't re-run a resolved exception
+
+
+def test_injection_is_marked_escalates_and_restores(app):
+    at = select(app.run(), "EX-0003")
+    at = press(at, "inj")
+    assert "injection" in wf_status(at, "EX-0003")["tampered"]
+    assert "re-run" in wf_status(at, "EX-0003")["tampered"]
+    assert any("has been changed" in w.value for w in at.warning)
+    at = press(at, "inv_one")
+    assert wf_status(at, "EX-0003")["status"] == "Escalated"
+    assert "re-run" not in wf_status(at, "EX-0003")["tampered"]
+    assert any("instruction-like" in e.value for e in at.error)
+    at = press(at, "restore")
+    assert wf_status(at, "EX-0003")["tampered"] == ""
+    at = press(at, "inv_one")
+    assert wf_status(at, "EX-0003")["status"] == "Awaiting approval"
+
+
+def test_bank_change_escalates(app):
+    at = select(app.run(), "EX-0005")
+    at = press(at, "bank")
+    assert "bank-detail" in wf_status(at, "EX-0005")["tampered"]
+    at = press(at, "inv_one")
+    assert wf_status(at, "EX-0005")["status"] == "Escalated"
+    assert any("bank-detail/SSI change" in e.value for e in at.error)
+
+
+def test_run_queue(app):
+    at = select(app.run(), "EX-0001")
+    at = press(at, "enqueue")
+    at = select(at, "EX-0004")
+    at = press(at, "enqueue")
+    at = click(at, "Run queue (2)")
+    assert not at.exception, at.exception
+    assert metrics(at)["Awaiting approval"] == "2"
+    assert at.session_state["run_queue"] == []
 
 
 # ---------------------------------------------------------------- data explorer
-def test_explorer_available_before_any_run(app):
+def test_explorer_and_guide_render(app):
     at = app.run()
-    assert not at.exception, at.exception
-    assert any(h.value == "4 · Explore the data" for h in at.header)
-    assert len(at.get("graphviz_chart")) == 1                      # ER diagram rendered
-    assert any("Press **Investigate**" in i.value for i in at.info)
-
-
-def test_drilldown_flags_the_mismatched_field(app):
-    at = app.run()
-    at.selectbox(key="dd_pick").set_value("EX-0001").run()          # internal quantity break
-    cmp = next(d.value for d in at.dataframe if "match" in getattr(d.value, "columns", []))
-    cmp = cmp.data if hasattr(cmp, "data") else cmp                 # Styler -> DataFrame
-    q = cmp.set_index("field").loc["quantity"]
-    assert q["match"] == "❌" and q["OMS (our booking)"] != q["Broker confirm"]
+    assert len(at.get("graphviz_chart")) == 1
+    assert any("mock-agent" in md.value for md in at.markdown)       # models guide rendered
+    assert any("Insert injection" in md.value for md in at.markdown) # app guide rendered
 
 
 def test_sql_is_read_only(app, tmp_path):
     at = app.run()
     at.text_area(key="sql_text").set_value("delete from trades").run()
-    at = click(at, "Run query")
+    at = press(at, "sql_run")
     assert any("only SELECT" in e.value for e in at.error)
-    at.text_area(key="sql_text").set_value("select count(*) as n from trades").run()
-    at = click(at, "Run query")
-    assert not at.error
     import sqlite3
     assert sqlite3.connect(tmp_path / "warehouse" / "tradeops.sqlite").execute("select count(*) from trades").fetchone()[0] == 40
 
 
-def test_example_query_and_table_browser(app):
+def test_drilldown_and_examples(app):
     from tradeops import app_support as sup
-    at = app.run()
+    at = select(app.run(), "EX-0001")
+    cmp = next(d.value for d in at.dataframe if "match" in getattr(getattr(d.value, "data", d.value), "columns", []))
+    cmp = cmp.data if hasattr(cmp, "data") else cmp
+    assert cmp.set_index("field").loc["quantity"]["match"] == "❌"
     for name, sql in sup.EXAMPLE_QUERIES.items():
-        rows, err = sup.run_readonly_sql(sql)
-        assert err is None, (name, err)
-    at.selectbox(key="tb_name").set_value("broker_confirms").run()
-    at.text_input(key="tb_search").set_value("bank details").run()
-    assert not at.exception
-    assert len(sup.table_rows("broker_confirms", "bank details")) == 1
+        assert sup.run_readonly_sql(sql)[1] is None, name

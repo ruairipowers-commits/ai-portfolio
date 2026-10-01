@@ -56,7 +56,7 @@ sequenceDiagram
 ## Data model
 
 Every table the agent reads, the audit trail it writes, and the two tables only the approval-gated tool can
-write. The app's **Explore the data** section draws the same model and lets you browse and query it.
+write. The app's **Data explorer** tab draws the same model and lets you browse and query it.
 
 <!-- --8<-- [start:er] -->
 ```mermaid
@@ -147,7 +147,7 @@ erDiagram
 
 How a break is caught: the matching engine or custodian feed opens an **exceptions** row; the agent compares
 **trades** with **broker_confirms**, **custodian_records**, **allocations** and **ssis** field by field
-(quantity, price, settle date, settlement account). The app's *Exception drill-down* shows that comparison
+(quantity, price, settle date, settlement account). The app's *Evidence & records* view (Exception workflow tab) shows that comparison
 with the mismatched field highlighted, next to every related row.
 
 ## Why this shape

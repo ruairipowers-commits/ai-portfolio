@@ -56,20 +56,22 @@ pytest -q && (cd mcp-server && npm test)    # 27 Python (incl. app) + 7 Node tes
 
 ### The app
 
-![Trade-ops app: approval queue with evidence, editable fix and email](docs/img/app.png)
+![Exception workflow tab: select a row, tamper with its broker confirm, investigate, approve](docs/img/app.png)
 
-`tradeops ui` opens a three-part page: **Input** (the 40 open exceptions by default, all or a selection;
-change what a broker sent to try an injection or a bank-detail-change request), **Run** (the agent
-investigates and pauses at approval) and **Output** (approval queue with evidence, trajectory and
-editable fix/email; escalations with reasons; resolutions and the outbox; eval gate; cost by model).
-`Reset demo data` restores the 40 synthetic exceptions.
+`tradeops ui` opens four tabs (full guide: [docs/app-guide.md](docs/app-guide.md); models: [docs/models.md](docs/models.md),
+both also shown in the app):
 
-**4 · Explore the data** (available before you run anything) is a read-only browser for the SQLite database:
-an **ER diagram** of the tables grouped by role with the workflow drawn on top; an **exception drill-down**
-that shows how the break appears across OMS, broker confirm, custodian, allocations and SSI (mismatched field
-highlighted) plus every related row; a **table browser** with search and CSV download; and a **SQL box**
-(SELECT/WITH only, on a read-only connection) with example queries. The same drill-down is under each proposal
-in the approval queue.
+- **🧾 Exception workflow** — one table of all 40 exceptions with a coloured status (amber awaiting approval,
+  red escalated, **green resolved**, grey rejected) and a purple marker on any exception whose broker confirm you
+  changed. Select a row to **investigate** it, **add it to a run queue**, **try to break it** (💉 injection or
+  🏦 bank-detail change, applied immediately, logged and undoable), see the **evidence** across systems and every
+  related database row, read the **agent trajectory**, and **approve / edit / reject** the proposal.
+- **🗄️ Data explorer** — ER diagram, table browser with search and CSV download, and a read-only SQL box with
+  example queries.
+- **📏 Audit & evals** — the eval gate, resolutions, the outbox, every decision, cost by model.
+- **📘 Guide & models** — what every button does and what to expect from each model.
+
+Model, your name and **Reset demo data** are in the sidebar.
 
 ![ER diagram in the app](docs/img/er-diagram.png)
 
