@@ -78,6 +78,14 @@ the oldest frauds in operations. An agent that helpfully proposes the new accoun
 
 --8<-- "projects/trade-ops-exceptions/docs/architecture.md:flow"
 
+### Data model
+
+Everything the agent reads, everything it logs, and the two tables only an approval can write live in one
+database. The app's *Explore the data* section draws this, shows any exception's records side by side
+with the mismatched field highlighted, and has a read-only SQL box.
+
+--8<-- "projects/trade-ops-exceptions/docs/architecture.md:er"
+
 ### Why this architecture
 
 --8<-- "projects/trade-ops-exceptions/docs/architecture.md:decisions"
