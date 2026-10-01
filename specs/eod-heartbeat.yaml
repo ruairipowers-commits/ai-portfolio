@@ -22,7 +22,7 @@ stack:
   orchestration: apache airflow (docker compose)   # most common orchestrator in finance data teams
   llm_access: registry adapter
   retrieval: pgvector over runbooks + incident history
-  ui: slack-style alert message (markdown) + CLI
+  ui: streamlit (pick a business date → Run EOD checks → breaks with cited runbook explanation; try-to-break-it: edit a runbook page)
   aws_native: MWAA (managed Airflow), RDS Postgres + pgvector, Bedrock, SNS
 showcases: [airflow DAG with SLAs, reconciliation modelling, RAG with provenance, alerting]
 

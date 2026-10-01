@@ -14,7 +14,8 @@ triage memo, and lets deterministic policy — not the model — have the last w
 <!-- more -->
 
 **Repo:** [github.com/{{GITHUB_OWNER}}/altdata-triage](https://github.com/{{GITHUB_OWNER}}/altdata-triage) · runs offline in 5 minutes, no API keys ·
-**Stack:** Python, dbt, DuckDB, Pydantic, Anthropic / OpenAI / Bedrock (via aliases), GitHub Actions, Terraform
+**Try it:** `pip install -e ".[ui]" && altdata-triage ui`, then edit a vendor's notes to attempt an injection. ·
+**Stack:** Python, dbt, DuckDB, Streamlit, Pydantic, Anthropic / OpenAI / Bedrock (via aliases), GitHub Actions, Terraform
 
 ## The business problem
 

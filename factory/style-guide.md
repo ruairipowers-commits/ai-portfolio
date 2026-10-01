@@ -26,6 +26,14 @@ Follow `factory/templates/blog-post.md` exactly — sections are what readers sc
 ## Repositories
 
 - Runs offline in < 5 minutes with `pip install -e ".[dev]"` + one command; mock provider by default.
+- Every project ships a **Streamlit app** (`<cli> ui`, `src/<pkg>/ui.py`) laid out as **1 · Input → 2 · Run → 3 · Output**:
+  - Input: a working default (synthetic data loaded automatically) plus a **"Try to break it"** control that edits the
+    untrusted input (vendor notes, broker text, documents) with one-click adversarial examples; uploads where it makes sense.
+  - Run: one primary button; steps shown with st.status; a failed data gate stops the run and says why.
+  - Output: headline metrics, then tabs for results, the human-review/approval step, the eval gate and audit/cost.
+  - Model picker lists only approved, priced models with a key present; default is the offline mock.
+  - A "Reset demo data" button. No telemetry (`.streamlit/config.toml` gatherUsageStats=false).
+  - Tested headless with `streamlit.testing` (`tests/test_ui.py`): default run, a break-it case, the human step.
 - Every project has: README (template), `docs/architecture.md`, `docs/governance.md` (maps EVERY
   control ID), `docs/aws-native.md`, `infra/aws/` Terraform starter, `config/settings.yaml`,
   `config/models.yaml`, `prompts/`, `evals/golden_set.yaml`, tests, CI workflow, LICENSE.

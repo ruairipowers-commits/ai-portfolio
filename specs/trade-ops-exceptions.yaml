@@ -24,7 +24,7 @@ stack:
   llm_access: registry aliases -> LangChain chat models (ChatAnthropic / ChatOpenAI / ChatBedrockConverse); deterministic scripted mock for offline runs and CI
   retrieval: none (similar past exceptions via SQL lookup tool)
   tools: MCP server in TypeScript (@modelcontextprotocol/sdk, stdio) loaded with langchain-mcp-adapters
-  ui: Streamlit approval queue (evidence, proposed fix, editable email, approve/edit/reject)
+  ui: streamlit (open exceptions → Investigate → approval queue with evidence, editable fix/email, approve/reject; try-to-break-it: edit broker confirm text)
   aws_native: Bedrock (Converse + tool use), ECS Fargate, RDS Postgres, Step Functions waitForTaskToken for the approval wait, SES in sandbox for drafts; AgentCore noted as an option
 showcases:
   - real agent loop with native tool calling (vs altdata-triage's fixed workflow)
