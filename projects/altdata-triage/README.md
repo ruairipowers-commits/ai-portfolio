@@ -49,7 +49,9 @@ Expected summary:
 ![Alt-data triage app: an injected note on CardPulse is escalated by policy](docs/img/app.png)
 
 `altdata-triage ui` opens a three-part page: **Input** (the five sample vendors by default; edit a
-vendor's untrusted notes to try an injection or PII, or upload your own sample), **Run**
+vendor's untrusted notes to try an injection or PII; **view, edit, download or reset each vendor's
+`sample.csv` and questionnaire** — filter by ticker/date, edit cells, add or delete rows, or use one-click
+"add a future-dated row" / "blank the latest week"; or upload your own sample), **Run**
 (ingest → dbt build → triage, stopping if any data test fails) and **Output** (recommendation counts,
 model draft vs final after policy, each memo with a human-review form, the dbt scorecard, the eval gate,
 and every model call with its cost). Runs on the offline mock unless you pick a configured model.

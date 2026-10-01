@@ -20,7 +20,7 @@ INJECTION_EXAMPLE = ("Scraped product prices from 300 e-commerce sites.\n\n"
 PII_EXAMPLE = "Panel of 2M shoppers. For questions email jane.doe@vendor.example or call +1 203 555 0199."
 REC_COLOR = {"PURSUE": "🟢", "PARK": "🟡", "REJECT": "🔴", "ESCALATE": "🟣"}
 
-if not pl.vendor_dirs():
+if not pl.vendor_dirs() or not pl.PRISTINE.exists():
     pl.generate_sample()
 
 # ------------------------------------------------------------------ header
@@ -36,6 +36,8 @@ with st.expander("How this works / what to try", expanded=False):
 3. **Output** — recommendation per vendor, the policy overrides, every cited number checked against the scorecard.
 
 Things to try: make a clean vendor's notes contain an injection and watch it flip to **ESCALATE**;
+open **View / edit vendor data** and add a future-dated row to see dbt's look-ahead test block the AI step;
+untick a vendor's derived-use licence in its questionnaire;
 add an email address and see it **redacted** before the model sees it; upload a CSV with a future date and
 watch dbt **block** the AI step.""")
 
@@ -50,11 +52,12 @@ with left:
         meta, _ = pl.read_questionnaire(vid)
         inv.append({"vendor_id": vid, "vendor": meta["vendor_name"], "category": meta["category"],
                     "PII present": meta["pii_present"], "point-in-time": meta["point_in_time"],
-                    "derived-use licence": meta["license_derived_use"], "price $/yr": meta["annual_price_usd"]})
+                    "derived-use licence": meta["license_derived_use"], "price $/yr": meta["annual_price_usd"],
+                    "edited": "✏️" if any(pl.is_modified(vid).values()) else ""})
     st.dataframe(pd.DataFrame(inv), hide_index=True, width="stretch")
     if st.button("Reset to sample vendors", help="Regenerate the 5 synthetic vendors and discard edits/uploads"):
         pl.generate_sample()
-        for k in [k for k in st.session_state if k.startswith("notes_") or k == "run"]:
+        for k in [k for k in st.session_state if k.startswith(("notes_", "editor_")) or k == "run"]:
             del st.session_state[k]
         st.rerun()
 
@@ -75,6 +78,107 @@ with right:
         pl.set_vendor_notes(target, notes)
         st.toast(f"Saved notes for {target}. Run triage to see the effect.")
         st.rerun()
+
+# ------------------------------------------------------------------ view / edit / reset a vendor's data
+with st.expander("View / edit vendor data (sample.csv and questionnaire)", expanded=False):
+    dv = st.selectbox("Vendor", list(vendors), key="data_vendor",
+                      format_func=lambda v: f"{v} — {pl.read_questionnaire(v)[0]['vendor_name']}")
+    mod = pl.is_modified(dv)
+    df_all = pl.read_sample(dv)
+    stats = pl.sample_stats(df_all)
+    h = st.columns([1, 1, 2, 1, 2])
+    h[0].metric("Rows", f"{stats['rows']:,}")
+    h[1].metric("Tickers", stats["tickers"])
+    h[2].markdown(f"**History**  \n{stats['first']} → {stats['last']}")
+    h[3].metric("Null values", f"{stats['null_pct']}%")
+    with h[4]:
+        st.markdown("**Status:** " + ("✏️ edited — " + ", ".join(f for f, m in mod.items() if m)
+                                      if any(mod.values()) else "original delivery"))
+        r1, r2 = st.columns(2)
+        if r1.button("Reset this vendor", disabled=not any(mod.values()),
+                     help="Restore this vendor's original sample.csv and questionnaire"):
+            res = pl.reset_vendor(dv)
+            for k in [k for k in st.session_state if k.startswith(("editor_", f"notes_{dv}"))] + ["run"]:
+                st.session_state.pop(k, None)
+            st.toast(res.message)
+            st.rerun()
+        r2.download_button("Download CSV", pl.sample_bytes(dv), file_name=f"{dv}_sample.csv", mime="text/csv")
+
+    t_panel, t_q = st.tabs(["Panel data (sample.csv)", "Questionnaire"])
+    with t_panel:
+        st.caption("Filter to the rows you want, edit cells, add rows (bottom of the table) or delete them "
+                   "(select rows, then the bin icon), and Save. The full file is kept; only the rows shown are replaced. "
+                   "dbt re-tests everything on the next run, so bad edits will block the AI step — which is the point.")
+        f1, f2, f3 = st.columns([2, 2, 1])
+        tick = f1.text_input("Ticker contains", key=f"tick_{dv}").strip().upper()
+        dates = f2.date_input("Date range", value=(stats["first"], stats["last"]) if stats["rows"] else (),
+                              key=f"dates_{dv}")
+        cap = int(f3.number_input("Max rows shown", 100, 5000, 1000, step=100, key=f"cap_{dv}"))
+        mask = pd.Series(True, index=df_all.index)
+        if tick:
+            mask &= df_all["ticker"].fillna("").str.contains(tick, regex=False)
+        if isinstance(dates, tuple) and len(dates) == 2:
+            mask &= df_all["obs_date"].between(dates[0], dates[1])
+        shown = df_all[mask].sort_values(["obs_date", "ticker"], ascending=[False, True]).head(cap)
+        if mask.sum() > cap:
+            st.caption(f"Showing the {cap:,} most recent of {int(mask.sum()):,} matching rows — narrow the filter to edit others.")
+        edited = st.data_editor(
+            shown.reset_index(drop=True), num_rows="dynamic", width="stretch", height=380,
+            key=f"editor_{dv}_{tick}_{dates}_{cap}",
+            column_config={
+                "obs_date": st.column_config.DateColumn("obs_date", format="YYYY-MM-DD", required=True),
+                "ticker": st.column_config.TextColumn("ticker", required=True, max_chars=12),
+                "metric_value": st.column_config.NumberColumn("metric_value", format="%.2f",
+                                                              help="Leave empty for a missing value"),
+            })
+        changed = not edited.reset_index(drop=True).equals(shown.reset_index(drop=True))
+        b1, b2, b3 = st.columns(3)
+        if b1.button("Save panel edits", type="primary", disabled=not changed):
+            full = pd.concat([df_all.drop(shown.index), edited], ignore_index=True)
+            res = pl.write_sample(dv, full)
+            (st.toast if res.ok else st.error)(res.message)
+            if res.ok:
+                st.session_state.pop("run", None)
+                st.rerun()
+        if b2.button("Add a future-dated row", help="Look-ahead bias test: dbt's no_future_observations test should block triage"):
+            extra = pd.DataFrame([{"obs_date": pd.Timestamp("2030-01-04").date(),
+                                   "ticker": df_all["ticker"].iloc[0] if len(df_all) else "AAA", "metric_value": 1.0}])
+            res = pl.write_sample(dv, pd.concat([df_all, extra], ignore_index=True))
+            st.session_state.pop("run", None)
+            st.toast("Added a 2030-01-04 row. Run triage to see dbt block the AI step.")
+            st.rerun()
+        if b3.button("Blank the latest week", help="Raises the null rate; watch the rule score fall"):
+            last = df_all["obs_date"].max()
+            df2 = df_all.copy()
+            df2.loc[df2["obs_date"] == last, "metric_value"] = None
+            pl.write_sample(dv, df2)
+            st.session_state.pop("run", None)
+            st.toast(f"Blanked values for {last}. Run triage to see the scorecard change.")
+            st.rerun()
+
+    with t_q:
+        meta, _ = pl.read_questionnaire(dv)
+        with st.form(f"q_{dv}"):
+            q1, q2 = st.columns(2)
+            name = q1.text_input("Vendor name", meta["vendor_name"])
+            category = q2.text_input("Category", meta["category"])
+            q3, q4, q5 = st.columns(3)
+            pii = q3.checkbox("PII present", bool(meta["pii_present"]))
+            pit = q4.checkbox("Point-in-time history", bool(meta["point_in_time"]))
+            lic = q5.checkbox("Licence allows derived use", bool(meta["license_derived_use"]))
+            q6, q7 = st.columns(2)
+            delivery = q6.selectbox("Delivery", ["daily", "weekly", "monthly"],
+                                    index=["daily", "weekly", "monthly"].index(meta.get("delivery", "weekly"))
+                                    if meta.get("delivery") in ("daily", "weekly", "monthly") else 1)
+            price = q7.number_input("Annual price (USD)", 0, 10_000_000, int(meta["annual_price_usd"]), step=5_000)
+            st.caption("Free-text notes are edited under **Try to break it** above.")
+            if st.form_submit_button("Save questionnaire"):
+                res = pl.update_questionnaire_meta(dv, {"vendor_name": name, "category": category, "pii_present": pii,
+                                                        "point_in_time": pit, "license_derived_use": lic,
+                                                        "delivery": delivery, "annual_price_usd": int(price)})
+                st.session_state.pop("run", None)
+                st.toast(res.message)
+                st.rerun()
 
 with st.expander("Upload your own vendor sample"):
     st.caption("CSV columns: `obs_date,ticker,metric_value` (weekly rows). Tickers are matched to a synthetic "

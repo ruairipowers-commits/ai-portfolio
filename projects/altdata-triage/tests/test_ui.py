@@ -3,6 +3,7 @@ import os
 import shutil
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 st_testing = pytest.importorskip("streamlit.testing.v1")
@@ -29,7 +30,7 @@ def click(at, label):
 
 
 def summary(at):
-    return at.dataframe[1].value.set_index("vendor")
+    return next(d.value for d in at.dataframe if "model_draft" in d.value.columns).set_index("vendor")
 
 
 def test_default_run(app):
@@ -64,10 +65,61 @@ def test_upload_with_future_dates_blocks_ai(app, tmp_path):
     at = app.run()
     at = click(at, "Run triage")
     assert any("dbt build failed" in e.value for e in at.error)
-    assert len(at.dataframe) >= 1 and not any("model_draft" in d.value.columns for d in at.dataframe)
+    assert not any("model_draft" in d.value.columns for d in at.dataframe)
 
 
 def test_bad_csv_rejected(app):
     app.run()
     from altdata_triage import pipeline as pl
     assert not pl.add_vendor(b"date,price\n1,2\n", {"vendor_name": "x"}, "").ok
+
+
+# ---------------------------------------------------------------- view / edit / reset vendor data
+def test_edit_roundtrip_and_reset(app):
+    app.run()
+    from altdata_triage import pipeline as pl
+    df = pl.read_sample("v02")
+    n, nulls = len(df), df["metric_value"].isna().sum()
+    assert pl.is_modified("v02") == {"sample.csv": False, "questionnaire.md": False}
+    # edit one value, delete one row, add one row -> same merge the UI performs
+    shown = df.head(3)
+    edited = shown.reset_index(drop=True).copy()
+    edited.loc[0, "metric_value"] = 999.0
+    edited = edited.drop(index=1)
+    edited.loc[len(edited) + 5] = [df["obs_date"].max(), "ZZZZ", 1.5]
+    assert pl.write_sample("v02", pd.concat([df.drop(shown.index), edited], ignore_index=True)).ok
+    after = pl.read_sample("v02")
+    assert len(after) == n and (after["metric_value"] == 999.0).sum() == 1 and "ZZZZ" in set(after["ticker"])
+    lost = int(pd.isna(shown.iloc[0]["metric_value"])) + int(pd.isna(shown.iloc[1]["metric_value"]))
+    assert after["metric_value"].isna().sum() == nulls - lost   # other empty cells still read back as missing
+    assert pl.is_modified("v02")["sample.csv"]
+    assert pl.reset_vendor("v02").ok and not any(pl.is_modified("v02").values())
+
+
+def test_write_rejects_rows_without_ticker(app):
+    app.run()
+    from altdata_triage import pipeline as pl
+    df = pl.read_sample("v01")
+    df.loc[0, "ticker"] = ""
+    assert not pl.write_sample("v01", df).ok
+
+
+def test_future_row_button_blocks_ai_then_reset_recovers(app):
+    at = app.run()
+    at.selectbox(key="data_vendor").set_value("v05").run()
+    at = click(at, "Add a future-dated row")
+    assert not at.exception, at.exception
+    at = click(at, "Run triage")
+    assert any("dbt build failed" in e.value for e in at.error)
+    at = click(at, "Reset this vendor")
+    at = click(at, "Run triage")
+    assert not at.error and summary(at).loc["ShipTrack", "final"].endswith("PARK")
+
+
+def test_questionnaire_edit_changes_outcome(app):
+    at = app.run()
+    from altdata_triage import pipeline as pl
+    assert pl.update_questionnaire_meta("v01", {"license_derived_use": False, "pii_present": True}).ok
+    at = app.run()
+    at = click(at, "Run triage")
+    assert summary(at).loc["CardPulse", "final"].endswith("REJECT")   # PII without derived-use licence

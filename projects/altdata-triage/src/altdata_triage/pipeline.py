@@ -24,6 +24,8 @@ from .workflow import (DataQualityGateError, assert_dbt_tests_passed, get_vendor
                        render_memo_md, triage_vendor)
 
 INCOMING = ROOT / "data" / "incoming"
+PRISTINE = ROOT / "data" / "pristine"   # untouched copy of every delivery, for per-vendor reset
+SAMPLE_COLUMNS = ["obs_date", "ticker", "metric_value"]
 PROVIDER_KEYS = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}
 
 
@@ -50,6 +52,9 @@ def generate_sample() -> StepResult:
     shutil.rmtree(INCOMING, ignore_errors=True)
     r = subprocess.run([sys.executable, str(ROOT / "scripts" / "generate_sample_data.py")],
                        capture_output=True, text=True, cwd=ROOT)
+    if r.returncode == 0:
+        shutil.rmtree(PRISTINE, ignore_errors=True)
+        shutil.copytree(INCOMING, PRISTINE)
     return StepResult(r.returncode == 0, r.stdout.strip() or r.stderr.strip()[-500:])
 
 
@@ -92,7 +97,78 @@ def add_vendor(csv_bytes: bytes, meta: dict, notes: str) -> StepResult:
     d.mkdir(parents=True, exist_ok=True)
     (d / "sample.csv").write_bytes(csv_bytes)
     write_questionnaire(d / "questionnaire.md", {"vendor_id": vid, **meta}, notes)
+    shutil.copytree(d, PRISTINE / d.name, dirs_exist_ok=True)   # "reset" returns to the uploaded file
     return StepResult(True, f"Added {meta['vendor_name']} as {vid}")
+
+
+# ------------------------------------------------------------------ view / edit / reset vendor data
+def read_sample(vendor_id: str):
+    """The vendor's panel (sample.csv) as a DataFrame: obs_date (date), ticker (str), metric_value (float)."""
+    import pandas as pd
+
+    df = pd.read_csv(vendor_dirs()[vendor_id] / "sample.csv", dtype={"obs_date": str, "ticker": str},
+                     keep_default_na=False, na_values={"metric_value": [""]})   # a ticker like "NAN" stays a ticker
+    df["obs_date"] = pd.to_datetime(df["obs_date"], errors="coerce").dt.date
+    df["metric_value"] = pd.to_numeric(df["metric_value"], errors="coerce")
+    return df[SAMPLE_COLUMNS]
+
+
+def write_sample(vendor_id: str, df) -> StepResult:
+    """Validate and save an edited panel. Bad rows are rejected here; subtler problems are dbt's job."""
+    import pandas as pd
+
+    if list(df.columns) != SAMPLE_COLUMNS:
+        return StepResult(False, f"Columns must be {SAMPLE_COLUMNS}")
+    df = df.dropna(how="all")
+    bad_date = df["obs_date"].isna().sum()
+    bad_ticker = df["ticker"].fillna("").astype(str).str.strip().eq("").sum()
+    if bad_date or bad_ticker:
+        return StepResult(False, f"{bad_date} row(s) missing a date and {bad_ticker} missing a ticker — fix or delete them")
+    out = df.copy()
+    out["obs_date"] = pd.to_datetime(out["obs_date"]).dt.strftime("%Y-%m-%d")
+    out["ticker"] = out["ticker"].astype(str).str.strip().str.upper()
+    out = out.sort_values(["obs_date", "ticker"])
+    out.to_csv(vendor_dirs()[vendor_id] / "sample.csv", index=False, float_format="%.2f")
+    return StepResult(True, f"Saved {len(out):,} rows for {vendor_id}")
+
+
+def sample_bytes(vendor_id: str) -> bytes:
+    return (vendor_dirs()[vendor_id] / "sample.csv").read_bytes()
+
+
+def sample_stats(df) -> dict:
+    if df.empty:
+        return {"rows": 0, "tickers": 0, "first": None, "last": None, "null_pct": 0.0}
+    return {"rows": len(df), "tickers": df["ticker"].nunique(), "first": df["obs_date"].min(),
+            "last": df["obs_date"].max(), "null_pct": round(100 * df["metric_value"].isna().mean(), 1)}
+
+
+def update_questionnaire_meta(vendor_id: str, meta: dict) -> StepResult:
+    old, notes = read_questionnaire(vendor_id)
+    write_questionnaire(vendor_dirs()[vendor_id] / "questionnaire.md", {**old, **meta, "vendor_id": vendor_id}, notes)
+    return StepResult(True, f"Saved questionnaire for {vendor_id}")
+
+
+def _pristine_dir(vendor_id: str) -> Path | None:
+    p = PRISTINE / vendor_dirs()[vendor_id].name
+    return p if p.exists() else None
+
+
+def is_modified(vendor_id: str) -> dict:
+    """Which of the vendor's files differ from the original delivery."""
+    src, orig = vendor_dirs()[vendor_id], _pristine_dir(vendor_id)
+    if orig is None:
+        return {"sample.csv": False, "questionnaire.md": False}
+    return {f: (src / f).read_bytes() != (orig / f).read_bytes() for f in ("sample.csv", "questionnaire.md")}
+
+
+def reset_vendor(vendor_id: str, files: tuple[str, ...] = ("sample.csv", "questionnaire.md")) -> StepResult:
+    orig = _pristine_dir(vendor_id)
+    if orig is None:
+        return StepResult(False, "No original copy on file; use Reset to sample vendors")
+    for f in files:
+        shutil.copy2(orig / f, vendor_dirs()[vendor_id] / f)
+    return StepResult(True, f"Restored original {', '.join(files)} for {vendor_id}")
 
 
 def usable_aliases(settings: Settings) -> dict[str, str]:
