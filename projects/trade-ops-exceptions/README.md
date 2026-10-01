@@ -56,12 +56,16 @@ pytest -q && (cd mcp-server && npm test)    # 27 Python (incl. app) + 7 Node tes
 
 ### The app
 
-![Exception workflow tab: select a row, tamper with its broker confirm, investigate, approve](docs/img/app.png)
+![Bulk exception queue: select a row, tamper with its broker confirm, investigate, approve](docs/img/app.png)
 
-`tradeops ui` opens four tabs (full guide: [docs/app-guide.md](docs/app-guide.md); models: [docs/models.md](docs/models.md),
+`tradeops ui` opens five tabs (full guide: [docs/app-guide.md](docs/app-guide.md); models: [docs/models.md](docs/models.md),
 both also shown in the app):
 
-- **🧾 Exception workflow** — one table of all 40 exceptions with a coloured status (amber awaiting approval,
+- **🧑‍🤝‍🧑 Single trade walkthrough** — play each party in turn: 👤 trader books, 🏦 broker confirms, 🏛️ custodian
+  reports, ⚙️ the matching engine opens an exception on a break, 🤖 the agent investigates, 🧑‍💼 you decide. Each
+  step shows who is acting and which tables it writes; 12 scenarios (clean, each break type, injection, bank-detail
+  change, corrupt custodian record) pre-fill the inputs.
+- **📋 Bulk exception queue** — one table of all exceptions with a coloured status (amber awaiting approval,
   red escalated, **green resolved**, grey rejected) and a purple marker on any exception whose broker confirm you
   changed. Select a row to **investigate** it, **add it to a run queue**, **try to break it** (💉 injection or
   🏦 bank-detail change, applied immediately, logged and undoable), see the **evidence** across systems and every
@@ -72,6 +76,8 @@ both also shown in the app):
 - **📘 Guide & models** — what every button does and what to expect from each model.
 
 Model, your name and **Reset demo data** are in the sidebar.
+
+![Single trade walkthrough](docs/img/walkthrough.png)
 
 ![ER diagram in the app](docs/img/er-diagram.png)
 
