@@ -136,3 +136,19 @@ def test_drilldown_and_examples(app):
     assert cmp.set_index("field").loc["quantity"]["match"] == "❌"
     for name, sql in sup.EXAMPLE_QUERIES.items():
         assert sup.run_readonly_sql(sql)[1] is None, name
+
+
+def test_no_magic_expressions_in_apps():
+    """Streamlit 'magic' renders any bare non-call expression (e.g. `a() if x else b()`) as a widget dump."""
+    import ast
+    apps = [APP, ROOT.parent / "altdata-triage" / "src" / "altdata_triage" / "ui.py"]
+    for path in [a for a in apps if a.exists()]:
+        bad = [n.lineno for n in ast.walk(ast.parse(path.read_text()))
+               if isinstance(n, ast.Expr) and not isinstance(n.value, (ast.Call, ast.Constant, ast.Await))]
+        assert not bad, f"{path.name}: bare expressions on lines {bad}"
+
+
+def test_records_tab_has_no_object_dump(app):
+    at = select(app.run(), "EX-0009")                     # missing confirm -> several empty tables ("No rows.")
+    assert not any("DeltaGenerator" in str(getattr(e, "value", "")) for e in at.main)
+    assert any(c.value == "No rows." for c in at.caption)
