@@ -91,7 +91,10 @@ def render_records(exception_id: str):
     st.markdown("**Related database records** (" + ", ".join(f"{t}: {len(rec[t])}" for t in present) + ")")
     for tab, name in zip(st.tabs(present), present):
         with tab:
-            st.dataframe(_df(rec[name]), hide_index=True, width="stretch") if rec[name] else st.caption("No rows.")
+            if rec[name]:
+                st.dataframe(_df(rec[name]), hide_index=True, width="stretch")
+            else:
+                st.caption("No rows.")
 
 
 def proposal_summary(run: dict):
