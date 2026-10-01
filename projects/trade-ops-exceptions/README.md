@@ -49,10 +49,20 @@ tradeops queue               # proposals awaiting approval + escalations
 tradeops show EX-0002        # evidence, fix, email draft
 tradeops approve EX-0002 --approver you     # records via the gated write tool, queues the email
 tradeops replay EX-0037      # full trajectory of the injection case
-tradeops ui                  # Streamlit approval queue
+tradeops ui                  # browser app: input → Investigate → approval queue (http://localhost:8501)
 tradeops eval                # golden-set gate: outcome + trajectory metrics
-pytest -q && (cd mcp-server && npm test)
+pytest -q && (cd mcp-server && npm test)    # 27 Python (incl. app) + 7 Node tests
 ```
+
+### The app
+
+![Trade-ops app: approval queue with evidence, editable fix and email](docs/img/app.png)
+
+`tradeops ui` opens a three-part page: **Input** (the 40 open exceptions by default, all or a selection;
+change what a broker sent to try an injection or a bank-detail-change request), **Run** (the agent
+investigates and pauses at approval) and **Output** (approval queue with evidence, trajectory and
+editable fix/email; escalations with reasons; resolutions and the outbox; eval gate; cost by model).
+`Reset demo data` restores the 40 synthetic exceptions.
 
 ### Use a real model
 
@@ -149,7 +159,7 @@ infra/aws/     Terraform starter (RDS, Secrets Manager, split investigator/appro
 | `tradeops investigate [--exception EX-0001] [--alias X]` | run the agent (stops at approval) |
 | `tradeops queue` / `show EX` / `replay EX` | review proposals and trajectories |
 | `tradeops approve EX --approver NAME [--fix-details ...]` / `reject EX --approver NAME` | human decision |
-| `tradeops ui` | Streamlit approval queue |
+| `tradeops ui` | Streamlit app: queue (or your edited broker text) → Investigate → approve/edit/reject, escalations, outbox, eval, audit |
 | `tradeops eval [--alias X] [--baseline Y]` / `promote ALIAS MODEL` | eval gate and model promotion |
 | `tradeops models-check` / `cost-report` | model hygiene and spend |
 

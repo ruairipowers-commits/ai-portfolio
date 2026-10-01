@@ -13,7 +13,7 @@ same [governance standard](blog/posts/governance.md).
 
 | Project | Problem | Pattern | Stack highlights | Status |
 |---|---|---|---|---|
-| [Alt-data vendor triage](blog/posts/altdata-triage.md) | Analysts spend days profiling vendor samples | Workflow | dbt, DuckDB, Pydantic, Bedrock | ✅ Live |
+| [Alt-data vendor triage](blog/posts/altdata-triage.md) | Analysts spend days profiling vendor samples | Workflow | dbt, DuckDB, Streamlit, Bedrock | ✅ Live |
 | EOD heartbeat | End-of-day pipeline breaks found late, fixed from tribal knowledge | RAG + monitor | Airflow, Postgres/pgvector, dbt | In progress |
 | [Trade-ops exception agent](blog/posts/trade-ops-exceptions.md) | Settlement breaks need lookups across 4 systems | Agent + human approval | LangGraph, MCP (TypeScript), Streamlit, Postgres | ✅ Live |
 | Research Q&A | Analysts re-read filings to answer questions | RAG | FastAPI, hybrid pgvector search, RAGAS-style evals | Planned |
@@ -21,6 +21,7 @@ same [governance standard](blog/posts/governance.md).
 ## What every project includes
 
 - A write-up: business problem, functional and non-functional requirements, architecture diagrams and the *why*
+- A browser app (Streamlit): a default input, a Run button and the results — plus a "try to break it" input
 - A public repo that runs offline with a mock model — no API keys — and switches to Claude, OpenAI or Bedrock by config
 - A control-by-control governance mapping, with configuration and the options I didn't build
 - An AWS-native path: Terraform starter and a local-vs-AWS comparison

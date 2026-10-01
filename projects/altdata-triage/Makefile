@@ -1,6 +1,6 @@
-.PHONY: setup all data ingest transform triage eval test cost clean
+.PHONY: setup ui all data ingest transform triage eval test cost clean
 setup:      ## install (editable) with dev extras
-	pip install -e ".[dev]"
+	pip install -e ".[ui,dev]"
 all:        ## end-to-end offline demo
 	altdata-triage all
 data: ; altdata-triage data
@@ -9,6 +9,7 @@ transform: ; altdata-triage transform
 triage: ; altdata-triage triage
 eval: ; altdata-triage eval --alias triage-primary
 test: ; pytest -q
+ui: ; altdata-triage ui
 cost: ; altdata-triage cost-report
 docs:       ## dbt lineage docs (DATA-01)
 	DUCKDB_PATH=warehouse/altdata.duckdb dbt docs generate --project-dir dbt --profiles-dir dbt && echo "open dbt/target/index.html"

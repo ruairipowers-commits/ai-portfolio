@@ -15,6 +15,7 @@ architecture, not by the prompt.
 <!-- more -->
 
 **Repo:** [github.com/{{GITHUB_OWNER}}/trade-ops-exceptions](https://github.com/{{GITHUB_OWNER}}/trade-ops-exceptions) · runs offline in 5 minutes, no API keys ·
+**Try it:** `tradeops ui`, then put a "bank details have changed" message on a clean confirm and re-investigate it. ·
 **Stack:** Python, LangGraph, MCP server in TypeScript, Streamlit, SQLite/Postgres, Anthropic / OpenAI / Bedrock (via aliases), Terraform
 
 ## The business problem

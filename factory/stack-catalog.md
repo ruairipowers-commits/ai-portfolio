@@ -20,7 +20,7 @@ and for no two projects to have identical stacks.
 | Evals | pytest + golden YAML | promptfoo, DeepEval, RAGAS, Langfuse evals | Mock provider in CI, live on schedule |
 | Observability | audit tables (SQL) | Langfuse, OpenTelemetry GenAI, Datadog LLM | SQL tables keep it runnable offline |
 | API | FastAPI | Flask, Lambda handlers | |
-| UI | Streamlit | Next.js, Retool, Slack app | Approval queues and chat |
+| UI | Streamlit (required: Input → Run → Output) | Next.js, Retool, Slack app | Every project ships one; see style guide |
 | IaC | Terraform | CDK, Bicep, Pulumi | AWS starter in every project |
 | CI | GitHub Actions | GitLab CI | tests + offline e2e + eval gate |
 | Containers | Docker / compose | Podman | |
@@ -43,7 +43,7 @@ and for no two projects to have identical stacks.
 
 | Project | Pattern | Data | Orchestration | Retrieval | Tools/UI | AWS focus |
 |---|---|---|---|---|---|---|
-| altdata-triage | workflow | dbt + DuckDB | CLI | — | markdown memos | Athena, Bedrock, ECS |
+| altdata-triage | workflow | dbt + DuckDB | CLI | — | Streamlit app + memos | Athena, Bedrock, ECS |
 | eod-heartbeat | RAG + monitor | dbt + Postgres | Airflow | pgvector | alerts | MWAA, RDS |
 | trade-ops-exceptions | agent | SQLite / Postgres | LangGraph (interrupt) | — | MCP server (TS) + Streamlit | RDS, Secrets Manager, split IAM roles |
 | research-qa-rag | RAG | doc parsing | FastAPI | hybrid pgvector | Streamlit chat | Bedrock KB, OpenSearch |
