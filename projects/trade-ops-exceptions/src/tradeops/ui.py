@@ -1,6 +1,6 @@
 """Streamlit app for the trade-ops exception agent. Run: `tradeops ui`.
 
-Four tabs: Exception workflow (select a row → investigate / queue / tamper / approve), Data explorer
+Five tabs: Single trade walkthrough (play each role), Bulk exception queue (select a row → investigate / queue / tamper / approve), Data explorer
 (ER diagram, tables, read-only SQL), Audit & evals, and Guide & models. See docs/app-guide.md.
 """
 from __future__ import annotations
@@ -13,6 +13,7 @@ import pandas as pd
 import streamlit as st
 
 from tradeops import app_support as sup
+from tradeops import walkthrough
 from tradeops.llm import BudgetExceeded, Registry, RegistryError
 from tradeops.runner import ROOT, decide, investigate
 
@@ -138,11 +139,18 @@ if "flash" in st.session_state:
     ok, msg = st.session_state.pop("flash")
     (st.success if ok else st.error)(msg)
 
-tab_wf, tab_data, tab_audit, tab_guide = st.tabs(
-    ["🧾 Exception workflow", "🗄️ Data explorer", "📏 Audit & evals", "📘 Guide & models"])
+tab_one, tab_wf, tab_data, tab_audit, tab_guide = st.tabs(
+    ["🧑‍🤝‍🧑 Single trade walkthrough", "📋 Bulk exception queue", "🗄️ Data explorer", "📏 Audit & evals",
+     "📘 Guide & models"])
 
-# ================================================================== 1. workflow
+# ================================================================== 0. single-trade walkthrough
+with tab_one:
+    walkthrough.render(models, alias_label, flash)
+
+# ================================================================== 1. bulk queue
 with tab_wf:
+    st.caption("Work the whole queue at once: investigate everything, queue a batch, tamper with any exception, approve "
+               "or reject. To follow one trade through every role, use **Single trade walkthrough**.")
     rows = sup.workflow_rows()
     wf = pd.DataFrame(rows)
     counts = wf["status"].value_counts()

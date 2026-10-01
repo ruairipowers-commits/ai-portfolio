@@ -46,9 +46,12 @@ def select(at, exception_id):
 
 
 def wf_status(at, exception_id):
-    table = at.dataframe[0].value
-    table = table.data if hasattr(table, "data") else table          # Styler -> DataFrame
-    return table.set_index("exception_id").loc[exception_id]
+    """Row of the bulk-queue table (the one with status + tampered columns)."""
+    for d in at.dataframe:
+        table = d.value.data if hasattr(d.value, "data") else d.value   # Styler -> DataFrame
+        if {"exception_id", "status", "tampered"} <= set(table.columns):
+            return table.set_index("exception_id").loc[exception_id]
+    raise AssertionError("bulk queue table not found")
 
 
 # ---------------------------------------------------------------- workflow tab
@@ -56,7 +59,8 @@ def test_tabs_and_investigate_all(app):
     at = app.run()
     assert not at.exception, at.exception
     labels = [t.label for t in at.tabs]
-    assert {"🧾 Exception workflow", "🗄️ Data explorer", "📏 Audit & evals", "📘 Guide & models"} <= set(labels)
+    assert {"🧑‍🤝‍🧑 Single trade walkthrough", "📋 Bulk exception queue", "🗄️ Data explorer", "📏 Audit & evals",
+            "📘 Guide & models"} <= set(labels)
     assert metrics(at)["Not investigated"] == "40"
     at = click(at, "Investigate all not yet investigated")
     assert not at.exception, at.exception
@@ -152,3 +156,58 @@ def test_records_tab_has_no_object_dump(app):
     at = select(app.run(), "EX-0009")                     # missing confirm -> several empty tables ("No rows.")
     assert not any("DeltaGenerator" in str(getattr(e, "value", "")) for e in at.main)
     assert any(c.value == "No rows." for c in at.caption)
+
+
+# ---------------------------------------------------------------- single-trade walkthrough
+def walk(app, scenario, upto="inv"):
+    at = app.run()
+    at.selectbox(key="wt_scenario").set_value(scenario).run()
+    at = press(at, "wt_load")
+    for k in ["wt_book", "wt_send", "wt_cust", "wt_match", "wt_inv"]:
+        if k == "wt_inv" and not at.session_state["wt"].get("exception_id"):
+            break
+        at = press(at, k)
+        assert not at.exception, (k, at.exception)
+        if k == upto:
+            break
+    return at
+
+
+def test_walkthrough_broker_qty_to_resolved(app):
+    at = walk(app, "Broker confirms the wrong quantity")
+    ex = at.session_state["wt"]["exception_id"]
+    assert ex.startswith("EX-9")
+    wt = at.session_state["wt"]
+    assert wt["custodian"]["quantity"] == 5000 and wt["confirm"]["quantity"] == 5250   # prefills survived the steps
+    assert str(wt["custodian"]["settle_date"]) == str(wt["trade"]["settle_date"])
+    assert any("Break found" in e.value for e in at.error)
+    assert any("REQUEST_BROKER_CORRECTION" in m.value for m in at.markdown)
+    at = press(at, "wt_approve")
+    assert any("Resolved." in s.value for s in at.success)
+    assert wf_status(at, ex)["status"] == "Resolved"            # same exception, green in the bulk queue
+
+
+def test_walkthrough_our_qty_uses_scenario_custodian(app):
+    at = walk(app, "We booked the wrong quantity")
+    wt = at.session_state["wt"]
+    assert wt["trade"]["quantity"] == 5250 and wt["custodian"]["quantity"] == 5000
+    assert any("AMEND_INTERNAL" in m.value for m in at.markdown)
+
+
+def test_walkthrough_clean_trade_opens_no_exception(app):
+    at = walk(app, "Clean trade — everything matches")
+    assert "exception_id" not in at.session_state["wt"]
+    assert any("Matched." in s.value for s in at.success)
+
+
+def test_walkthrough_injection_escalates_and_cannot_be_approved(app):
+    at = walk(app, "💉 Broker confirm contains a prompt injection")
+    assert any("instruction-like" in e.value for e in at.error)
+    assert not [b for b in at.button if b.key == "wt_approve"]
+    ex = at.session_state["wt"]["exception_id"]
+    assert "injection" in wf_status(at, ex)["tampered"]          # marked in the bulk queue too
+
+
+def test_walkthrough_missing_confirm_chases(app):
+    at = walk(app, "Broker never sends a confirm")
+    assert any("CHASE_CONFIRM" in m.value for m in at.markdown)

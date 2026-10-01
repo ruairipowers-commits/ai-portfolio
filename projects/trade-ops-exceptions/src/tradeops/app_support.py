@@ -361,6 +361,27 @@ def break_comparison(exception_id: str) -> tuple[list[dict], list[str]]:
     rec = related_records(exception_id)
     if not rec or not rec["trades"]:
         return [], []
+    return trade_comparison(rec["trades"][0]["trade_id"])
+
+
+def _trade_records(trade_id: str) -> dict[str, list[dict]]:
+    con = _con()
+    try:
+        trades = con.query("select * from trades where trade_id = ?", (trade_id,))
+        broker = trades[0]["broker"] if trades else ""
+        return {"trades": trades,
+                "allocations": con.query("select * from allocations where trade_id = ?", (trade_id,)),
+                "broker_confirms": con.query("select * from broker_confirms where trade_id = ?", (trade_id,)),
+                "custodian_records": con.query("select * from custodian_records where trade_id = ?", (trade_id,)),
+                "ssis": con.query("select * from ssis where counterparty = ?", (broker,))}
+    finally:
+        con.close()
+
+
+def trade_comparison(trade_id: str) -> tuple[list[dict], list[str]]:
+    rec = _trade_records(trade_id)
+    if not rec["trades"]:
+        return [], []
     t = rec["trades"][0]
     c = rec["broker_confirms"][0] if rec["broker_confirms"] else None
     cu_raw = rec["custodian_records"][0]["raw_payload"] if rec["custodian_records"] else "{}"
@@ -445,3 +466,154 @@ def er_dot(highlight: str | None = None) -> str:
               for a, b, lbl in flow]
     lines.append("}")
     return "\n".join(lines)
+
+
+# ================================================================== single-trade walkthrough
+# Simulates each party in the trade lifecycle so one exception can be followed end to end:
+#   trader books (OMS) -> broker confirms -> custodian reports -> matching engine compares and, on a break,
+#   opens an exception -> the agent investigates -> an analyst decides.
+# Manual trades/exceptions use T09xxx / EX-9xxx ids so they never collide with the sample data.
+from datetime import date as _date, timedelta as _td
+
+
+def next_bday(d: _date, n: int = 1) -> _date:
+    while n:
+        d += _td(days=1)
+        if d.weekday() < 5:
+            n -= 1
+    return d
+
+
+def prev_bday(d: _date) -> _date:
+    d -= _td(days=1)
+    while d.weekday() >= 5:
+        d -= _td(days=1)
+    return d
+
+
+def brokers() -> dict[str, str]:
+    """Counterparty -> verified SSI account on file."""
+    return {r["counterparty"]: r["account_ref"] for r in table("select counterparty, account_ref from ssis order by 1")}
+
+
+def _next_id(con, prefix: str, column: str, tbl: str, start: int) -> str:
+    """Next id in the manual range (>= start): T09001…, EX-9001…"""
+    rows = con.query(f"select {column} as id from {tbl} where {column} like ?", (prefix + "%",))
+    nums = [n for n in (int(r["id"][len(prefix):]) for r in rows if r["id"][len(prefix):].isdigit()) if n >= start]
+    width = 4 if prefix == "EX-" else 5
+    return f"{prefix}{max(nums + [start - 1]) + 1:0{width}d}"
+
+
+def book_trade(t: dict, alloc_a: int, alloc_b: int) -> str:
+    """Trader: book the trade in the OMS (trades + allocations). Returns trade_id."""
+    con = _con()
+    try:
+        tid = _next_id(con, "T", "trade_id", "trades", 9001)
+        con.execute("insert into trades values (?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (tid, t["fund"], t["account"], t["ticker"].upper(), t["side"], int(t["quantity"]),
+                     float(t["booked_price"]), float(t["exec_avg_price"]), str(t["trade_date"]),
+                     str(t["settle_date"]), t["broker"], "OPEN"))
+        con.execute("insert into allocations values (?,?,?)", (tid, f"{t['account']}-A", int(alloc_a)))
+        con.execute("insert into allocations values (?,?,?)", (tid, f"{t['account']}-B", int(alloc_b)))
+        con.commit()
+        return tid
+    finally:
+        con.close()
+
+
+def send_confirm(trade_id: str, c: dict | None) -> None:
+    """Broker: send (or fail to send) the trade confirm. Free text is untrusted outside input."""
+    if c is None:
+        return
+    from datetime import datetime, timezone
+
+    con = _con()
+    try:
+        broker = con.one("select broker from trades where trade_id = ?", (trade_id,))["broker"]
+        con.execute("insert into broker_confirms values (?,?,?,?,?,?,?,?,?)",
+                    ("C" + trade_id[1:], trade_id, broker, int(c["quantity"]), float(c["price"]), str(c["settle_date"]),
+                     c["account_ref"], c["free_text"], datetime.now(timezone.utc).isoformat()))
+        con.commit()
+    finally:
+        con.close()
+
+
+def custodian_report(trade_id: str, quantity: int, settle_date, account: str, malformed: bool = False) -> None:
+    """Custodian feed: report its view of the trade. `malformed` simulates a truncated feed message."""
+    from datetime import datetime, timezone
+
+    payload = (json_dumps({"quantity": int(quantity), "settle_date": str(settle_date), "account": account,
+                           "status": "UNMATCHED"}))
+    if malformed:
+        payload = payload[: len(payload) // 2]
+    con = _con()
+    try:
+        con.execute("insert into custodian_records values (?,?,?,?)",
+                    (trade_id, "Keystone Custody", payload, datetime.now(timezone.utc).isoformat()))
+        con.commit()
+    finally:
+        con.close()
+
+
+def json_dumps(o) -> str:
+    return _json.dumps(o)
+
+
+def match_trade(trade_id: str) -> tuple[list[dict], list[str], str | None]:
+    """Matching engine: compare our booking with the broker, custodian, allocations and SSI.
+    Returns (comparison rows, notes, exception description or None if everything matched)."""
+    rows, notes = trade_comparison(trade_id)
+    rec = _trade_records(trade_id)
+    t = rec["trades"][0]
+    c = rec["broker_confirms"][0] if rec["broker_confirms"] else None
+    ssi = rec["ssis"][0]["account_ref"] if rec["ssis"] else None
+    alloc_total = sum(int(a["quantity"]) for a in rec["allocations"])
+    _, cu_err = _custodian(rec["custodian_records"][0]["raw_payload"]) if rec["custodian_records"] else ({}, None)
+    bad = {r["field"] for r in rows if r["match"] == "❌"}
+    if c is None:
+        desc = "No broker confirm/affirmation by cutoff"
+    elif c["account_ref"] != ssi:
+        desc = "Settlement instructions do not match"
+    elif "settle_date" in bad:
+        desc = "Settlement date differs from counterparty"
+    elif int(c["quantity"]) != int(t["quantity"]) or float(c["price"]) != float(t["booked_price"]):
+        desc = "Unmatched against broker confirm"
+    elif alloc_total != int(t["quantity"]):
+        desc = "Allocations do not sum to block quantity"
+    elif cu_err:
+        desc = "Custodian record unreadable"
+    else:
+        desc = None
+    return rows, notes, desc
+
+
+def open_exception(trade_id: str, description: str, detected_by: str = "matching-engine") -> str:
+    from datetime import datetime, timezone
+
+    con = _con()
+    try:
+        eid = _next_id(con, "EX-", "exception_id", "exceptions", 9001)
+        con.execute("insert into exceptions values (?,?,?,?,?,?)",
+                    (eid, trade_id, detected_by, description, datetime.now(timezone.utc).isoformat(), "OPEN"))
+        con.commit()
+        return eid
+    finally:
+        con.close()
+
+
+def log_walkthrough_text(exception_id: str, text: str) -> None:
+    """If the broker's free text was one of the demo attacks, mark it in demo_inputs so the bulk queue shows it."""
+    kind = {INJECTION_TEXT: "injection", BANK_CHANGE_TEXT: "bank_change"}.get(text)
+    if not kind:
+        return
+    from datetime import datetime, timezone
+
+    con = _con()
+    try:
+        _ensure_demo_inputs(con)
+        con.execute("delete from demo_inputs where exception_id = ?", (exception_id,))
+        con.execute("insert into demo_inputs values (?,?,?,?,?)",
+                    (exception_id, kind, "Standard confirm.", text, datetime.now(timezone.utc).isoformat()))
+        con.commit()
+    finally:
+        con.close()

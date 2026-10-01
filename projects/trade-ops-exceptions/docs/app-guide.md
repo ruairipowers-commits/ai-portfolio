@@ -1,7 +1,7 @@
 # Using the app
 
 `tradeops ui` opens the app at http://localhost:8501. Settings are in the **sidebar**; the work happens in
-four tabs.
+five tabs.
 
 ## Sidebar
 
@@ -11,9 +11,44 @@ four tabs.
 | **Your name** | Recorded on every approval and rejection (`approvals.approver`, `resolutions.approved_by`). Approve/Reject are disabled while it's empty. |
 | **Reset demo data** | Regenerates the 40 synthetic exceptions and clears all runs, approvals, resolutions, the outbox and your *Try to break it* edits. Use it to start over. |
 
-## Tab 1 — Exception workflow
+## Tab 1 — Single trade walkthrough
 
-One table with every exception. **Click the box at the left of a row to select it**; everything below the
+Follow **one trade** from booking to resolution. You play each party in turn, and every step says who is acting
+and which tables that action writes to. Steps unlock in order (*your turn* → *done*; later steps show *waiting*).
+
+| Step | Who acts | What you do | Writes |
+|---|---|---|---|
+| ① | 👤 **Trader** (front office) | Book the trade: fund, ticker, side, quantity, booked price, EMS average fill, trade/settle date, broker, and how the block is allocated to two sub-accounts. **👤 Book trade**. | `trades`, `allocations` |
+| ② | 🏦 **Broker** (counterparty, outside the firm) | Send the confirm — quantity, price, settle date, which account to settle to (our SSI on file or a different one) and free text. Quick buttons fill the free text with *Standard*, *💉 Injection* or *🏦 Bank-detail change*. Untick *Broker sends a confirm* to simulate a missed cutoff. **🏦 Send confirm**. | `broker_confirms` |
+| ③ | 🏛️ **Custodian** (automated feed) | Report what will settle (defaults to the booking). Change it to create a three-way break, or tick *corrupt record* to send a truncated feed message. **🏛️ Report custodian record**. | `custodian_records` |
+| ④ | ⚙️ **Matching engine** (system) | **⚙️ Run matching** compares every field across OMS, confirm, custodian, allocations and SSI (mismatches in red). If anything disagrees it opens an exception (`EX-9xxx`); if not, the trade simply settles. | `exceptions` |
+| ⑤ | 🤖 **Trade-ops agent** (AI) | **🤖 Investigate** runs the agent with the sidebar model. You see each step labelled *model decides* or *tool (read-only)*, the proposal, any draft email, and whether policy passed it or escalated it. | `agent_runs`, `agent_steps` |
+| ⑥ | 🧑‍💼 **Ops analyst — you** | Edit the fix or email, then **Approve** (signed token → write-scoped tool records the fix and queues the email, never sent) or **Reject**. Escalated cases can't be approved. | `approvals`, `resolutions`, `outbox` |
+
+**Scenario** pre-fills every role's inputs so you can reproduce a specific break in a few clicks — and you can
+still change any field. **Load scenario** starts over with those values; **Start a new trade** clears the
+walkthrough. Each scenario says what should happen:
+
+| Scenario | Expected outcome |
+|---|---|
+| Clean trade — everything matches | No exception; nothing for the agent or ops |
+| Broker confirms the wrong quantity | Unmatched → agent asks the broker to correct (email) → you approve |
+| We booked the wrong quantity | Unmatched → agent proposes amending our booking (no email) |
+| Broker's price is off / Our booked price doesn't match the fills | Price break → whoever disagrees with the fills is corrected |
+| Broker uses the wrong settle date (T+2) | Settle-date break → broker asked to correct to T+1 |
+| Broker settles to a stale account | SSI break → broker asked to use our verified SSI (we never change ours) |
+| Broker never sends a confirm | Missing confirm → chase the broker |
+| Allocations don't add up | Allocation break → rebalance internally |
+| 💉 Broker confirm contains a prompt injection | **Escalated** — instruction-like text in the confirm |
+| 🏦 Broker asks us to change bank details | **Escalated** — payment-fraud control |
+| 🏛️ Custodian sends a corrupt record | **Escalated** — the agent won't guess from unreadable data |
+
+Trades and exceptions created here use ids `T09xxx` / `EX-9xxx` and also appear in the bulk queue and the data
+explorer. **Reset demo data** in the sidebar removes them.
+
+## Tab 2 — Bulk exception queue
+
+The whole queue at once — the 40 sample exceptions plus any you created in the walkthrough. One table with every exception. **Click the box at the left of a row to select it**; everything below the
 table then applies to that exception.
 
 ### Table columns
@@ -88,7 +123,7 @@ Below it, every related row in the database, table by table.
 Every LLM turn and tool call from the latest investigation: which tool, with what arguments, tokens, cost, and
 any security flag raised on the result.
 
-## Tab 2 — Data explorer
+## Tab 3 — Data explorer
 
 | Section | What it does |
 |---|---|
@@ -96,7 +131,7 @@ any security flag raised on the result.
 | **Browse tables** | Row counts and each table's role; pick a table, search any column, download CSV. |
 | **SQL query** | One `SELECT`/`WITH` statement at a time on a read-only connection (writes are refused twice: by the app and by the database). Start from an example query or write your own; download results. |
 
-## Tab 3 — Audit & evals
+## Tab 4 — Audit & evals
 
 | Section | What it does |
 |---|---|
@@ -104,6 +139,6 @@ any security flag raised on the result.
 | **Resolutions / Outbox / Decisions** | Everything written after approval, and every human decision with what the AI proposed vs what was recorded. |
 | **Cost by model / Runs** | Tokens and cost per model, production vs eval, and every agent run. |
 
-## Tab 4 — Guide & models
+## Tab 5 — Guide & models
 
 This guide, and what each model is, how it works and what to expect from it.
