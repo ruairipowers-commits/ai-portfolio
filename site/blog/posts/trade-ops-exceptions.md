@@ -81,7 +81,7 @@ the oldest frauds in operations. An agent that helpfully proposes the new accoun
 ### Data model
 
 Everything the agent reads, everything it logs, and the two tables only an approval can write live in one
-database. The app's *Explore the data* section draws this, shows any exception's records side by side
+database. The app's *Data explorer* tab draws this, and each exception's *Evidence & records* view shows its records side by side
 with the mismatched field highlighted, and has a read-only SQL box.
 
 --8<-- "projects/trade-ops-exceptions/docs/architecture.md:er"
