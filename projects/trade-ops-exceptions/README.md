@@ -64,6 +64,15 @@ investigates and pauses at approval) and **Output** (approval queue with evidenc
 editable fix/email; escalations with reasons; resolutions and the outbox; eval gate; cost by model).
 `Reset demo data` restores the 40 synthetic exceptions.
 
+**4 · Explore the data** (available before you run anything) is a read-only browser for the SQLite database:
+an **ER diagram** of the tables grouped by role with the workflow drawn on top; an **exception drill-down**
+that shows how the break appears across OMS, broker confirm, custodian, allocations and SSI (mismatched field
+highlighted) plus every related row; a **table browser** with search and CSV download; and a **SQL box**
+(SELECT/WITH only, on a read-only connection) with example queries. The same drill-down is under each proposal
+in the approval queue.
+
+![ER diagram in the app](docs/img/er-diagram.png)
+
 ### Use a real model
 
 ```bash

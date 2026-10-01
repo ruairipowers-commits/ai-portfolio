@@ -123,3 +123,245 @@ def table(sql: str) -> list[dict]:
         return con.query(sql)
     finally:
         con.close()
+
+
+# ================================================================== data explorer
+import json as _json
+import re as _re
+
+BUSINESS_TABLES = ["exceptions", "trades", "allocations", "broker_confirms", "custodian_records", "ssis",
+                   "historical_resolutions"]
+GATED_TABLES = ["resolutions", "outbox"]
+AGENT_TABLES = ["agent_runs", "agent_steps", "approvals"]
+MAX_ROWS = 1000
+
+
+def list_tables() -> list[dict]:
+    """Every table with its row count and role in the workflow."""
+    con = _con()
+    try:
+        role = {**{t: "source system (read by agent tools)" for t in BUSINESS_TABLES},
+                **{t: "written only via approval-gated tool" for t in GATED_TABLES},
+                **{t: "agent audit trail (written by runtime)" for t in AGENT_TABLES}}
+        out = []
+        for t in BUSINESS_TABLES + AGENT_TABLES + GATED_TABLES:
+            try:
+                n = con.one(f"select count(*) as n from {t}")["n"]
+            except Exception:
+                n = None
+            out.append({"table": t, "rows": n, "role": role[t]})
+        return out
+    finally:
+        con.close()
+
+
+def table_rows(name: str, search: str = "", limit: int = 200) -> list[dict]:
+    if name not in BUSINESS_TABLES + GATED_TABLES + AGENT_TABLES:   # allow-list: name goes into SQL
+        raise ValueError(f"unknown table {name}")
+    rows = table(f"select * from {name}")  # tables are small (hundreds of rows)
+    if search:
+        s = search.lower()
+        rows = [r for r in rows if any(s in str(v).lower() for v in r.values())]
+    return rows[:limit]
+
+
+_WRITE = _re.compile(r"\b(insert|update|delete|drop|alter|create|replace|attach|detach|pragma|vacuum|reindex|grant|"
+                     r"truncate|copy)\b", _re.I)
+
+
+def run_readonly_sql(sql: str, limit: int = MAX_ROWS) -> tuple[list[dict], str | None]:
+    """Run one SELECT/WITH statement on a read-only connection. Returns (rows, error)."""
+    q = sql.strip().rstrip(";").strip()
+    if not q:
+        return [], "Enter a query."
+    if ";" in q:
+        return [], "One statement at a time."
+    if not _re.match(r"(?is)^\s*(select|with)\b", q) or _WRITE.search(q):
+        return [], "Read-only explorer: only SELECT / WITH queries are allowed."
+    s = load_settings()
+    url = db_url(s)
+    try:
+        if db.is_pg(url):
+            import psycopg
+
+            with psycopg.connect(url) as c:
+                c.read_only = True
+                cur = c.execute(q)
+                cols = [d.name for d in cur.description]
+                return [dict(zip(cols, r)) for r in cur.fetchmany(limit)], None
+        import sqlite3
+
+        c = sqlite3.connect(f"file:{url}?mode=ro", uri=True)   # the database itself refuses writes
+        try:
+            cur = c.execute(q)
+            cols = [d[0] for d in cur.description or []]
+            return [dict(zip(cols, r)) for r in cur.fetchmany(limit)], None
+        finally:
+            c.close()
+    except Exception as e:  # show the database's own message
+        return [], str(e)
+
+
+EXAMPLE_QUERIES = {
+    "Exceptions with trade, confirm and custodian side by side": """select e.exception_id, e.description,
+       t.quantity as oms_qty, c.quantity as confirm_qty,
+       t.booked_price, t.exec_avg_price, c.price as confirm_price,
+       t.settle_date as oms_settle, c.settle_date as confirm_settle,
+       c.account_ref as confirm_ssi, s.account_ref as ssi_on_file
+from exceptions e
+join trades t using (trade_id)
+left join broker_confirms c using (trade_id)
+left join ssis s on s.counterparty = t.broker
+order by e.exception_id""",
+    "Agent outcome per exception (latest run)": """select r.exception_id, r.status, r.category, r.fix_type, r.tool_calls,
+       round(r.cost_usd, 4) as cost_usd, r.policy_flags
+from agent_runs r
+where r.run_id not like 'eval-%'
+order by r.exception_id, r.started_at desc""",
+    "Which tool results raised a security flag": """select s.thread_id, s.step, s.name as tool, s.flag, s.result_preview
+from agent_steps s
+where s.kind = 'tool' and s.flag is not null
+order by s.thread_id, s.step""",
+    "Allocations that don't sum to the block": """select t.trade_id, t.quantity as block_qty, sum(a.quantity) as allocated,
+       t.quantity - sum(a.quantity) as difference
+from trades t join allocations a using (trade_id)
+group by t.trade_id, t.quantity
+having sum(a.quantity) <> t.quantity""",
+    "Approvals: what the AI proposed vs what was recorded": """select a.exception_id, a.decision, a.approver, a.ai_fix_type,
+       a.final_fix_type, a.edited, r.fix_details, a.ts
+from approvals a left join resolutions r using (exception_id)
+order by a.ts desc""",
+}
+
+
+def _custodian(payload: str) -> tuple[dict, str | None]:
+    try:
+        return _json.loads(payload), None
+    except Exception as e:
+        return {}, f"malformed JSON ({e.__class__.__name__}): {payload[:80]}"
+
+
+def related_records(exception_id: str) -> dict[str, list[dict]]:
+    """Every row in every table that relates to one exception, keyed by table."""
+    con = _con()
+    try:
+        ex = con.query("select * from exceptions where exception_id = ?", (exception_id,))
+        if not ex:
+            return {}
+        tid = ex[0]["trade_id"]
+        trades = con.query("select * from trades where trade_id = ?", (tid,))
+        broker = trades[0]["broker"] if trades else ""
+        out = {
+            "exceptions": ex,
+            "trades": trades,
+            "allocations": con.query("select * from allocations where trade_id = ?", (tid,)),
+            "broker_confirms": con.query("select * from broker_confirms where trade_id = ?", (tid,)),
+            "custodian_records": con.query("select * from custodian_records where trade_id = ?", (tid,)),
+            "ssis": con.query("select * from ssis where counterparty = ?", (broker,)),
+        }
+        runs = con.query("""select * from agent_runs where exception_id = ? and run_id not like 'eval-%'
+                            order by started_at desc""", (exception_id,))
+        out["agent_runs"] = runs
+        if runs:
+            out["agent_steps"] = con.query("select * from agent_steps where thread_id = ? order by step",
+                                           (runs[0]["thread_id"],))
+            out["historical_resolutions"] = con.query(
+                "select * from historical_resolutions where category = ? limit 5", (runs[0]["category"],))
+        out["approvals"] = con.query("select * from approvals where exception_id = ? order by ts", (exception_id,))
+        out["resolutions"] = con.query("select * from resolutions where exception_id = ?", (exception_id,))
+        out["outbox"] = con.query("select * from outbox where exception_id = ?", (exception_id,))
+        return out
+    finally:
+        con.close()
+
+
+def break_comparison(exception_id: str) -> tuple[list[dict], list[str]]:
+    """Field-by-field view of the trade across systems — the evidence that shows how the break was caught.
+    Returns (rows, notes). Each row: field, OMS, broker confirm, custodian, other, match."""
+    rec = related_records(exception_id)
+    if not rec or not rec["trades"]:
+        return [], []
+    t = rec["trades"][0]
+    c = rec["broker_confirms"][0] if rec["broker_confirms"] else None
+    cu_raw = rec["custodian_records"][0]["raw_payload"] if rec["custodian_records"] else "{}"
+    cu, cu_err = _custodian(cu_raw)
+    alloc_total = sum(int(a["quantity"]) for a in rec["allocations"])
+    ssi = rec["ssis"][0]["account_ref"] if rec["ssis"] else None
+    notes = []
+    if c is None:
+        notes.append("No broker confirm received — a missing-confirm break.")
+    if cu_err:
+        notes.append(f"Custodian record could not be parsed: {cu_err}")
+    if c and c.get("free_text") and c["free_text"] != "Standard confirm.":
+        notes.append(f"Broker free text (untrusted): “{c['free_text'][:240]}”")
+
+    def row(field, oms, conf, cust, other_label="", other=None):
+        vals = [v for v in (oms, conf, cust, other) if v is not None and v != ""]
+        norm = {str(float(v)) if isinstance(v, (int, float)) else str(v) for v in vals}
+        return {"field": field, "OMS (our booking)": oms, "Broker confirm": conf, "Custodian": cust,
+                "Other source": f"{other_label}: {other}" if other_label else "",
+                "match": "✅" if len(norm) <= 1 else "❌"}
+
+    rows = [
+        row("quantity", t["quantity"], c and c["quantity"], cu.get("quantity"), "allocations total", alloc_total),
+        row("price", t["booked_price"], c and c["price"], None, "EMS avg fill", t["exec_avg_price"]),
+        row("settle_date", t["settle_date"], c and c["settle_date"], cu.get("settle_date")),
+        row("settlement account (SSI)", None, c and c["account_ref"], None, "SSI on file", ssi),
+    ]
+    return rows, notes
+
+
+# ------------------------------------------------------------------ ER diagram (Graphviz DOT, rendered in-browser)
+def er_dot(highlight: str | None = None) -> str:
+    """ER diagram of the schema, grouped by role, with the workflow arrows. `highlight` = a table to emphasise."""
+    cols = {
+        "exceptions": ["exception_id PK", "trade_id FK", "detected_by", "description", "status"],
+        "trades": ["trade_id PK", "account", "ticker", "side", "quantity", "booked_price", "exec_avg_price",
+                   "trade_date", "settle_date", "broker FK"],
+        "allocations": ["trade_id FK", "sub_account", "quantity"],
+        "broker_confirms": ["confirm_id PK", "trade_id FK", "quantity", "price", "settle_date", "account_ref",
+                            "free_text (untrusted)"],
+        "custodian_records": ["trade_id PK/FK", "custodian", "raw_payload (JSON)"],
+        "ssis": ["counterparty PK", "account_ref", "bic", "verified_by"],
+        "historical_resolutions": ["exception_id PK", "category", "fix_type"],
+        "agent_runs": ["thread_id PK", "exception_id FK", "status", "category", "fix_type", "tool_calls",
+                       "cost_usd", "policy_flags"],
+        "agent_steps": ["thread_id FK", "step", "kind", "name", "args_json", "flag"],
+        "approvals": ["approval_id PK", "thread_id FK", "exception_id FK", "decision", "approver",
+                      "ai_fix_type", "final_fix_type"],
+        "resolutions": ["exception_id PK/FK", "fix_type", "fix_details", "approved_by", "approval_id FK"],
+        "outbox": ["message_id PK", "exception_id FK", "recipient", "subject", "sent"],
+    }
+    fill = {**{t: "#E8F1FB" for t in BUSINESS_TABLES}, **{t: "#FFF4E0" for t in AGENT_TABLES},
+            **{t: "#E9F7EF" for t in GATED_TABLES}}
+
+    def node(t):
+        border = ' color="#C62828" penwidth=3' if t == highlight else ' color="#5F6B7A"'
+        rows = "".join(f'<tr><td align="left"><font point-size="10">{c}</font></td></tr>' for c in cols[t])
+        return (f'  {t} [shape=plain{border} label=<<table border="1" cellborder="0" cellspacing="0" cellpadding="3" '
+                f'bgcolor="{fill[t]}"><tr><td><b>{t}</b></td></tr>{rows}</table>>];')
+
+    lines = ['digraph ER {', '  graph [rankdir=RL, fontname="Helvetica", nodesep=0.35, ranksep=0.7];',
+             '  node [fontname="Helvetica"]; edge [fontname="Helvetica", fontsize=9, color="#5F6B7A"];']
+    groups = [("cluster_src", "Source systems — read-only MCP tools", BUSINESS_TABLES),
+              ("cluster_agent", "Agent audit trail", AGENT_TABLES),
+              ("cluster_gated", "Approval-gated writes", GATED_TABLES)]
+    for cid, label, tables in groups:
+        lines.append(f'  subgraph {cid} {{ label="{label}"; style="rounded,dashed"; color="#9AA5B1"; fontsize=11;')
+        lines += ["  " + node(t) for t in tables]
+        lines.append("  }")
+    rels = [("exceptions", "trades", "trade_id"), ("allocations", "trades", "trade_id"),
+            ("broker_confirms", "trades", "trade_id"), ("custodian_records", "trades", "trade_id"),
+            ("trades", "ssis", "broker = counterparty"),
+            ("agent_runs", "exceptions", "exception_id"), ("agent_steps", "agent_runs", "thread_id"),
+            ("approvals", "agent_runs", "thread_id"), ("resolutions", "exceptions", "exception_id"),
+            ("resolutions", "approvals", "approval_id"), ("outbox", "exceptions", "exception_id")]
+    lines += [f'  {a} -> {b} [label="{lbl}", arrowhead=crow, dir=back, arrowtail=none];' for a, b, lbl in rels]
+    flow = [("exceptions", "agent_runs", "① detected → investigated"),
+            ("agent_steps", "broker_confirms", "② tool calls read sources"),
+            ("agent_runs", "approvals", "③ policy → human decision"),
+            ("approvals", "resolutions", "④ signed token → gated write")]
+    lines += [f'  {a} -> {b} [label="{lbl}", color="#C62828", fontcolor="#C62828", style=bold, constraint=false];'
+              for a, b, lbl in flow]
+    lines.append("}")
+    return "\n".join(lines)
