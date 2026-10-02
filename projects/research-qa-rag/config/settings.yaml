@@ -1,6 +1,6 @@
 # Runtime + governance settings. Every key here is referenced in docs/governance.md.
 use_case: research-qa-rag
-workflow:                    # shown in the governance hub (telemetry.register)
+workflow:                    # shown in the governance console (telemetry.register)
   title: Research Q&A (RAG)
   owner: Head of research (business) · Research engineering (technical)
   description: Cited answers over filings, transcripts and licensed broker research; refuses when unsupported.

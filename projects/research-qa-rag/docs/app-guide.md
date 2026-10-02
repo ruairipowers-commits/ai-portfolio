@@ -10,7 +10,7 @@
 | **Answer model** | Which model drafts the answer. Only approved, priced models with credentials present are listed. Default: the offline `mock-extractive` model (see below). |
 | **Retrieval** | `hybrid` (default) fuses BM25 keyword search and vector search with reciprocal rank fusion; `bm25` and `vector` use one retriever, for comparison. |
 | **Excerpts sent to the model** | top-k: how many chunks go into the prompt. |
-| **Your name** | Optional. Recorded in the audit log and the governance hub instead of an anonymous visitor id. |
+| **Your name** | Optional. Recorded in the audit log and the governance console instead of an anonymous visitor id. |
 | **Reset demo data** | Regenerates the 12 sample documents, removes anything you added and rebuilds the index. |
 
 ## Tab 1 — 💬 Ask

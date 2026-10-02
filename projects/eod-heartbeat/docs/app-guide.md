@@ -9,7 +9,7 @@ days of synthetic feeds and indexes the runbooks (about 20 seconds). Settings ar
 |---|---|
 | **Explainer model** | Which model writes explanations. Only approved, priced models with credentials present are listed. Default: the offline `mock-explainer`. |
 | **Simulate a provider outage** | *Primary model down*: the fallback (`mock-explainer-lite`) explains instead, and the explanation is flagged `fallback_model`. *All models down*: every break is still detected and alerted, with the retrieved runbook steps attached, in **degraded** mode (MODEL-05). |
-| **Your name** | Recorded with feedback and in the governance hub instead of an anonymous visitor id. |
+| **Your name** | Recorded with feedback and in the governance console instead of an anonymous visitor id. |
 | **Reset demo data** | Regenerates the feeds, restores the original runbooks, re-indexes and clears the audit log. |
 
 ## Tab 1 — 🫀 EOD check

@@ -1,0 +1,1473 @@
+{
+ "generated_from": "catalog/workflows.json (scripts/build_catalog.py)",
+ "controls": [
+  {
+   "id": "DATA-01",
+   "name": "Source inventory & lineage",
+   "category": "Data preparation & quality",
+   "requirement": "Every input source has an owner, refresh cadence and documented lineage from raw to AI input.",
+   "evidence": "dbt sources + lineage graph; source table in README"
+  },
+  {
+   "id": "DATA-02",
+   "name": "Quality gates before AI",
+   "category": "Data preparation & quality",
+   "requirement": "Automated data tests (nulls, uniqueness, ranges, freshness) must pass before any model call; failures block the run.",
+   "evidence": "Test suite + gate code that reads test results"
+  },
+  {
+   "id": "DATA-03",
+   "name": "Minimization & sensitive data",
+   "category": "Data preparation & quality",
+   "requirement": "Only fields needed for the task reach the model; PII / MNPI is classified and redacted or excluded.",
+   "evidence": "Payload builder, redaction code, tests"
+  },
+  {
+   "id": "DATA-04",
+   "name": "Usage rights",
+   "category": "Data preparation & quality",
+   "requirement": "Data licenses / terms permit processing by third-party AI providers and derived use.",
+   "evidence": "License flag checked in pipeline or policy"
+  },
+  {
+   "id": "DATA-05",
+   "name": "Retrieval corpus hygiene",
+   "category": "Data preparation & quality",
+   "requirement": "For RAG: chunking, de-duplication, provenance metadata and re-index policy are defined and versioned.",
+   "evidence": "Indexing config + index version in run log"
+  },
+  {
+   "id": "SEC-01",
+   "name": "Secrets management",
+   "category": "AI security",
+   "requirement": "No keys in code or logs; secrets from env/secret manager; rotation path documented.",
+   "evidence": "`.env.example`, secret-manager option"
+  },
+  {
+   "id": "SEC-02",
+   "name": "Prompt-injection defense",
+   "category": "AI security",
+   "requirement": "Untrusted content is delimited, scanned and never allowed to change instructions or tool permissions.",
+   "evidence": "Sanitizer + injection test cases"
+  },
+  {
+   "id": "SEC-03",
+   "name": "Least-privilege tools",
+   "category": "AI security",
+   "requirement": "Agent tools are read-only by default; any write/side effect needs explicit approval.",
+   "evidence": "Tool allow-list; approval step"
+  },
+  {
+   "id": "SEC-04",
+   "name": "Output handling",
+   "category": "AI security",
+   "requirement": "Model output is schema-validated and treated as data — never executed or trusted blindly.",
+   "evidence": "Pydantic/JSON-schema validation, repair/fallback path"
+  },
+  {
+   "id": "SEC-05",
+   "name": "Provider & data residency terms",
+   "category": "AI security",
+   "requirement": "Only approved providers/regions; zero-retention / no-training settings where available.",
+   "evidence": "Provider allow-list in model registry"
+  },
+  {
+   "id": "SEC-06",
+   "name": "Supply chain",
+   "category": "AI security",
+   "requirement": "Dependencies pinned, scanned; model provenance recorded.",
+   "evidence": "Lockfile, CI scan, model IDs in registry"
+  },
+  {
+   "id": "COST-01",
+   "name": "Hard budgets",
+   "category": "Cost oversight",
+   "requirement": "Per-call token caps and per-run spend caps that stop execution when exceeded.",
+   "evidence": "Budget guard + test"
+  },
+  {
+   "id": "COST-02",
+   "name": "Cost attribution",
+   "category": "Cost oversight",
+   "requirement": "Tokens and cost logged per call, run, use case and model.",
+   "evidence": "Call log table + cost report"
+  },
+  {
+   "id": "COST-03",
+   "name": "Efficiency levers",
+   "category": "Cost oversight",
+   "requirement": "Right-size models (tiering), cache, batch, and trim context before scaling spend.",
+   "evidence": "Config options + measured effect"
+  },
+  {
+   "id": "COST-04",
+   "name": "Alerts & review",
+   "category": "Cost oversight",
+   "requirement": "Monthly thresholds with alerts and a named reviewer.",
+   "evidence": "Threshold config + report command"
+  },
+  {
+   "id": "MODEL-01",
+   "name": "Registry & aliases",
+   "category": "Model lifecycle & migration",
+   "requirement": "Code references aliases, never raw model IDs; the registry holds provider, ID, pricing, deprecation date.",
+   "evidence": "`models.yaml`"
+  },
+  {
+   "id": "MODEL-02",
+   "name": "Eval-gated changes",
+   "category": "Model lifecycle & migration",
+   "requirement": "Any model or prompt change must pass the eval suite (and not regress vs baseline) before promotion.",
+   "evidence": "Eval gate + promote command"
+  },
+  {
+   "id": "MODEL-03",
+   "name": "Deprecation monitoring",
+   "category": "Model lifecycle & migration",
+   "requirement": "Provider deprecation dates tracked with warning window and a migration runbook.",
+   "evidence": "Check command + runbook"
+  },
+  {
+   "id": "MODEL-04",
+   "name": "Prompt versioning",
+   "category": "Model lifecycle & migration",
+   "requirement": "Prompts live in versioned files; prompt hash recorded on every call.",
+   "evidence": "`prompts/` + hash in log"
+  },
+  {
+   "id": "MODEL-05",
+   "name": "Fallback & resilience",
+   "category": "Model lifecycle & migration",
+   "requirement": "Retries plus a fallback model/provider for outages; degraded mode is explicit.",
+   "evidence": "Fallback alias + retry code"
+  },
+  {
+   "id": "EVAL-01",
+   "name": "Golden dataset",
+   "category": "Evaluation & quality",
+   "requirement": "A labeled set of representative and adversarial cases with expected outcomes.",
+   "evidence": "`evals/` folder"
+  },
+  {
+   "id": "EVAL-02",
+   "name": "Metrics & thresholds",
+   "category": "Evaluation & quality",
+   "requirement": "Task accuracy, format validity, grounding/citation accuracy and safety metrics with pass thresholds.",
+   "evidence": "Threshold config + eval report"
+  },
+  {
+   "id": "EVAL-03",
+   "name": "Regression in CI",
+   "category": "Evaluation & quality",
+   "requirement": "Evals run automatically on every change (offline/mock in CI, live on schedule).",
+   "evidence": "CI workflow"
+  },
+  {
+   "id": "OBS-01",
+   "name": "Run log",
+   "category": "Observability & audit",
+   "requirement": "Each call logs model, prompt version, input hash, tokens, latency, cost, outcome.",
+   "evidence": "Audit tables"
+  },
+  {
+   "id": "OBS-02",
+   "name": "Traceability",
+   "category": "Observability & audit",
+   "requirement": "Every AI claim traces to source data (citations checked against the source).",
+   "evidence": "Citation check"
+  },
+  {
+   "id": "OBS-03",
+   "name": "Retention",
+   "category": "Observability & audit",
+   "requirement": "Logs retained per books-and-records policy; access controlled.",
+   "evidence": "Retention setting / storage option"
+  },
+  {
+   "id": "HITL-01",
+   "name": "Risk tiering",
+   "category": "Human oversight & accountability",
+   "requirement": "Each use case is tiered (low/medium/high); the tier sets required controls and approvals.",
+   "evidence": "`risk_tier` in config + rationale"
+  },
+  {
+   "id": "HITL-02",
+   "name": "Human approval",
+   "category": "Human oversight & accountability",
+   "requirement": "Consequential decisions/actions require a named human approver.",
+   "evidence": "Review step / approval queue"
+  },
+  {
+   "id": "HITL-03",
+   "name": "Feedback loop",
+   "category": "Human oversight & accountability",
+   "requirement": "Reviewer overrides are captured and fed back into evals.",
+   "evidence": "Review log + eval ingestion"
+  },
+  {
+   "id": "HITL-04",
+   "name": "Use-case card",
+   "category": "Human oversight & accountability",
+   "requirement": "Intended use, limits, owners and known failure modes are documented.",
+   "evidence": "Use-case card in README"
+  }
+ ],
+ "workflows": [
+  {
+   "slug": "altdata-triage",
+   "title": "Alt-data vendor triage: dbt-scored samples + governed LLM memos",
+   "name": "Alt-data vendor triage",
+   "emoji": "📊",
+   "status": "built",
+   "built": true,
+   "pattern": "workflow",
+   "domain": "hedge fund data sourcing",
+   "risk_tier": "medium",
+   "risk_rationale": "advisory output that prioritises human work; touches licensing/PII so compliance cases forced to humans",
+   "users": "data sourcing analysts, data engineers, compliance",
+   "deep_dive": [
+    "DATA-02",
+    "SEC-02",
+    "MODEL-02",
+    "COST-01",
+    "OBS-02"
+   ],
+   "stack": {
+    "language": "python",
+    "data": "dbt + duckdb (athena target documented)",
+    "orchestration": "cli (make / GitHub Actions)",
+    "llm_access": "registry adapter (mock, anthropic, openai, bedrock)",
+    "retrieval": "none",
+    "ui": "streamlit (sample vendors or upload → Run triage → summary, memos + review, scorecard, eval, audit; try-to-break-it: edit vendor notes)",
+    "aws_native": "S3, Glue, Athena (dbt-athena), Bedrock, ECS Fargate, CloudWatch, Budgets (Terraform)"
+   },
+   "controls": {
+    "DATA-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "dbt `sources.yml` declares raw tables with owner/refresh `meta`; `make docs` renders the lineage graph raw → staging → marts.",
+     "configure": "`dbt/models/staging/sources.yml`",
+     "options": "OpenLineage/Marquez, DataHub, Unity Catalog, AWS Glue lineage"
+    },
+    "DATA-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "14 dbt tests (not-null, unique, range, look-ahead guard). `triage` reads `run_results.json` and refuses to call any model unless every node passed.",
+     "configure": "`data.require_dbt_tests_pass`",
+     "options": "Great Expectations / Soda checks; dbt `source freshness` as a hard gate"
+    },
+    "DATA-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Model sees only 16 scorecard fields (`FACT_COLUMNS`) + sanitized notes. Raw rows never leave the warehouse. Emails/phones/SSN-like strings redacted.",
+     "configure": "`workflow.FACT_COLUMNS`, `data.redact_pii`",
+     "options": "Microsoft Presidio or AWS Comprehend PII detection; MNPI keyword lists"
+    },
+    "DATA-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`license_derived_use` captured from the questionnaire; policy blocks PURSUE when PII is present without a derived-use license.",
+     "configure": "`policy.pii_without_license_allowed`",
+     "options": "Contract-management system lookup; legal sign-off workflow"
+    },
+    "DATA-05": {
+     "status": "not_applicable",
+     "mark": "⚪",
+     "how": "No RAG in this project (see *Research Q&A* project).",
+     "configure": "—",
+     "options": "—"
+    },
+    "SEC-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Keys only from environment; `.env` git-ignored; Bedrock uses IAM roles (no key at all).",
+     "configure": "`.env.example`",
+     "options": "AWS Secrets Manager / Azure Key Vault / 1Password CLI; OIDC in CI"
+    },
+    "SEC-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Vendor notes are scanned for instruction patterns, `<`/`>` escaped so delimiters can't be closed, truncated, and placed in `<untrusted_vendor_notes>`. Any hit forces ESCALATE. Vendor v04 is a live test case.",
+     "configure": "`data.max_notes_chars`, `policy.escalate_on_injection`, `guardrails.INJECTION_PATTERNS`",
+     "options": "LLM-based classifier (e.g. Llama Guard / Bedrock Guardrails prompt-attack filter); dual-LLM pattern"
+    },
+    "SEC-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "The model has no tools; code performs two read-only queries. No write paths exist. AWS role can read landing, write results, invoke only approved model ARNs.",
+     "configure": "`infra/aws/main.tf`",
+     "options": "Tool allow-lists with MCP scopes (see *Trade-ops* project)"
+    },
+    "SEC-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Pydantic schema with enum + bounds; parse failure yields an ESCALATE fallback memo, never a guess. Output is rendered as text, never executed.",
+     "configure": "`schemas.py`",
+     "options": "Provider-native structured outputs / JSON mode; one-shot repair prompt"
+    },
+    "SEC-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Registry `approved:` flag; unapproved models cannot be resolved (OpenAI entry ships disabled). Bedrock keeps traffic in your AWS region.",
+     "configure": "`config/models.yaml`",
+     "options": "Enterprise zero-data-retention agreements; private endpoints/VPC"
+    },
+    "SEC-06": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Version-bounded deps, `pip-audit` in CI (report-only), ECR scan-on-push in AWS path.",
+     "configure": "`pyproject.toml`, CI",
+     "options": "`uv lock` / hash-pinned lockfile; SBOM via Syft; Dependabot"
+    },
+    "COST-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Pre-flight check per call: token cap, worst-case cost vs remaining run budget, refusal of unpriced models. Blocked calls are logged.",
+     "configure": "`cost.*`",
+     "options": "Provider-side spend limits; API gateway (LiteLLM proxy) budgets per key"
+    },
+    "COST-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`audit.ai_calls` stores tokens and $ per call, vendor, run, model; `cost-report` splits prod vs eval.",
+     "configure": "—",
+     "options": "Langfuse / Helicone dashboards; AWS cost allocation tags"
+    },
+    "COST-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Minimized context (~1k tokens/vendor); model tiering is one alias change (e.g. Haiku for triage).",
+     "configure": "`aliases` in `models.yaml`",
+     "options": "Prompt caching of the static system prompt; Batch APIs for overnight runs (~50% cheaper at most providers)"
+    },
+    "COST-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Monthly total vs alert threshold in `cost-report`; AWS Budgets forecast alert in the AWS path.",
+     "configure": "`cost.monthly_alert_usd`",
+     "options": "Slack/Teams alert webhook; FinOps monthly review"
+    },
+    "MODEL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Code never names a model; aliases → registry with provider, ID, pricing, deprecation date.",
+     "configure": "`config/models.yaml`",
+     "options": "MLflow model registry; LiteLLM router config"
+    },
+    "MODEL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`eval --alias triage-candidate --baseline triage-primary` fails on threshold or regression; `promote` refuses without a passing eval on the current prompt hash.",
+     "configure": "`eval.*`",
+     "options": "Shadow traffic / canary % rollout; A/B with reviewer blind grading"
+    },
+    "MODEL-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "`models-check` warns inside the window; runbook below. Dates are entered manually.",
+     "configure": "`governance.deprecation_warning_days`",
+     "options": "Scrape provider deprecation pages; calendar alerts"
+    },
+    "MODEL-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Prompt in `prompts/triage_memo.v1.md`; version + SHA logged per call; promotion invalidated by prompt change.",
+     "configure": "`llm.prompt_file`",
+     "options": "Prompt registry (Langfuse, PromptLayer)"
+    },
+    "MODEL-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Retries with backoff, then `triage-fallback` alias; `used_fallback` logged. Budget errors are never retried.",
+     "configure": "`llm.fallback_alias`, `llm.retries`",
+     "options": "Cross-provider fallback (Anthropic ↔ Bedrock); circuit breaker"
+    },
+    "EVAL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "5 labelled vendors covering happy path, stale, PII/licensing, injection, look-ahead bias.",
+     "configure": "`evals/golden_set.yaml`",
+     "options": "Synthetic case generation; larger historical sample"
+    },
+    "EVAL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Accuracy, schema-valid rate, citation accuracy, escalation recall (safety), total cost.",
+     "configure": "`eval.*`",
+     "options": "LLM-as-judge rubric for memo quality (calibrated vs humans)"
+    },
+    "EVAL-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "GitHub Actions runs tests + full pipeline + eval gate on every push (mock, $0); optional scheduled live eval.",
+     "configure": "`.github/workflows/ci.yml`",
+     "options": "promptfoo / DeepEval suites"
+    },
+    "OBS-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`audit.ai_calls` (model, prompt SHA, input SHA, tokens, latency, cost, status) and `audit.triage_results`.",
+     "configure": "—",
+     "options": "OpenTelemetry GenAI spans → Langfuse/Datadog/CloudWatch"
+    },
+    "OBS-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Every evidence item is checked against the scorecard; mismatches are recorded and a PURSUE with bad citations is escalated.",
+     "configure": "`guardrails.check_citations`",
+     "options": "Span-level source attribution"
+    },
+    "OBS-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Local DuckDB (no expiry); AWS path sets S3 lifecycle + CloudWatch retention to ~7 years.",
+     "configure": "`governance.log_retention_days`, Terraform vars",
+     "options": "WORM storage (S3 Object Lock) for SEC 17a-4 style records"
+    },
+    "HITL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`risk_tier: medium` with rationale above.",
+     "configure": "`risk_tier`",
+     "options": "Tier-driven control checklist enforced in CI"
+    },
+    "HITL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Memos are advisory; `review` records a named reviewer's decision. Nothing downstream happens automatically.",
+     "configure": "—",
+     "options": "Approval queue UI (Streamlit / Retool / Airtable)"
+    },
+    "HITL-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Reviews stored in `audit.reviews`; eval reports `human_review_agreement`; overrides are candidates for new golden cases.",
+     "configure": "—",
+     "options": "Auto-open a PR adding the case to `golden_set.yaml`"
+    },
+    "HITL-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "See README → *Use-case card*.",
+     "configure": "`README.md`",
+     "options": "Model cards per model version"
+    }
+   },
+   "models": [
+    {
+     "name": "mock-local",
+     "provider": "mock",
+     "model_id": "mock-heuristic-v1",
+     "kind": "chat",
+     "approved": true,
+     "priced": true,
+     "deprecation_date": null,
+     "aliases": [
+      "triage-primary",
+      "triage-fallback",
+      "triage-candidate"
+     ]
+    },
+    {
+     "name": "claude-sonnet",
+     "provider": "anthropic",
+     "model_id": "claude-sonnet-5-5",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "claude-haiku",
+     "provider": "anthropic",
+     "model_id": "claude-haiku-4-5-20251001",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "openai-default",
+     "provider": "openai",
+     "model_id": "SET-CURRENT-OPENAI-MODEL-ID",
+     "kind": "chat",
+     "approved": false,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "bedrock-claude",
+     "provider": "bedrock",
+     "model_id": "SET-BEDROCK-MODEL-OR-INFERENCE-PROFILE-ID",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    }
+   ]
+  },
+  {
+   "slug": "eod-heartbeat",
+   "title": "EOD heartbeat: fund end-of-day pipeline monitor with an LLM break explainer",
+   "name": "EOD heartbeat",
+   "emoji": "🫀",
+   "status": "built",
+   "built": true,
+   "pattern": "rag",
+   "domain": "hedge fund operations (end-of-day NAV / positions / P&L)",
+   "risk_tier": "medium",
+   "risk_rationale": "explains, never fixes; wrong advice could delay NAV, so every explanation must cite a runbook, unsafe steps are blocked and humans act",
+   "users": "fund operations, data engineering on-call",
+   "deep_dive": [
+    "DATA-05",
+    "OBS-02",
+    "HITL-03",
+    "MODEL-05",
+    "OBS-03"
+   ],
+   "stack": {
+    "language": "python",
+    "data": "postgres + dbt-postgres (file SLAs, position recon, P&L explain, price/FX quality → one breaks model)",
+    "orchestration": "apache airflow DAG (every 5 min, 17:00-21:00 ET); the same task functions run from the CLI and the app",
+    "llm_access": "registry adapter (explainer + embedding models by alias)",
+    "retrieval": "pgvector over runbook sections + past incidents, filtered by break type",
+    "local_postgres": "embedded Postgres 16 + pgvector via pgserver (no Docker); docker compose for Postgres + Airflow",
+    "ui": "streamlit (pick a business date → Run EOD checks → breaks with cited explanation, alert and on-call feedback; try-to-break-it: edit a runbook page, inject a break)",
+    "aws_native": "MWAA (managed Airflow), RDS Postgres + pgvector, Bedrock, SNS"
+   },
+   "controls": {
+    "DATA-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "dbt `sources.yml` declares every feed with owner, source system and SLA; `dbt docs` renders raw → staging → marts → breaks.",
+     "configure": "`dbt/models/staging/sources.yml`, `config/feeds`",
+     "options": "OpenLineage from Airflow + dbt into Marquez / DataHub"
+    },
+    "DATA-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "28 dbt tests run every heartbeat; if any fails, the DAG task fails and nothing is explained (`blocked_dq`). Duplicate trade ids are *detected as breaks*, not test failures, so they get explained.",
+     "configure": "`dbt/models/**/schema.yml`",
+     "options": "Source freshness as a hard gate; Great Expectations / Soda"
+    },
+    "DATA-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Client names (from a client register), emails and phone numbers are redacted before runbooks and incidents are indexed; the model sees only break facts and retrieved sections, never positions or P&L tables. Governance telemetry carries counts, not content.",
+     "configure": "`kb.redact_pii`, `kb/client_register.yaml`",
+     "options": "Presidio / Comprehend PII; MNPI watch-list"
+    },
+    "DATA-04": {
+     "status": "not_applicable",
+     "mark": "⚪",
+     "how": "Internal operational data and internally written runbooks; no third-party licence restricts AI processing. Vendor price/FX data never reaches the model.",
+     "configure": "—",
+     "options": "Licence flag per feed if vendor data were ever sent (see research-qa-rag)"
+    },
+    "DATA-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Runbooks chunked by section (`RB-04#steps`), one chunk per incident; incremental re-index by file hash; `kb.index_runs` history; every explanation stores the `kb_version` and each chunk the hash of the file it came from, so a reviewer can see exactly which runbook text was cited.",
+     "configure": "`kb.*`",
+     "options": "Runbook approval workflow (PR review) before re-index; blue/green KB versions"
+    },
+    "SEC-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Keys only from the environment; the embedded Postgres has no network listener; RDS credentials via Secrets Manager in the AWS path.",
+     "configure": "`.env.example`",
+     "options": "Vault / 1Password; IAM database auth"
+    },
+    "SEC-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Runbook and incident paragraphs with instruction-like text are quarantined at index time (RB-10 ships with one); sources are escaped and tagged as reference material in the prompt.",
+     "configure": "`kb.quarantine_suspicious`, `kb.INJECTION_PATTERNS`",
+     "options": "LLM classifier on runbook changes; signed runbooks"
+    },
+    "SEC-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "The model has no tools and no database access; code retrieves. Nothing the model returns is executed. The DAG's DB role needs no write access to raw feeds.",
+     "configure": "—",
+     "options": "Separate read-only role for retrieval"
+    },
+    "SEC-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Pydantic schema; invalid output → `needs_human` with `invalid_output`; **unsafe-action policy** blocks forced/full reruns, skipping reconciliation, deletes and publishing NAV, even when the text came from a runbook.",
+     "configure": "`policy.unsafe_action_patterns`",
+     "options": "Allow-list of runbook step ids instead of patterns"
+    },
+    "SEC-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Registry `approved:` flag (OpenAI entry ships disabled); Bedrock keeps traffic in-region.",
+     "configure": "`config/models.yaml`",
+     "options": "Zero-retention agreements; VPC endpoints"
+    },
+    "SEC-06": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Version-bounded deps; `pip-audit` (report-only); Airflow pinned with its constraints file in CI.",
+     "configure": "`pyproject.toml`, CI",
+     "options": "Lockfile with hashes; SBOM"
+    },
+    "COST-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Per-run budget across all explanations, per-call token cap, unpriced models refused.",
+     "configure": "`cost.*`",
+     "options": "Gateway budgets per team"
+    },
+    "COST-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`audit.explanations` (tokens, $ per break, model, prod vs eval); `cost-report`; governance events per run.",
+     "configure": "—",
+     "options": "Langfuse dashboards"
+    },
+    "COST-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "A break already explained with the same model, prompt and knowledge-base version is not sent to the model again on the next 5-minute tick (`cached`); alerts are de-duplicated; the lite fallback is priced ~4× lower; the context is a handful of sections.",
+     "configure": "`retrieval.*`, aliases",
+     "options": "Cache explanations by break signature; prompt caching"
+    },
+    "COST-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`cost-report` vs monthly alert; the governance console charts spend per workflow against budget; AWS Budgets in the Terraform.",
+     "configure": "`cost.monthly_alert_usd`",
+     "options": "FinOps review"
+    },
+    "MODEL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`explain-primary/fallback/candidate`, `embed-primary`; code never names a model.",
+     "configure": "`config/models.yaml`",
+     "options": "—"
+    },
+    "MODEL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`eval --alias explain-candidate --baseline explain-primary`; `promote` refuses without a passing eval on the current prompt.",
+     "configure": "`eval.*`",
+     "options": "Shadow explanations alongside production for a week"
+    },
+    "MODEL-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "`models-check` with a warning window. Embedding changes force a full KB re-index (`kb-index --full`).",
+     "configure": "`governance.deprecation_warning_days`",
+     "options": "Provider deprecation feed"
+    },
+    "MODEL-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`prompts/explain.v1.md`; hash on every explanation and eval report.",
+     "configure": "`llm.prompt_file`",
+     "options": "Prompt registry"
+    },
+    "MODEL-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Retries → `explain-fallback` (a cheaper model; flagged `fallback_model`) → **degraded mode**: the break is still detected and alerted with its runbook steps, status `degraded`. The eval gate fails on `explained_rate` when all models are down, while detection still passes. Try it in the app's outage switch.",
+     "configure": "`llm.fallback_alias`, `llm.retries`",
+     "options": "Cross-provider fallback (Bedrock ↔ Anthropic API); circuit breaker"
+    },
+    "EVAL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "All 10 business days with the exact breaks SQL must find and, per break, acceptable runbooks and whether a human is required.",
+     "configure": "`evals/golden_set.yaml`",
+     "options": "Replay of real historical evenings"
+    },
+    "EVAL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Detection recall/precision (SQL), runbook accuracy, citation rate, explained rate, human routing, unsafe actions shown (0), cost.",
+     "configure": "`eval.*`",
+     "options": "LLM-judged usefulness calibrated against on-call ratings"
+    },
+    "EVAL-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Tests + end-to-end + eval gate on the embedded Postgres; a CI job installs Airflow 3.1 and imports the DAG.",
+     "configure": "`.github/workflows/ci.yml`",
+     "options": "Nightly live-model eval"
+    },
+    "OBS-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`audit.runs` (who/what triggered, as-of time, dbt result, counts, cost) and `audit.explanations`.",
+     "configure": "—",
+     "options": "OpenTelemetry spans from Airflow tasks"
+    },
+    "OBS-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Every explanation cites runbook chunk ids (and incident ids) that were in the context — checked in code; the app shows the cited text; `kb_version` + chunk `doc_sha` pin the exact text.",
+     "configure": "`policy.min_runbook_citations`",
+     "options": "Link alerts to the runbook page at that git commit"
+    },
+    "OBS-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`eodhb retention` archives audit rows past the retention period to JSON Lines with a SHA-256 manifest, then deletes (dry run by default). The AWS path writes the archive to S3 with Object Lock.",
+     "configure": "`governance.log_retention_days`, `governance.archive_dir`",
+     "options": "Partitioned audit tables with automatic expiry"
+    },
+    "HITL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`risk_tier: medium` with rationale above.",
+     "configure": "`risk_tier`",
+     "options": "—"
+    },
+    "HITL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Nothing is executed. Critical breaks and any policy flag set `needs_human`; alerts say who must act (on-call vs ops lead). Publishing NAV is always the ops lead's decision (RB-12).",
+     "configure": "`policy.human_required_severities`",
+     "options": "Acknowledge/assign workflow in PagerDuty / Opsgenie"
+    },
+    "HITL-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "👍/👎 per explanation in `audit.feedback`; \"wrong\" explanations are reviewed and become golden-set cases or runbook fixes.",
+     "configure": "—",
+     "options": "Weekly review of wrong explanations with the runbook owner"
+    },
+    "HITL-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "See README → *Use-case card*.",
+     "configure": "`README.md`",
+     "options": "—"
+    }
+   },
+   "models": [
+    {
+     "name": "mock-explainer",
+     "provider": "mock",
+     "model_id": "mock-explainer-v1",
+     "kind": "chat",
+     "approved": true,
+     "priced": true,
+     "deprecation_date": null,
+     "aliases": [
+      "explain-primary",
+      "explain-candidate"
+     ]
+    },
+    {
+     "name": "mock-explainer-lite",
+     "provider": "mock",
+     "model_id": "mock-explainer-lite-v1",
+     "kind": "chat",
+     "approved": true,
+     "priced": true,
+     "deprecation_date": null,
+     "aliases": [
+      "explain-fallback"
+     ]
+    },
+    {
+     "name": "claude-sonnet",
+     "provider": "anthropic",
+     "model_id": "claude-sonnet-5-5",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "claude-haiku",
+     "provider": "anthropic",
+     "model_id": "claude-haiku-4-5-20251001",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "openai-default",
+     "provider": "openai",
+     "model_id": "SET-CURRENT-OPENAI-MODEL-ID",
+     "kind": "chat",
+     "approved": false,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "bedrock-claude",
+     "provider": "bedrock",
+     "model_id": "SET-BEDROCK-MODEL-OR-INFERENCE-PROFILE-ID",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "mock-hash-384",
+     "provider": "mock",
+     "model_id": "mock-hash-384-v1",
+     "kind": "embedding",
+     "approved": true,
+     "priced": true,
+     "deprecation_date": null,
+     "aliases": [
+      "embed-primary"
+     ]
+    },
+    {
+     "name": "bedrock-titan-embed-v2",
+     "provider": "bedrock",
+     "model_id": "amazon.titan-embed-text-v2:0",
+     "kind": "embedding",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    }
+   ]
+  },
+  {
+   "slug": "trade-ops-exceptions",
+   "title": "Trade-ops exception agent: a tool-calling agent that investigates settlement breaks and waits for a human",
+   "name": "Trade-ops exception agent",
+   "emoji": "🧾",
+   "status": "built",
+   "built": true,
+   "pattern": "agent",
+   "domain": "hedge fund middle/back office (trade settlement)",
+   "risk_tier": "high",
+   "risk_rationale": "proposes changes to settlement data and external communication; every write/send is human-approved and enforced twice (graph + tool server)",
+   "users": "middle-office / settlements analysts; ops manager; compliance (external comms)",
+   "deep_dive": [
+    "SEC-03",
+    "HITL-02",
+    "SEC-02",
+    "COST-01",
+    "EVAL-02"
+   ],
+   "stack": {
+    "language": "python (agent, evals, UI) + typescript (MCP tool server)",
+    "data": "SQLite by default (zero install); Postgres via docker compose as an option, same SQL",
+    "orchestration": "LangGraph state machine; interrupt() before any write",
+    "llm_access": "registry aliases -> LangChain chat models (ChatAnthropic / ChatOpenAI / ChatBedrockConverse); deterministic scripted mock for offline runs and CI",
+    "retrieval": "none (similar past exceptions via SQL lookup tool)",
+    "tools": "MCP server in TypeScript (@modelcontextprotocol/sdk, stdio) loaded with langchain-mcp-adapters",
+    "ui": "streamlit (open exceptions → Investigate → approval queue with evidence, editable fix/email, approve/reject; try-to-break-it: edit broker confirm text)",
+    "aws_native": "Bedrock (Converse + tool use), ECS Fargate, RDS Postgres, Step Functions waitForTaskToken for the approval wait, SES in sandbox for drafts; AgentCore noted as an option"
+   },
+   "controls": {
+    "DATA-01": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Seven source tables documented in `schema/schema.sql` (OMS trades, allocations, broker confirms, custodian, SSIs, exceptions, history); every tool result hash is logged per step.",
+     "configure": "`schema/schema.sql`",
+     "options": "Data catalog (DataHub/Unity), OpenLineage events from the MCP server"
+    },
+    "DATA-02": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Malformed or missing source data surfaces as a tool error and forces escalation instead of a guess (case EX-0039). No upstream test suite — sources are operational systems.",
+     "configure": "`policy.escalate_on_tool_error`",
+     "options": "dbt/Great Expectations tests on the nightly feeds; freshness checks on custodian files"
+    },
+    "DATA-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "The model sees only what a tool returns for one trade; no bulk tables. SSI account refs are internal references, not bank account numbers.",
+     "configure": "`agent.read_tools`",
+     "options": "Field-level masking in the MCP server (e.g. show last 4 of account refs)"
+    },
+    "DATA-04": {
+     "status": "not_applicable",
+     "mark": "⚪",
+     "how": "Internal operational data processed for its own purpose; no third-party licences involved. Provider terms are covered by SEC-05.",
+     "configure": "—",
+     "options": "—"
+    },
+    "DATA-05": {
+     "status": "not_applicable",
+     "mark": "⚪",
+     "how": "No retrieval corpus; similar cases come from a SQL lookup tool.",
+     "configure": "—",
+     "options": "—"
+    },
+    "SEC-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Model keys and `APPROVAL_SIGNING_KEY` from environment; `.env` git-ignored; the signing key is passed only to the write-scoped server process; Bedrock uses IAM.",
+     "configure": "`.env.example`",
+     "options": "Secrets Manager / Vault; KMS-backed signing (asymmetric, so the server only holds the public key)"
+    },
+    "SEC-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Every tool result is screened for instruction-like text and bank-detail-change requests; broker `free_text` is labelled untrusted by the server; any hit escalates. The model has no write capability to abuse. Cases EX-0037 and EX-0038.",
+     "configure": "`policy.escalate_on_injection`, `policy.escalate_on_ssi_change_request`, `policy.INJECTION` patterns",
+     "options": "Classifier model (Llama Guard / Bedrock Guardrails) on tool results; spotlighting / data-marking of untrusted fields"
+    },
+    "SEC-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Model gets 7 read tools on a **read-only DB handle**; the write tool is registered only in a separate server process started after approval; tools outside the allow-list are refused and flagged.",
+     "configure": "`agent.read_tools`, `MCP_TOOL_SCOPE`",
+     "options": "Per-tool OAuth scopes via MCP authorization; row-level security in Postgres"
+    },
+    "SEC-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`submit_proposal` is a Pydantic schema (enums for category and fix); invalid output → escalation, never parsed free text. Proposal is data; only the execute node acts.",
+     "configure": "`policy.py: Proposal`",
+     "options": "Provider strict tool schemas"
+    },
+    "SEC-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Registry `approved:` flag blocks unreviewed models (OpenAI ships disabled); Bedrock keeps traffic in-region under IAM.",
+     "configure": "`config/models.yaml`",
+     "options": "Zero-data-retention agreements; VPC endpoints"
+    },
+    "SEC-06": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Version-bounded Python deps, `package-lock.json` for Node, `npm audit` + `pip-audit` in CI (report-only), ECR scan in AWS path.",
+     "configure": "CI",
+     "options": "Hash-pinned `uv.lock`; SBOM; Dependabot; signed MCP server images"
+    },
+    "COST-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Per-exception ($0.25) and per-run ($5) caps checked before each LLM call; tool-call cap (8) and LLM-turn cap (10); unpriced models refused. Exceeding any cap escalates.",
+     "configure": "`cost.*`, `agent.max_tool_calls`, `agent.max_llm_turns`",
+     "options": "Gateway budgets (LiteLLM proxy) per team"
+    },
+    "COST-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Tokens and $ per LLM step (`agent_steps`) and per exception (`agent_runs`); `cost-report` by month/model/prod-vs-eval.",
+     "configure": "—",
+     "options": "Langfuse/Datadog LLM observability"
+    },
+    "COST-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Cheap model tier is one alias change; prompt is short; playbook limits lookups.",
+     "configure": "`aliases`",
+     "options": "Prompt caching of system prompt + tool schemas; parallel tool calls; small model for triage, large for hard cases"
+    },
+    "COST-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Monthly total vs threshold in `cost-report`; AWS Budgets alert in the AWS path.",
+     "configure": "`cost.monthly_alert_usd`",
+     "options": "Slack alert webhook"
+    },
+    "MODEL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Code references `investigator-*` aliases; registry holds provider, ID, pricing, approval, deprecation date.",
+     "configure": "`config/models.yaml`",
+     "options": "LiteLLM router"
+    },
+    "MODEL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`eval --alias investigator-candidate --baseline investigator-primary` gates outcome **and** trajectory metrics; `promote` refuses without a passing eval on the current prompt hash.",
+     "configure": "`eval.*`",
+     "options": "Shadow mode on live queue before promotion"
+    },
+    "MODEL-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "`models-check` warns within the window; dates entered manually.",
+     "configure": "`governance.deprecation_warning_days`",
+     "options": "Automated provider-deprecation feed"
+    },
+    "MODEL-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`prompts/investigator.v1.md`; prompt SHA on every run; promotion invalidated by prompt edits.",
+     "configure": "`llm.prompt_file`",
+     "options": "Prompt registry"
+    },
+    "MODEL-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Provider errors fall back to `investigator-fallback`; LangGraph checkpoints let a paused or crashed thread resume.",
+     "configure": "`llm.fallback_alias`, `checkpoint_db`",
+     "options": "Cross-provider fallback; durable execution (Temporal)"
+    },
+    "EVAL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "16 cases: 2 per break type (both \"who's wrong\" variants) + injection, SSI-change fraud, malformed data, ambiguous/loop.",
+     "configure": "`evals/golden_set.yaml`",
+     "options": "Sample of real historical breaks with outcomes"
+    },
+    "EVAL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Category and fix accuracy, **escalation recall**, **trajectory compliance** (required tools, step cap), **unapproved writes = 0**, cost.",
+     "configure": "`eval.*`",
+     "options": "LLM-as-judge on root-cause quality; analyst edit-distance on emails"
+    },
+    "EVAL-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "CI builds the server, runs Node + Python tests, the offline agent over all 40 exceptions and the eval gate.",
+     "configure": "`.github/workflows/ci.yml`",
+     "options": "Scheduled live-model eval"
+    },
+    "OBS-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`agent_steps`: every LLM turn and tool call with args, result hash/preview, tokens, cost, flags; `agent_runs` per exception.",
+     "configure": "—",
+     "options": "OpenTelemetry GenAI spans"
+    },
+    "OBS-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Each evidence item `{tool, field, value}` is verified against the actual tool results; mismatches escalate. `tradeops replay` prints the full trajectory.",
+     "configure": "`policy.require_evidence_match`",
+     "options": "Link evidence to source-system record URLs in the UI"
+    },
+    "OBS-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Local SQLite; AWS path sets CloudWatch/S3 retention ≈ 7 years.",
+     "configure": "`governance.log_retention_days`",
+     "options": "S3 Object Lock (WORM) for books-and-records"
+    },
+    "HITL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`risk_tier: high` with rationale; drives two-layer write control and outbox-only email.",
+     "configure": "`risk_tier`",
+     "options": "—"
+    },
+    "HITL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "LangGraph `interrupt()` pauses every clean proposal; approve/edit/reject via Streamlit or CLI with a named approver; HMAC token binds the approval to the exact content written; optional approver allow-list.",
+     "configure": "`approval.*`",
+     "options": "Four-eyes (two approvers) for SSI or large-value cases; SSO identity instead of typed name"
+    },
+    "HITL-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "`approvals` records AI fix vs final fix and whether edited; overrides are candidates for new golden cases (manual step).",
+     "configure": "—",
+     "options": "Auto-open a PR adding overridden cases to the golden set"
+    },
+    "HITL-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "See README → *Use-case card*.",
+     "configure": "`README.md`",
+     "options": "—"
+    }
+   },
+   "models": [
+    {
+     "name": "mock-agent",
+     "provider": "mock",
+     "model_id": "mock-investigator-v1",
+     "kind": "chat",
+     "approved": true,
+     "priced": true,
+     "deprecation_date": null,
+     "aliases": [
+      "investigator-primary",
+      "investigator-fallback",
+      "investigator-candidate"
+     ]
+    },
+    {
+     "name": "claude-sonnet",
+     "provider": "anthropic",
+     "model_id": "claude-sonnet-5-5",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "claude-haiku",
+     "provider": "anthropic",
+     "model_id": "claude-haiku-4-5-20251001",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "openai-default",
+     "provider": "openai",
+     "model_id": "SET-CURRENT-OPENAI-MODEL-ID",
+     "kind": "chat",
+     "approved": false,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "bedrock-claude",
+     "provider": "bedrock",
+     "model_id": "SET-BEDROCK-MODEL-OR-INFERENCE-PROFILE-ID",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    }
+   ]
+  },
+  {
+   "slug": "research-qa-rag",
+   "title": "Research Q&A: cited answers over filings and broker research (RAG)",
+   "name": "Research Q&A (RAG)",
+   "emoji": "🔎",
+   "status": "built",
+   "built": true,
+   "pattern": "rag",
+   "domain": "investment research",
+   "risk_tier": "medium",
+   "risk_rationale": "informs research, not trading; licensed broker content and AI-processing restrictions need access controls; analysts verify cited pages",
+   "users": "fundamental analysts, PMs, research compliance",
+   "deep_dive": [
+    "DATA-05",
+    "DATA-04",
+    "SEC-02",
+    "OBS-02",
+    "EVAL-02"
+   ],
+   "stack": {
+    "language": "python",
+    "data": "document parsing with PyMuPDF (PDF) and the stdlib HTML parser (transcripts); page-aware chunking",
+    "orchestration": "FastAPI service (+ CLI)",
+    "llm_access": "registry adapter (answer model + embedding model, both by alias)",
+    "retrieval": "hybrid search in one SQLite file: FTS5 BM25 + sqlite-vec cosine, fused with reciprocal rank fusion; entitlement filter applied in SQL before ranking",
+    "ui": "streamlit (question + analyst picker → Ask → cited answer or refusal + retrieval trace; try-to-break-it: add a broker note with hidden instructions; corpus browser; evals)",
+    "aws_native": "Bedrock Knowledge Bases (hybrid search, metadata filters) + OpenSearch Serverless, S3, Lambda/API Gateway or ECS, IAM Identity Center groups for entitlements"
+   },
+   "controls": {
+    "DATA-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`data/corpus/manifest.yaml` lists every document with source, company, date, entitlement and licence; `documents` stores the file hash; every chunk carries document, page and section.",
+     "configure": "`corpus_dir`, manifest",
+     "options": "Document management system as source of truth; OpenLineage events per ingest"
+    },
+    "DATA-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Ingest refuses documents it can't parse, drops empty and tiny chunks, and `ask` refuses to run without an index or on an index built with a different embedding model.",
+     "configure": "`ingest.min_chunk_words`",
+     "options": "Parse-quality checks (OCR confidence, table extraction) with a human review queue"
+    },
+    "DATA-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Emails and phone numbers are redacted before indexing (8 in the sample broker notes). The model sees only the top-k excerpts. Governance telemetry carries a hash of the question, never its text.",
+     "configure": "`ingest.redact_pii`, `retrieval.top_k`",
+     "options": "Presidio / Comprehend PII; MNPI watch-list screening at ingest"
+    },
+    "DATA-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Each document has a licence and an `ai_processing` flag. Barred documents are keyword-indexed (the analyst may read them) but never embedded and never sent to a model; refusals explain this. The Kestrel note is the test case.",
+     "configure": "manifest `ai_processing`",
+     "options": "Licence terms pulled from the research-entitlement system (e.g. a vendor-management database)"
+    },
+    "DATA-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Chunking config (90 words, 20 overlap, page-bounded), boilerplate dedup within an entitlement, quarantine, incremental re-index by file hash, `index_runs` history, and the index version on every answer.",
+     "configure": "`ingest.*`",
+     "options": "Blue/green index with rollback; scheduled freshness checks per source"
+    },
+    "SEC-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Keys only from the environment; `.env` git-ignored; Bedrock via IAM role. The hosted demo has no keys at all.",
+     "configure": "`.env.example`",
+     "options": "AWS Secrets Manager; OIDC in CI"
+    },
+    "SEC-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Two screens: paragraphs with instruction-like text are quarantined at ingest, and retrieved chunks are screened again before the prompt. Excerpts are escaped and wrapped in `<excerpt>` tags; the prompt says they are data. The Aldgate note's hidden white text is the live case.",
+     "configure": "`ingest.quarantine_suspicious`, `guardrails.INJECTION_PATTERNS`",
+     "options": "LLM-based classifier (Llama Guard, Bedrock Guardrails prompt-attack filter); rendering PDFs and comparing visible vs extracted text"
+    },
+    "SEC-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "The model has no tools; retrieval is code. The API takes identity from a header limited to known personas; entitlements are looked up server-side, never taken from the request.",
+     "configure": "`config/users.yaml`",
+     "options": "SSO (IAM Identity Center / Entra ID) groups → entitlements; row-level security in the store"
+    },
+    "SEC-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Pydantic schema; off-contract output becomes a refusal (`invalid_output`); answers are rendered as text.",
+     "configure": "`guardrails.Answer`",
+     "options": "Provider structured outputs; repair prompt"
+    },
+    "SEC-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Registry `approved:` flag for answer and embedding models (OpenAI entries ship disabled). Bedrock keeps traffic in-region.",
+     "configure": "`config/models.yaml`",
+     "options": "Zero-retention agreements; VPC endpoints"
+    },
+    "SEC-06": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Version-bounded deps; `pip-audit` in CI (report-only); embedding model IDs recorded per index.",
+     "configure": "`pyproject.toml`, CI",
+     "options": "Hash-pinned lockfile; SBOM; Dependabot"
+    },
+    "COST-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Pre-flight per question: token cap, worst-case cost vs `max_usd_per_question`, refusal of unpriced models (test: an unpriced Claude alias is blocked).",
+     "configure": "`cost.*`",
+     "options": "Gateway budgets per team (LiteLLM proxy)"
+    },
+    "COST-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`answers` stores tokens and $ per question, user, model, prod vs eval; `cost-report`; governance events per question.",
+     "configure": "—",
+     "options": "Langfuse / Helicone dashboards"
+    },
+    "COST-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "top-k trims context; refusals before any model call when nothing is retrieved; model tiering by alias. Embeddings are computed once per document version (incremental re-index).",
+     "configure": "`retrieval.top_k`, aliases",
+     "options": "Prompt caching of the system prompt; semantic answer cache; batch re-embedding"
+    },
+    "COST-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`cost-report` flags months over the alert; the governance console charts daily and cumulative spend against the monthly budget.",
+     "configure": "`cost.monthly_alert_usd`",
+     "options": "AWS Budgets alerts; FinOps review"
+    },
+    "MODEL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`answer-primary/fallback/candidate` and `embed-primary` aliases; code never names a model.",
+     "configure": "`config/models.yaml`",
+     "options": "MLflow registry; LiteLLM router"
+    },
+    "MODEL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`eval --alias answer-candidate --baseline answer-primary` fails on thresholds or regression; `promote` refuses without a passing eval on the current prompt hash **and index version**.",
+     "configure": "`eval.*`",
+     "options": "Shadow traffic; analyst blind comparison"
+    },
+    "MODEL-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "`models-check` warns inside the window. Embedding deprecations force a full re-index — runbook below.",
+     "configure": "`governance.deprecation_warning_days`",
+     "options": "Provider deprecation feed alerts"
+    },
+    "MODEL-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`prompts/answer.v1.md`; prompt hash on every answer and eval report.",
+     "configure": "`llm.prompt_file`",
+     "options": "Prompt registry"
+    },
+    "MODEL-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Retries then `answer-fallback`; `used_fallback` logged. An index/embedding mismatch fails closed with a clear message.",
+     "configure": "`llm.fallback_alias`, `llm.retries`",
+     "options": "Cross-provider fallback; keyword-only degraded mode"
+    },
+    "EVAL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "21 questions: filings, transcripts, entitled broker notes, a not-entitled case, a licence-barred case, hidden instructions, two no-answer cases.",
+     "configure": "`evals/golden_set.yaml`",
+     "options": "Synthetic question generation per new document"
+    },
+    "EVAL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Answer and refusal accuracy, citation accuracy, faithfulness, context recall, entitlement leaks (must be 0), injection resisted, p95 latency, cost; plus recall@k / MRR per retrieval mode.",
+     "configure": "`eval.*`",
+     "options": "LLM-judged faithfulness and answer relevance (RAGAS) on a sample"
+    },
+    "EVAL-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Tests + ingest + eval gate on every push (mock, $0).",
+     "configure": "`.github/workflows/ci.yml`",
+     "options": "Scheduled live eval with a real model"
+    },
+    "OBS-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`answers` (who, question, outcome, model, prompt hash, index version, filters, tokens, latency, cost, flags) and `index_runs`.",
+     "configure": "—",
+     "options": "OpenTelemetry GenAI spans → Langfuse / Datadog"
+    },
+    "OBS-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Every answer cites document + page; each quote must match the retrieved text word for word and the answer must be ≥ 90% supported, or it is refused. The retrieval trace shows why each chunk was chosen.",
+     "configure": "`answer.min_supported_ratio`",
+     "options": "Highlighting the quote on the rendered PDF page"
+    },
+    "OBS-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Local SQLite (no expiry); AWS path sets S3 versioning + log retention.",
+     "configure": "`governance.log_retention_days`",
+     "options": "S3 Object Lock (WORM) for research records"
+    },
+    "HITL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`risk_tier: medium` with rationale above.",
+     "configure": "`risk_tier`",
+     "options": "—"
+    },
+    "HITL-02": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Advisory only: no action is taken on an answer; analysts verify the cited page. Adding a document is logged with who added it.",
+     "configure": "—",
+     "options": "Librarian approval before new sources go live"
+    },
+    "HITL-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "👍/👎 per answer stored in `feedback`; \"wrong\" answers are golden-set candidates.",
+     "configure": "—",
+     "options": "Auto-open a PR adding the case to `golden_set.yaml`"
+    },
+    "HITL-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "See README → *Use-case card*.",
+     "configure": "`README.md`",
+     "options": "—"
+    }
+   },
+   "models": [
+    {
+     "name": "mock-extractive",
+     "provider": "mock",
+     "model_id": "mock-extractive-v1",
+     "kind": "chat",
+     "approved": true,
+     "priced": true,
+     "deprecation_date": null,
+     "aliases": [
+      "answer-primary",
+      "answer-fallback",
+      "answer-candidate"
+     ]
+    },
+    {
+     "name": "claude-sonnet",
+     "provider": "anthropic",
+     "model_id": "claude-sonnet-5-5",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "claude-haiku",
+     "provider": "anthropic",
+     "model_id": "claude-haiku-4-5-20251001",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "openai-default",
+     "provider": "openai",
+     "model_id": "SET-CURRENT-OPENAI-MODEL-ID",
+     "kind": "chat",
+     "approved": false,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "bedrock-claude",
+     "provider": "bedrock",
+     "model_id": "SET-BEDROCK-MODEL-OR-INFERENCE-PROFILE-ID",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "mock-hash-384",
+     "provider": "mock",
+     "model_id": "mock-hash-384-v1",
+     "kind": "embedding",
+     "approved": true,
+     "priced": true,
+     "deprecation_date": null,
+     "aliases": [
+      "embed-primary"
+     ]
+    },
+    {
+     "name": "openai-embed-small",
+     "provider": "openai",
+     "model_id": "text-embedding-3-small",
+     "kind": "embedding",
+     "approved": false,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "bedrock-titan-embed-v2",
+     "provider": "bedrock",
+     "model_id": "amazon.titan-embed-text-v2:0",
+     "kind": "embedding",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    }
+   ]
+  }
+ ],
+ "author": "Ruairi Powers"
+}

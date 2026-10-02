@@ -6,14 +6,15 @@ import json
 import os
 import subprocess
 import sys
+import time
 from datetime import date, timedelta
 from pathlib import Path
 
-from . import evals
+from . import evals, telemetry
 from .llm import Budget, BudgetExceeded, LLMClient, Registry, RegistryError
 from .store import ROOT, Settings, connect, ingest
 from .workflow import (DataQualityGateError, assert_dbt_tests_passed, build_prompt, get_vendor_facts, list_vendors,
-                       new_run_id, render_memo_md, triage_vendor)
+                       new_run_id, render_memo_md, report_run, triage_vendor)
 
 
 def cmd_data(args, s):
@@ -42,6 +43,11 @@ def _client(s: Settings) -> LLMClient:
 
 
 def cmd_triage(args, s):
+    try:
+        telemetry.require_enabled("triage")
+    except telemetry.WorkflowDisabled as e:
+        sys.exit(str(e))
+    t0 = time.perf_counter()
     if s["data"]["require_dbt_tests_pass"]:
         assert_dbt_tests_passed()
     con = connect(s)
@@ -60,6 +66,8 @@ def cmd_triage(args, s):
             print(f"{v}: {r.final_recommendation:9s} (draft {r.llm_recommendation}) {'; '.join(r.policy_overrides)}")
     except (BudgetExceeded, RegistryError) as e:
         sys.exit(f"Stopped: {e}")
+    report_run(con, run_id, "triage", int((time.perf_counter() - t0) * 1000))
+    telemetry.flush()
     (ROOT / "output" / "triage_summary.md").write_text(
         f"# Vendor triage — run {run_id}\n\nSpend this run: ${client.budget.spent:.4f}\n\n" + "\n".join(summary) + "\n")
     print(f"run {run_id}: memos in output/memos/, spend ${client.budget.spent:.4f}")
@@ -74,6 +82,9 @@ def cmd_review(args, s):
         sys.exit(f"No triage result for {args.vendor}; run triage first.")
     con.execute("insert into audit.reviews values (now(),?,?,?,?,?,?,?)",
                 [row[0], args.vendor, args.reviewer, row[1], args.decision, row[1] == args.decision, args.note])
+    telemetry.emit("review", actor=args.reviewer, actor_type="named", records_in=1, run_id=row[0],
+                    flags=[] if row[1] == args.decision else ["human_override"])
+    telemetry.flush()
     print(f"Recorded {args.reviewer}: {args.vendor} -> {args.decision} (AI said {row[1]})")
 
 
@@ -81,6 +92,9 @@ def cmd_eval(args, s):
     assert_dbt_tests_passed()
     con = connect(s)
     rep = evals.run_eval(con, s, args.alias)
+    report_run(con, rep["run_id"], "eval", 0, status="ok" if rep["passed"] else "failed",
+               extra_flags=() if rep["passed"] else ("eval_failed",), detail={"metrics": rep["metrics"]})
+    telemetry.flush()
     print(json.dumps(rep["metrics"], indent=2))
     ok = rep["passed"]
     if args.baseline:

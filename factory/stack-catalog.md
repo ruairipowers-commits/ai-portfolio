@@ -21,6 +21,7 @@ and for no two projects to have identical stacks.
 | Observability | audit tables (SQL) | Langfuse, OpenTelemetry GenAI, Datadog LLM | SQL tables keep it runnable offline |
 | API | FastAPI | Flask, Lambda handlers | |
 | UI | Streamlit (required: Input → Run → Output) | Next.js, Retool, Slack app | Every project ships one; see style guide |
+| Governance telemetry | `telemetry.py` client → governance console | OpenTelemetry GenAI spans, LLM gateway logs | Same file in every workflow (`scripts/sync_telemetry_client.py`); one event per visit/action; obey the kill switch |
 | IaC | Terraform | CDK, Bicep, Pulumi | AWS starter in every project |
 | CI | GitHub Actions | GitLab CI | tests + offline e2e + eval gate |
 | Containers | Docker / compose | Podman | |
@@ -44,6 +45,7 @@ and for no two projects to have identical stacks.
 | Project | Pattern | Data | Orchestration | Retrieval | Tools/UI | AWS focus |
 |---|---|---|---|---|---|---|
 | altdata-triage | workflow | dbt + DuckDB | CLI | — | Streamlit app + memos | Athena, Bedrock, ECS |
-| eod-heartbeat | RAG + monitor | dbt + Postgres | Airflow | pgvector | alerts | MWAA, RDS |
+| eod-heartbeat | RAG + monitor | dbt-postgres (embedded pgserver locally) | Airflow | pgvector, filtered by break type | Streamlit + alert outbox | MWAA, RDS, SNS, S3 Object Lock |
 | trade-ops-exceptions | agent | SQLite / Postgres | LangGraph (interrupt) | — | MCP server (TS) + Streamlit | RDS, Secrets Manager, split IAM roles |
-| research-qa-rag | RAG | doc parsing | FastAPI | hybrid pgvector | Streamlit chat | Bedrock KB, OpenSearch |
+| research-qa-rag | RAG | PDF/HTML parsing (PyMuPDF) | FastAPI | hybrid: SQLite FTS5 + sqlite-vec, RRF | Streamlit + API | Bedrock KB, OpenSearch Serverless |
+| governance-console | platform (no model) | event store (SQLite / Postgres) | FastAPI | — | server-rendered HTML + Chart.js | App Runner, Aurora, AppConfig, Firehose → S3 |

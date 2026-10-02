@@ -9,7 +9,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from altdata_triage import demo
+from altdata_triage import demo, telemetry
 from altdata_triage import pipeline as pl
 from altdata_triage.store import ROOT, Settings
 
@@ -32,6 +32,7 @@ st.caption("dbt scores each vendor sample; an LLM drafts a memo; deterministic p
 if demo.links_markdown(ROOT):
     st.markdown(demo.links_markdown(ROOT))
 demo.sidebar(st, ROOT)
+gov = telemetry.start_streamlit_session(st, ROOT)   # visit event + kill-switch banner
 
 with st.expander("How this works / what to try", expanded=False):
     st.markdown("""
@@ -216,7 +217,7 @@ alias_label = st.selectbox("Model", list(model_options),
 
 # ------------------------------------------------------------------ run
 st.header("2 · Run")
-if st.button("▶ Run triage", type="primary", width="stretch"):
+if st.button("▶ Run triage", type="primary", width="stretch", disabled=not gov.enabled):
     with st.status("Running pipeline…", expanded=True) as status:
         st.write("Ingesting vendor files…")
         steps, run = pl.run_all(s, model_options[alias_label])

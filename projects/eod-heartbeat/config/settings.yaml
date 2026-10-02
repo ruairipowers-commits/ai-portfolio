@@ -1,6 +1,6 @@
 # Runtime + governance settings. Every key here is referenced in docs/governance.md.
 use_case: eod-heartbeat
-workflow:                    # shown in the governance hub (telemetry.register)
+workflow:                    # shown in the governance console (telemetry.register)
   title: EOD heartbeat
   owner: Head of fund operations (business) · Data engineering on-call (technical)
   description: Detects end-of-day pipeline breaks in SQL and explains them from runbooks and past incidents.

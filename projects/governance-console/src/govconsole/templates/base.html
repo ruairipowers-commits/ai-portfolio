@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}AI Governance Console{% endblock %}</title>
+<link rel="stylesheet" href="/static/app.css">
+<script>try { const t = localStorage.getItem("gov-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+</head>
+<body>
+{% set q = "days=" ~ f.days ~ ("&sim=0" if not f.sim else "") ~ ("&wf=" ~ f.wf if f.wf else "") %}
+<header class="top"><div class="top-inner">
+  <a class="brand" href="/?{{ q }}"><span class="brand-mark">◆</span> AI Governance Console</a>
+  <nav class="tabs">
+    <a href="/?{{ q }}" class="{{ 'on' if page == 'overview' }}">Overview</a>
+    <a href="/controls?{{ q }}" class="{{ 'on' if page == 'controls' }}">Controls</a>
+    <a href="/models?{{ q }}" class="{{ 'on' if page == 'models' }}">Models</a>
+    <a href="/events?{{ q }}" class="{{ 'on' if page == 'events' }}">Events &amp; people</a>
+    <a href="/audit?{{ q }}" class="{{ 'on' if page == 'audit' }}">Audit &amp; alerts</a>
+  </nav>
+  <div class="top-right">
+    {% if admin %}
+      <span class="chip good"><span class="dot"></span>Admin{% if not admin_configured %} (local){% endif %}</span>
+      {% if admin_configured %}<form method="post" action="/admin/logout" style="margin:0"><button class="btn small">Sign out</button></form>{% endif %}
+    {% else %}
+      <span class="chip neutral"><span class="dot"></span>Read-only</span>
+      {% if admin_configured %}<a class="btn small" href="/admin/login">Admin sign-in</a>{% endif %}
+    {% endif %}
+    {% if links.blog %}<a class="small" href="{{ links.blog }}">About</a>{% endif %}
+    <button class="btn small" id="theme-btn" type="button" aria-label="Toggle light or dark theme">◐</button>
+  </div>
+</div></header>
+<main>
+{% block filters %}
+<form class="filters" method="get" id="filters">
+  <span class="seg" role="group" aria-label="Date range">
+    {% for d in [7, 30, 90] %}<a href="?days={{ d }}{{ '&sim=0' if not f.sim }}{{ '&wf=' ~ f.wf if f.wf }}" class="{{ 'on' if f.days == d }}">Last {{ d }} days</a>{% endfor %}
+  </span>
+  {% if page == 'overview' or page == 'events' %}
+  <select name="wf" onchange="this.form.requestSubmit()" aria-label="Workflow">
+    <option value="">All workflows</option>
+    {% for w in catalog.workflows %}<option value="{{ w.slug }}" {{ 'selected' if f.wf == w.slug }}>{{ w.name }}</option>{% endfor %}
+  </select>
+  {% endif %}
+  <input type="hidden" name="days" value="{{ f.days }}">
+  <label class="toggle"><input type="checkbox" name="sim" value="1" {{ 'checked' if f.sim }} onchange="this.form.requestSubmit()">
+    Include simulated history</label>
+  <input type="hidden" name="sim" value="0">
+  {% block filters_extra %}{% endblock %}
+</form>
+{% endblock %}
+{% if not f.sim %}<div class="banner info"><span>ℹ️</span><div>Showing <b>live events only</b> — what visitors and local runs of the demo apps have actually done. Costs from the demo apps use the offline mock model's simulated pricing.</div></div>{% endif %}
+{% block content %}{% endblock %}
+</main>
+<footer>
+  {% if links %}<p>{% if links.blog %}📝 <a href="{{ links.blog }}">How this console works</a> · {% endif %}{% if links.source %}💻 <a href="{{ links.source }}">Source code</a> · {% endif %}{% if links.governance %}📏 <a href="{{ links.governance }}">The governance standard</a> · {% endif %}{% if links.portfolio %}🌐 <a href="{{ links.portfolio }}">Portfolio</a>{% endif %}</p>{% endif %}
+  Workflows come from the portfolio catalog ({{ catalog.workflows|length }} registered); events from every visit and action in the apps.
+  Simulated history is labelled and can be hidden. {{ 'Public demo: read-only.' if demo and not admin }}
+</footer>
+<script>
+document.getElementById("theme-btn").addEventListener("click", () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("gov-theme", root.dataset.theme); } catch (e) {}
+  window.dispatchEvent(new Event("themechange"));
+});
+// Unticked checkbox sends nothing, so a hidden sim=0 follows it; drop it when the box is ticked.
+document.getElementById("filters")?.addEventListener("submit", e => {
+  const box = e.target.querySelector("input[type=checkbox][name=sim]");
+  if (box && box.checked) e.target.querySelector("input[type=hidden][name=sim]").disabled = true;
+});
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

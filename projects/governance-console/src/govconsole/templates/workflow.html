@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% from "_macros.html" import swatch, state_chip, risk_chip, status_cell, event_line, attest_badge %}
+{% block title %}{{ row.name }} · AI Governance Console{% endblock %}
+{% block content %}
+<p class="small"><a href="/?days={{ f.days }}{{ '&sim=0' if not f.sim }}">← All workflows</a></p>
+<div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; justify-content:space-between">
+  <div>
+    <h1>{{ swatch(row.slug, catalog) }}{{ row.emoji }} {{ row.name }}</h1>
+    <p class="sub">{{ wf.title if wf else 'Not in the catalog — no spec, owner or control mapping on file.' }}</p>
+    {% set l = wf_links.get(row.slug, {}) %}{% if l and row.built %}<p class="small">{% if l.demo %}▶ <a href="{{ l.demo }}">Live demo</a> · {% endif %}{% if l.blog %}📝 <a href="{{ l.blog }}">Write-up</a> · {% endif %}{% if l.source %}💻 <a href="{{ l.source }}">Source</a>{% endif %}</p>{% endif %}
+    <p>{{ state_chip(row) }} {{ risk_chip(row.risk_tier) if row.registered }}
+      {% if wf %}<span class="chip neutral"><span class="dot"></span>{{ wf.pattern|capitalize }}</span>
+      <span class="chip neutral"><span class="dot"></span>{{ wf.status }}</span>{% endif %}</p>
+  </div>
+  <div class="card" style="min-width: 320px; max-width: 460px">
+    <h2>Kill switch</h2>
+    {% if row.enabled %}<p style="margin:0 0 8px"><b>Enabled.</b> {% if row.state_by %}<span class="muted small">Last change by {{ row.state_by }}, {{ row.state_at|ts }}: {{ row.state_reason }}</span>{% endif %}</p>
+    {% else %}<p style="margin:0 0 8px"><b>Disabled</b> by {{ row.state_by }}, {{ row.state_at|ts }} — {{ row.state_reason }}
+      {% if row.state_expires %}<br><span class="small">Lapses automatically at {{ row.state_expires|ts }} UTC.</span>{% endif %}</p>{% endif %}
+    <p class="small muted" style="margin:0 0 10px">The app checks this before every run and approval (within 15 s) and refuses while disabled.
+      Each refused attempt is logged as <i>blocked</i>.</p>
+    {% if rights and row.registered %}
+    <form method="post" action="/workflows/{{ row.slug }}/toggle" style="display:grid; gap:8px">
+      <input type="hidden" name="enabled" value="{{ '0' if row.enabled else '1' }}">
+      {% if rights == 'temporary' %}<input type="text" name="name" required placeholder="Your name" maxlength="60">{% endif %}
+      <input type="text" name="reason" required placeholder="Reason (recorded in the audit log)" maxlength="300">
+      <button class="btn {{ 'danger' if row.enabled else 'primary' }}">{{ ('Switch off for ' ~ settings.kill_switch.demo_expiry_minutes ~ ' minutes' if rights == 'temporary' else 'Disable workflow') if row.enabled else 'Re-enable workflow' }}</button>
+    </form>
+    {% if rights == 'temporary' %}<p class="small muted" style="margin:8px 0 0">Public demo: try it, then open the
+      {% if wf_links.get(row.slug, {}).demo %}<a href="{{ wf_links[row.slug].demo }}">app</a>{% else %}app{% endif %} and run it.
+      A switch-off lapses after {{ settings.kill_switch.demo_expiry_minutes }} minutes so the demo stays usable for everyone.</p>{% endif %}
+    {% elif row.registered %}<p class="small">Changing it needs an <a href="/admin/login">admin sign-in</a>.</p>{% endif %}
+  </div>
+</div>
+
+<section class="grid kpis" id="kpis" aria-live="polite" style="margin-top:14px">
+  {% for k in ['AI spend', 'AI runs', 'Active users', 'Human decisions', 'Tokens', 'Records processed', 'Escalated / refused', 'p95 latency'] %}
+  <div class="card kpi"><div class="label">{{ k }}</div><div class="value">—</div><div class="delta">&nbsp;</div></div>
+  {% endfor %}
+</section>
+<section class="grid charts-2">
+  <div class="card"><div class="card-head"><h2>Daily AI spend</h2><span class="muted small">USD · budget {{ row.budget|usd }}/month · {{ row.budget_pct }}% used (30d)</span></div>
+    <div class="chart-box short"><canvas id="c-cost" role="img" aria-label="Daily AI spend"></canvas></div></div>
+  <div class="card"><div class="card-head"><h2>Cumulative AI spend</h2></div>
+    <div class="chart-box short"><canvas id="c-cum" role="img" aria-label="Cumulative AI spend"></canvas></div></div>
+</section>
+<section class="grid charts-2b">
+  <div class="card"><div class="card-head"><h2>Runs per day by outcome</h2></div>
+    <div class="chart-box short"><canvas id="c-runs" role="img" aria-label="Runs per day by outcome"></canvas></div></div>
+  <div class="card"><div class="card-head"><h2>Data throughput</h2><span class="muted small">records in per day</span></div>
+    <div class="chart-box short"><canvas id="c-rec" role="img" aria-label="Records processed per day"></canvas></div></div>
+</section>
+
+<section class="grid charts-2b">
+  <div class="card"><h2>Ownership &amp; risk</h2>
+    <dl class="kv">
+      <dt>Business owner</dt><dd>{{ cfg.owner }}</dd><dt>Technical owner</dt><dd>{{ cfg.technical_owner }}</dd>
+      <dt>Monthly budget</dt><dd>{{ cfg.monthly_budget_usd|usd }}</dd>
+      {% if wf %}<dt>Users</dt><dd>{{ wf.users }}</dd><dt>Risk rationale</dt><dd>{{ wf.risk_rationale }}</dd>
+      <dt>Deep-dive controls</dt><dd>{{ wf.deep_dive|join(', ') }}</dd>
+      {% for k, v in wf.stack.items() %}<dt>{{ k|replace('_', ' ')|capitalize }}</dt><dd class="small">{{ v }}</dd>{% endfor %}{% endif %}
+    </dl></div>
+  <div class="card"><div class="card-head"><h2>Spend by model</h2></div><div class="table-wrap" id="models"></div>
+    <h2 style="margin-top:16px">Who ran it</h2>
+    <div class="table-wrap"><table><thead><tr><th>Person / service</th><th class="n">Runs</th><th class="n">Decisions</th><th class="n">Spend</th><th>Last seen</th></tr></thead><tbody>
+    {% for a in actors %}<tr><td>{{ a.actor }} <span class="muted small">{{ a.actor_type }}</span></td><td class="n">{{ a.runs|num }}</td>
+      <td class="n">{{ a.decisions|num }}</td><td class="n">{{ a.cost|usd }}</td><td class="small muted">{{ a.last_seen|ts }}</td></tr>
+    {% else %}<tr><td colspan="5" class="muted">No activity in range.</td></tr>{% endfor %}</tbody></table></div></div>
+</section>
+
+{% if wf %}
+<section class="card" style="margin:14px 0" id="controls">
+  <div class="card-head"><h2>Controls — mapping, live evidence and attestation</h2>
+    <span class="muted small">Mapping from the project's docs/governance.md · evidence from the last 30 days of events ·
+      attestations go stale after {{ settings.attestation.stale_after_days }} days</span></div>
+  <p class="small" style="margin-top:0">{{ row.attested }} confirmed · {{ row.attest_exceptions }} exception{{ 's' if row.attest_exceptions != 1 }} ·
+    {{ row.attest_stale }} stale · {{ row.controls_total - row.controls_na - row.attested - row.attest_stale }} not yet attested (excluding n/a)</p>
+  {% if can_attest %}
+  <form method="post" action="/workflows/{{ row.slug }}/attest" class="filters" style="margin-bottom:12px">
+    <select name="control_id" aria-label="Control">{% for c in catalog.controls %}{% if wf.controls.get(c.id) %}<option value="{{ c.id }}">{{ c.id }} {{ c.name }}</option>{% endif %}{% endfor %}</select>
+    <select name="verdict" aria-label="Verdict"><option value="confirmed">Confirm — evidence reviewed</option><option value="exception">Exception — gap accepted</option></select>
+    <input type="text" name="note" placeholder="Note (what you checked)" maxlength="300" style="min-width:240px">
+    {% if not admin %}<input type="text" name="name" required placeholder="Your name" maxlength="60">{% endif %}
+    <button class="btn primary">Record attestation</button>
+  </form>{% endif %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Control</th><th>Status</th><th>How this workflow meets it</th><th>Configure</th><th>Live evidence</th><th>Attestation</th></tr></thead><tbody>
+    {% for c in catalog.controls %}{% set m = wf.controls.get(c.id) %}
+      <tr><td class="small"><b>{{ c.id }}</b><br>{{ c.name }}</td><td class="small">{{ status_cell(m) }}</td>
+        <td class="small">{{ (m.how if m else 'Not mapped')|md }}</td><td class="small muted">{{ m.configure|md if m }}</td>
+        <td class="small">{{ evidence.get(c.id, '') }}</td>
+        <td>{{ attest_badge(attestations.get((row.slug, c.id)), stale_before) if m and m.status != 'not_applicable' else '' }}</td></tr>
+    {% endfor %}</tbody></table></div>
+</section>
+{% endif %}
+
+<section class="grid charts-2b">
+  <div class="card"><div class="card-head"><h2>Recent events</h2><a class="small" href="/events?wf={{ row.slug }}&days={{ f.days }}">All →</a></div>
+    <ul class="feed">{% for e in events %}{{ event_line(e, catalog) }}{% else %}<li class="muted">No events yet.</li>{% endfor %}</ul></div>
+  <div class="card"><h2>Kill-switch history</h2>
+    <ul class="feed">{% for c in changes %}<li><span class="t">{{ c.ts|ts }}</span><span><b>{{ 'Disabled' if c.action == 'disable' else 'Enabled' }}</b> by {{ c.actor }} — {{ c.reason }}{% if c.source == 'simulated' %} <span class="muted">(simulated)</span>{% endif %}</span></li>
+    {% else %}<li class="muted">Never changed.</li>{% endfor %}</ul></div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="/static/vendor/chart.umd.js"></script>
+<script src="/static/app.js"></script>
+<script>Gov.workflow({ slug: {{ row.slug|tojson }}, order: {{ order|tojson }}, names: {{ names|tojson }} });</script>
+{% endblock %}

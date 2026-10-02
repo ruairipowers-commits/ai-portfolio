@@ -9,7 +9,7 @@ COPY --chown=user . .
 USER user
 RUN pip install --no-cache-dir --user -e ".[ui]"
 # Pre-build the baseline every visitor's sandbox is copied from (synthetic data, dbt build, triage).
-RUN altdata-triage all
+RUN GOVERNANCE_TELEMETRY=off altdata-triage all
 ENV PORTFOLIO_DEMO=1
 EXPOSE 7860
 CMD ["streamlit", "run", "src/altdata_triage/ui.py", "--server.port=7860", "--server.address=0.0.0.0", \

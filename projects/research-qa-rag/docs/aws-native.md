@@ -33,7 +33,7 @@ flowchart LR
 | Licence-barred documents (DATA-04) | keyword-indexed, never embedded or sent to a model | **Not uploaded to the KB** (embedding them is AI processing); keep them in a separate keyword-only OpenSearch index if analysts need to find them | Filter by `ai_processing` before upload |
 | Answer model | `answer-primary: mock-extractive` | Bedrock Converse | Set `bedrock-claude.model_id` + pricing, eval, `promote` |
 | Index versioning (DATA-05) | `index_runs` + version on every answer | S3 versioning + KB ingestion-job IDs; record the job ID and data-source sync time on every answer | Log `ingestionJobId` with each answer |
-| Run log | `answers` table | CloudWatch Logs (structured JSON) + governance hub events | Point `GOVERNANCE_DATABASE_URL` at the hub's Postgres |
+| Run log | `answers` table | CloudWatch Logs (structured JSON) + governance console events | Set `GOVERNANCE_URL` to the governance console |
 
 ## Steps
 

@@ -19,7 +19,7 @@ from pathlib import Path
 
 PROJECT = "altdata-triage"
 MUTABLE = ("warehouse", "data", "dbt/target", "output")   # relative to the project root
-LINK_KEYS = ("blog_url", "source_url", "portfolio_url", "demo_url")
+LINK_KEYS = ("blog_url", "source_url", "portfolio_url", "demo_url", "console_url")
 
 _workspace: ContextVar[Path | None] = ContextVar(f"{PROJECT}-workspace", default=None)
 
@@ -95,7 +95,8 @@ def links_markdown(root: Path) -> str:
     l = links(root)
     parts = [f"📝 [Blog post]({l['blog_url']})" if "blog_url" in l else "",
              f"💻 [Source code]({l['source_url']})" if "source_url" in l else "",
-             f"🌐 [Portfolio]({l['portfolio_url']})" if "portfolio_url" in l else ""]
+             f"🌐 [Portfolio]({l['portfolio_url']})" if "portfolio_url" in l else "",
+             f"🛡️ [Governance console]({l['console_url']})" if "console_url" in l else ""]
     return " · ".join(p for p in parts if p)
 
 

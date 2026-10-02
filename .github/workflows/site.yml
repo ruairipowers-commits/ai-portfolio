@@ -15,6 +15,8 @@ jobs:
         with: {python-version: "3.11"}
       - run: pip install -r requirements-site.txt
       - run: python scripts/check_governance.py
+      - run: python scripts/sync_telemetry_client.py --check   # every workflow ships the same telemetry client
+      - run: python scripts/build_catalog.py --check           # the console's bundled catalog lists every project
       - run: mkdocs build --strict
         env:
           # Derived from whoever owns the repo, so no personal details live in git.

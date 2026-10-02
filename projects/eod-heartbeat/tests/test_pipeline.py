@@ -88,10 +88,9 @@ def test_dbt_failure_blocks_explanations(m, ready):
     assert r["status"] == "blocked_dq" and not r["explanations"]
 
 
-def test_kill_switch(m, ready):
-    m.telemetry._execute("insert into gov_workflow_state values (?,?,?,?,?)",
-                         ("eod-heartbeat", 0, "runbook review in progress", "head-of-ops", m.telemetry.now()))
-    m.telemetry._state_cache = (0.0, True, "")
+def test_kill_switch(m, ready, console):
+    console.update(enabled=False, reason="runbook review in progress", changed_by="head-of-ops")
+    m.telemetry._state_cache = (0.0, None)
     with pytest.raises(m.telemetry.WorkflowDisabled):
         m.explain.run_eod(ready, "2026-09-17")
 
@@ -106,8 +105,13 @@ def test_feedback_retention_and_telemetry(m, ready):
     assert done["tables"]["audit.feedback"]["sha256"]
     with m.store.connect(ready) as con:
         assert con.execute("select count(*) as n from audit.feedback").fetchone()["n"] == 0
-    ev = m.telemetry._execute("select actor, items, cost_usd, rows_in from gov_events where action = 'eod-check'", fetch=True)
-    assert ev[0][0] == "dana" and ev[0][1] == 2 and ev[0][2] > 0 and ev[0][3] > 0
+    import os
+    from pathlib import Path
+
+    from conftest import read_spool
+
+    ev = [e for e in read_spool(Path(os.environ["GOVERNANCE_SPOOL"])) if e["event_type"] == "eod-check"]
+    assert ev[0]["actor"] == "dana" and ev[0]["records_out"] == 2 and ev[0]["cost_usd"] > 0 and ev[0]["records_in"] > 0
 
 
 def test_dag_structure():

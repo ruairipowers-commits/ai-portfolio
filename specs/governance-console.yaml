@@ -1,0 +1,61 @@
+slug: governance-console
+title: "AI governance console: usage, cost, controls and kill switches for every AI workflow"
+kind: platform          # governs the other projects; not itself a governed AI workflow (no model calls)
+status: built
+domain: AI governance for an investment firm (CRO / CTO / model-risk oversight)
+use_case: >
+  Once a firm runs several AI workflows, nobody can answer simple questions: what runs, who uses it, what it
+  costs, whether its controls are in place, and how to stop it. The console collects one event per visit and
+  action from every workflow, shows usage, spend and safety signals over time, maps each workflow against the
+  governance standard with live evidence, lets a reviewer attest to controls, and holds a kill switch per workflow.
+
+business_problem:
+  who: CRO / head of model risk, CTO, workflow owners, internal audit
+  pain: "AI spend and usage scattered across teams and invoices; control evidence assembled by hand for audits; no single place to switch a misbehaving workflow off"
+  outcome: "one screen for usage, cost and control coverage; evidence on demand; a workflow switched off in seconds with an audit trail"
+
+pattern: workflow
+risk_tier: low
+risk_rationale: no model calls; it observes and can switch off the workflows that make them — the kill switch itself is admin-only and audited
+
+stack:
+  language: python
+  data: SQLite events store (Postgres via DATABASE_URL for durable history)
+  orchestration: FastAPI service (ingest API + server-rendered pages)
+  llm_access: none
+  retrieval: none
+  ui: "server-rendered HTML + Chart.js (Datadog-style: KPI tiles, daily and cumulative spend, runs, throughput, controls matrix, events, audit)"
+  aws_native: API Gateway + Lambda or ECS for ingest, Kinesis Data Firehose → S3 → Athena, AppConfig feature flags for the kill switch, CloudWatch / Managed Grafana
+showcases: [one telemetry contract across workflows, kill switch enforced in each workflow's code path, control coverage read from each project's governance mapping, attestation with expiry, budget and anomaly alerts, shadow-AI detection, catalog that grows with the portfolio]
+
+functional_requirements:
+  - "FR-1 Ingest one event per visit and action from every workflow (who, model, tokens, cost, latency, records, outcome, flags)"
+  - "FR-2 Show usage, spend (daily and cumulative), throughput and safety signals per workflow and in total, over a chosen period"
+  - "FR-3 Kill switch per workflow: admin-only, reason required, audited; workflows enforce it before every run"
+  - "FR-4 Controls matrix from each project's docs/governance.md, with live evidence and reviewer attestations"
+  - "FR-5 Pick up new workflows automatically from the portfolio catalog; flag event sources that aren't registered"
+non_functional_requirements:
+  - "NFR-1 Telemetry never blocks or breaks a workflow (background send, spool fallback)"
+  - "NFR-2 Apps hold an append-only ingest token, never database credentials"
+  - "NFR-3 Kill-switch change reaches every app within 15 s"
+  - "NFR-4 Dashboards render 90 days × all workflows in < 1 s on a laptop"
+  - "NFR-5 No prompts, questions or documents leave the workflows — counts, hashes and flags only"
+
+governance:
+  deep_dive: [COST-02, COST-04, OBS-01, OBS-03, HITL-01]
+  not_applicable: {}
+
+synthetic_data:
+  description: 90 days of labelled simulated history for the four workflows (named staff, teams, model changes), plus live events from visitors to the demos
+  adversarial_cases: ["unregistered 'pm-notes-summarizer' sending usage (shadow AI)", "forged ingest without the token", "visitor trying to flip a kill switch without admin rights", "cost spike after a model promotion"]
+
+golden_cases: []
+
+demo:   # hosted demo on Hugging Face Spaces (scripts/build_space.py)
+  title: AI governance console
+  emoji: "🛡️"
+  short_description: Usage, cost, controls and kill switches for AI
+  about: >-
+    Read-only for visitors: 90 days of labelled simulated history plus live events from people using the other demos.
+    Anyone can switch a workflow off for 10 minutes to see the kill switch work.
+links: {repo: "", blog: "blog/governance-console"}

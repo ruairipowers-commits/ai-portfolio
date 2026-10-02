@@ -70,6 +70,11 @@ altdata-triage triage
 The mock provider is a deterministic heuristic stand-in so CI is free and results reproducible;
 it is not an LLM. Swap it out as above to see real model behaviour.
 
+## Governance console
+
+Every visit, triage run, review and eval is reported to the portfolio's [governance console]({{SITE_URL}}/blog/governance-console/): who ran it, the model, tokens, cost, records in and out, the outcome and safety flags
+(never prompts, questions or document text — only counts and hashes). The console can switch the workflow off; the triage run then refuses with the reason. Point `GOVERNANCE_URL` at the console (events are posted with `GOVERNANCE_INGEST_TOKEN`); without it, events go to a local spool file (`~/.ai-portfolio/governance/events.jsonl`) that a console on the same machine imports. `GOVERNANCE_TELEMETRY=off` disables telemetry; `GOVERNANCE_FAIL_CLOSED=1` blocks runs when the console can't be reached.
+
 ## Requirements
 
 **Functional**

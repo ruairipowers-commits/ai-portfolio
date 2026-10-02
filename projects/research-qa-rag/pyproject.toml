@@ -17,7 +17,6 @@ ui = ["streamlit>=1.40", "pandas>=2"]
 anthropic = ["anthropic>=0.40"]
 openai = ["openai>=1.50"]
 aws = ["boto3>=1.35"]
-governance-pg = ["psycopg[binary]>=3.2"]   # only to send governance telemetry to a shared Postgres hub
 dev = ["pytest>=8", "httpx>=0.27"]
 
 [project.scripts]

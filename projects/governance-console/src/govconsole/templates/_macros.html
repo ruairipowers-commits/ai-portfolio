@@ -1,0 +1,42 @@
+{% macro swatch(slug, catalog) -%}
+{%- set ns = namespace(i=-1) -%}
+{%- for w in catalog.workflows %}{% if w.slug == slug %}{% set ns.i = loop.index %}{% endif %}{% endfor -%}
+<span class="swatch" style="background: var({{ '--s' ~ ns.i if 0 < ns.i <= 8 else '--other' }})" aria-hidden="true"></span>
+{%- endmacro %}
+
+{% macro state_chip(r) -%}
+{% if not r.registered %}<span class="chip critical"><span class="dot"></span>Unregistered</span>
+{% elif r.enabled %}<span class="chip good"><span class="dot"></span>Enabled</span>
+{% else %}<span class="chip critical"><span class="dot"></span>Disabled</span>{% endif %}
+{%- endmacro %}
+
+{% macro risk_chip(tier) -%}
+{% set cls = {'high': 'critical', 'medium': 'warning', 'low': 'good'}.get(tier, 'neutral') %}
+<span class="chip {{ cls }}"><span class="dot"></span>{{ (tier or 'unrated')|capitalize }} risk</span>
+{%- endmacro %}
+
+{% macro status_cell(c) -%}
+{% if not c %}<span class="muted" title="Not mapped">—</span>
+{% else %}<span class="mark" aria-hidden="true">{{ c.mark or '?' }}</span>
+<span class="small">{{ {'implemented': 'Built', 'partial': 'Partial', 'not_applicable': 'N/A', 'documented_option': 'Option'}.get(c.status, c.status) }}</span>{% endif %}
+{%- endmacro %}
+
+{% macro attest_badge(a, stale_before) -%}
+{% if not a %}<span class="muted small">not attested</span>
+{% elif a.verdict == 'exception' %}<span class="chip serious small"><span class="dot"></span>Exception</span>
+  <span class="small">{{ a.reviewer }}, {{ a.ts[:10] }} — {{ a.note }}</span>
+{% elif a.ts[:10] < stale_before %}<span class="chip warning small"><span class="dot"></span>Stale</span>
+  <span class="small muted">{{ a.reviewer }}, {{ a.ts[:10] }}</span>
+{% else %}<span class="chip good small"><span class="dot"></span>Confirmed</span>
+  <span class="small muted">{{ a.reviewer }}, {{ a.ts[:10] }}</span>{% endif %}
+{%- endmacro %}
+
+{% macro event_line(e, catalog) -%}
+<li><span class="t">{{ e.ts|ts }}</span>
+<span>{{ swatch(e.workflow, catalog) }}<b>{{ e.workflow }}</b> · {{ e.event_type }}
+  {% if e.status not in ('ok',) %}<span class="flag">{{ e.status }}</span>{% endif %}
+  by {{ e.actor or '—' }}{% if e.actor_type == 'visitor' %} <span class="muted">(visitor)</span>{% elif e.actor_type == 'service' %} <span class="muted">(service)</span>{% endif %}
+  {% if e.cost_usd %}· {{ e.cost_usd|usd }}{% endif %}
+  {% for fl in e.flags %}<span class="flag">{{ fl }}</span>{% endfor %}
+  {% if e.source == 'live' %}<span class="chip good small" style="padding:0 6px"><span class="dot"></span>live</span>{% endif %}</span></li>
+{%- endmacro %}

@@ -76,18 +76,14 @@ def test_eval_gate_and_retrieval_comparison(app):
     assert not at.exception, at.exception
 
 
-def test_kill_switch_disables_ask(app, project):
-    import sqlite3
-
+def test_kill_switch_disables_ask(app, project, console):
     from research_qa import telemetry
 
     at = app.run()
-    con = sqlite3.connect(project / "governance.sqlite")
-    con.execute("insert into gov_workflow_state values ('research-qa-rag', 0, 'model provider outage', 'cro', '2026-10-02')")
-    con.commit()
-    telemetry._state_cache = (0.0, True, "")
+    console.update(enabled=False, reason="model provider outage", changed_by="cro")
+    telemetry._state_cache = (0.0, None)
     at = at.run()
-    assert any("switched off" in e.value for e in at.error)
+    assert any("switched off" in e.value.lower() and "provider outage" in e.value for e in at.error)
     assert next(b for b in at.button if b.label == "🔎 Ask").disabled
 
 
