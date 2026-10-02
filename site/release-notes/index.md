@@ -9,6 +9,15 @@ The big changes to this portfolio, newest first. Each project's repository has t
 
 ## 2 October 2026
 
+**Technology pages.** Every technology named in a post's stack line, or in a project table, now links to its own page.
+Each page has a description, typical use cases, how it shows up in AI work, where this portfolio uses it, pros and
+cons, a minimal example and a link to the vendor's documentation. They're all listed on
+[Technologies](../tech/index.md).
+
+**Featured and personal projects.** Featured projects stay on the home page and in the main blog. Smaller personal
+ones get their own [Personal projects](../personal/index.md) page and blog. Which is which is one list in
+`portfolio.yaml`.
+
 **Governance escalation.** The [governance console](../blog/posts/governance-console.md) now acts on what it sees.
 - When a workflow reports a governance issue, the console opens an incident. Examples are an AI-proposed step
   outside the runbook, restricted content reaching someone, a bank-detail change request, an injection, a failed

@@ -55,6 +55,7 @@ nav:
   - Governance: blog/governance/
   - Blog: blog/index.md
   - Personal projects: personal/index.md
+  - Technologies: tech/index.md
   - Release notes: release-notes/index.md
   - About: about.md
 
