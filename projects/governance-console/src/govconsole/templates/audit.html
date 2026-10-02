@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "_macros.html" import swatch %}
+{% block title %}Audit · AI Governance Console{% endblock %}
+{% block content %}
+<h1>Audit &amp; alerts</h1>
+<p class="sub">Kill-switch changes, spend anomalies and AI usage from workflows nobody registered.</p>
+<section class="card" style="margin-bottom:14px"><h2>Unregistered workflows (shadow AI)</h2>
+  {% if unregistered %}<div class="table-wrap"><table><thead><tr><th>Workflow</th><th class="n">Runs (30d)</th><th class="n">Users</th><th class="n">Spend (30d)</th><th>Last run</th><th>What to do</th></tr></thead><tbody>
+  {% for r in unregistered %}<tr><td class="wf"><a href="/workflows/{{ r.slug }}">{{ r.slug }}</a></td><td class="n">{{ r.runs_30d|num }}</td><td class="n">{{ r.users_30d|num }}</td>
+    <td class="n">{{ r.cost_30d|usd }}</td><td class="small muted">{{ r.last_run|ts }}</td>
+    <td class="small">Add it to <code>portfolio.yaml</code> with a spec (owner, risk tier) and a <code>docs/governance.md</code> mapping — it then appears here as a governed workflow.</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="muted">None — every workflow sending events is registered.</p>{% endif %}</section>
+<section class="grid charts-2b">
+  <div class="card"><h2>Spend anomalies (90 days)</h2><p class="small muted">A day whose cost is more than {{ settings.alerts.anomaly_factor }}× that workflow's trailing 14-day median.</p>
+    <div class="table-wrap"><table><thead><tr><th>Day</th><th>Workflow</th><th class="n">Spend</th><th class="n">14-day median</th><th class="n">Factor</th></tr></thead><tbody>
+    {% for a in anomalies|reverse %}<tr><td class="small">{{ a.day }}</td><td class="small">{{ swatch(a.workflow, catalog) }}{{ a.workflow }}</td><td class="n">{{ a.cost|usd }}</td>
+      <td class="n">{{ a.median|usd }}</td><td class="n">{{ a.factor }}×</td></tr>
+    {% else %}<tr><td colspan="5" class="muted">No anomalies.</td></tr>{% endfor %}</tbody></table></div></div>
+  <div class="card"><h2>Kill-switch audit log</h2>
+    <div class="table-wrap"><table><thead><tr><th>Time (UTC)</th><th>Workflow</th><th>Action</th><th>By</th><th>Reason</th></tr></thead><tbody>
+    {% for c in changes %}<tr><td class="small">{{ c.ts|ts }}</td><td class="small">{{ c.workflow }}</td><td class="small"><b>{{ c.action }}</b></td>
+      <td class="small">{{ c.actor }}</td><td class="small">{{ c.reason }}{% if c.source == 'simulated' %} <span class="muted">(simulated)</span>{% endif %}</td></tr>
+    {% else %}<tr><td colspan="5" class="muted">No changes.</td></tr>{% endfor %}</tbody></table></div></div>
+</section>
+{% endblock %}

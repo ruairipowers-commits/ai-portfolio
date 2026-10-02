@@ -1,0 +1,5 @@
+owner                       = "head-of-fund-operations"
+oncall_email                = "eod-oncall@example.com"
+vpc_id                      = "vpc-REPLACE"
+private_subnet_ids          = ["subnet-REPLACE-a", "subnet-REPLACE-b"]
+approved_bedrock_model_arns = ["arn:aws:bedrock:us-east-1::foundation-model/REPLACE-WITH-MODEL-ID"]

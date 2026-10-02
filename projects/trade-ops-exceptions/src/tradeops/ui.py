@@ -13,11 +13,13 @@ import pandas as pd
 import streamlit as st
 
 from tradeops import app_support as sup
+from tradeops import demo, telemetry
 from tradeops import walkthrough
 from tradeops.llm import BudgetExceeded, Registry, RegistryError
 from tradeops.runner import ROOT, decide, investigate
 
 st.set_page_config(page_title="Trade-ops exception agent", page_icon="🧾", layout="wide")
+demo.activate_streamlit(ROOT)   # hosted demo: this visitor's own copy of the data (no-op locally)
 DOCS = Path(__file__).resolve().parents[2] / "docs"   # shipped with the code, not the data folder
 
 STATUS_STYLE = {
@@ -67,7 +69,7 @@ def run_investigation(ids: list[str], label: str):
                    f"{len(res) - esc} awaiting approval, {esc} escalated · spend ${sum(r['cost_usd'] for r in res):.4f}")
             status.update(label=msg, state="complete")
             flash(True, msg)
-        except (BudgetExceeded, RegistryError) as e:
+        except (BudgetExceeded, RegistryError, telemetry.WorkflowDisabled) as e:
             status.update(label=f"Stopped: {e}", state="error")
             flash(False, f"Stopped: {e}")
     st.rerun()
@@ -131,10 +133,15 @@ with st.sidebar:
         flash(True, "Demo data reset: 40 open exceptions, nothing investigated.")
         st.rerun()
     st.caption("New here? Open **📘 Guide & models**.")
+    st.divider()
+    demo.sidebar(st, ROOT)
 
 st.title("Trade-ops exception agent")
 st.caption("A LangGraph agent investigates settlement breaks with read-only tools from an MCP server, proposes a fix "
            "and stops. Nothing is recorded or sent until a named analyst approves.")
+if demo.links_markdown(ROOT):
+    st.markdown(demo.links_markdown(ROOT))
+gov = telemetry.start_streamlit_session(st, ROOT)   # visit event + kill-switch banner
 if "flash" in st.session_state:
     ok, msg = st.session_state.pop("flash")
     (st.success if ok else st.error)(msg)
@@ -162,10 +169,10 @@ with tab_wf:
     not_run = wf.loc[wf["status"] == "Not investigated", "exception_id"].tolist()
     queue = [q for q in st.session_state["run_queue"] if q in set(wf["exception_id"])]
     b1, b2, b3 = st.columns([2, 2, 1])
-    if b1.button(f"▶ Investigate all not yet investigated ({len(not_run)})", disabled=not not_run, type="primary",
+    if b1.button(f"▶ Investigate all not yet investigated ({len(not_run)})", disabled=not not_run or not gov.enabled, type="primary",
                  help="Run the agent on every exception with no run yet. Each stops at Awaiting approval or Escalated."):
         run_investigation(not_run, f"{len(not_run)} exceptions")
-    if b2.button(f"▶ Run queue ({len(queue)})", disabled=not queue,
+    if b2.button(f"▶ Run queue ({len(queue)})", disabled=not queue or not gov.enabled,
                  help="Run the agent on the exceptions you added with ➕ Add to run queue, then empty the queue."):
         st.session_state["run_queue"] = []
         run_investigation(queue, f"the queue ({len(queue)})")
@@ -208,7 +215,7 @@ with tab_wf:
         st.markdown(f"{STATUS_BADGE.get(status, status)} &nbsp; {row['trade']} · {row['broker']}"
                     + (f" &nbsp; :violet-badge[{row['tampered']}]" if row["tampered"] else ""))
         a1, a2, _ = st.columns([2, 2, 3])
-        if a1.button("▶ Investigate this exception", type="primary", disabled=status == "Resolved", key="inv_one",
+        if a1.button("▶ Investigate this exception", type="primary", disabled=status == "Resolved" or not gov.enabled, key="inv_one",
                      help="Run the agent on this exception now. A new run replaces the previous proposal. "
                           "Not available once resolved."):
             run_investigation([sel], sel)
@@ -240,7 +247,7 @@ with tab_wf:
                     edits["email_draft"] = {**e, "subject": subj, "body": body}
                 note = st.text_input("Note (optional)", key=f"note_{run['thread_id']}")
                 d1, d2 = st.columns(2)
-                if d1.button("✅ Approve", type="primary", disabled=not approver, key="approve",
+                if d1.button("✅ Approve", type="primary", disabled=not approver or not gov.enabled, key="approve",
                              help="Mint a signed approval token over exactly this content, start the write-scoped tool "
                                   "server, record the fix and queue any email (never sent). Status turns green."):
                     out = asyncio.run(decide(sel, "approve", approver, note, edits))
@@ -250,7 +257,7 @@ with tab_wf:
                                                                             if w.get("email_queued") else "")
                           if out["status"] == "resolved" else f"{sel}: {out['status']} — {w.get('error', w)}")
                     st.rerun()
-                if d2.button("Reject", disabled=not approver, key="reject",
+                if d2.button("Reject", disabled=not approver or not gov.enabled, key="reject",
                              help="Record that you rejected the proposal. Nothing is written. You can re-investigate."):
                     asyncio.run(decide(sel, "reject", approver, note))
                     flash(True, f"{sel}: rejected by {approver}")

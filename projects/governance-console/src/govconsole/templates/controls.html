@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_macros.html" import swatch, status_cell, risk_chip %}
+{% block title %}Controls · AI Governance Console{% endblock %}
+{% block content %}
+<h1>Control coverage</h1>
+<p class="sub">Every workflow mapped against the {{ catalog.controls|length }} controls of the governance standard. The mapping is read from each
+  project's <code>docs/governance.md</code>, so it changes when the project changes. Hover a cell for how the control is met and the live evidence.</p>
+<p class="small">✅ Built · 🟡 Partial / manual · 🔷 Option documented, not built · ⚪ Not applicable · — not mapped.
+  Attestation: <b>✔</b> confirmed by a reviewer · <b>⏳</b> confirmation older than {{ settings.attestation.stale_after_days }} days · <b>⚠</b> exception recorded.
+  Attest on a workflow's page.</p>
+<section class="card"><div class="table-wrap"><table class="matrix">
+  <thead><tr><th>Control</th>
+    {% for w in catalog.workflows %}<th class="c"><a href="/workflows/{{ w.slug }}">{{ swatch(w.slug, catalog) }}{{ w.name }}</a>
+      <div class="small muted">{{ w.risk_tier }} risk{{ ' · not deployed' if not w.built }}</div></th>{% endfor %}</tr></thead>
+  <tbody>
+    <tr><td class="small"><b>Coverage</b></td>
+    {% for w in catalog.workflows %}{% set r = rows.get(w.slug) %}<td class="c small">
+      {% if r and r.controls_total %}{{ r.controls_implemented }} built · {{ r.controls_partial }} partial<br>{{ r.controls_option }} option · {{ r.controls_na }} n/a
+      <br><b>{{ r.attested }}</b> attested · {{ r.attest_stale }} stale · {{ r.attest_exceptions }} exc.
+      {% else %}<span class="muted">no mapping yet</span>{% endif %}</td>{% endfor %}</tr>
+  {% set ns = namespace(cat='') %}
+  {% for c in catalog.controls %}
+    {% if c.category != ns.cat %}{% set ns.cat = c.category %}<tr class="cat"><td colspan="{{ catalog.workflows|length + 1 }}">{{ c.category }}</td></tr>{% endif %}
+    <tr><td class="small" title="{{ c.requirement }}"><b>{{ c.id }}</b> {{ c.name }}</td>
+      {% for w in catalog.workflows %}{% set m = w.controls.get(c.id) %}
+      {% set a = attestations.get((w.slug, c.id)) %}
+      <td class="c" title="{{ (m.how ~ (' — Configure: ' ~ m.configure if m.configure) ~ (' — Evidence: ' ~ evidence[w.slug].get(c.id) if evidence[w.slug].get(c.id)) ~ (' — Attested: ' ~ a.verdict ~ ' by ' ~ a.reviewer ~ ' on ' ~ a.ts[:10] if a)) if m else 'Not mapped' }}">{{ status_cell(m) }}
+        {% if a and m %}<b class="small" aria-label="{{ a.verdict }}">{{ '⚠' if a.verdict == 'exception' else '⏳' if a.ts[:10] < stale_before else '✔' }}</b>{% endif %}</td>
+      {% endfor %}</tr>
+  {% endfor %}
+  </tbody></table></div></section>
+{% endblock %}

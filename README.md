@@ -61,11 +61,43 @@ mkdocs serve                        # http://localhost:8000
 python scripts/check_governance.py
 ```
 
+## Live demos (Hugging Face Spaces)
+
+Each project with a `Dockerfile.space` is synced to its own Docker Space by `.github/workflows/spaces.yml` on every
+push to `main` (or run it by hand from the Actions tab). Demos use the offline mock models only; each visitor gets a
+private copy of the data; every app reports to the governance console Space and obeys its kill switch.
+
+One-time setup:
+
+1. Create a Hugging Face account and a **write** token (*Settings → Access Tokens*).
+2. In this GitHub repo, *Settings → Secrets and variables → Actions*:
+   - secret `HF_TOKEN` — the Hugging Face token
+   - secret `GOVERNANCE_INGEST_TOKEN` — any long random string (`python -c "import secrets; print(secrets.token_urlsafe(32))"`)
+   - secret `GOVERNANCE_ADMIN_TOKEN` — another one; your sign-in for permanent kill-switch changes
+   - optional secret `GOVERNANCE_DATABASE_URL` — a Postgres URL (e.g. Neon's free tier) so console history survives restarts
+   - variable `HF_OWNER` — only if your Hugging Face username differs from your GitHub username
+3. Run the **spaces** workflow (or push to `main`). Each Space builds in a few minutes.
+
+**Always on or on demand.** Free CPU Spaces sleep after 48 hours without visitors and wake on the next visit (about
+a minute). To keep them always on, set repository variable `HF_SPACE_HARDWARE=cpu-upgrade` (billed by Hugging Face per
+hour per Space), or upgrade individual Spaces in their settings.
+
+Build a Space folder locally without pushing: `python scripts/build_space.py <slug>` → `dist/spaces/<slug>/`.
+
+## Governance console
+
+`projects/governance-console` is the platform the other projects report to: usage, spend (daily and cumulative),
+throughput, safety signals, control coverage with attestations, and a kill switch per workflow. New projects appear
+in it automatically from `portfolio.yaml`, their spec and their `docs/governance.md`. Every workflow ships the same
+`telemetry.py` (`python scripts/sync_telemetry_client.py` keeps the copies identical; CI checks it), and
+`python scripts/build_catalog.py` refreshes the console's bundled catalog (also checked in CI).
+
 ## Project status
 
 | Project | Status |
 |---|---|
-| altdata-triage | built — ready to publish |
-| eod-heartbeat | planned — align existing Claude Code repo to the standard |
-| trade-ops-exceptions | built — ready to publish |
-| research-qa-rag | spec drafted |
+| altdata-triage | built — live demo via Spaces |
+| eod-heartbeat | built — live demo via Spaces |
+| trade-ops-exceptions | built — live demo via Spaces |
+| research-qa-rag | built — live demo via Spaces |
+| governance-console | built — governs the four above; live demo via Spaces |

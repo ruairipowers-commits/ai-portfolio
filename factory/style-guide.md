@@ -34,6 +34,10 @@ Follow `factory/templates/blog-post.md` exactly — sections are what readers sc
   - Model picker lists only approved, priced models with a key present; default is the offline mock.
   - A "Reset demo data" button. No telemetry (`.streamlit/config.toml` gatherUsageStats=false).
   - Tested headless with `streamlit.testing` (`tests/test_ui.py`): default run, a break-it case, the human step.
+  - Links back to the blog post, source repo, portfolio and governance console (`demo.py`), and runs as a hosted demo
+    (`Dockerfile.space`) where each visitor gets a private copy of the data.
+- Every workflow reports to the governance console through the shared `telemetry.py` and obeys its kill switch in the
+  code path (not only by disabling buttons).
 - Every project has: README (template), `docs/architecture.md`, `docs/governance.md` (maps EVERY
   control ID), `docs/aws-native.md`, `infra/aws/` Terraform starter, `config/settings.yaml`,
   `config/models.yaml`, `prompts/`, `evals/golden_set.yaml`, tests, CI workflow, LICENSE.

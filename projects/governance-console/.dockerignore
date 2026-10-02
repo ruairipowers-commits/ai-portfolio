@@ -1,0 +1,6 @@
+.env
+warehouse/
+.venv/
+**/__pycache__/
+.pytest_cache/
+infra/aws/.terraform/

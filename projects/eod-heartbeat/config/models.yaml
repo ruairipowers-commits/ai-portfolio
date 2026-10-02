@@ -1,0 +1,81 @@
+# MODEL-01 Model registry. Code only ever references ALIASES.
+# Migration: point `explain-candidate` at the new model, then
+#   eodhb eval --alias explain-candidate --baseline explain-primary  →  eodhb promote explain-primary <model>
+# Pricing is USD per million tokens; null pricing is refused unless cost.allow_unpriced_models=true (COST-01).
+
+aliases:
+  explain-primary: mock-explainer
+  explain-fallback: mock-explainer-lite
+  explain-candidate: mock-explainer
+  embed-primary: mock-hash-384
+
+models:
+  mock-explainer:        # deterministic offline stand-in: cites the best-matching runbook section and incident
+    provider: mock
+    model_id: mock-explainer-v1
+    input_per_mtok: 1.00          # simulated, so cost reporting has numbers to show
+    output_per_mtok: 5.00
+    deprecation_date: null
+    approved: true
+
+  mock-explainer-lite:   # cheaper fallback: cites the runbook's steps only, no incident history
+    provider: mock
+    model_id: mock-explainer-lite-v1
+    input_per_mtok: 0.25
+    output_per_mtok: 1.25
+    deprecation_date: null
+    approved: true
+
+  claude-sonnet:
+    provider: anthropic
+    model_id: claude-sonnet-5-5
+    input_per_mtok: null          # fill from anthropic.com/pricing
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true
+
+  claude-haiku:
+    provider: anthropic
+    model_id: claude-haiku-4-5-20251001
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true
+
+  openai-default:
+    provider: openai
+    model_id: "SET-CURRENT-OPENAI-MODEL-ID"
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: false
+
+  bedrock-claude:
+    provider: bedrock
+    model_id: "SET-BEDROCK-MODEL-OR-INFERENCE-PROFILE-ID"
+    region: us-east-1
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true
+
+  mock-hash-384:
+    kind: embedding
+    provider: mock
+    model_id: mock-hash-384-v1
+    dimensions: 384
+    input_per_mtok: 0.0
+    output_per_mtok: 0.0
+    deprecation_date: null
+    approved: true
+
+  bedrock-titan-embed-v2:
+    kind: embedding
+    provider: bedrock
+    model_id: amazon.titan-embed-text-v2:0
+    dimensions: 1024
+    region: us-east-1
+    input_per_mtok: null
+    output_per_mtok: 0.0
+    deprecation_date: null
+    approved: true

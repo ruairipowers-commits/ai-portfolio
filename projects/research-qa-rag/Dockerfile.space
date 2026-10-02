@@ -1,0 +1,16 @@
+# Hosted demo image (Hugging Face Space, Docker SDK). Local equivalent:
+#   docker build -f Dockerfile.space -t rqa-demo . && docker run -p 7860:7860 rqa-demo
+# Mock models only: no API keys are needed or read. Each visitor gets a private copy of the corpus and index.
+FROM python:3.11-slim
+RUN useradd -m -u 1000 user
+ENV HOME=/home/user PATH=/home/user/.local/bin:$PATH PYTHONUNBUFFERED=1
+WORKDIR /app
+COPY --chown=user . .
+USER user
+RUN pip install --no-cache-dir --user -e ".[ui]"
+# Pre-build the baseline every visitor's sandbox is copied from (12 documents, indexed).
+RUN GOVERNANCE_TELEMETRY=off rqa data && GOVERNANCE_TELEMETRY=off rqa ingest --full
+ENV PORTFOLIO_DEMO=1
+EXPOSE 7860
+CMD ["streamlit", "run", "src/research_qa/ui.py", "--server.port=7860", "--server.address=0.0.0.0", \
+     "--server.headless=true", "--server.enableXsrfProtection=false", "--server.enableCORS=false"]

@@ -50,6 +50,9 @@ prompts/<name>.v1.md
 src/<package>/  (workflow/agent, guardrails, llm registry adapter, evals, store/audit, cli)
 evals/golden_set.yaml
 src/<package>/ui.py  + tests/test_ui.py         # Streamlit app: Input → Run → Output (see style guide)
+src/<package>/demo.py                           # copy from a sibling: per-visitor sandbox + links back (blog, source, console)
+src/<package>/telemetry.py                      # written by scripts/sync_telemetry_client.py — never hand-edit
+Dockerfile.space                                # hosted demo (port 7860, PORTFOLIO_DEMO=1, baseline built with GOVERNANCE_TELEMETRY=off)
 .streamlit/config.toml                          # gatherUsageStats = false
 scripts/generate_sample_data.py                 # deterministic, seeded, fictional names
 tests/                                          # unit tests per control + one offline end-to-end
@@ -68,7 +71,12 @@ Rules:
   `<!-- --8<-- [start:flow] -->` … `[end:flow]`, and a decisions table in `[start:decisions]` … `[end:decisions]`.
 - `docs/governance.md`: a row for **every** control ID with status ✅/🟡/⚪/🔷, how, config key, and options not built;
   plus a model-migration runbook.
-- Use `{{SITE_URL}}`, `{{GITHUB_OWNER}}`, `{{BLOG_TITLE}}` placeholders for cross-links.
+- Use `{{SITE_URL}}`, `{{GITHUB_OWNER}}`, `{{HF_OWNER}}`, `{{BLOG_TITLE}}` placeholders for cross-links.
+- Governance telemetry: `telemetry.register(ROOT)` + one `visit` per session in the app; `telemetry.require_enabled(action)`
+  before every model call or write; one `telemetry.record(...)`/`emit(...)` per run with model, tokens, cost, latency,
+  records in/out and flags. Counts, hashes and flags only — never prompts, questions or documents. Tests set
+  `GOVERNANCE_SPOOL` to a temp file (see a sibling's `tests/conftest.py`, which also has a stand-in console).
+- Add a `demo:` block (title, emoji, short_description) to the spec for the Hugging Face Space.
 
 ## 3. Verify (don't skip)
 
@@ -76,6 +84,7 @@ Run and fix until all pass:
 ```
 pip install -e ".[dev]" && <cli> all && <cli> eval && pytest -q
 python scripts/check_governance.py <slug>
+python scripts/sync_telemetry_client.py && python scripts/build_catalog.py   # new project → console catalog
 ```
 Then open the app in a real browser (Playwright + the preinstalled Chromium, or `<cli> ui` locally): load the
 default, run it, try the break-it input, do the human step, and look at screenshots. Headless tests passing is
@@ -91,13 +100,16 @@ Pull diagrams and the decisions table in with snippets:
 `deep_dive` controls: risk → how handled → config knob → option not built. Be explicit about
 what's mocked or not yet built.
 
-Then update `site/index.md` (projects table), the diversity matrix in `factory/stack-catalog.md`,
-and run `mkdocs build --strict`.
+Then update `site/index.md` (projects table, with the live-demo link), the diversity matrix in
+`factory/stack-catalog.md`, and run `mkdocs build --strict`. Open the governance console locally with the new
+project's events (`GOVERNANCE_URL=http://localhost:8600`) and check it appears with its controls.
 
 ## 5. Package and publish
 
 - `scripts/publish_project.sh <slug>` → `dist/<slug>/` + zip (runs the governance check, substitutes placeholders).
 - Only with the user's explicit go-ahead: `scripts/publish_project.sh <slug> --push` (creates/updates the public repo).
+- Hosted demo: `python scripts/build_space.py <slug>` builds `dist/spaces/<slug>/`; the spaces workflow pushes it on merge
+  to `main` once the user has set `HF_TOKEN` (never push a Space from a session without their go-ahead).
 - Set spec `status: built` (or `published` — the script does this on push). Commit with a clear message.
 
 ## Update flows

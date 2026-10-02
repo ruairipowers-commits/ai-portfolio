@@ -4,10 +4,11 @@ editing a broker confirm's free text) which model what an outside party could se
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 from . import db
 from .llm import Registry, RegistryError
-from .runner import ROOT, db_url, load_settings
+from .runner import ROOT, checkpoint_path, db_url, load_settings
 
 PROVIDER_KEYS = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}
 
@@ -46,7 +47,7 @@ def reset() -> dict:
     finally:
         con.close()
     for suffix in ("", "-wal", "-shm"):
-        (ROOT / (s["checkpoint_db"] + suffix)).unlink(missing_ok=True)
+        Path(checkpoint_path(s) + suffix).unlink(missing_ok=True)
     return out
 
 

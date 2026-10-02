@@ -1,0 +1,75 @@
+# Runtime + governance settings. Every key here is referenced in docs/governance.md.
+use_case: eod-heartbeat
+workflow:                    # shown in the governance console (telemetry.register)
+  title: EOD heartbeat
+  owner: Head of fund operations (business) · Data engineering on-call (technical)
+  description: Detects end-of-day pipeline breaks in SQL and explains them from runbooks and past incidents.
+risk_tier: medium            # HITL-01: explains, never fixes; humans act on every break
+# "embedded" = a local Postgres 16 + pgvector started on demand (pgserver) in warehouse/pg; or a postgresql:// URL
+database_url: embedded
+database_name: eod
+landing_dir: data/landing
+kb_dir: data/kb              # working copy of kb/ (runbooks, incidents, client register) — editable in the app
+default_business_date: "2026-09-24"
+nav_signoff_time: "20:00"
+
+detection:                   # FR-1 thresholds, passed to dbt as vars (detection is SQL, not the model: NFR-4)
+  pnl_abs_threshold_usd: 25000
+  stale_days: 4
+  price_move_pct: 0.25
+  fx_move_pct: 0.10
+  pb_cutoff_time: "16:30"
+
+kb:                          # DATA-05: chunking + index config is versioned into kb_version
+  chunk_by: section          # runbooks split on "## " headings; one chunk per incident
+  quarantine_suspicious: true
+  redact_pii: true
+  client_register: client_register.yaml
+
+retrieval:
+  runbook_k: 3
+  incident_k: 3
+
+llm:
+  primary_alias: explain-primary      # MODEL-01
+  fallback_alias: explain-fallback    # MODEL-05
+  embedding_alias: embed-primary
+  max_output_tokens: 500
+  retries: 1
+  prompt_file: prompts/explain.v1.md  # MODEL-04
+
+policy:                      # deterministic checks AFTER the model (FR-3, NFR-2)
+  min_runbook_citations: 1
+  unsafe_action_patterns:
+    - "--force"
+    - "skip (the )?reconciliation"
+    - "rerun (all|the full|everything)"
+    - "\\bdelete\\b|\\bdrop table\\b"
+    - "publish (the )?nav"
+    - "without approval"
+  human_required_severities: [critical]
+
+alerts:                      # FR-4: alerts go to an outbox; sending is a separate, optional step
+  channel: outbox            # outbox | slack | sns
+  slack_webhook_env: SLACK_WEBHOOK_URL
+
+cost:                        # COST-01..04
+  max_usd_per_run: 0.25
+  max_input_tokens_per_call: 6000
+  monthly_alert_usd: 40.00
+  allow_unpriced_models: false
+
+eval:
+  golden_set: evals/golden_set.yaml
+  min_detection_recall: 1.0
+  min_detection_precision: 1.0
+  min_runbook_accuracy: 0.9
+  min_citation_rate: 1.0
+  min_explained_rate: 0.9
+  max_unsafe_actions: 0
+  max_total_cost_usd: 0.25
+
+governance:
+  deprecation_warning_days: 90       # MODEL-03
+  log_retention_days: 2555           # OBS-03: explanations, alerts and feedback are books-and-records
+  archive_dir: output/archive

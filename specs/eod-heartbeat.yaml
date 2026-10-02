@@ -1,11 +1,11 @@
 slug: eod-heartbeat
 title: "EOD heartbeat: fund end-of-day pipeline monitor with an LLM break explainer"
-status: planned   # existing Claude Code project — align it to the standard rather than regenerate
+status: built       # built fresh 2026-10-02; the earlier Claude Code project was not available to this session
 domain: hedge fund operations (end-of-day NAV / positions / P&L)
 use_case: >
   Ops engineers chase end-of-day pipeline breaks (late files, position/P&L reconciliation diffs)
-  across logs and runbooks. The workflow detects breaks and an LLM explains likely cause and
-  next action, grounded in runbooks and past incidents via RAG.
+  across logs and runbooks. The workflow detects breaks in SQL and an LLM explains the likely cause and
+  next step, grounded in runbooks and past incidents via RAG. People act; the model never reruns anything.
 
 business_problem:
   who: fund operations, data engineering on-call
@@ -14,35 +14,44 @@ business_problem:
 
 pattern: rag
 risk_tier: medium
-risk_rationale: explains, never fixes; wrong advice could delay NAV, so explanation must cite runbook and humans act
+risk_rationale: explains, never fixes; wrong advice could delay NAV, so every explanation must cite a runbook, unsafe steps are blocked and humans act
 
 stack:
   language: python
-  data: postgres + dbt-postgres (recon models)
-  orchestration: apache airflow (docker compose)   # most common orchestrator in finance data teams
-  llm_access: registry adapter
-  retrieval: pgvector over runbooks + incident history
-  ui: streamlit (pick a business date → Run EOD checks → breaks with cited runbook explanation; try-to-break-it: edit a runbook page)
+  data: "postgres + dbt-postgres (file SLAs, position recon, P&L explain, price/FX quality → one breaks model)"
+  orchestration: "apache airflow DAG (every 5 min, 17:00-21:00 ET); the same task functions run from the CLI and the app"
+  llm_access: registry adapter (explainer + embedding models by alias)
+  retrieval: "pgvector over runbook sections + past incidents, filtered by break type"
+  local_postgres: "embedded Postgres 16 + pgvector via pgserver (no Docker); docker compose for Postgres + Airflow"
+  ui: "streamlit (pick a business date → Run EOD checks → breaks with cited explanation, alert and on-call feedback; try-to-break-it: edit a runbook page, inject a break)"
   aws_native: MWAA (managed Airflow), RDS Postgres + pgvector, Bedrock, SNS
-showcases: [airflow DAG with SLAs, reconciliation modelling, RAG with provenance, alerting]
+showcases: [airflow DAG, reconciliation modelling in dbt-postgres, RAG with provenance over runbooks, unsafe-action guard on LLM advice, alert outbox + on-call feedback]
 
 functional_requirements:
-  - "FR-1 Detect late/missing files and recon breaks against thresholds"
+  - "FR-1 Detect late/missing files and recon breaks (positions vs prime broker, P&L explain, stale prices, FX outliers) against thresholds"
   - "FR-2 Retrieve relevant runbook sections and similar past incidents"
-  - "FR-3 Produce explanation + suggested next step with citations"
-  - "FR-4 Post alert; capture on-call feedback (useful / wrong)"
+  - "FR-3 Produce likely cause + next step with citations; never propose an action outside the runbook or a forced rerun"
+  - "FR-4 Post an alert (outbox; Slack/SNS optional) and capture on-call feedback (useful / wrong)"
+  - "FR-5 Show NAV sign-off status per business date"
 non_functional_requirements:
-  - "NFR-1 Alert within 5 minutes of SLA breach"
+  - "NFR-1 Alert within 5 minutes of SLA breach (DAG cadence)"
   - "NFR-2 Every explanation cites >= 1 runbook chunk"
-  - "NFR-3 Runs locally via docker compose"
+  - "NFR-3 Runs locally with no Docker (embedded Postgres); full stack via docker compose"
+  - "NFR-4 Break detection is deterministic SQL; the model explains, never decides whether a break exists"
+  - "NFR-5 Per-run cost cap; offline mock by default"
 
 governance:
   deep_dive: [DATA-05, OBS-02, HITL-03, MODEL-05, OBS-03]
   not_applicable: {}
 
 synthetic_data:
-  description: synthetic fund books, positions, prices, P&L with injected breaks; 15 runbook pages; 30 past incidents
+  description: synthetic fund (3 books, 12 securities), 10 business days of prices, FX, trades, prime-broker positions, corporate actions, reported P&L and file arrivals, with injected breaks; 15 runbook pages; 30 past incidents
   adversarial_cases: ["runbook page containing an instruction to 'auto-rerun with --force'", "incident note containing a client name (PII)"]
 
-golden_cases: []
-links: {repo: "", blog: ""}
+golden_cases: []   # evals/golden_set.yaml
+
+demo:   # hosted demo on Hugging Face Spaces (scripts/build_space.py)
+  title: EOD heartbeat
+  emoji: "🫀"
+  short_description: EOD pipeline breaks explained from runbooks
+links: {repo: "", blog: "blog/eod-heartbeat"}
