@@ -7,7 +7,7 @@
     In production this would be SSO with a governance role.</p>
   {% if not admin_configured %}<div class="banner"><span>ℹ️</span><div>No admin token is configured{{ ', so admin actions are disabled on this public demo' if demo else '; running locally, admin is open' }}.</div></div>{% endif %}
   {% if error %}<div class="banner critical"><span>⛔</span><div>That token isn't valid.</div></div>{% endif %}
-  <form method="post" action="/admin/login" style="display:grid; gap:10px">
+  <form method="post" action="{{ base }}/admin/login" style="display:grid; gap:10px">
     <label>Your name (recorded on every change)<br><input type="text" name="name" required style="width:100%"></label>
     <label>Admin token<br><input type="password" name="token" required style="width:100%" autocomplete="current-password"></label>
     <button class="btn primary" {{ 'disabled' if not admin_configured }}>Sign in</button>

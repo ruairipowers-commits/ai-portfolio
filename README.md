@@ -61,29 +61,23 @@ mkdocs serve                        # http://localhost:8000
 python scripts/check_governance.py
 ```
 
-## Live demos (Hugging Face Spaces)
+## Live demos
 
-Each project with a `Dockerfile.space` is synced to its own Docker Space by `.github/workflows/spaces.yml` on every
-push to `main` (or run it by hand from the Actions tab). Demos use the offline mock models only; each visitor gets a
-private copy of the data; every app reports to the governance console Space and obeys its kill switch.
+One setting picks where the demos run: `demos.target` in `portfolio.yaml` (or repo variable `DEMOS_TARGET`).
+`python scripts/demos.py list` shows the apps and their URLs for the current target; the **demos** workflow deploys
+on every push to `main`. Links on the site, in READMEs and inside the apps follow the target.
 
-One-time setup:
+| Target | Where | Cost | Setup | Status |
+|---|---|---|---|---|
+| `selfhost` (default) | your own machine, `https://demos.<domain>/<app>/` via a Cloudflare Tunnel | free | [deploy/selfhost](deploy/selfhost/README.md) | verified locally (all apps behind the proxy, path prefixes, WebSockets, telemetry) |
+| `huggingface` | one Docker Space per app | Hugging Face PRO ($9/month) | secret `HF_TOKEN`, variable `HF_OWNER` | build + push verified up to Hugging Face's paywall |
+| `cloudflare` | Cloudflare Containers behind a Worker on your domain | Workers Paid ($5/month) + usage | secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | generated config checked; **not yet deployed** |
+| `cloudrun` | Google Cloud Run, one service per app + a router at your domain | free tier (billing account required) | secret `GCP_SA_KEY`, variables `GCP_PROJECT`, `GCP_REGION` | deploy plan dry-run only; **not yet deployed** |
 
-1. Create a Hugging Face account and a **write** token (*Settings → Access Tokens*). Docker Spaces need a
-   **PRO** subscription on that account (free accounts get `402 Payment Required` when the workflow creates a Space).
-2. In this GitHub repo, *Settings → Secrets and variables → Actions*:
-   - secret `HF_TOKEN` — the Hugging Face token
-   - secret `GOVERNANCE_INGEST_TOKEN` — any long random string (`python -c "import secrets; print(secrets.token_urlsafe(32))"`)
-   - secret `GOVERNANCE_ADMIN_TOKEN` — another one; your sign-in for permanent kill-switch changes
-   - optional secret `GOVERNANCE_DATABASE_URL` — a Postgres URL (e.g. Neon's free tier) so console history survives restarts
-   - variable `HF_OWNER` — only if your Hugging Face username differs from your GitHub username
-3. Run the **spaces** workflow (or push to `main`). Each Space builds in a few minutes.
-
-**Always on or on demand.** Free CPU Spaces sleep after 48 hours without visitors and wake on the next visit (about
-a minute). To keep them always on, set repository variable `HF_SPACE_HARDWARE=cpu-upgrade` (billed by Hugging Face per
-hour per Space), or upgrade individual Spaces in their settings.
-
-Build a Space folder locally without pushing: `python scripts/build_space.py <slug>` → `dist/spaces/<slug>/`.
+For every target except `huggingface`, set repo variable `DEMOS_URL` (e.g. `https://demos.example.com`). For all of
+them, add repository secrets `GOVERNANCE_INGEST_TOKEN` and `GOVERNANCE_ADMIN_TOKEN` (long random strings) and
+optionally `GOVERNANCE_DATABASE_URL`. Use **repository** secrets — secrets saved only in an Environment aren't passed
+to the workflow. Every image is the same `Dockerfile.space`; it serves at a domain root or under `/<app>/`.
 
 ## Governance console
 

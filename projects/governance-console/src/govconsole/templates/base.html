@@ -4,27 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}AI Governance Console{% endblock %}</title>
-<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="{{ base }}/static/app.css">
+<script>window.GOV_BASE = {{ base|tojson }};</script>
 <script>try { const t = localStorage.getItem("gov-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
 </head>
 <body>
 {% set q = "days=" ~ f.days ~ ("&sim=0" if not f.sim else "") ~ ("&wf=" ~ f.wf if f.wf else "") %}
 <header class="top"><div class="top-inner">
-  <a class="brand" href="/?{{ q }}"><span class="brand-mark">◆</span> AI Governance Console</a>
+  <a class="brand" href="{{ base }}/?{{ q }}"><span class="brand-mark">◆</span> AI Governance Console</a>
   <nav class="tabs">
-    <a href="/?{{ q }}" class="{{ 'on' if page == 'overview' }}">Overview</a>
-    <a href="/controls?{{ q }}" class="{{ 'on' if page == 'controls' }}">Controls</a>
-    <a href="/models?{{ q }}" class="{{ 'on' if page == 'models' }}">Models</a>
-    <a href="/events?{{ q }}" class="{{ 'on' if page == 'events' }}">Events &amp; people</a>
-    <a href="/audit?{{ q }}" class="{{ 'on' if page == 'audit' }}">Audit &amp; alerts</a>
+    <a href="{{ base }}/?{{ q }}" class="{{ 'on' if page == 'overview' }}">Overview</a>
+    <a href="{{ base }}/controls?{{ q }}" class="{{ 'on' if page == 'controls' }}">Controls</a>
+    <a href="{{ base }}/models?{{ q }}" class="{{ 'on' if page == 'models' }}">Models</a>
+    <a href="{{ base }}/events?{{ q }}" class="{{ 'on' if page == 'events' }}">Events &amp; people</a>
+    <a href="{{ base }}/audit?{{ q }}" class="{{ 'on' if page == 'audit' }}">Audit &amp; alerts</a>
   </nav>
   <div class="top-right">
     {% if admin %}
       <span class="chip good"><span class="dot"></span>Admin{% if not admin_configured %} (local){% endif %}</span>
-      {% if admin_configured %}<form method="post" action="/admin/logout" style="margin:0"><button class="btn small">Sign out</button></form>{% endif %}
+      {% if admin_configured %}<form method="post" action="{{ base }}/admin/logout" style="margin:0"><button class="btn small">Sign out</button></form>{% endif %}
     {% else %}
       <span class="chip neutral"><span class="dot"></span>Read-only</span>
-      {% if admin_configured %}<a class="btn small" href="/admin/login">Admin sign-in</a>{% endif %}
+      {% if admin_configured %}<a class="btn small" href="{{ base }}/admin/login">Admin sign-in</a>{% endif %}
     {% endif %}
     {% if links.blog %}<a class="small" href="{{ links.blog }}">About</a>{% endif %}
     <button class="btn small" id="theme-btn" type="button" aria-label="Toggle light or dark theme">◐</button>

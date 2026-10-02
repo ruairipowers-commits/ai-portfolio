@@ -1,0 +1,74 @@
+# Deploys the live demos to the target set in portfolio.yaml (demos.target) or repo variable DEMOS_TARGET:
+#   selfhost     nothing to push — the demo host pulls main every 5 minutes (deploy/selfhost/update.sh)
+#   huggingface  one Docker Space per app            secrets: HF_TOKEN            variable: HF_OWNER (if ≠ GitHub user)
+#   cloudflare   Cloudflare Containers + a Worker     secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+#   cloudrun     Google Cloud Run + a router service  secrets: GCP_SA_KEY         variables: GCP_PROJECT, GCP_REGION
+# All targets: variable DEMOS_URL (except huggingface); secrets GOVERNANCE_INGEST_TOKEN, GOVERNANCE_ADMIN_TOKEN,
+# optional GOVERNANCE_DATABASE_URL. Secrets must be *repository* secrets (Environment secrets aren't passed here).
+name: demos
+on:
+  push:
+    branches: [main]
+    paths: ["projects/**", "specs/**", "scripts/**", "governance/**", "portfolio.yaml", "deploy/**", ".github/workflows/demos.yml"]
+  workflow_dispatch:
+    inputs:
+      target: {description: "Override the target (blank = configured)", required: false}
+      project: {description: "huggingface only: one project slug (blank = all)", required: false}
+permissions: {contents: read}
+concurrency: {group: demos, cancel-in-progress: false}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      PORTFOLIO_GITHUB_OWNER: ${{ github.repository_owner }}
+      PORTFOLIO_SITE_URL: ${{ vars.SITE_URL || format('https://{0}.github.io/{1}/', github.repository_owner, github.event.repository.name) }}
+      PORTFOLIO_HF_OWNER: ${{ vars.HF_OWNER }}
+      PORTFOLIO_DEMOS_URL: ${{ vars.DEMOS_URL }}
+      PORTFOLIO_DEMOS_TARGET: ${{ github.event.inputs.target || vars.DEMOS_TARGET }}
+      HF_SPACE_HARDWARE: ${{ vars.HF_SPACE_HARDWARE }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      GCP_PROJECT: ${{ vars.GCP_PROJECT }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      GOVERNANCE_INGEST_TOKEN: ${{ secrets.GOVERNANCE_INGEST_TOKEN }}
+      GOVERNANCE_ADMIN_TOKEN: ${{ secrets.GOVERNANCE_ADMIN_TOKEN }}
+      GOVERNANCE_DATABASE_URL: ${{ secrets.GOVERNANCE_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.11"}
+      - run: pip install pyyaml "huggingface_hub>=0.25"
+      - id: t
+        name: Resolve target
+        run: |
+          python scripts/demos.py list
+          echo "target=$(python -c 'import sys; sys.path.insert(0,"scripts"); from portfolio_config import resolve; print(resolve()["demos_target"])')" >> "$GITHUB_OUTPUT"
+      - name: selfhost
+        if: steps.t.outputs.target == 'selfhost'
+        run: echo "::notice::Target is selfhost — the demo host pulls main and rebuilds within 5 minutes (deploy/selfhost/README.md)."
+      - name: huggingface
+        if: steps.t.outputs.target == 'huggingface'
+        run: |
+          [ -n "$HF_TOKEN" ] || { echo "::error::HF_TOKEN is not visible to this job. Add it as a repository secret."; exit 1; }
+          failed=""
+          for s in $(python -c 'import sys; sys.path.insert(0,"scripts"); from demos import apps; print(" ".join(a["slug"] for a in apps()))'); do
+            [ -z "${{ github.event.inputs.project }}" ] || [ "$s" = "${{ github.event.inputs.project }}" ] || continue
+            python scripts/build_space.py "$s" --push || failed="$failed $s"
+          done
+          [ -z "$failed" ] || { echo "::error::Not pushed:$failed (see the errors above)"; exit 1; }
+      - name: cloudflare (untested target)
+        if: steps.t.outputs.target == 'cloudflare'
+        run: |
+          [ -n "$CLOUDFLARE_API_TOKEN" ] || { echo "::error::CLOUDFLARE_API_TOKEN is not set"; exit 1; }
+          python scripts/demos.py deploy cloudflare
+      - name: google auth
+        if: steps.t.outputs.target == 'cloudrun'
+        uses: google-github-actions/auth@v2
+        with: {credentials_json: "${{ secrets.GCP_SA_KEY }}"}
+      - name: gcloud
+        if: steps.t.outputs.target == 'cloudrun'
+        uses: google-github-actions/setup-gcloud@v2
+      - name: cloudrun (untested target)
+        if: steps.t.outputs.target == 'cloudrun'
+        run: python scripts/demos.py deploy cloudrun

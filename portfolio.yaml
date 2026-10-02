@@ -22,6 +22,21 @@ defaults:
   ci: github actions (tests + offline end-to-end + eval gate)
   diagrams: mermaid
 
+# Live demos: where they're hosted. One setting; links on the site, in READMEs and in the apps follow it.
+#   selfhost    your own machine via docker compose + a Cloudflare Tunnel (deploy/selfhost)   — free
+#   huggingface one Docker Space per app (scripts/build_space.py)                          — needs HF PRO
+#   cloudflare  Cloudflare Containers behind a Worker (deploy/cloudflare)                   — Workers Paid
+#   cloudrun    Google Cloud Run + a small router service (deploy/cloudrun)                 — free tier, billing on
+# Override with repo variable DEMOS_TARGET / env PORTFOLIO_DEMOS_TARGET. For selfhost / cloudflare / cloudrun
+# every app lives at <base_url>/<slug>/; set the base URL with repo variable DEMOS_URL (kept out of git).
+demos:
+  target: selfhost
+  base_url: https://REPLACE-DEMOS-HOST
+
+# "Source code" links: the project folder in this repo (monorepo) or its own published repo (standalone).
+source_links: monorepo
+repo_name: ai-portfolio
+
 # Order projects appear on the site.
 projects:
   - altdata-triage

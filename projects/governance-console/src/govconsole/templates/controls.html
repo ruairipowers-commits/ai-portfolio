@@ -10,7 +10,7 @@
   Attest on a workflow's page.</p>
 <section class="card"><div class="table-wrap"><table class="matrix">
   <thead><tr><th>Control</th>
-    {% for w in catalog.workflows %}<th class="c"><a href="/workflows/{{ w.slug }}">{{ swatch(w.slug, catalog) }}{{ w.name }}</a>
+    {% for w in catalog.workflows %}<th class="c"><a href="{{ base }}/workflows/{{ w.slug }}">{{ swatch(w.slug, catalog) }}{{ w.name }}</a>
       <div class="small muted">{{ w.risk_tier }} risk{{ ' · not deployed' if not w.built }}</div></th>{% endfor %}</tr></thead>
   <tbody>
     <tr><td class="small"><b>Coverage</b></td>

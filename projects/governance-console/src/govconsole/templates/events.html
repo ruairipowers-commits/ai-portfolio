@@ -7,7 +7,7 @@
     {% for s in ['ok', 'escalated', 'refused', 'blocked', 'error', 'failed'] %}<option {{ 'selected' if flt.status == s }}>{{ s }}</option>{% endfor %}</select>
   <input type="text" name="event_type" value="{{ flt.event_type or '' }}" placeholder="Event type" aria-label="Event type" size="12">
   <button class="btn">Apply</button>
-  <a class="btn" href="/api/events.csv?{{ request.query_params }}">Download CSV</a>
+  <a class="btn" href="{{ base }}/api/events.csv?{{ request.query_params }}">Download CSV</a>
 {% endblock %}
 {% block content %}
 <h1>Events &amp; people</h1>

@@ -122,7 +122,7 @@
     const p = qs();
     Object.entries(extra || {}).forEach(([k, v]) => p.set(k, v));
     document.querySelectorAll(".chart-box").forEach((b) => b.classList.add("loading"));
-    const r = await fetch("/api/summary?" + p.toString());
+    const r = await fetch((window.GOV_BASE || "") + "/api/summary?" + p.toString());
     const d = await r.json();
     document.querySelectorAll(".chart-box").forEach((b) => b.classList.remove("loading"));
     return d;

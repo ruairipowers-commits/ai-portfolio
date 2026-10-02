@@ -34,6 +34,9 @@ from .store import Store, now_iso
 HERE = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(HERE / "templates"))
 SETTINGS = M.load_settings()
+# Serving under a path prefix (e.g. https://demos.example.com/governance-console behind a reverse proxy that strips it):
+# set ROOT_PATH=/governance-console. Every link, redirect and fetch is built from this.
+BASE = os.getenv("ROOT_PATH", "").rstrip("/")
 
 
 # ---------------------------------------------------------------- ingest schema
@@ -60,6 +63,20 @@ class Event(BaseModel):
     detail: dict = Field(default_factory=dict)
 
 
+class StripPrefix:
+    """Accept requests with or without the ROOT_PATH prefix, so any proxy works whether or not it strips it."""
+
+    def __init__(self, app, prefix: str):
+        self.app, self.prefix = app, prefix
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] in ("http", "websocket"):
+            path = scope.get("path", "")
+            if path == self.prefix or path.startswith(self.prefix + "/"):
+                scope = {**scope, "path": path[len(self.prefix):] or "/", "raw_path": None}
+        await self.app(scope, receive, send)
+
+
 class State:
     store: Store
     catalog: dict = {}
@@ -80,6 +97,8 @@ def create_app(store: Store | None = None, seed: bool = True) -> FastAPI:
     S.store = store or Store()
     S.catalog_at = 0
     app = FastAPI(title="AI governance console", docs_url="/api/docs", redoc_url=None)
+    if BASE:
+        app.add_middleware(StripPrefix, prefix=BASE)
     app.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
     if seed and simulate.needs_seed(S.store):
         simulate.seed(S.store, [w["slug"] for w in get_catalog()["workflows"]], SETTINGS["simulation"]["days"],
@@ -149,7 +168,7 @@ def _flt(request: Request) -> dict:
 def _ctx(request: Request, **kw) -> dict:
     f = _flt(request)
     c = get_catalog()
-    return {"request": request, "f": f, "admin": is_admin(request), "demo": demo_mode(), "rights": switch_rights(request),
+    return {"request": request, "f": f, "base": BASE, "admin": is_admin(request), "demo": demo_mode(), "rights": switch_rights(request),
             "can_attest": can_attest(request), "settings": SETTINGS, "links": links.console(),
             "wf_links": {w["slug"]: links.for_slug(w["slug"]) for w in c["workflows"]},
             "order": [w["slug"] for w in c["workflows"]], "names": {w["slug"]: w["name"] for w in c["workflows"]},
@@ -277,8 +296,8 @@ def _routes(app: FastAPI) -> None:
     @app.post("/admin/login")
     def login(request: Request, token: str = Form(...), name: str = Form("admin")):
         if not admin_token() or not hmac.compare_digest(token, admin_token()):
-            return RedirectResponse("/admin/login?error=1", status_code=303)
-        r = RedirectResponse("/", status_code=303)
+            return RedirectResponse(BASE + "/admin/login?error=1", status_code=303)
+        r = RedirectResponse(BASE + "/", status_code=303)
         secure = request.url.scheme == "https"
         r.set_cookie("gov_admin", _digest(admin_token()), httponly=True, samesite="strict", secure=secure, max_age=8 * 3600)
         r.set_cookie("gov_admin_name", name[:60] or "admin", samesite="strict", secure=secure, max_age=8 * 3600)
@@ -286,7 +305,7 @@ def _routes(app: FastAPI) -> None:
 
     @app.post("/admin/logout")
     def logout():
-        r = RedirectResponse("/", status_code=303)
+        r = RedirectResponse(BASE + "/", status_code=303)
         r.delete_cookie("gov_admin"), r.delete_cookie("gov_admin_name")
         return r
 
@@ -307,7 +326,7 @@ def _routes(app: FastAPI) -> None:
             mins = SETTINGS["kill_switch"]["demo_expiry_minutes"]
             exp = (datetime.now(timezone.utc) + timedelta(minutes=mins)).isoformat(timespec="seconds")
             S.store.set_enabled(slug, enabled == "1", reason, who, expires_at=None if enabled == "1" else exp)
-        return RedirectResponse(f"/workflows/{slug}", status_code=303)
+        return RedirectResponse(f"{BASE}/workflows/{slug}", status_code=303)
 
     @app.post("/workflows/{slug}/attest")
     def attest(request: Request, slug: str, control_id: str = Form(...), verdict: str = Form(...),
@@ -321,7 +340,7 @@ def _routes(app: FastAPI) -> None:
         if not is_admin(request) and not name.strip():
             raise HTTPException(422, "your name is required")
         S.store.attest(slug, control_id, verdict, who, note.strip()[:300])
-        return RedirectResponse(f"/workflows/{slug}#controls", status_code=303)
+        return RedirectResponse(f"{BASE}/workflows/{slug}#controls", status_code=303)
 
     @app.get("/models", response_class=HTMLResponse)
     def models_page(request: Request):

@@ -4,7 +4,7 @@
 dbt computes the facts, an LLM drafts the memo, deterministic policy has the last word, and a human decides.
 
 > Part of the [AI Workflow Portfolio]({{SITE_URL}}) by Ruairi Powers ·
-> Write-up: [{{BLOG_TITLE}}]({{SITE_URL}}/blog/altdata-triage/) · Governance: [standard]({{SITE_URL}}/blog/governance/) / [this project's mapping](docs/governance.md)
+> Write-up: [{{BLOG_TITLE}}]({{SITE_URL}}/blog/altdata-triage/) · Live demo: [try it]({{DEMOS_URL}}/altdata-triage/) · Governance: [standard]({{SITE_URL}}/blog/governance/) / [this project's mapping](docs/governance.md)
 
 ![python](https://img.shields.io/badge/python-3.11-blue) ![dbt](https://img.shields.io/badge/dbt-duckdb-orange) ![runs offline](https://img.shields.io/badge/runs-offline%20by%20default-green)
 

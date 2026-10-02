@@ -17,12 +17,16 @@ jobs:
       - run: python scripts/check_governance.py
       - run: python scripts/sync_telemetry_client.py --check   # every workflow ships the same telemetry client
       - run: python scripts/build_catalog.py --check           # the console's bundled catalog lists every project
+      - run: python scripts/demos.py render selfhost --out /tmp/demos && python scripts/demos.py render cloudflare --out /tmp/cf
+        env: {PORTFOLIO_DEMOS_URL: "https://demos.example.com"}
       - run: mkdocs build --strict
         env:
           # Derived from whoever owns the repo, so no personal details live in git.
           # For a custom domain, set repository variable SITE_URL (Settings -> Variables).
           PORTFOLIO_GITHUB_OWNER: ${{ github.repository_owner }}
           PORTFOLIO_HF_OWNER: ${{ vars.HF_OWNER }}
+          PORTFOLIO_DEMOS_URL: ${{ vars.DEMOS_URL }}
+          PORTFOLIO_DEMOS_TARGET: ${{ vars.DEMOS_TARGET }}
           PORTFOLIO_SITE_URL: ${{ vars.SITE_URL || format('https://{0}.github.io/{1}/', github.repository_owner, github.event.repository.name) }}
       - uses: actions/upload-pages-artifact@v3
         with: {path: build}

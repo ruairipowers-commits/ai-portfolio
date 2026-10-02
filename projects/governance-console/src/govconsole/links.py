@@ -30,7 +30,10 @@ def portfolio() -> dict:
             data = {}
     out = {"site_url": os.getenv("PORTFOLIO_SITE_URL") or data.get("site_url", ""),
            "github_owner": os.getenv("PORTFOLIO_GITHUB_OWNER") or data.get("github_owner", ""),
-           "hf_owner": os.getenv("PORTFOLIO_HF_OWNER") or data.get("hf_owner", "")}
+           "hf_owner": os.getenv("PORTFOLIO_HF_OWNER") or data.get("hf_owner", ""),
+           "demos_url": os.getenv("PORTFOLIO_DEMOS_URL") or data.get("demos_url", ""),
+           "demos_target": os.getenv("PORTFOLIO_DEMOS_TARGET") or data.get("demos_target", ""),
+           "source_base": os.getenv("PORTFOLIO_SOURCE_BASE") or (data.get("source_url", "").rsplit("/", 1)[0] if data.get("source_url") else "")}
     return {k: v.rstrip("/") for k, v in out.items() if v and "REPLACE" not in v and "{{" not in v}
 
 
@@ -39,9 +42,13 @@ def for_slug(slug: str) -> dict[str, str]:
     out = {}
     if "site_url" in p:
         out["blog"] = f"{p['site_url']}/blog/{slug}/"
-    if "github_owner" in p:
+    if p.get("source_base"):
+        out["source"] = f"{p['source_base']}/{slug}"
+    elif "github_owner" in p:
         out["source"] = f"https://github.com/{p['github_owner']}/{slug}"
-    if "hf_owner" in p:
+    if p.get("demos_url"):
+        out["demo"] = f"{p['demos_url']}/{slug}" + ("" if p.get("demos_target") == "huggingface" else "/")
+    elif "hf_owner" in p:
         out["demo"] = f"https://huggingface.co/spaces/{p['hf_owner']}/{slug}"
     return out
 
