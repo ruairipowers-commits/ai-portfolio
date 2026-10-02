@@ -53,7 +53,11 @@ def app_env(app: dict, c: dict, with_prefix: bool) -> dict[str, str]:
     env = {"PORTFOLIO_DEMO": "1",
            "PORTFOLIO_BLOG_URL": l["blog_url"], "PORTFOLIO_SOURCE_URL": l["source_url"],
            "PORTFOLIO_PORTFOLIO_URL": l["portfolio_url"], "PORTFOLIO_DEMO_URL": l["demo_url"],
-           "PORTFOLIO_CONSOLE_URL": l["console_url"]}
+           "PORTFOLIO_CONSOLE_URL": l["console_url"],
+           # the banner the apps share with the blog
+           "PORTFOLIO_SITE_TITLE": l["site_title"], "PORTFOLIO_STANDARD_URL": l["standard_url"],
+           "PORTFOLIO_BLOG_INDEX_URL": l["blog_index_url"], "PORTFOLIO_ABOUT_URL": l["about_url"],
+           "PORTFOLIO_DEMOS_HOME_URL": l["demos_home_url"]}
     if app["kind"] == "streamlit":
         if with_prefix:
             env["STREAMLIT_SERVER_BASE_URL_PATH"] = app["slug"]

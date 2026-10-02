@@ -20,3 +20,4 @@ projects/*/dbt/.user.yml
 # Self-hosted demo machine: secrets and generated deploy files stay local
 deploy/selfhost/.env
 deploy/*/generated/
+deploy/selfhost/.state/
