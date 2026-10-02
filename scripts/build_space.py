@@ -136,6 +136,10 @@ def main() -> None:
         except SystemExit:
             raise
         except Exception as e:   # surface the reason as an annotation on the run page
+            if "402" in str(e):
+                fail(f"{a.slug}: Hugging Face answered 402 Payment Required. Docker Spaces now need a PRO subscription "
+                     "(or a payment method / credits) on the account that owns them; free accounts can't create them. "
+                     "Upgrade at https://huggingface.co/subscribe/pro and re-run.")
             fail(f"{a.slug}: push to Hugging Face failed — {type(e).__name__}: {str(e)[:300]}")
 
 
