@@ -2,7 +2,8 @@
 #   docker build -f Dockerfile.space -t altdata-demo . && docker run -p 7860:7860 altdata-demo
 # Mock model only: no API keys are needed or read. Each visitor gets a private copy of the data.
 FROM python:3.11-slim
-RUN useradd -m -u 1000 user
+# /app must belong to the app user: the build writes data/ and warehouse/ there (WORKDIR alone creates it as root)
+RUN useradd -m -u 1000 user && install -d -o user -g user /app
 ENV HOME=/home/user PATH=/home/user/.local/bin:$PATH PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY --chown=user . .
