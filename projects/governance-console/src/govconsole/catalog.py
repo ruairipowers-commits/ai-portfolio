@@ -30,6 +30,8 @@ def find_portfolio_root() -> Path | None:
     env = os.getenv("PORTFOLIO_ROOT")
     if env:
         return Path(env)
+    if len(PKG_ROOT.parents) < 2:   # installed shallow, e.g. /app in a container: not inside the portfolio repo
+        return None
     cand = PKG_ROOT.parents[1]
     return cand if (cand / "portfolio.yaml").exists() and (cand / "governance" / "controls.md").exists() else None
 
