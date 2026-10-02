@@ -12,3 +12,7 @@ projects/*/logs/
 *.egg-info/
 .pytest_cache/
 projects/*/dbt/.user.yml
+
+# Machine-local agent skill links (symlinks into a project's .venv) — never portable
+.agents/
+.claude/skills/developing-with-streamlit
