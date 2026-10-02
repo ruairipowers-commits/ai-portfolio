@@ -1,0 +1,33 @@
+[project]
+name = "eod-heartbeat"
+version = "0.1.0"
+description = "Fund end-of-day pipeline monitor: breaks detected in dbt-postgres, explained from runbooks via pgvector RAG"
+requires-python = ">=3.11"
+dependencies = [
+  "psycopg[binary]>=3.2,<4",
+  "pgserver>=0.1.4",            # embedded Postgres 16 + pgvector for local runs (no Docker)
+  "dbt-postgres>=1.9,<2",
+  "pydantic>=2.7,<3",
+  "pyyaml>=6,<7",
+]
+
+[project.optional-dependencies]
+ui = ["streamlit>=1.40", "pandas>=2"]
+anthropic = ["anthropic>=0.40"]
+openai = ["openai>=1.50"]
+aws = ["boto3>=1.35"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+eodhb = "eod_heartbeat.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

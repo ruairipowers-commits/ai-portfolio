@@ -13,11 +13,13 @@ import pandas as pd
 import streamlit as st
 
 from tradeops import app_support as sup
+from tradeops import demo
 from tradeops import walkthrough
 from tradeops.llm import BudgetExceeded, Registry, RegistryError
 from tradeops.runner import ROOT, decide, investigate
 
 st.set_page_config(page_title="Trade-ops exception agent", page_icon="🧾", layout="wide")
+demo.activate_streamlit(ROOT)   # hosted demo: this visitor's own copy of the data (no-op locally)
 DOCS = Path(__file__).resolve().parents[2] / "docs"   # shipped with the code, not the data folder
 
 STATUS_STYLE = {
@@ -131,10 +133,14 @@ with st.sidebar:
         flash(True, "Demo data reset: 40 open exceptions, nothing investigated.")
         st.rerun()
     st.caption("New here? Open **📘 Guide & models**.")
+    st.divider()
+    demo.sidebar(st, ROOT)
 
 st.title("Trade-ops exception agent")
 st.caption("A LangGraph agent investigates settlement breaks with read-only tools from an MCP server, proposes a fix "
            "and stops. Nothing is recorded or sent until a named analyst approves.")
+if demo.links_markdown(ROOT):
+    st.markdown(demo.links_markdown(ROOT))
 if "flash" in st.session_state:
     ok, msg = st.session_state.pop("flash")
     (st.success if ok else st.error)(msg)

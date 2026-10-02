@@ -1,0 +1,5 @@
+# Airflow 3 with this project installed, so the DAG's tasks import eod_heartbeat.
+FROM apache/airflow:3.1.0-python3.11
+COPY --chown=airflow:root . /opt/eod
+RUN pip install --no-cache-dir /opt/eod
+ENV EOD_ROOT=/opt/eod AIRFLOW__CORE__DAGS_FOLDER=/opt/eod/dags AIRFLOW__CORE__LOAD_EXAMPLES=False

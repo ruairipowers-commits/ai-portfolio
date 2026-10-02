@@ -7,7 +7,7 @@ from pathlib import Path
 import yaml
 
 from .llm import Budget, LLMClient, Registry
-from .store import ROOT, Settings, now
+from .store import ROOT, Settings, now, workspace
 from .workflow import build_prompt, new_run_id, triage_vendor
 
 
@@ -61,7 +61,7 @@ def run_eval(con, settings: Settings, alias: str) -> dict:
     report = {"run_id": run_id, "ts": now().isoformat(), "alias": alias, "model_name": spec.name,
               "model_id": spec.model_id, "prompt_sha": prompt_sha, "metrics": metrics,
               "failures": failures, "passed": not failures, "cases": rows}
-    out = ROOT / "output" / "evals"
+    out = workspace() / "output" / "evals"
     out.mkdir(parents=True, exist_ok=True)
     (out / f"{report['ts'][:19].replace(':', '')}_{spec.name}.json").write_text(json.dumps(report, indent=2))
     (out / f"latest_{spec.name}.json").write_text(json.dumps(report, indent=2))
@@ -78,5 +78,5 @@ def compare(candidate: dict, baseline: dict) -> list[str]:
 
 
 def latest_report(model_name: str) -> dict | None:
-    p = ROOT / "output" / "evals" / f"latest_{model_name}.json"
+    p = workspace() / "output" / "evals" / f"latest_{model_name}.json"
     return json.loads(p.read_text()) if p.exists() else None

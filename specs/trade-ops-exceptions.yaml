@@ -24,7 +24,7 @@ stack:
   llm_access: registry aliases -> LangChain chat models (ChatAnthropic / ChatOpenAI / ChatBedrockConverse); deterministic scripted mock for offline runs and CI
   retrieval: none (similar past exceptions via SQL lookup tool)
   tools: MCP server in TypeScript (@modelcontextprotocol/sdk, stdio) loaded with langchain-mcp-adapters
-  ui: streamlit (open exceptions → Investigate → approval queue with evidence, editable fix/email, approve/reject; try-to-break-it: edit broker confirm text)
+  ui: "streamlit (open exceptions → Investigate → approval queue with evidence, editable fix/email, approve/reject; try-to-break-it: edit broker confirm text)"
   aws_native: Bedrock (Converse + tool use), ECS Fargate, RDS Postgres, Step Functions waitForTaskToken for the approval wait, SES in sandbox for drafts; AgentCore noted as an option
 showcases:
   - real agent loop with native tool calling (vs altdata-triage's fixed workflow)
@@ -61,4 +61,8 @@ synthetic_data:
 
 golden_cases: 12 labelled exceptions (2 per break type) + the 4 adversarial/compliance cases; expected category, expected fix type, required tools, max steps
 
+demo:   # hosted demo on Hugging Face Spaces (scripts/build_space.py)
+  title: Trade-ops exception agent
+  emoji: "🧾"
+  short_description: LangGraph + MCP agent with human approval
 links: {repo: "", blog: "blog/trade-ops-exceptions"}

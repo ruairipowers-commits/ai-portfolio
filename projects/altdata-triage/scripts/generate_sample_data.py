@@ -8,13 +8,14 @@ attempt and a PII/licensing problem. All names and data are invented.
 from __future__ import annotations
 
 import csv
+import os
 import random
 import string
 from datetime import date, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-INCOMING = ROOT / "data" / "incoming"
+INCOMING = Path(os.getenv("ALTDATA_INCOMING") or ROOT / "data" / "incoming")
 SEEDS = ROOT / "dbt" / "seeds"
 END = date(2026, 9, 18)  # last delivery Friday (as_of_date in config is 2026-09-25)
 

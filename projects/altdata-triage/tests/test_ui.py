@@ -123,3 +123,24 @@ def test_questionnaire_edit_changes_outcome(app):
     at = app.run()
     at = click(at, "Run triage")
     assert summary(at).loc["CardPulse", "final"].endswith("REJECT")   # PII without derived-use licence
+
+
+def test_hosted_demo_gives_each_visitor_a_private_sandbox(app, tmp_path, monkeypatch):
+    """PORTFOLIO_DEMO=1: data is copied per session; the shared baseline is never written."""
+    sessions = tmp_path / "sessions"
+    monkeypatch.setenv("PORTFOLIO_DEMO", "1")
+    monkeypatch.setenv("DEMO_SESSIONS_DIR", str(sessions))
+    monkeypatch.setenv("PORTFOLIO_BLOG_URL", "https://example.test/blog/altdata-triage/")
+    monkeypatch.setenv("PORTFOLIO_SOURCE_URL", "https://github.com/example/altdata-triage")
+    at = app.run()
+    assert not at.exception
+    at = click(at, "Run triage")
+    assert not at.exception, at.exception
+    boxes = [d for d in (sessions / "altdata-triage").iterdir() if d.is_dir()]
+    assert len(boxes) == 1
+    assert (boxes[0] / "warehouse" / "ui.duckdb").exists()
+    assert (boxes[0] / "dbt" / "target" / "run_results.json").exists()
+    assert not (tmp_path / "warehouse" / "ui.duckdb").exists()      # baseline untouched
+    links = " ".join(m.value for m in at.markdown)
+    assert "example.test/blog/altdata-triage" in links and "github.com/example/altdata-triage" in links
+    assert any("Public demo" in i.value for i in at.sidebar.info)

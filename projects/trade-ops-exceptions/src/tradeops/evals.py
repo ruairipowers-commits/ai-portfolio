@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 import yaml
 
 from . import db
-from .runner import ROOT, db_url, investigate, load_settings
+from .runner import ROOT, db_url, investigate, load_settings, workspace
 from .llm import Registry
 
 
@@ -72,7 +72,7 @@ async def run_eval(alias: str) -> dict:
     report = {"run_id": run_id, "ts": datetime.now(timezone.utc).isoformat(), "alias": alias,
               "model_name": spec.name, "model_id": spec.model_id, "prompt_sha": prompt_sha,
               "metrics": m, "failures": failures, "passed": not failures, "cases": rows}
-    out = ROOT / "output" / "evals"
+    out = workspace() / "output" / "evals"
     out.mkdir(parents=True, exist_ok=True)
     (out / f"{report['ts'][:19].replace(':', '')}_{spec.name}.json").write_text(json.dumps(report, indent=2))
     (out / f"latest_{spec.name}.json").write_text(json.dumps(report, indent=2))
@@ -86,5 +86,5 @@ def compare(candidate: dict, baseline: dict) -> list[str]:
 
 
 def latest(model_name: str) -> dict | None:
-    p = ROOT / "output" / "evals" / f"latest_{model_name}.json"
+    p = workspace() / "output" / "evals" / f"latest_{model_name}.json"
     return json.loads(p.read_text()) if p.exists() else None

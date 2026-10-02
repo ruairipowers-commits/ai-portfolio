@@ -21,7 +21,7 @@ stack:
   orchestration: cli (make / GitHub Actions)
   llm_access: registry adapter (mock, anthropic, openai, bedrock)
   retrieval: none
-  ui: streamlit (sample vendors or upload → Run triage → summary, memos + review, scorecard, eval, audit; try-to-break-it: edit vendor notes)
+  ui: "streamlit (sample vendors or upload → Run triage → summary, memos + review, scorecard, eval, audit; try-to-break-it: edit vendor notes)"
   aws_native: S3, Glue, Athena (dbt-athena), Bedrock, ECS Fargate, CloudWatch, Budgets (Terraform)
 showcases: [dbt modelling + tests as an AI quality gate, deterministic policy over LLM output, eval-gated model promotion, cost budgets]
 
@@ -53,4 +53,8 @@ golden_cases:
   - {id: v04, expected: ESCALATE, tags: [must_escalate]}
   - {id: v05, expected: PARK}
 
+demo:   # hosted demo on Hugging Face Spaces (scripts/build_space.py)
+  title: Alt-data vendor triage
+  emoji: "📊"
+  short_description: dbt scores vendor samples; an LLM drafts memos
 links: {repo: "", blog: "blog/altdata-triage"}

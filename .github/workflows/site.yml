@@ -20,6 +20,7 @@ jobs:
           # Derived from whoever owns the repo, so no personal details live in git.
           # For a custom domain, set repository variable SITE_URL (Settings -> Variables).
           PORTFOLIO_GITHUB_OWNER: ${{ github.repository_owner }}
+          PORTFOLIO_HF_OWNER: ${{ vars.HF_OWNER }}
           PORTFOLIO_SITE_URL: ${{ vars.SITE_URL || format('https://{0}.github.io/{1}/', github.repository_owner, github.event.repository.name) }}
       - uses: actions/upload-pages-artifact@v3
         with: {path: build}

@@ -13,7 +13,7 @@ from langgraph.types import Command
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from . import db, policy as P
+from . import db, demo, policy as P
 from .agent import Runtime, build_graph, initial_state
 from .llm import Budget, Registry
 
@@ -29,13 +29,18 @@ def find_root() -> Path:
 ROOT = find_root()
 
 
+def workspace() -> Path:
+    """Where mutable data lives: the project root, or this visitor's sandbox in the hosted demo."""
+    return demo.current() or ROOT
+
+
 def load_settings() -> dict:
     return yaml.safe_load((ROOT / "config" / "settings.yaml").read_text())
 
 
 def db_url(s: dict) -> str:
     url = os.getenv("DATABASE_URL", s["database_url"])
-    return url if db.is_pg(url) else str(ROOT / url)
+    return url if db.is_pg(url) else str(workspace() / url)
 
 
 @asynccontextmanager
@@ -54,7 +59,7 @@ async def mcp_tools(s: dict, scope: str, signing_key: str | None = None):
 
 
 def checkpoint_path(s: dict) -> str:
-    p = ROOT / s["checkpoint_db"]
+    p = workspace() / s["checkpoint_db"]
     p.parent.mkdir(parents=True, exist_ok=True)
     return str(p)
 

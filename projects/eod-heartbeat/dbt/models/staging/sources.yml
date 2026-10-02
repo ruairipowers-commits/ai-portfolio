@@ -1,0 +1,36 @@
+version: 2
+sources:
+  - name: raw
+    description: EOD feeds as delivered, landed by `eodhb load` (DATA-01). One folder per business date.
+    meta: {owner: fund-operations, refresh: "every 5 min 17:00-21:00 ET (Airflow)"}
+    tables:
+      - name: securities
+        meta: {source: security master}
+        columns: [{name: ticker, data_tests: [not_null, unique]}]
+      - name: feeds
+        meta: {source: config — feed SLAs}
+        columns: [{name: feed, data_tests: [not_null, unique]}]
+      - name: opening_positions
+      - name: opening_prices
+      - name: opening_fx
+      - name: prices
+        meta: {source: pricing vendor, sla: "17:30 ET"}
+        columns: [{name: close, data_tests: [not_null]}]
+      - name: fx
+        meta: {source: FX vendor, sla: "17:15 ET"}
+        columns: [{name: usd_rate, data_tests: [not_null]}]
+      - name: trades
+        meta: {source: OMS EOD extract, sla: "18:00 ET"}
+        columns: [{name: trade_id, data_tests: [not_null]}]   # duplicates are detected as breaks, not failed here
+      - name: pb_positions
+        meta: {source: prime broker, sla: "19:00 ET"}
+        columns: [{name: qty, data_tests: [not_null]}]
+      - name: corp_actions
+        meta: {source: corporate actions vendor, sla: "18:30 ET"}
+      - name: adjustments
+        meta: {source: ops position adjustments (manual, with reason)}
+      - name: reported_pnl
+        meta: {source: risk system, sla: "19:30 ET"}
+      - name: file_arrivals
+        meta: {source: landing-zone watcher}
+        columns: [{name: arrived_at, data_tests: [not_null]}]
