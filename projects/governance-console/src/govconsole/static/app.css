@@ -143,3 +143,5 @@ code { font-size: 12px; background: var(--surface-2); border: 1px solid var(--bo
   .kv { grid-template-columns: 1fr; }
 }
 footer { max-width: 1440px; margin: 0 auto; padding: 8px 20px 30px; color: var(--muted); font-size: 12px; }
+
+.tabs .count { display:inline-block; min-width:18px; padding:0 5px; margin-left:3px; border-radius:9px; background: var(--critical); color:#fff; font-size:11px; line-height:18px; text-align:center; font-weight:600; }

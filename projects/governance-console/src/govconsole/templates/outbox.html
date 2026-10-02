@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Outbox · AI Governance Console{% endblock %}
+{% block content %}
+<p class="small"><a href="{{ base }}/settings">← Settings</a></p>
+<h1>Outbox</h1>
+<p class="sub">Every notification the console has sent or tried to send. Email: {{ smtp }}.</p>
+<section class="card"><div class="table-wrap"><table><thead><tr><th>Time (UTC)</th><th>Incident</th><th>To</th><th>Subject</th><th>Status</th></tr></thead><tbody>
+{% for m in mails %}<tr><td class="small">{{ m.ts|ts }}</td>
+  <td class="small">{% if m.incident_id %}<a href="{{ base }}/incidents/{{ m.incident_id }}">{{ m.incident_id }}</a>{% else %}—{% endif %}</td>
+  <td class="small">{{ m.recipients or '—' }}</td><td class="small"><a href="{{ base }}/outbox/{{ m.notification_id }}">{{ m.subject }}</a>{% if m.source == 'simulated' %} <span class="muted">(simulated)</span>{% endif %}</td>
+  <td class="small">{{ m.status }}{% if m.error %} <span class="muted">— {{ m.error }}</span>{% endif %}</td></tr>
+{% else %}<tr><td colspan="5" class="muted">Nothing sent yet.</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% from "_macros.html" import swatch, sev_chip, inc_status, state_chip %}
+{% block title %}{{ inc.incident_id }} · AI Governance Console{% endblock %}
+{% block filters %}{% endblock %}
+{% block content %}
+<p class="small"><a href="{{ base }}/incidents">← All incidents</a></p>
+<div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; justify-content:space-between">
+  <div style="flex:1 1 520px">
+    <p style="margin:0 0 6px">{{ sev_chip(inc.severity) }} {{ inc_status(inc.status) }}
+      <span class="muted small">{{ inc.incident_id }} · control {{ inc.control_id }} · opened {{ inc.opened_at|ts }} UTC
+      {% if inc.occurrences > 1 %}· happened {{ inc.occurrences }} times, last {{ inc.last_seen|ts }}{% endif %}
+      {% if inc.source == 'simulated' %}· simulated{% endif %}</span></p>
+    <h1 style="margin-top:4px">{{ inc.title }}</h1>
+    <p class="sub">{{ swatch(inc.workflow, catalog) }}<a href="{{ base }}/workflows/{{ inc.workflow }}">{{ names.get(inc.workflow, inc.workflow) }}</a>
+      {% if row %}· owner {{ row.owner }} · {{ row.risk_tier }} risk{% endif %}</p>
+    <p>{{ inc.summary }}</p>
+    {% if rule.guidance %}<div class="banner info"><span>🧭</span><div><b>What to do.</b> {{ rule.guidance }}</div></div>{% endif %}
+  </div>
+  <div class="card" style="min-width:300px; max-width:400px">
+    <h2>Workflow state</h2>
+    {% if row %}<p style="margin:0 0 6px">{{ state_chip(row) }}</p>
+      {% if not row.enabled %}<p class="small" style="margin:0 0 6px">Off since {{ row.state_at|ts }} — {{ row.state_reason|inc }} ({{ row.state_by }})
+        {% if row.state_expires %}<br>Lapses automatically at {{ row.state_expires|ts }} UTC (public demo).{% endif %}</p>{% endif %}
+    {% else %}<p class="small">Not in the catalog — no switch to turn.</p>{% endif %}
+    <p class="small" style="margin:8px 0 0">
+      {% if wf_link.demo %}▶ <a href="{{ wf_link.demo }}">Open the workflow</a> · {% endif %}
+      <a href="{{ base }}/events?wf={{ inc.workflow }}&days=7">Its recent events</a> ·
+      <a href="{{ base }}/workflows/{{ inc.workflow }}#controls">Its controls</a></p>
+    {% if others %}<p class="small" style="margin:8px 0 0">Also open for this workflow:
+      {% for o in others %}<a href="{{ base }}/incidents/{{ o.incident_id }}">{{ o.incident_id }}</a> ({{ o.severity }}){{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
+  </div>
+</div>
+
+<section class="grid charts-2b" style="margin-top:14px">
+  <div class="card"><h2>Evidence</h2>
+    <p class="small muted" style="margin-top:0">What the workflow reported — counts, flags and identifiers, never prompts or documents.</p>
+    {% for e in inc.evidence|reverse %}
+    <dl class="kv" style="border-top:1px solid var(--border); padding-top:8px">
+      {% for k, v in e.items() if k != 'detail' %}<dt>{{ k|replace('_', ' ') }}</dt><dd class="small">{{ v|join(', ') if v is iterable and v is not string and v is not mapping else v }}</dd>{% endfor %}
+      {% for k, v in (e.detail or {}).items() %}<dt>{{ k|replace('_', ' ') }}</dt><dd class="small">{{ v }}</dd>{% endfor %}
+    </dl>{% endfor %}
+  </div>
+  <div class="card" id="timeline"><h2>Timeline</h2>
+    <ul class="feed">{% for l in log %}<li><span class="t">{{ l.ts|ts }}</span><span><b>{{ {'opened': 'Opened', 'repeat': 'Repeated', 'shutdown': 'Auto-shutdown', 'notified': 'Notified', 'investigation': 'Investigation', 'root_cause': 'Root cause', 'fix': 'Fix', 'documentation': 'Documented', 'resolved': 'Resolved', 'attested': 'Control re-confirmed', 'reenabled': 'Re-enabled'}.get(l.kind, l.kind) }}</b>
+      {% if l.actor %}<span class="muted">· {{ l.actor }}</span>{% endif %}<br><span class="small" style="white-space:pre-line">{{ l.text }}</span></span></li>{% endfor %}</ul>
+    {% if inc.status != 'resolved' and (admin or demo) %}
+    <form method="post" action="{{ base }}/incidents/{{ inc.incident_id }}/note" style="display:grid; gap:8px; margin-top:10px">
+      <div style="display:flex; gap:8px; flex-wrap:wrap">
+        <select name="kind" aria-label="Note type"><option value="investigation">Investigation note</option><option value="root_cause">Root cause</option>
+          <option value="fix">Fix applied</option><option value="documentation">Documentation</option></select>
+        {% if not admin %}<input type="text" name="name" required placeholder="Your name" maxlength="60">{% endif %}
+      </div>
+      <textarea name="text" rows="2" required placeholder="What you found or did"></textarea>
+      <div><button class="btn">Add to timeline</button></div>
+    </form>{% endif %}
+  </div>
+</section>
+
+<section class="card" style="margin-top:14px" id="resolve">
+  {% if inc.status == 'resolved' %}
+  <h2>Resolved {{ inc.resolved_at|ts }} by {{ inc.resolved_by }}</h2>
+  <p style="white-space:pre-line">{{ inc.resolution }}</p>
+  {% elif admin or demo %}
+  <h2>Resolve</h2>
+  <p class="small muted" style="margin-top:0">All three are required: they become the incident record your auditors read.</p>
+  <form method="post" action="{{ base }}/incidents/{{ inc.incident_id }}/resolve" style="display:grid; gap:8px; max-width:820px">
+    <label class="small">Root cause<textarea name="root_cause" rows="2" required placeholder="Why it happened"></textarea></label>
+    <label class="small">Fix — how the gap was closed<textarea name="fix" rows="2" required placeholder="What changed so it can't happen the same way again"></textarea></label>
+    <label class="small">Documentation<textarea name="documentation" rows="2" required placeholder="Where it's written down: runbook, PR, governance mapping, golden-set case"></textarea></label>
+    {% if not admin %}<input type="text" name="name" required placeholder="Your name" maxlength="60">{% endif %}
+    {% if inc.control_id %}<label class="toggle"><input type="checkbox" name="attest" value="1" checked> Re-confirm control {{ inc.control_id }} for this workflow</label>{% endif %}
+    {% if row and not row.enabled %}<label class="toggle"><input type="checkbox" name="reenable" value="1" checked> Switch {{ row.name }} back on</label>
+      {% if others %}<p class="small" style="margin:0">Note: {{ others|length }} other incident{{ 's' if others|length > 1 }} still open for this workflow.</p>{% endif %}{% endif %}
+    <div><button class="btn primary">Resolve incident{{ ' and re-enable' if row and not row.enabled }}</button></div>
+  </form>
+  {% else %}<p class="small">Resolving needs an <a href="{{ base }}/admin/login">admin sign-in</a>.</p>{% endif %}
+</section>
+
+<section class="grid charts-2b" style="margin-top:14px">
+  <div class="card"><h2>Notifications</h2>
+    <div class="table-wrap"><table><thead><tr><th>Sent (UTC)</th><th>Channel</th><th>Status</th><th>Subject</th></tr></thead><tbody>
+    {% for m in mails %}<tr><td class="small">{{ m.ts|ts }}</td><td class="small">{{ m.channel }}</td><td class="small">{{ m.status }}{% if m.error %} — {{ m.error }}{% endif %}</td>
+      <td class="small"><a href="{{ base }}/outbox/{{ m.notification_id }}">{{ m.subject }}</a></td></tr>
+    {% else %}<tr><td colspan="4" class="muted">None (below this workflow's notify level, or alerts are off).</td></tr>{% endfor %}</tbody></table></div></div>
+  <div class="card"><h2>Ticketing (integration option)</h2>
+    <p class="small muted" style="margin-top:0">Not connected in this demo. In production the same incident opens one ticket,
+      deduplicated by incident ID, so repeats update it rather than paging again. The payloads it would send:</p>
+    {% for ch, payload in tickets.items() %}<details><summary class="small"><b>{{ {'pagerduty': 'PagerDuty Events API v2', 'servicenow': 'ServiceNow incident (Table API)'}[ch] }}</b></summary>
+      <pre class="small" style="white-space:pre-wrap; overflow:auto; max-height:260px">{{ payload|tojson(indent=2) }}</pre></details>{% endfor %}
+  </div>
+</section>
+{% endblock %}

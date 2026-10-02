@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "_macros.html" import swatch, sev_chip, inc_status %}
+{% block title %}Incidents · AI Governance Console{% endblock %}
+{% block content %}
+<h1>Incidents</h1>
+<p class="sub">Governance issues the console found in what the workflows report — one incident per workflow and rule until
+  someone resolves it. Serious ones switch the workflow off and email its escalation list
+  (<a href="{{ base }}/settings">settings</a>).</p>
+<p class="seg" role="group" aria-label="Status">
+  {% for s, label in [('open', 'Open'), ('resolved', 'Resolved'), ('all', 'All')] %}
+  <a href="?status={{ s }}&days={{ f.days }}{{ '&sim=0' if not f.sim }}" class="{{ 'on' if status == s }}">{{ label }}</a>{% endfor %}
+</p>
+<section class="card" style="margin-top:12px">
+  <div class="table-wrap"><table><thead><tr><th>Incident</th><th>Severity</th><th>Workflow</th><th>Issue</th><th>Control</th>
+    <th class="n">Times</th><th>Opened (UTC)</th><th>Status</th><th>Workflow switched off?</th></tr></thead><tbody>
+  {% for i in incidents %}
+  <tr><td><a href="{{ base }}/incidents/{{ i.incident_id }}"><b>{{ i.incident_id }}</b></a>{% if i.source == 'simulated' %} <span class="muted small">(simulated)</span>{% endif %}</td>
+    <td>{{ sev_chip(i.severity) }}</td><td class="small">{{ swatch(i.workflow, catalog) }}{{ names.get(i.workflow, i.workflow) }}</td>
+    <td class="small">{{ i.title }}</td><td class="small">{{ i.control_id }}</td><td class="n">{{ i.occurrences }}</td>
+    <td class="small muted">{{ i.opened_at|ts }}</td><td>{{ inc_status(i.status) }}</td>
+    <td class="small">{{ 'Yes, automatically' if i.auto_shutdown else 'No' }}</td></tr>
+  {% else %}<tr><td colspan="9" class="muted">No {{ status if status != 'all' }} incidents.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}

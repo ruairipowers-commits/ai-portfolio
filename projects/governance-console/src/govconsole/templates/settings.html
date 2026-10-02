@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% from "_macros.html" import swatch, sev_chip %}
+{% block title %}Settings · AI Governance Console{% endblock %}
+{% block filters %}{% endblock %}
+{% block content %}
+<h1>Escalation settings</h1>
+<p class="sub">For each workflow: whether governance issues are emailed, to whom, at what severity, and when the console
+  switches the workflow off by itself. <a href="{{ base }}/outbox">Outbox →</a></p>
+{% if saved %}<div class="banner info"><span>✓</span><div>Saved settings for <b>{{ names.get(saved, saved) }}</b>.</div></div>{% endif %}
+{% if not admin %}<div class="banner"><span>🔒</span><div>Read-only: changing who gets alerts needs an
+  {% if admin_configured %}<a href="{{ base }}/admin/login">admin sign-in</a>{% else %}admin sign-in{% endif %}.
+  {% if demo %}In the public demo the alerts go to the portfolio's owner; recipients are masked.{% endif %}</div></div>{% endif %}
+
+<section class="grid charts-2b">
+  <div class="card"><h2>Channels</h2>
+    <dl class="kv">
+      <dt>Email</dt><dd>{% if smtp_ok %}<span class="chip good small"><span class="dot"></span>Connected</span>{% else %}<span class="chip warning small"><span class="dot"></span>Outbox only</span>{% endif %}
+        <span class="small">{{ smtp }}</span>
+        {% if env_recipients %}<br><span class="small muted">Always copied: {{ env_recipients|join(', ') }} (GOVERNANCE_ALERT_EMAIL)</span>{% endif %}
+        {% if admin %}<form method="post" action="{{ base }}/settings/test-email" style="margin:6px 0 0"><button class="btn small">Send a test email</button></form>{% endif %}</dd>
+      <dt>PagerDuty</dt><dd><span class="chip neutral small"><span class="dot"></span>Integration option</span>
+        <span class="small muted">Events API v2, one alert per incident (dedup key = incident ID). Not built.</span></dd>
+      <dt>ServiceNow</dt><dd><span class="chip neutral small"><span class="dot"></span>Integration option</span>
+        <span class="small muted">Incident via the Table API, correlation ID = incident ID. Not built.</span></dd>
+    </dl>
+    <p class="small muted">Each incident page shows the exact ticket payloads. Design: <code>docs/integrations.md</code>.</p></div>
+  <div class="card"><h2>How it works</h2>
+    <ol class="small" style="padding-left:18px; margin:0">
+      <li>A workflow reports an event whose guardrail flags match a rule (or a periodic check trips: budget, spend anomaly, unregistered workflow).</li>
+      <li>The console opens an incident — one per workflow and rule until resolved, so repeats don't re-alert.</li>
+      <li>At or above the <b>auto-shutdown</b> level it turns the workflow's kill switch off; the app refuses runs within 15 s.</li>
+      <li>At or above the <b>notify</b> level it emails the recipients with the details and a link to the incident.</li>
+      <li>You investigate, record root cause, fix and documentation, re-confirm the control and switch the workflow back on.</li>
+    </ol>
+    <p class="small muted">Limits: {{ esc.limits.emails_per_day }} emails a day across all workflows; checks every {{ esc.limits.check_interval_minutes }} minutes.
+      {% if demo %}Public demo: an automatic switch-off lapses after {{ esc.limits.demo_shutdown_minutes }} minutes.{% endif %}</p></div>
+</section>
+
+{% for w in catalog.workflows %}{% set s = per_wf[w.slug] %}
+<section class="card" style="margin-top:14px" id="wf-{{ w.slug }}">
+  <div class="card-head"><h2>{{ swatch(w.slug, catalog) }}{{ w.name }}</h2>
+    <span class="muted small">{% if s._stored %}changed by {{ s._updated_by }}, {{ s._updated_at|ts }}{% else %}defaults{% endif %}</span></div>
+  <form method="post" action="{{ base }}/settings/escalation/{{ w.slug }}">
+  <fieldset {{ 'disabled' if not admin }} style="border:0; padding:0; margin:0; display:grid; gap:10px">
+    <div class="filters" style="margin:0">
+      <label class="toggle"><input type="checkbox" name="alerts_enabled" value="1" {{ 'checked' if s.alerts_enabled }}> Email alerts</label>
+      <label class="small">Recipients <input type="text" name="recipients" value="{{ s.recipients|join(', ') if admin else '' }}"
+        placeholder="{{ 'name@firm.com, other@firm.com' if admin else ('set by the admin' if s.recipients else 'only GOVERNANCE_ALERT_EMAIL') }}" style="min-width:300px"></label>
+      <label class="small">Email at
+        <select name="notify_at">{% for v in esc.severities %}<option value="{{ v }}" {{ 'selected' if s.notify_at == v }}>{{ v }} and above</option>{% endfor %}</select></label>
+      <label class="small">Switch off at
+        <select name="auto_shutdown_at">{% for v in esc.severities %}<option value="{{ v }}" {{ 'selected' if s.auto_shutdown_at == v }}>{{ v }} and above</option>{% endfor %}
+          <option value="never" {{ 'selected' if s.auto_shutdown_at == 'never' }}>never automatically</option></select></label>
+    </div>
+    <details><summary class="small">Rules ({{ s.rule_ids|length }} of {{ rules|length }} on)</summary>
+      <div class="table-wrap"><table><thead><tr><th>On</th><th>Rule</th><th>Severity</th><th>Control</th><th>What it does here</th></tr></thead><tbody>
+      {% for r in esc.rules %}{% set on = r.id in s.rule_ids %}
+      <tr><td><input type="checkbox" name="rules" value="{{ r.id }}" {{ 'checked' if on }} aria-label="{{ r.title }}"></td>
+        <td class="small">{{ r.title }}<br><span class="muted">{{ 'flags: ' ~ r.match.flags|join(', ') if r.match else 'periodic check: ' ~ r.aggregate }}</span></td>
+        <td>{{ sev_chip(r.severity) }}</td><td class="small">{{ r.control }}</td>
+        <td class="small">{% if not on %}<span class="muted">ignored</span>{% else %}{{ 'switch off + ' if (esc.severities.index(r.severity) >= (esc.severities.index(s.auto_shutdown_at) if s.auto_shutdown_at in esc.severities else 99)) }}{{ 'email' if s.alerts_enabled and esc.severities.index(r.severity) >= esc.severities.index(s.notify_at) else 'record only' }}{% endif %}</td></tr>
+      {% endfor %}</tbody></table></div></details>
+    {% if admin %}<div><button class="btn primary">Save {{ w.name }}</button></div>{% endif %}
+  </fieldset></form>
+</section>
+{% endfor %}
+{% endblock %}

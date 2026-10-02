@@ -40,3 +40,13 @@
   {% for fl in e.flags %}<span class="flag">{{ fl }}</span>{% endfor %}
   {% if e.source == 'live' %}<span class="chip good small" style="padding:0 6px"><span class="dot"></span>live</span>{% endif %}</span></li>
 {%- endmacro %}
+
+{% macro sev_chip(sev) -%}
+{% set cls = {'critical': 'critical', 'high': 'serious', 'medium': 'warning', 'low': 'neutral'}.get(sev, 'neutral') %}
+<span class="chip {{ cls }}"><span class="dot"></span>{{ sev|capitalize }}</span>
+{%- endmacro %}
+
+{% macro inc_status(s) -%}
+{% set cls = {'open': 'critical', 'investigating': 'warning', 'resolved': 'good'}.get(s, 'neutral') %}
+<span class="chip {{ cls }}"><span class="dot"></span>{{ s|capitalize }}</span>
+{%- endmacro %}

@@ -17,7 +17,9 @@
     <a href="{{ base }}/controls?{{ q }}" class="{{ 'on' if page == 'controls' }}">Controls</a>
     <a href="{{ base }}/models?{{ q }}" class="{{ 'on' if page == 'models' }}">Models</a>
     <a href="{{ base }}/events?{{ q }}" class="{{ 'on' if page == 'events' }}">Events &amp; people</a>
+    <a href="{{ base }}/incidents?{{ q }}" class="{{ 'on' if page == 'incidents' }}">Incidents{% if open_incidents %} <span class="count">{{ open_incidents|length }}</span>{% endif %}</a>
     <a href="{{ base }}/audit?{{ q }}" class="{{ 'on' if page == 'audit' }}">Audit &amp; alerts</a>
+    <a href="{{ base }}/settings" class="{{ 'on' if page == 'settings' }}">Settings</a>
   </nav>
   <div class="top-right">
     {% if admin %}
@@ -51,6 +53,10 @@
 </form>
 {% endblock %}
 {% if not f.sim %}<div class="banner info"><span>ℹ️</span><div>Showing <b>live events only</b> — what visitors and local runs of the demo apps have actually done. Costs from the demo apps use the offline mock model's simulated pricing.</div></div>{% endif %}
+{% if open_incidents and page in ('overview', 'workflow') %}{% set mine = open_incidents if page == 'overview' else open_incidents|selectattr('workflow', 'equalto', row.slug)|list %}
+{% if mine %}<div class="banner critical"><span>🚨</span><div><b>{{ mine|length }} open incident{{ 's' if mine|length > 1 }}:</b>
+  {% for i in mine[:4] %}<a href="{{ base }}/incidents/{{ i.incident_id }}">{{ i.incident_id }}</a> {{ names.get(i.workflow, i.workflow) }} — {{ i.title }}{{ ' (switched off)' if i.auto_shutdown }}{{ ' · ' if not loop.last }}{% endfor %}
+  {% if mine|length > 4 %} · <a href="{{ base }}/incidents">all</a>{% endif %}</div></div>{% endif %}{% endif %}
 {% block content %}{% endblock %}
 </main>
 <footer>

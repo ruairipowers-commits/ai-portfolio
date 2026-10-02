@@ -1,9 +1,15 @@
 """Event store: SQLite by default, Postgres when DATABASE_URL is set (durable history for a hosted console).
 
-Three tables:
-  events           one row per governance event from any workflow (visit, run, approval, eval, blocked …)
-  workflow_state   the kill switch: enabled / disabled, why, by whom
-  control_changes  append-only audit log of every switch change
+Tables:
+  events               one row per governance event from any workflow (visit, run, approval, eval, blocked …)
+  workflow_state       the kill switch: enabled / disabled, why, by whom
+  control_changes      append-only audit log of every switch change
+  workflow_meta        what each workflow declares about itself (models, version) when it starts
+  attestations         reviewers confirming controls
+  incidents            governance issues the console detected, from detection to documented resolution
+  incident_log         each incident's timeline: opened, repeats, auto-shutdown, emails, notes, fix, resolution
+  notifications        every email (or ticket) the console sent or would have sent — the outbox
+  escalation_settings  per-workflow alert and auto-shutdown choices from the Settings page
 Timestamps are ISO-8601 UTC text and `day` is YYYY-MM-DD, so the same SQL runs on both databases.
 """
 from __future__ import annotations
@@ -41,6 +47,24 @@ create table if not exists attestations (
 create table if not exists control_changes (
   change_id text primary key, ts text not null, workflow text not null, action text not null,
   reason text, actor text, source text not null
+);
+create table if not exists incidents (
+  incident_id text primary key, number integer not null, opened_at text not null, workflow text not null,
+  rule_id text not null, severity text not null, title text not null, control_id text, status text not null,
+  summary text, evidence text, occurrences integer default 1, last_seen text, auto_shutdown integer default 0,
+  resolved_at text, resolved_by text, resolution text, source text not null
+);
+create index if not exists ix_incidents_open on incidents (workflow, rule_id, status);
+create table if not exists incident_log (
+  entry_id text primary key, incident_id text not null, ts text not null, kind text not null, actor text,
+  text text, source text not null
+);
+create table if not exists notifications (
+  notification_id text primary key, ts text not null, incident_id text, channel text not null, recipients text,
+  subject text, body_text text, body_html text, status text not null, error text, source text not null
+);
+create table if not exists escalation_settings (
+  workflow text primary key, settings text not null, updated_by text, updated_at text
 )
 """
 EVENT_COLS = ["event_id", "ts", "day", "workflow", "event_type", "status", "actor", "actor_type", "session_id",
@@ -102,9 +126,8 @@ class Store:
             return c.query("select count(*) as n from events")[0]["n"] - before
 
     def delete_source(self, source: str) -> None:
-        self.execute("delete from events where source = ?", (source,))
-        self.execute("delete from control_changes where source = ?", (source,))
-        self.execute("delete from attestations where source = ?", (source,))
+        for table in ("events", "control_changes", "attestations", "incidents", "incident_log", "notifications"):
+            self.execute(f"delete from {table} where source = ?", (source,))
 
     # -------------------------------------------------------------- kill switch
     def workflow_state(self) -> dict[str, dict]:
@@ -152,6 +175,105 @@ class Store:
         for r in self.query(f"select * from attestations {src} order by ts"):
             out[(r["workflow"], r["control_id"])] = r
         return out
+
+    # -------------------------------------------------------------- incidents
+    def open_incident(self, workflow: str, rule_id: str) -> dict | None:
+        rows = self.query("select * from incidents where workflow = ? and rule_id = ? and status <> 'resolved' "
+                          "order by opened_at desc limit 1", (workflow, rule_id))
+        return _incident(rows[0]) if rows else None
+
+    def create_incident(self, inc: dict, source: str = "live") -> dict:
+        with self._lock, self._conn() as c:
+            n = (c.query("select max(number) as n from incidents")[0]["n"] or 0) + 1
+            inc = {"incident_id": f"INC-{n:04d}", "number": n, "status": "open", "occurrences": 1,
+                   "last_seen": inc["opened_at"], "auto_shutdown": 0, "resolved_at": None, "resolved_by": None,
+                   "resolution": None, "source": source, **inc}
+            cols = ["incident_id", "number", "opened_at", "workflow", "rule_id", "severity", "title", "control_id",
+                    "status", "summary", "evidence", "occurrences", "last_seen", "auto_shutdown", "resolved_at",
+                    "resolved_by", "resolution", "source"]
+            row = {**inc, "evidence": json.dumps(inc.get("evidence") or [])}
+            c.execute(f"insert into incidents ({','.join(cols)}) values ({','.join('?' * len(cols))})",
+                      tuple(row[k] for k in cols))
+        return inc
+
+    def update_incident(self, incident_id: str, **fields) -> None:
+        if "evidence" in fields:
+            fields["evidence"] = json.dumps(fields["evidence"])
+        sets = ", ".join(f"{k} = ?" for k in fields)
+        self.execute(f"update incidents set {sets} where incident_id = ?", (*fields.values(), incident_id))
+
+    def incident(self, incident_id: str) -> dict | None:
+        rows = self.query("select * from incidents where incident_id = ?", (incident_id,))
+        return _incident(rows[0]) if rows else None
+
+    def incidents(self, status: str | None = None, workflow: str | None = None, include_simulated: bool = True,
+                  limit: int = 200) -> list[dict]:
+        where, p = [], []
+        if status == "open":
+            where.append("status <> 'resolved'")
+        elif status:
+            where.append("status = ?"), p.append(status)
+        if workflow:
+            where.append("workflow = ?"), p.append(workflow)
+        if not include_simulated:
+            where.append("source = 'live'")
+        sql = "select * from incidents" + (" where " + " and ".join(where) if where else "") + \
+            f" order by opened_at desc limit {int(limit)}"
+        return [_incident(r) for r in self.query(sql, p)]
+
+    def log_incident(self, incident_id: str, kind: str, actor: str, text: str, source: str = "live",
+                     ts: str | None = None) -> None:
+        self.execute("insert into incident_log values (?,?,?,?,?,?,?)",
+                     (os.urandom(8).hex(), incident_id,   # microseconds keep same-second entries in order
+                      ts or datetime.now(timezone.utc).isoformat(timespec="microseconds"), kind, actor, text, source))
+
+    def incident_log(self, incident_id: str) -> list[dict]:
+        return self.query("select * from incident_log where incident_id = ? order by ts, entry_id", (incident_id,))
+
+    # -------------------------------------------------------------- notifications (the outbox)
+    def add_notification(self, n: dict, source: str = "live") -> str:
+        nid = n.get("notification_id") or os.urandom(8).hex()
+        cols = ["notification_id", "ts", "incident_id", "channel", "recipients", "subject", "body_text", "body_html",
+                "status", "error", "source"]
+        row = {"notification_id": nid, "ts": now_iso(), "error": "", "source": source, **n}
+        row["recipients"] = ", ".join(row["recipients"]) if isinstance(row["recipients"], list) else row["recipients"]
+        self.execute(f"insert into notifications ({','.join(cols)}) values ({','.join('?' * len(cols))})",
+                     tuple(row.get(k) for k in cols))
+        return nid
+
+    def set_notification_status(self, nid: str, status: str, error: str = "") -> None:
+        self.execute("update notifications set status = ?, error = ? where notification_id = ?", (status, error, nid))
+
+    def notifications(self, incident_id: str | None = None, limit: int = 100, include_simulated: bool = True) -> list[dict]:
+        where, p = [], []
+        if incident_id:
+            where.append("incident_id = ?"), p.append(incident_id)
+        if not include_simulated:
+            where.append("source = 'live'")
+        return self.query("select * from notifications" + (" where " + " and ".join(where) if where else "") +
+                          f" order by ts desc limit {int(limit)}", p)
+
+    def notification(self, nid: str) -> dict | None:
+        rows = self.query("select * from notifications where notification_id = ?", (nid,))
+        return rows[0] if rows else None
+
+    def emails_sent_since(self, ts: str) -> int:
+        return self.query("select count(*) as n from notifications where channel = 'email' and status = 'sent' "
+                          "and ts >= ? and source = 'live'", (ts,))[0]["n"]
+
+    # -------------------------------------------------------------- escalation settings
+    def escalation_settings(self) -> dict[str, dict]:
+        return {r["workflow"]: {**json.loads(r["settings"]), "_updated_by": r["updated_by"], "_updated_at": r["updated_at"]}
+                for r in self.query("select * from escalation_settings")}
+
+    def save_escalation_settings(self, workflow: str, settings: dict, actor: str) -> None:
+        with self._lock, self._conn() as c:
+            c.execute("delete from escalation_settings where workflow = ?", (workflow,))
+            c.execute("insert into escalation_settings values (?,?,?,?)", (workflow, json.dumps(settings), actor, now_iso()))
+
+
+def _incident(r: dict) -> dict:
+    return {**r, "evidence": json.loads(r["evidence"] or "[]")}
 
 
 def _row(e: dict) -> dict:

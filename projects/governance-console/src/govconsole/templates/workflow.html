@@ -15,7 +15,7 @@
   <div class="card" style="min-width: 320px; max-width: 460px">
     <h2>Kill switch</h2>
     {% if row.enabled %}<p style="margin:0 0 8px"><b>Enabled.</b> {% if row.state_by %}<span class="muted small">Last change by {{ row.state_by }}, {{ row.state_at|ts }}: {{ row.state_reason }}</span>{% endif %}</p>
-    {% else %}<p style="margin:0 0 8px"><b>Disabled</b> by {{ row.state_by }}, {{ row.state_at|ts }} — {{ row.state_reason }}
+    {% else %}<p style="margin:0 0 8px"><b>Disabled</b> by {{ row.state_by }}, {{ row.state_at|ts }} — {{ row.state_reason|inc }}
       {% if row.state_expires %}<br><span class="small">Lapses automatically at {{ row.state_expires|ts }} UTC.</span>{% endif %}</p>{% endif %}
     <p class="small muted" style="margin:0 0 10px">The app checks this before every run and approval (within 15 s) and refuses while disabled.
       Each refused attempt is logged as <i>blocked</i>.</p>

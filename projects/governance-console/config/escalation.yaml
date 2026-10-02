@@ -1,0 +1,94 @@
+# Governance escalation: what counts as a governance issue, how serious it is, and what the console does about it.
+# Per-workflow choices (alerts on/off, recipients, auto-shutdown threshold, which rules) are edited on the console's
+# Settings page and stored in its database; the values here are the defaults. Secrets (SMTP password) come from the
+# environment, never this file.
+
+# Event rules fire the moment a matching event arrives from a workflow. `flags`: any of these on the event.
+# Aggregate rules are checked every `check_interval_minutes` over live events.
+rules:
+  - id: unsafe-action
+    title: AI proposed an action outside the approved runbook
+    control: SEC-04
+    severity: high
+    match: {flags: [unsafe_action, step_not_in_runbook]}
+    guidance: Find which input led the model to the step (usually an edited runbook or an injected instruction), fix it at the source, and confirm the unsafe-action policy still blocks it.
+  - id: entitlement-leak
+    title: Restricted content reached a user or model without entitlement
+    control: DATA-04
+    severity: critical
+    match: {flags: [entitlement_leak, licence_leak]}
+    guidance: Treat as a data incident. Identify the documents and users involved, notify the data owner, and fix the filter before re-enabling.
+  - id: payment-fraud-signal
+    title: Counterparty asked to change bank or settlement details
+    control: HITL-02
+    severity: high
+    match: {flags: [bank_change_request]}
+    guidance: Confirm no instruction was released, verify the request by call-back on a known number, and check the approval step held.
+  - id: output-injection
+    title: Model output contained instruction-like text
+    control: SEC-02
+    severity: high
+    match: {flags: [output_injection]}
+    guidance: Find the source document carrying the instruction, quarantine it, and add it to the golden set as an injection case.
+  - id: injection-detected
+    title: Prompt-injection attempt detected (blocked)
+    control: SEC-02
+    severity: medium
+    match: {flags: [injection_detected, injection_text_dropped]}
+    guidance: The defence held. Check where the text came from (vendor file, document, ticket) and whether the source should be blocked.
+  - id: data-quality-gate
+    title: Data-quality gate failed before the AI step
+    control: DATA-02
+    severity: medium
+    match: {flags: [dq_gate_failed]}
+    guidance: The AI step did not run. Fix the upstream data and re-run; check whether the test threshold is right.
+  - id: eval-failed
+    title: Evaluation gate failed
+    control: MODEL-02
+    severity: medium
+    match: {flags: [eval_failed]}
+    guidance: Don't promote the model or prompt. Compare against the last passing run and inspect the failing cases.
+  - id: budget-cap
+    title: Run stopped at its cost or step budget
+    control: COST-01
+    severity: low
+    match: {flags: [step_or_budget_cap, budget_blocked]}
+    guidance: Check whether the cap is right for this input size or whether the agent looped.
+  # aggregate rules (checked periodically over live events)
+  - id: budget-threshold
+    title: Trailing 30-day spend passed the budget warning
+    control: COST-04
+    severity: medium
+    aggregate: budget
+    guidance: Review what drove spend (model change, volume, loops) and agree a new budget or a fix with the owner.
+  - id: spend-anomaly
+    title: Daily spend anomaly
+    control: COST-04
+    severity: medium
+    aggregate: anomaly
+    guidance: Compare the day against the trailing median; look for a model promotion, a batch, or a retry loop.
+  - id: shadow-ai
+    title: Unregistered workflow is sending AI usage
+    control: HITL-04
+    severity: high
+    aggregate: unregistered
+    guidance: Find the team, register the workflow (spec, owner, risk tier, governance mapping) or shut it down.
+
+severities: [low, medium, high, critical]
+
+defaults:                           # every workflow starts with these until changed on the Settings page
+  alerts_enabled: true
+  recipients: []                    # plus GOVERNANCE_ALERT_EMAIL from the environment, if set
+  auto_shutdown_at: high            # switch the workflow off for issues at or above this severity; "never" to disable
+  notify_at: medium                 # email for issues at or above this severity
+  rules: all                        # or a list of rule ids
+
+limits:
+  emails_per_day: 25                # across all workflows; further issues are still recorded, just not emailed
+  check_interval_minutes: 5
+  demo_shutdown_minutes: 10         # public demo: an automatic switch-off lapses on its own, like a visitor's
+
+channels:                           # where notifications go. Only email is implemented; the rest are designs.
+  email: {enabled: true}            # SMTP settings from the environment (SMTP_HOST, SMTP_USER, SMTP_PASSWORD, ...)
+  pagerduty: {enabled: false, implemented: false, routing_key_env: PAGERDUTY_ROUTING_KEY}
+  servicenow: {enabled: false, implemented: false, instance_env: SERVICENOW_INSTANCE}

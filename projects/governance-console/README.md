@@ -29,7 +29,9 @@ Never prompts, questions or documents. The console turns those events into:
 | **Controls** | Matrix of workflows × controls from each project's `docs/governance.md`, with attestation state |
 | **Models** | Every registered model per workflow: aliases in use, approved, priced, deprecation date, usage |
 | **Events & people** | Who ran what and when, filterable, with CSV export |
+| **Incidents** | Every governance issue the console detected — evidence, guidance, timeline, auto-shutdown, emails, and the documented resolution |
 | **Audit & alerts** | Kill-switch log, spend anomalies, and **unregistered workflows** sending AI usage (shadow AI) |
+| **Settings** | Per workflow: email alerts on or off, recipients, the severity that emails, the severity that **switches it off automatically**, which rules apply; plus the outbox |
 
 **New projects appear on their own.** The catalog is built from `portfolio.yaml`, each project's spec (owner, risk
 tier) and its `docs/governance.md`. Add a project to the portfolio and it's governed — its controls, models and
@@ -39,6 +41,22 @@ budget show up before it has run once. A workflow that sends events without bein
 console whether it's enabled (cached 15 s) and refuses with the reason if not, logging the attempt as *blocked*.
 Changes need an admin and a reason and are audited. In the public demo anyone can try it — the switch-off lapses
 after 10 minutes so the demos stay usable.
+
+**Governance issues are escalated.** When a workflow reports something a rule treats as a governance issue — an
+AI-proposed action outside the runbook, restricted content reaching someone, a payment-detail change request,
+an injection, a failed eval or data gate, a budget or spend anomaly, an unregistered workflow — the console opens an
+incident. At or above the workflow's auto-shutdown level it switches the workflow off; at or above its notify level
+it emails the escalation list with the details and a link straight to the incident. There you investigate, record
+the root cause, the fix and where it's documented, re-confirm the control and switch the workflow back on, in one
+step. One open incident per workflow and rule means one email, not a flood. Ticketing (PagerDuty, ServiceNow) is a
+designed integration option: each incident page shows the exact payloads ([docs/integrations.md](docs/integrations.md)).
+
+[![Escalation walkthrough: violation, auto-shutdown, email, investigate, fix, document, re-enable (2:47)](docs/img/escalation-email.png)](docs/img/escalation.mp4)
+
+*Walkthrough video (2 min 47 s, [docs/img/escalation.mp4](docs/img/escalation.mp4)): a runbook is edited so the
+model proposes a forced rerun → the policy blocks it and the console switches EOD heartbeat off → the owner's
+email → the incident page → investigation note → approved runbooks restored → root cause, fix and documentation
+recorded, SEC-04 re-confirmed, workflow re-enabled. Recorded against a local console and a local mail server.*
 
 ### Simulated history vs live events
 
@@ -57,7 +75,7 @@ git clone <this repo> && cd governance-console
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 govconsole serve                 # http://localhost:8600 (seeds the simulated history on first start)
-pytest -q                        # 15 tests, incl. a round trip with the real telemetry client over HTTP
+pytest -q                        # 23 tests, incl. a round trip with the real telemetry client over HTTP
 ```
 
 Point the workflows at it and use them — their events appear on the next refresh (untick *Include simulated
@@ -85,6 +103,7 @@ it stops with *switched off by governance: \<reason\> (by \<you\>)*.
 | FR-3 | Kill switch per workflow: admin-only, reason required, audited; workflows enforce it before every run |
 | FR-4 | Controls matrix from each project's governance mapping, with live evidence and reviewer attestations |
 | FR-5 | Pick up new workflows automatically; flag event sources that aren't registered |
+| FR-6 | Escalate governance issues per workflow settings: incident, optional auto-shutdown, email with a link to the details; resolution records root cause, fix and documentation |
 
 **Non-functional**
 
@@ -120,7 +139,10 @@ src/govconsole/
   app.py        FastAPI: pages, ingest API, status API, admin, attestations
   catalog.py    builds the catalog from the portfolio (projects, specs, governance mappings, models)
   metrics.py    KPIs, daily series, budgets, anomalies, actors, control evidence
-  store.py      events · workflow_state · control_changes · attestations · workflow_meta (SQLite or Postgres)
+  escalation.py rules → incidents → auto-shutdown → notifications; resolution
+  notify.py     the alert email, SMTP delivery, PagerDuty / ServiceNow payloads (design)
+  store.py      events · workflow_state · control_changes · attestations · workflow_meta · incidents ·
+                incident_log · notifications · escalation_settings (SQLite or Postgres)
   simulate.py   labelled 90-day history
   templates/ static/   server-rendered pages, Chart.js (vendored)
 infra/aws/      Terraform starter (App Runner, Aurora Serverless v2, Secrets Manager, S3 Object Lock, AppConfig, Budgets)
@@ -135,6 +157,8 @@ infra/aws/      Terraform starter (App Runner, Aurora Serverless v2, Secrets Man
 | Durable store | `DATABASE_URL=postgresql://…` (`pip install '.[postgres]'`) |
 | Owners and budgets | `config/workflows.yaml` |
 | Budget warning, anomaly factor, attestation window, demo switch-off length | `config/settings.yaml` |
+| Escalation rules, severities, defaults, email cap | `config/escalation.yaml`; per-workflow choices on the **Settings** page |
+| Alert email | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `GOVERNANCE_ALERT_EMAIL`; link base `GOVERNANCE_PUBLIC_URL` |
 | Workflow side | `GOVERNANCE_URL`, `GOVERNANCE_INGEST_TOKEN`, `GOVERNANCE_FAIL_CLOSED=1`, `GOVERNANCE_TELEMETRY=off` |
 
 Behind a path prefix (e.g. `https://demos.example.com/governance-console/`) set `ROOT_PATH=/governance-console`;

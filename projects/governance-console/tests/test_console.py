@@ -35,7 +35,7 @@ def test_seeded_history_is_labelled_and_tells_the_story(client, store):
 
 def test_ingest_validates_dedupes_and_requires_token_when_set(client, monkeypatch):
     e = event()
-    assert client.post("/api/events", json=[e]).json() == {"accepted": 1, "received": 1}
+    assert client.post("/api/events", json=[e]).json() == {"accepted": 1, "received": 1, "incidents": []}
     assert client.post("/api/events", json=[e]).json()["accepted"] == 0           # idempotent on event_id
     assert client.post("/api/events", json=[{**event(), "cost_usd": -1}]).status_code == 422
     assert client.post("/api/events", json=[{**event(), "workflow": "Bad Name!"}]).status_code == 422
@@ -189,6 +189,7 @@ def test_reference_client_round_trip(store, monkeypatch, tmp_path):
     port = server.servers[0].sockets[0].getsockname()[1]
     monkeypatch.setenv("GOVERNANCE_URL", f"http://127.0.0.1:{port}")
     monkeypatch.setenv("GOVERNANCE_SPOOL", str(tmp_path / "spool.jsonl"))
+    monkeypatch.delenv("GOVERNANCE_TELEMETRY", raising=False)   # CI turns telemetry off; this test is about it
     try:
         t = _client_module("altdata-triage")
         t.set_actor("maya", "named")
