@@ -1,0 +1,12 @@
+[browser]
+gatherUsageStats = false   # no telemetry from demos
+
+[client]
+toolbarMode = "minimal"
+
+[server]
+maxUploadSize = 20
+
+[theme]
+# Blue accent so a selected row is not mistaken for an escalated (red) one.
+primaryColor = "#2563EB"

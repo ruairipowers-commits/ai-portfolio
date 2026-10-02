@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 from datetime import date, timedelta
+from pathlib import Path
 
 from . import evals
 from .llm import Budget, BudgetExceeded, LLMClient, Registry, RegistryError
@@ -143,6 +144,10 @@ def cmd_cost_report(args, s):
     print(f"budget-blocked calls: {blocked}")
 
 
+def cmd_ui(args, s):
+    subprocess.run([sys.executable, "-m", "streamlit", "run", str(Path(__file__).with_name("ui.py"))], cwd=ROOT)
+
+
 def cmd_all(args, s):
     for f in (cmd_data, cmd_ingest, cmd_transform):
         f(args, s)
@@ -169,6 +174,7 @@ def main(argv=None):
     mc.add_argument("--today"); mc.set_defaults(fn=cmd_models_check)
     sub.add_parser("cost-report", help="token and $ by month and model").set_defaults(fn=cmd_cost_report)
     sub.add_parser("all", help="data -> ingest -> transform -> triage").set_defaults(fn=cmd_all)
+    sub.add_parser("ui", help="Streamlit app: input -> run -> output").set_defaults(fn=cmd_ui)
     args = p.parse_args(argv)
     try:
         args.fn(args, Settings.load())

@@ -21,7 +21,7 @@ stack:
   orchestration: fastapi service
   llm_access: registry adapter
   retrieval: hybrid search (BM25 + embeddings) on postgres pgvector; reranker option
-  ui: streamlit chat
+  ui: streamlit (question + entitlement picker → Ask → cited answer or refusal; try-to-break-it: add a document with hidden instructions)
   aws_native: Bedrock Knowledge Bases + OpenSearch Serverless, S3, Lambda/API Gateway
 showcases: [chunking + provenance, hybrid retrieval, groundedness evals (ragas-style), document-level access control, refusal behaviour]
 
