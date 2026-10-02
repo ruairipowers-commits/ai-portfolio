@@ -40,5 +40,5 @@ jobs:
           [ -n "$slugs" ] || slugs=$(ls projects/*/Dockerfile.space | cut -d/ -f2)
           for s in $slugs; do
             if [ -n "$HF_TOKEN" ]; then python scripts/build_space.py "$s" --push
-            else python scripts/build_space.py "$s"; echo "::notice::HF_TOKEN not set: built $s but did not push"; fi
+            else python scripts/build_space.py "$s"; echo "::warning::HF_TOKEN not visible to this job: built $s but did not push. Add it under Settings > Secrets and variables > Actions > Repository secrets (secrets saved only in an Environment are not passed to this job)."; fi
           done
