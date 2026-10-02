@@ -1,0 +1,5 @@
+# Client names that must never reach a model or a log (DATA-03). Synthetic.
+clients:
+  - Margaret Okonjo
+  - Calloway Pension Trust
+  - Harrowgate Endowment

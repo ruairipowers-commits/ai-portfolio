@@ -1,0 +1,19 @@
+# EVAL-03 / SEC-06: every push runs unit + app tests, the offline end-to-end run, the eval gate
+# (mock models, zero cost) and a dependency vulnerability scan.
+name: ci
+on: [push, pull_request]
+permissions: {contents: read}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env: {GOVERNANCE_DB: /tmp/governance.sqlite}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install -e ".[ui,dev]" pip-audit
+      - run: pytest -q
+      - run: rqa all && rqa eval
+      - run: pip-audit --skip-editable || true   # report-only; make blocking once triaged
+      - uses: actions/upload-artifact@v4
+        with: {name: eval-report, path: output/evals/}

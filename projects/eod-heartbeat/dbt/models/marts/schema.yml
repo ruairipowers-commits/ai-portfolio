@@ -1,0 +1,30 @@
+version: 2
+models:
+  - name: breaks
+    description: One row per detected break (FR-1). The explainer only ever sees rows from this table.
+    columns:
+      - name: break_id
+        data_tests: [not_null, unique]
+      - name: break_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [late_file, missing_file, duplicate_trade, position_break, pnl_break, pnl_unavailable,
+                         stale_price, price_outlier, fx_outlier]
+      - name: severity
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [critical, high, medium]
+  - name: file_sla
+    columns:
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [on_time, late, missing, pending]
+  - name: recon_positions
+    columns:
+      - name: internal_qty
+        data_tests: [not_null]

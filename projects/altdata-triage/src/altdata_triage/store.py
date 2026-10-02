@@ -12,6 +12,8 @@ from pathlib import Path
 import duckdb
 import yaml
 
+from . import demo
+
 def _find_root() -> Path:
     if os.getenv("ALTDATA_ROOT"):
         return Path(os.environ["ALTDATA_ROOT"])
@@ -21,6 +23,11 @@ def _find_root() -> Path:
 
 
 ROOT = _find_root()
+
+
+def workspace() -> Path:
+    """Where mutable data lives: the project root, or this visitor's sandbox in the hosted demo."""
+    return demo.current() or ROOT
 
 
 @dataclass
@@ -36,7 +43,7 @@ class Settings:
 
     @property
     def db_path(self) -> Path:
-        return ROOT / os.getenv("DUCKDB_PATH", self.raw["duckdb_path"])
+        return workspace() / os.getenv("DUCKDB_PATH", self.raw["duckdb_path"])
 
 
 def sha(text: str) -> str:
@@ -64,7 +71,7 @@ def _front_matter(md: str) -> tuple[dict, str]:
 
 def ingest(con: duckdb.DuckDBPyConnection, incoming: Path | None = None) -> int:
     """Land every vendor folder into raw.* tables (idempotent full reload)."""
-    incoming = incoming or ROOT / "data" / "incoming"
+    incoming = incoming or workspace() / "data" / "incoming"
     vendor_dirs = sorted(p for p in incoming.iterdir() if p.is_dir())
     if not vendor_dirs:
         raise FileNotFoundError(f"No vendor folders in {incoming}; run `altdata-triage data` first")

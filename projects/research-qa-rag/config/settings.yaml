@@ -1,0 +1,57 @@
+# Runtime + governance settings. Every key here is referenced in docs/governance.md.
+use_case: research-qa-rag
+workflow:                    # shown in the governance hub (telemetry.register)
+  title: Research Q&A (RAG)
+  owner: Head of research (business) · Research engineering (technical)
+  description: Cited answers over filings, transcripts and licensed broker research; refuses when unsupported.
+risk_tier: medium            # HITL-01: informs research, never trades; licensed content needs access control
+db_path: warehouse/research.sqlite
+corpus_dir: data/corpus
+users_file: config/users.yaml
+
+ingest:                       # DATA-05: chunking + index config is versioned into index_version
+  chunk_words: 90
+  overlap_words: 20
+  min_chunk_words: 8
+  dedup: true                 # identical chunks within the same entitlement are stored once
+  quarantine_suspicious: true # SEC-02: chunks with instruction-like text never enter the index
+  redact_pii: true            # DATA-03: emails / phone numbers removed before indexing
+
+retrieval:                    # FR-4: entitlement filter is applied in SQL before any ranking
+  mode: hybrid                # hybrid | bm25 | vector
+  top_k: 5
+  candidates: 20              # per retriever, before fusion
+  rrf_k: 60                   # reciprocal rank fusion constant
+
+llm:
+  primary_alias: answer-primary      # MODEL-01: aliases resolve in config/models.yaml
+  fallback_alias: answer-fallback    # MODEL-05
+  embedding_alias: embed-primary
+  max_output_tokens: 600
+  retries: 2
+  prompt_file: prompts/answer.v1.md  # MODEL-04: versioned file, hash logged per answer
+
+answer:                       # deterministic checks after the model (OBS-02, SEC-04)
+  min_supported_ratio: 0.9    # share of answer sentences supported by their cited quotes
+  require_citation: true
+
+cost:                         # COST-01..04
+  max_usd_per_question: 0.05
+  max_input_tokens_per_call: 6000
+  monthly_alert_usd: 50.00
+  allow_unpriced_models: false
+
+eval:                         # EVAL-02 thresholds; MODEL-02 gate
+  golden_set: evals/golden_set.yaml
+  min_answer_accuracy: 0.90
+  min_refusal_accuracy: 1.00
+  min_citation_accuracy: 0.95
+  min_faithfulness: 0.90
+  min_context_recall: 0.90
+  max_entitlement_leaks: 0
+  max_p95_latency_ms: 8000
+  max_total_cost_usd: 0.50
+
+governance:
+  deprecation_warning_days: 90       # MODEL-03
+  log_retention_days: 2555           # OBS-03

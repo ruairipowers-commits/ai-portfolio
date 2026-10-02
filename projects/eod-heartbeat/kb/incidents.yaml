@@ -1,0 +1,280 @@
+# Past EOD incidents (synthetic). Retrieved as 'similar incidents' for each new break.
+incidents:
+- id: INC-2025-001
+  date: '2025-02-08'
+  break_type: late_file
+  hints:
+  - late
+  runbook: RB-01
+  summary: Vendor price file arrived 55 minutes late
+  root_cause: Vendor batch delayed by their exchange-data outage
+  resolution: Waited for the file; next heartbeat run loaded it; NAV signed off 20:40
+- id: INC-2025-002
+  date: '2025-03-15'
+  break_type: late_file
+  hints:
+  - late
+  runbook: RB-01
+  summary: Prime-broker positions file late
+  root_cause: Broker's SFTP server restarted during delivery
+  resolution: Broker resent; loaded 19:35
+- id: INC-2025-003
+  date: '2025-04-22'
+  break_type: late_file
+  hints:
+  - late
+  runbook: RB-01
+  summary: Trades extract late after OMS patching
+  root_cause: OMS maintenance window overran
+  resolution: Extract rerun by OMS team; loaded 18:25
+- id: INC-2025-004
+  date: '2025-05-02'
+  break_type: missing_file
+  hints:
+  - missing
+  - fx
+  runbook: RB-02
+  summary: FX file not published on a UK holiday
+  root_cause: Vendor holiday calendar treated the date as non-business
+  resolution: Used secondary FX source with ops lead approval; recorded substitution
+- id: INC-2025-005
+  date: '2025-06-09'
+  break_type: missing_file
+  hints:
+  - missing
+  - fx
+  runbook: RB-02
+  summary: FX file missing after vendor credential expiry
+  root_cause: API key for the FX endpoint expired at midnight
+  resolution: Rotated credential, re-pulled the file; P&L ran 18:05
+- id: INC-2025-006
+  date: '2025-07-16'
+  break_type: missing_file
+  hints:
+  - missing
+  runbook: RB-14
+  summary: Prime-broker file loaded zero rows
+  root_cause: Broker inserted a new column without notice
+  resolution: Loader mapping updated via reviewed change; date reloaded
+- id: INC-2025-007
+  date: '2025-08-23'
+  break_type: position_break
+  hints:
+  - corporate_action
+  - split
+  runbook: RB-04
+  summary: Position break after 3:1 split
+  root_cause: Split not loaded into internal security master before EOD
+  resolution: Adjustment booked for the ratio; P&L step rerun for the book
+- id: INC-2025-008
+  date: '2025-09-03'
+  break_type: position_break
+  hints:
+  - corporate_action
+  - split
+  runbook: RB-04
+  summary: Break on spin-off security
+  root_cause: Spin-off shares credited by broker, not internally
+  resolution: New security set up; adjustment booked
+- id: INC-2025-009
+  date: '2025-10-10'
+  break_type: pnl_break
+  hints:
+  - corporate_action
+  - split
+  runbook: RB-04
+  summary: Large P&L loss on split day
+  root_cause: Price adjusted for split but quantity not
+  resolution: Adjustment booked; P&L restated for the book before sign-off
+- id: INC-2025-010
+  date: '2025-11-17'
+  break_type: duplicate_trade
+  hints:
+  - duplicate
+  runbook: RB-05
+  summary: Duplicate OMS rows after extract retry
+  root_cause: Extract job appended rows on retry after timeout
+  resolution: Cancelling adjustment booked; OMS team made extract idempotent
+- id: INC-2025-011
+  date: '2025-12-24'
+  break_type: position_break
+  hints:
+  - duplicate
+  runbook: RB-05
+  summary: Position break equal to one trade
+  root_cause: Amended trade left in extract twice
+  resolution: Desk confirmed one execution; adjustment booked
+- id: INC-2025-012
+  date: '2025-01-04'
+  break_type: stale_price
+  hints:
+  - stale
+  runbook: RB-06
+  summary: Small-cap miner price unchanged for a week
+  root_cause: Vendor dropped the security after an identifier change
+  resolution: Re-mapped identifier; vendor sent corrected history
+- id: INC-2025-013
+  date: '2025-02-11'
+  break_type: stale_price
+  hints:
+  - stale
+  runbook: RB-06
+  summary: Stale price on suspended stock
+  root_cause: Trading suspended on exchange
+  resolution: Recorded as validated stale; valuation committee informed
+- id: INC-2025-014
+  date: '2025-03-18'
+  break_type: fx_outlier
+  hints:
+  - fx
+  runbook: RB-07
+  summary: EUR rate ten times too high
+  root_cause: Decimal-place error in vendor file
+  resolution: Vendor resent; P&L step rerun for MACRO only
+- id: INC-2025-015
+  date: '2025-04-25'
+  break_type: fx_outlier
+  hints:
+  - fx
+  runbook: RB-07
+  summary: JPY rate inverted
+  root_cause: Vendor quoted USD per JPY instead of JPY per USD
+  resolution: Corrected file loaded; P&L rerun
+- id: INC-2025-016
+  date: '2025-05-05'
+  break_type: pnl_break
+  hints:
+  - fx
+  runbook: RB-07
+  summary: MACRO P&L break of several million
+  root_cause: Bad GBP rate from vendor
+  resolution: Held P&L; loaded corrected rate
+- id: INC-2025-017
+  date: '2025-06-12'
+  break_type: pnl_break
+  hints:
+  - pnl
+  runbook: RB-08
+  summary: P&L break traced to one bond price
+  root_cause: Evaluated price arrived after the risk run
+  resolution: Risk system rerun with the late price
+- id: INC-2025-018
+  date: '2025-07-19'
+  break_type: pnl_break
+  hints:
+  - pnl
+  runbook: RB-08
+  summary: Unexplained P&L on event book
+  root_cause: Risk run used prior-day positions
+  resolution: Risk team reran with current positions
+- id: INC-2026-019
+  date: '2026-08-26'
+  break_type: price_outlier
+  hints:
+  - price
+  runbook: RB-09
+  summary: Price fell 40% on biotech
+  root_cause: Genuine move after trial failure
+  resolution: Validated against exchange; logged
+- id: INC-2026-020
+  date: '2026-09-06'
+  break_type: price_outlier
+  hints:
+  - price
+  runbook: RB-09
+  summary: UK stock priced in pence
+  root_cause: Vendor switched units
+  resolution: Corrected price; vendor mapping fixed
+- id: INC-2026-021
+  date: '2026-10-13'
+  break_type: position_break
+  hints:
+  - late_trade
+  - timing
+  runbook: RB-11
+  summary: Break equal to a late block sale
+  root_cause: Trade booked 16:52 after PB cutoff
+  resolution: Marked timing; cleared next day
+- id: INC-2026-022
+  date: '2026-11-20'
+  break_type: position_break
+  hints:
+  - late_trade
+  - timing
+  runbook: RB-11
+  summary: Break on late-booked allocation
+  root_cause: Allocation booked after cutoff
+  resolution: Cleared next business day
+- id: INC-2026-023
+  date: '2026-12-27'
+  break_type: position_break
+  hints:
+  - position
+  runbook: RB-03
+  summary: Broker missing a cancelled trade
+  root_cause: Cancellation not sent to broker
+  resolution: Broker corrected; break cleared same evening
+- id: INC-2026-024
+  date: '2026-01-07'
+  break_type: position_break
+  hints:
+  - position
+  runbook: RB-03
+  summary: Break on short position after recall
+  root_cause: Stock loan recall processed only at the broker. Client Margaret Okonjo of Calloway Pension Trust asked for confirmation of the corrected holding (m.okonjo@calloway.example)
+  resolution: Internal adjustment booked; client confirmation sent by IR
+- id: INC-2026-025
+  date: '2026-02-14'
+  break_type: missing_file
+  hints:
+  - nav
+  runbook: RB-12
+  summary: NAV sign-off missed 22:00
+  root_cause: Two critical feeds late on the same evening
+  resolution: Ops lead published estimated NAV; final NAV next morning
+- id: INC-2026-026
+  date: '2026-03-21'
+  break_type: late_file
+  hints:
+  - nav
+  runbook: RB-12
+  summary: Sign-off at risk from late PB file
+  root_cause: Broker delay
+  resolution: NAV team updated every 30 minutes; signed off 21:15
+- id: INC-2026-027
+  date: '2026-04-01'
+  break_type: pnl_break
+  hints:
+  - restate
+  runbook: RB-13
+  summary: Break found after NAV published
+  root_cause: Late price correction from vendor
+  resolution: CFO office approved restatement under error policy
+- id: INC-2026-028
+  date: '2026-05-08'
+  break_type: late_file
+  hints:
+  - rerun
+  runbook: RB-10
+  summary: Full rerun overwrote corrected P&L
+  root_cause: On-call reran all stages with force after a late file
+  resolution: Restored from backup; runbook changed to rerun single stages only
+- id: INC-2026-029
+  date: '2026-06-15'
+  break_type: missing_file
+  hints:
+  - format
+  runbook: RB-14
+  summary: Broker file renamed
+  root_cause: New naming convention from broker
+  resolution: Watcher pattern updated after review
+- id: INC-2026-030
+  date: '2026-07-22'
+  break_type: pnl_unavailable
+  hints:
+  - missing
+  - fx
+  runbook: RB-02
+  summary: P&L not computable for MACRO
+  root_cause: FX file missing for the date
+  resolution: Secondary source used with approval

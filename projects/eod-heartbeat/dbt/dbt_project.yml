@@ -1,0 +1,22 @@
+name: eod_heartbeat
+version: "1.0"
+profile: eod_heartbeat
+model-paths: [models]
+macro-paths: [macros]
+target-path: target
+clean-targets: [target]
+flags:
+  send_anonymous_usage_stats: false
+
+vars:                      # overridden per run from config/settings.yaml (detection.*) and the as-of time
+  as_of: "2099-01-01 00:00"
+  pnl_abs_threshold_usd: 25000
+  stale_days: 4
+  price_move_pct: 0.25
+  fx_move_pct: 0.10
+  pb_cutoff_time: "16:30"
+
+models:
+  eod_heartbeat:
+    staging: {+schema: staging, +materialized: view}
+    marts: {+schema: marts, +materialized: table}

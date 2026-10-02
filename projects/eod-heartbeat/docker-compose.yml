@@ -1,0 +1,29 @@
+# Full stack: Postgres 16 + pgvector, Airflow 3 (standalone: scheduler + API server + UI on :8080) running the
+# eod_heartbeat DAG every 5 minutes 17:00-21:00 ET, and the Streamlit app on :8501. All share one database.
+#   docker compose up -d --build      then: docker compose exec app eodhb all   (seed data + index)
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment: {POSTGRES_USER: eod, POSTGRES_PASSWORD: eod, POSTGRES_DB: eod}
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: {test: ["CMD-SHELL", "pg_isready -U eod"], interval: 5s, retries: 10}
+  airflow:
+    build: {context: ., dockerfile: Dockerfile.airflow}
+    command: airflow standalone
+    environment:
+      EOD_DATABASE_URL: postgresql://eod:eod@db:5432/postgres
+      GOVERNANCE_DB: /opt/airflow/governance.sqlite
+    ports: ["8080:8080"]
+    volumes: [eoddata:/opt/eod/data]        # landing files + runbooks, shared with the app
+    depends_on: {db: {condition: service_healthy}}
+  app:
+    build: .
+    environment:
+      EOD_DATABASE_URL: postgresql://eod:eod@db:5432/postgres
+    ports: ["8501:8501"]
+    volumes: [eoddata:/app/data]
+    depends_on: {db: {condition: service_healthy}}
+volumes:
+  pgdata:
+  eoddata:

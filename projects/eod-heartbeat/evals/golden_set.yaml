@@ -1,0 +1,36 @@
+# EVAL-01 golden set: every business date with the breaks SQL must find (detection is deterministic) and,
+# per break, the runbook(s) an explanation may cite and whether a human must be pulled in.
+as_of_time: "21:00"
+dates:
+  - date: "2026-09-14"
+    breaks: []
+  - date: "2026-09-15"
+    breaks:
+      - {type: late_file, entity: prices, runbooks: [RB-01, RB-12], human: false}
+  - date: "2026-09-16"
+    breaks: []
+  - date: "2026-09-17"
+    breaks:
+      - {type: position_break, entity: NRDC, runbooks: [RB-04], human: false, why: "split applied by PB, not internally"}
+      - {type: pnl_break, entity: EQ-EVENT, runbooks: [RB-04, RB-08], human: false}
+  - date: "2026-09-18"
+    breaks:
+      - {type: missing_file, entity: fx, runbooks: [RB-02, RB-12], human: true, why: "critical feed missing blocks NAV"}
+      - {type: pnl_unavailable, entity: MACRO, runbooks: [RB-02], human: true}
+  - date: "2026-09-21"
+    breaks:
+      - {type: duplicate_trade, entity: T1027, runbooks: [RB-05], human: false}
+      - {type: position_break, entity: CDRX, runbooks: [RB-05, RB-03], human: false}
+  - date: "2026-09-22"
+    breaks:
+      - {type: stale_price, entity: BLKW, runbooks: [RB-06], human: false}
+  - date: "2026-09-23"
+    breaks:
+      - {type: fx_outlier, entity: EUR, runbooks: [RB-07], human: false}
+      - {type: pnl_break, entity: MACRO, runbooks: [RB-07, RB-08], human: false}
+  - date: "2026-09-24"
+    breaks:
+      - {type: late_file, entity: pb_positions, runbooks: [RB-01, RB-12], human: false}
+      - {type: position_break, entity: ELMW, runbooks: [RB-11], human: false, why: "timing: trade after PB cutoff"}
+  - date: "2026-09-25"
+    breaks: []

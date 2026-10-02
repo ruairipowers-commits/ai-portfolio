@@ -1,0 +1,88 @@
+# MODEL-01 Model registry. Code only ever references ALIASES.
+# Answer-model migration: point `answer-candidate` at the new model, then
+#   rqa eval --alias answer-candidate --baseline answer-primary  →  rqa promote answer-primary <model>
+# Embedding migration changes every vector: `rqa ingest --embedding <model> --full` builds a new index
+# version, `rqa eval` must pass on it, and answers refuse to run on an index built with another embedding.
+#
+# Pricing is USD per million tokens. A model with null pricing is refused unless
+# cost.allow_unpriced_models=true (COST-01).
+
+aliases:
+  answer-primary: mock-extractive
+  answer-fallback: mock-extractive
+  answer-candidate: mock-extractive
+  embed-primary: mock-hash-384
+
+models:
+  mock-extractive:       # deterministic offline stand-in: picks supporting sentences, never invents text
+    provider: mock
+    model_id: mock-extractive-v1
+    input_per_mtok: 1.00          # simulated, so cost reporting has numbers to show
+    output_per_mtok: 5.00
+    deprecation_date: null
+    approved: true
+
+  claude-sonnet:
+    provider: anthropic
+    model_id: claude-sonnet-5-5
+    input_per_mtok: null          # fill from anthropic.com/pricing
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true                # SEC-05: only approved models can be resolved
+
+  claude-haiku:
+    provider: anthropic
+    model_id: claude-haiku-4-5-20251001
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true
+
+  openai-default:
+    provider: openai
+    model_id: "SET-CURRENT-OPENAI-MODEL-ID"
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: false               # flip after legal/security review of provider terms
+
+  bedrock-claude:
+    provider: bedrock
+    model_id: "SET-BEDROCK-MODEL-OR-INFERENCE-PROFILE-ID"
+    region: us-east-1
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true
+
+  # ---- embedding models (kind: embedding) ----
+  mock-hash-384:         # offline: feature hashing of words + character 4-grams; lexical, not semantic
+    kind: embedding
+    provider: mock
+    model_id: mock-hash-384-v1
+    dimensions: 384
+    input_per_mtok: 0.0
+    output_per_mtok: 0.0
+    deprecation_date: null
+    approved: true
+
+  openai-embed-small:
+    kind: embedding
+    provider: openai
+    model_id: text-embedding-3-small
+    dimensions: 1536
+    input_per_mtok: null
+    output_per_mtok: 0.0
+    deprecation_date: null
+    approved: false
+
+  bedrock-titan-embed-v2:
+    kind: embedding
+    provider: bedrock
+    model_id: amazon.titan-embed-text-v2:0
+    dimensions: 1024
+    region: us-east-1
+    input_per_mtok: null
+    output_per_mtok: 0.0
+    deprecation_date: null
+    approved: true
