@@ -69,7 +69,8 @@ private copy of the data; every app reports to the governance console Space and 
 
 One-time setup:
 
-1. Create a Hugging Face account and a **write** token (*Settings → Access Tokens*).
+1. Create a Hugging Face account and a **write** token (*Settings → Access Tokens*). Docker Spaces need a
+   **PRO** subscription on that account (free accounts get `402 Payment Required` when the workflow creates a Space).
 2. In this GitHub repo, *Settings → Secrets and variables → Actions*:
    - secret `HF_TOKEN` — the Hugging Face token
    - secret `GOVERNANCE_INGEST_TOKEN` — any long random string (`python -c "import secrets; print(secrets.token_urlsafe(32))"`)
