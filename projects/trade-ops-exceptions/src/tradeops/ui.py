@@ -139,8 +139,7 @@ with st.sidebar:
 st.title("Trade-ops exception agent")
 st.caption("A LangGraph agent investigates settlement breaks with read-only tools from an MCP server, proposes a fix "
            "and stops. Nothing is recorded or sent until a named analyst approves.")
-if demo.links_markdown(ROOT):
-    st.markdown(demo.links_markdown(ROOT))
+demo.banner(st, ROOT, "Trade-ops exception agent")   # the blog's header, with links back to the write-up and source
 gov = telemetry.start_streamlit_session(st, ROOT)   # visit event + kill-switch banner
 if "flash" in st.session_state:
     ok, msg = st.session_state.pop("flash")

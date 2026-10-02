@@ -63,11 +63,24 @@ def source_url(slug: str, c: dict) -> str:
     return f"https://github.com/{c['github_owner']}/{c.get('repo_name', 'ai-portfolio')}/tree/main/projects/{slug}"
 
 
+def site_title() -> str:
+    """The blog's site_name (mkdocs.yml), so the apps' banner says exactly what the blog's header says."""
+    import re
+    m = re.search(r"^site_name:\s*(.+)$", (ROOT / "mkdocs.yml").read_text(), re.M)
+    return m.group(1).strip().strip("'\"") if m else "AI Workflow Portfolio"
+
+
 def links(slug: str, c: dict | None = None) -> dict:
-    """Where a project lives: write-up, source code, live demo, and the governance console's demo."""
+    """Where a project lives: write-up, source code, live demo, the governance console's demo, and the blog's
+    top-level navigation (for the banner the apps share with the blog)."""
     c = c or resolve()
     return {"project": slug, "site_url": c["site_url"], "github_owner": c["github_owner"], "hf_owner": c["hf_owner"],
             "demos_target": c["demos_target"], "demos_url": c["demos_url"],
+            "site_title": site_title(),
+            "standard_url": c["site_url"] + "/blog/governance/",
+            "blog_index_url": c["site_url"] + "/blog/",
+            "about_url": c["site_url"] + "/about/",
+            "demos_home_url": c["demos_url"] and c["demos_url"] + "/",
             "portfolio_url": c["site_url"] + "/",
             "blog_url": f"{c['site_url']}/blog/{slug}/",
             "source_url": source_url(slug, c),

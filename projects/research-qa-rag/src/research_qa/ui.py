@@ -148,8 +148,7 @@ enabled, why_disabled = telemetry.status()
 st.title("Research Q&A")
 st.caption("Ask about five companies' filings, earnings calls and broker research. Answers cite the page they came from; "
            "if the documents you're entitled to don't support an answer, it says so. Offline mock models by default.")
-if demo.links_markdown(ROOT):
-    st.markdown(demo.links_markdown(ROOT))
+demo.banner(st, ROOT, "Research Q&A")   # the blog's header, with links back to the write-up and source
 if not enabled:
     st.error(f"This workflow is switched off by governance: {why_disabled}", icon="⛔")
 if "flash" in st.session_state:

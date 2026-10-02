@@ -1,0 +1,36 @@
+# Tests every project on every push and pull request. The self-hosted demo machine (deploy/selfhost/update.sh)
+# deploys a commit on main only after all its checks — these and the site build — have passed.
+name: ci
+on:
+  push: {branches: [main]}
+  pull_request:
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency: {group: "ci-${{ github.ref }}", cancel-in-progress: true}
+jobs:
+  projects:
+    runs-on: ubuntu-latest
+    outputs: {list: "${{ steps.l.outputs.list }}"}
+    steps:
+      - uses: actions/checkout@v5
+      - id: l   # every project with a pyproject.toml — a new project is tested with no change here
+        run: echo "list=$(ls -d projects/*/pyproject.toml | cut -d/ -f2 | jq -R . | jq -cs .)" >> "$GITHUB_OUTPUT"
+  test:
+    needs: projects
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: {project: "${{ fromJson(needs.projects.outputs.list) }}"}
+    defaults: {run: {working-directory: "projects/${{ matrix.project }}"}}
+    env: {GOVERNANCE_TELEMETRY: "off"}   # tests never report to a console
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.11", cache: pip}
+      - run: pip install -e ".[dev,ui]"
+      - name: build the offline demo data (make all), if the project has it
+        run: if grep -q '^all:' Makefile; then make all; fi
+      - run: pytest -q
+      - name: Node tests (MCP server), if any
+        if: hashFiles(format('projects/{0}/mcp-server/package.json', matrix.project)) != ''
+        run: cd mcp-server && npm ci && npm test

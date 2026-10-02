@@ -122,8 +122,7 @@ enabled, why_disabled = telemetry.status()
 st.title("EOD heartbeat")
 st.caption("End-of-day checks for a fictional fund: SQL (dbt on Postgres) finds late files and reconciliation breaks; "
            "a model explains each one from the runbooks and past incidents, citing them; people act. Offline mock models by default.")
-if demo.links_markdown(ROOT):
-    st.markdown(demo.links_markdown(ROOT))
+demo.banner(st, ROOT, "EOD heartbeat")   # the blog's header, with links back to the write-up and source
 if not enabled:
     st.error(f"This workflow is switched off by governance: {why_disabled}", icon="⛔")
 if "flash" in st.session_state:

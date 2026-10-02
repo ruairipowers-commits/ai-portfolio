@@ -26,11 +26,10 @@ if not pl.vendor_dirs() or not pl.pristine_dir().exists():
     pl.generate_sample()
 
 # ------------------------------------------------------------------ header
+demo.banner(st, ROOT, "Alt-data vendor triage")   # the blog's header, with links back to the write-up and source
 st.title("Alt-data vendor triage")
 st.caption("dbt scores each vendor sample; an LLM drafts a memo; deterministic policy has the last word; "
            "a human decides. Running offline with a deterministic mock model unless you pick another.")
-if demo.links_markdown(ROOT):
-    st.markdown(demo.links_markdown(ROOT))
 demo.sidebar(st, ROOT)
 gov = telemetry.start_streamlit_session(st, ROOT)   # visit event + kill-switch banner
 
