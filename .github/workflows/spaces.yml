@@ -30,15 +30,17 @@ jobs:
       GOVERNANCE_ADMIN_TOKEN: ${{ secrets.GOVERNANCE_ADMIN_TOKEN }}
       GOVERNANCE_DATABASE_URL: ${{ secrets.GOVERNANCE_DATABASE_URL }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with: {python-version: "3.11"}
       - run: pip install pyyaml "huggingface_hub>=0.25"
       - name: Build (and push when HF_TOKEN is set)
         run: |
           slugs="${{ github.event.inputs.project }}"
           [ -n "$slugs" ] || slugs=$(ls projects/*/Dockerfile.space | cut -d/ -f2)
+          failed=""
           for s in $slugs; do
-            if [ -n "$HF_TOKEN" ]; then python scripts/build_space.py "$s" --push
+            if [ -n "$HF_TOKEN" ]; then python scripts/build_space.py "$s" --push || failed="$failed $s"
             else python scripts/build_space.py "$s"; echo "::warning::HF_TOKEN not visible to this job: built $s but did not push. Add it under Settings > Secrets and variables > Actions > Repository secrets (secrets saved only in an Environment are not passed to this job)."; fi
           done
+          if [ -n "$failed" ]; then echo "::error::Not pushed:$failed (see the errors above)"; exit 1; fi
