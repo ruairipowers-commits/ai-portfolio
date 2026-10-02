@@ -49,6 +49,8 @@ config/settings.yaml   config/models.yaml        # same keys as reference; add d
 prompts/<name>.v1.md
 src/<package>/  (workflow/agent, guardrails, llm registry adapter, evals, store/audit, cli)
 evals/golden_set.yaml
+src/<package>/ui.py  + tests/test_ui.py         # Streamlit app: Input → Run → Output (see style guide)
+.streamlit/config.toml                          # gatherUsageStats = false
 scripts/generate_sample_data.py                 # deterministic, seeded, fictional names
 tests/                                          # unit tests per control + one offline end-to-end
 docs/architecture.md  docs/governance.md  docs/aws-native.md
@@ -75,6 +77,9 @@ Run and fix until all pass:
 pip install -e ".[dev]" && <cli> all && <cli> eval && pytest -q
 python scripts/check_governance.py <slug>
 ```
+Then open the app in a real browser (Playwright + the preinstalled Chromium, or `<cli> ui` locally): load the
+default, run it, try the break-it input, do the human step, and look at screenshots. Headless tests passing is
+not the same as the page looking right.
 Record real numbers from the run (results table, cost, token counts) for the README and post.
 Never claim something runs, or quote a figure, you didn't observe.
 

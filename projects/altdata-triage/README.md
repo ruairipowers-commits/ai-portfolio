@@ -23,12 +23,15 @@ prompt-injection attempt and one whose license forbids derived use of PII-bearin
 ```bash
 git clone <this repo> && cd altdata-triage
 python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
+pip install -e ".[ui,dev]"
 
+altdata-triage ui             # browser app: input → Run → output (http://localhost:8501)
+
+# or from the command line:
 altdata-triage all            # generate data → ingest → dbt build (+tests) → triage
 cat output/triage_summary.md  # results;  memos in output/memos/
 altdata-triage eval           # golden-set eval gate
-pytest -q                     # 21 tests incl. end-to-end
+pytest -q                     # 25 tests incl. end-to-end and the app
 ```
 
 Expected summary:
@@ -40,6 +43,18 @@ Expected summary:
 | AppSignal (v03) | REJECT | PII present, license forbids derived use |
 | WebCrawl Labs (v04) | ESCALATE | model drafted PARK; policy escalated on injection attempt |
 | ShipTrack (v05) | PARK | backfilled history — look-ahead bias risk |
+
+### The app
+
+![Alt-data triage app: an injected note on CardPulse is escalated by policy](docs/img/app.png)
+
+`altdata-triage ui` opens a three-part page: **Input** (the five sample vendors by default; edit a
+vendor's untrusted notes to try an injection or PII; **view, edit, download or reset each vendor's
+`sample.csv` and questionnaire** — filter by ticker/date, edit cells, add or delete rows, or use one-click
+"add a future-dated row" / "blank the latest week"; or upload your own sample), **Run**
+(ingest → dbt build → triage, stopping if any data test fails) and **Output** (recommendation counts,
+model draft vs final after policy, each memo with a human-review form, the dbt scorecard, the eval gate,
+and every model call with its cost). Runs on the offline mock unless you pick a configured model.
 
 ### Use a real model
 
@@ -122,6 +137,7 @@ infra/aws/     Terraform starter for the AWS-native path
 
 | Command | Purpose |
 |---|---|
+| `altdata-triage ui` | Streamlit app: default vendors (or your upload / edited notes) → Run → summary, memos, review, eval, audit |
 | `altdata-triage all` | data → ingest → transform → triage |
 | `altdata-triage triage [--vendor v01] [--alias X]` | memos (blocked unless dbt tests passed) |
 | `altdata-triage review v02 PURSUE --reviewer you --note "..."` | record human decision |

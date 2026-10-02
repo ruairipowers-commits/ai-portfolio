@@ -15,6 +15,7 @@ architecture, not by the prompt.
 <!-- more -->
 
 **Repo:** [github.com/{{GITHUB_OWNER}}/trade-ops-exceptions](https://github.com/{{GITHUB_OWNER}}/trade-ops-exceptions) · runs offline in 5 minutes, no API keys ·
+**Try it:** `tradeops ui`, then put a "bank details have changed" message on a clean confirm and re-investigate it. ·
 **Stack:** Python, LangGraph, MCP server in TypeScript, Streamlit, SQLite/Postgres, Anthropic / OpenAI / Bedrock (via aliases), Terraform
 
 ## The business problem
@@ -76,6 +77,14 @@ the oldest frauds in operations. An agent that helpfully proposes the new accoun
 ## Architecture
 
 --8<-- "projects/trade-ops-exceptions/docs/architecture.md:flow"
+
+### Data model
+
+Everything the agent reads, everything it logs, and the two tables only an approval can write live in one
+database. The app's *Data explorer* tab draws this, and each exception's *Evidence & records* view shows its records side by side
+with the mismatched field highlighted, and has a read-only SQL box.
+
+--8<-- "projects/trade-ops-exceptions/docs/architecture.md:er"
 
 ### Why this architecture
 

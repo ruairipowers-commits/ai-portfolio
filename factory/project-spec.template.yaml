@@ -24,7 +24,7 @@ stack:                           # prefer the most common tools; see factory/sta
   orchestration: cli
   llm_access: registry adapter
   retrieval: none
-  ui: none
+  ui: streamlit (Input → Run → Output; describe the try-to-break-it input and the human step)
   aws_native: "services used in the AWS variant"
 showcases: []                    # skills this project demonstrates that others don't
 

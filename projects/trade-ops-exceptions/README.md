@@ -49,10 +49,37 @@ tradeops queue               # proposals awaiting approval + escalations
 tradeops show EX-0002        # evidence, fix, email draft
 tradeops approve EX-0002 --approver you     # records via the gated write tool, queues the email
 tradeops replay EX-0037      # full trajectory of the injection case
-tradeops ui                  # Streamlit approval queue
+tradeops ui                  # browser app: input → Investigate → approval queue (http://localhost:8501)
 tradeops eval                # golden-set gate: outcome + trajectory metrics
-pytest -q && (cd mcp-server && npm test)
+pytest -q && (cd mcp-server && npm test)    # 27 Python (incl. app) + 7 Node tests
 ```
+
+### The app
+
+![Bulk exception queue: select a row, tamper with its broker confirm, investigate, approve](docs/img/app.png)
+
+`tradeops ui` opens five tabs (full guide: [docs/app-guide.md](docs/app-guide.md); models: [docs/models.md](docs/models.md),
+both also shown in the app):
+
+- **🧑‍🤝‍🧑 Single trade walkthrough** — play each party in turn: 👤 trader books, 🏦 broker confirms, 🏛️ custodian
+  reports, ⚙️ the matching engine opens an exception on a break, 🤖 the agent investigates, 🧑‍💼 you decide. Each
+  step shows who is acting and which tables it writes; 12 scenarios (clean, each break type, injection, bank-detail
+  change, corrupt custodian record) pre-fill the inputs.
+- **📋 Bulk exception queue** — one table of all exceptions with a coloured status (amber awaiting approval,
+  red escalated, **green resolved**, grey rejected) and a purple marker on any exception whose broker confirm you
+  changed. Select a row to **investigate** it, **add it to a run queue**, **try to break it** (💉 injection or
+  🏦 bank-detail change, applied immediately, logged and undoable), see the **evidence** across systems and every
+  related database row, read the **agent trajectory**, and **approve / edit / reject** the proposal.
+- **🗄️ Data explorer** — ER diagram, table browser with search and CSV download, and a read-only SQL box with
+  example queries.
+- **📏 Audit & evals** — the eval gate, resolutions, the outbox, every decision, cost by model.
+- **📘 Guide & models** — what every button does and what to expect from each model.
+
+Model, your name and **Reset demo data** are in the sidebar.
+
+![Single trade walkthrough](docs/img/walkthrough.png)
+
+![ER diagram in the app](docs/img/er-diagram.png)
 
 ### Use a real model
 
@@ -149,7 +176,7 @@ infra/aws/     Terraform starter (RDS, Secrets Manager, split investigator/appro
 | `tradeops investigate [--exception EX-0001] [--alias X]` | run the agent (stops at approval) |
 | `tradeops queue` / `show EX` / `replay EX` | review proposals and trajectories |
 | `tradeops approve EX --approver NAME [--fix-details ...]` / `reject EX --approver NAME` | human decision |
-| `tradeops ui` | Streamlit approval queue |
+| `tradeops ui` | Streamlit app: queue (or your edited broker text) → Investigate → approve/edit/reject, escalations, outbox, eval, audit |
 | `tradeops eval [--alias X] [--baseline Y]` / `promote ALIAS MODEL` | eval gate and model promotion |
 | `tradeops models-check` / `cost-report` | model hygiene and spend |
 
