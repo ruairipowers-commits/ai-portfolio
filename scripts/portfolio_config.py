@@ -82,10 +82,43 @@ def links(slug: str, c: dict | None = None) -> dict:
             "about_url": c["site_url"] + "/about/",
             "demos_home_url": c["demos_url"] and c["demos_url"] + "/",
             "portfolio_url": c["site_url"] + "/",
-            "blog_url": f"{c['site_url']}/blog/{slug}/",
+            "blog_url": f"{c['site_url']}/{'personal' if slug in (c.get('personal_projects') or []) else 'blog'}/{slug}/",
             "source_url": source_url(slug, c),
             "demo_url": demo_url(slug, c),
             "console_url": demo_url(CONSOLE, c)}
+
+
+def tiers(c: dict | None = None) -> dict:
+    """featured / platform / personal project rows for the site, from portfolio.yaml and each spec's `card`.
+    A slug in `personal_projects` is personal; other projects are featured (platform specs listed separately)."""
+    c = c or resolve()
+    personal_cfg = c.get("personal_projects") or []
+    personal_slugs = {p for p in personal_cfg if isinstance(p, str)}
+    unknown = personal_slugs - set(c["projects"])
+    if unknown:
+        raise SystemExit(f"personal_projects lists {sorted(unknown)}, which aren't in projects:")
+    out = {"featured": [], "platform": [], "personal": []}
+    for slug in c["projects"]:
+        spec = yaml.safe_load((ROOT / "specs" / f"{slug}.yaml").read_text())
+        card = spec.get("card") or {}
+        tier = "personal" if slug in personal_slugs else ("platform" if spec.get("kind") == "platform" else "featured")
+        out[tier].append({"slug": slug, "name": card.get("name", spec.get("title", slug)), "problem": card.get("problem", ""),
+                          "pattern": card.get("pattern", spec.get("pattern", "")), "stack": card.get("stack", ""),
+                          "post": post_path(slug, "personal" if tier == "personal" else "featured"),
+                          "demo": (ROOT / "projects" / slug / "Dockerfile.space").exists(), "external": False})
+    for p in personal_cfg:
+        if isinstance(p, dict):
+            out["personal"].append({"slug": p.get("slug", ""), "name": p["title"], "problem": p.get("summary", ""),
+                                    "pattern": p.get("pattern", ""), "stack": p.get("stack", ""), "url": p.get("url", ""),
+                                    "post": post_path(p["slug"], "personal") if p.get("slug") else None,
+                                    "demo": False, "external": True})
+    return out
+
+
+def post_path(slug: str, tier: str) -> str | None:
+    """Where a project's write-up lives under site/: blog/posts/ (featured) or personal/posts/ (personal)."""
+    rel = f"{'personal' if tier == 'personal' else 'blog'}/posts/{slug}.md"
+    return rel if (ROOT / "site" / rel).exists() else None
 
 
 def governance_url(c: dict) -> str:

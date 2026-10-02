@@ -55,3 +55,8 @@ demo:   # hosted demo on Hugging Face Spaces (scripts/build_space.py)
   emoji: "🫀"
   short_description: EOD pipeline breaks explained from runbooks
 links: {repo: "", blog: "blog/eod-heartbeat"}
+card:   # the row for this project on the home page (or the Personal projects page) — scripts/mkdocs_hooks.py
+  name: "EOD heartbeat"
+  problem: "End-of-day pipeline breaks found late, fixed from tribal knowledge"
+  pattern: "RAG + monitor"
+  stack: "Airflow, dbt-postgres, pgvector, Streamlit"

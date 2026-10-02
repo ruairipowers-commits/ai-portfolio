@@ -58,3 +58,8 @@ demo:   # hosted demo on Hugging Face Spaces (scripts/build_space.py)
   emoji: "📊"
   short_description: dbt scores vendor samples; an LLM drafts memos
 links: {repo: "", blog: "blog/altdata-triage"}
+card:   # the row for this project on the home page (or the Personal projects page) — scripts/mkdocs_hooks.py
+  name: "Alt-data vendor triage"
+  problem: "Analysts spend days profiling vendor samples"
+  pattern: "Workflow"
+  stack: "dbt, DuckDB, Streamlit, Bedrock"

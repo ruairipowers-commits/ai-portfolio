@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{#- Announcement bar: points at the release notes. Dismissable (theme.features: announce.dismiss); the
+    dismissal resets whenever this text changes. -#}
+{% block announce %}
+<a href="{{ 'release-notes/' | url }}" style="color:inherit">
+  <span class="twemoji">{% include ".icons/material/rocket-launch-outline.svg" %}</span>
+  <strong>What's new:</strong> governance escalation — incidents, auto-shutdown and alert emails in the console. Release notes →
+</a>
+{% endblock %}
