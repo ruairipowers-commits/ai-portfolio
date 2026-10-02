@@ -1,0 +1,15 @@
+# Alt-data triage
+cd projects/altdata-triage
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+altdata-triage all && cat output/triage_summary.md
+
+# Trade-ops agent (after merging or checking out the trade-ops-exceptions branch)
+cd ../trade-ops-exceptions
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[ui,dev]"
+tradeops all          # investigates all 40 exceptions
+tradeops ui           # approval queue at http://localhost:8501
+
+# The website itself
+cd ../.. && pip install -r requirements-site.txt && mkdocs serve   # http://localhost:8000
