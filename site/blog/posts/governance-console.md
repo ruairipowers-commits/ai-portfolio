@@ -79,11 +79,11 @@ takes three things: the root cause, how the gap was closed, and where it's docum
 re-confirm the control and switch the workflow back on. The console can switch a workflow off on its own; only a
 person can switch it back on.
 
-<video controls muted playsinline preload="metadata" poster="../img/governance-escalation-poster.png" style="width:100%;border-radius:6px">
+<video controls playsinline preload="metadata" poster="../img/governance-escalation-poster.png" style="width:100%;border-radius:6px">
   <source src="../img/governance-escalation.mp4" type="video/mp4">
 </video>
 
-*The whole loop in under three minutes: a runbook edit makes the model propose a forced rerun → the policy blocks
+*The whole loop in three minutes, narrated (synthetic voice): a runbook edit makes the model propose a forced rerun → the policy blocks
 it and the console switches EOD heartbeat off → the email → the incident → an investigation note → the approved
 runbooks restored → root cause, fix and documentation, SEC-04 re-confirmed, workflow back on.*
 
