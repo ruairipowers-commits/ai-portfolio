@@ -71,6 +71,29 @@ def build(slug: str) -> Path:
     return out
 
 
+def fail(msg: str) -> None:
+    """Exit with a GitHub Actions error annotation (readable on the run page without opening the log)."""
+    print(f"::error::{msg}")
+    sys.exit(1)
+
+
+def preflight(api, owner: str) -> None:
+    """Check the token works, can write, and may create Spaces under `owner` — with a fix for each failure."""
+    try:
+        me = api.whoami()
+    except Exception as e:
+        fail(f"Hugging Face rejected HF_TOKEN ({type(e).__name__}: {str(e)[:150]}). Create a new token with the Write role.")
+    user = me.get("name", "")
+    orgs = [o.get("name") for o in me.get("orgs", [])]
+    role = ((me.get("auth") or {}).get("accessToken") or {}).get("role", "")
+    print(f"Hugging Face token belongs to '{user}' (role: {role or 'unknown'}); target namespace '{owner}'")
+    if role == "read":
+        fail(f"HF_TOKEN for '{user}' is read-only. Create a token with the Write role and update the HF_TOKEN secret.")
+    if owner not in [user, *orgs]:
+        fail(f"Spaces would be created under '{owner}', but the token belongs to '{user}'. Add a repository variable "
+             f"HF_OWNER = {user} (Settings > Secrets and variables > Actions > Variables) and re-run.")
+
+
 def push(slug: str, folder: Path) -> None:
     from huggingface_hub import HfApi
 
@@ -80,6 +103,7 @@ def push(slug: str, folder: Path) -> None:
     cfg = resolve()
     repo_id = f"{cfg['hf_owner']}/{slug}"
     api = HfApi(token=token)
+    preflight(api, cfg["hf_owner"])
     api.create_repo(repo_id, repo_type="space", space_sdk="docker", exist_ok=True)
     sha = os.getenv("GITHUB_SHA", "local")[:7]
     api.upload_folder(repo_id=repo_id, repo_type="space", folder_path=str(folder),
@@ -107,7 +131,12 @@ def main() -> None:
     a = ap.parse_args()
     folder = build(a.slug)
     if a.push:
-        push(a.slug, folder)
+        try:
+            push(a.slug, folder)
+        except SystemExit:
+            raise
+        except Exception as e:   # surface the reason as an annotation on the run page
+            fail(f"{a.slug}: push to Hugging Face failed — {type(e).__name__}: {str(e)[:300]}")
 
 
 if __name__ == "__main__":
