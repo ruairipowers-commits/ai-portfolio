@@ -11,21 +11,17 @@ same [governance standard](blog/posts/governance.md).
 
 ## Projects
 
-| Project | Problem | Pattern | Stack highlights | Status |
-|---|---|---|---|---|
-| [Alt-data vendor triage](blog/posts/altdata-triage.md) | Analysts spend days profiling vendor samples | Workflow | dbt, DuckDB, Streamlit, Bedrock | ✅ [Live demo]({{DEMOS_URL}}/altdata-triage/) |
-| [EOD heartbeat](blog/posts/eod-heartbeat.md) | End-of-day pipeline breaks found late, fixed from tribal knowledge | RAG + monitor | Airflow, dbt-postgres, pgvector, Streamlit | ✅ [Live demo]({{DEMOS_URL}}/eod-heartbeat/) |
-| [Trade-ops exception agent](blog/posts/trade-ops-exceptions.md) | Settlement breaks need lookups across 4 systems | Agent + human approval | LangGraph, MCP (TypeScript), Streamlit, Postgres | ✅ [Live demo]({{DEMOS_URL}}/trade-ops-exceptions/) |
-| [Research Q&A](blog/posts/research-qa-rag.md) | Analysts re-read filings to answer questions | RAG | FastAPI, hybrid search (FTS5 + sqlite-vec), entitlements | ✅ [Live demo]({{DEMOS_URL}}/research-qa-rag/) |
+<!-- projects:featured -->
 
 ### Governing them
 
-| Project | Problem | Pattern | Stack highlights | Status |
-|---|---|---|---|---|
-| [AI governance console](blog/posts/governance-console.md) | Nobody can say what AI runs, who uses it, what it costs, or how to stop it | Platform | FastAPI, Chart.js, Postgres, kill switch | ✅ [Live demo]({{DEMOS_URL}}/governance-console/) |
+<!-- projects:platform -->
 
 Every workflow above reports each visit and action to the console — usage, cost, data throughput, safety signals —
 and obeys its kill switch. Use any demo, then find yourself in the console with *Include simulated history* unticked.
+
+Smaller things I've built for myself are on [Personal projects](personal/index.md); what's changed is in the
+[release notes](release-notes/index.md).
 
 ## What every project includes
 

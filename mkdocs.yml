@@ -7,7 +7,8 @@ site_dir: build
 
 theme:
   name: material
-  features: [navigation.tabs, navigation.sections, content.code.copy, navigation.top]
+  custom_dir: overrides          # announcement bar → release notes
+  features: [navigation.tabs, navigation.sections, content.code.copy, navigation.top, announce.dismiss]
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -25,6 +26,11 @@ plugins:
       post_url_format: "{slug}"
       post_excerpt: required
       categories: true
+  - blog:                        # personal projects: a separate blog, so they stay out of the main one
+      blog_dir: personal
+      post_url_format: "{slug}"
+      post_excerpt: required
+      categories: false
 
 hooks:
   - scripts/mkdocs_hooks.py
@@ -48,6 +54,8 @@ nav:
   - Home: index.md
   - Governance: blog/governance/
   - Blog: blog/index.md
+  - Personal projects: personal/index.md
+  - Release notes: release-notes/index.md
   - About: about.md
 
 validation:

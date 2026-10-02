@@ -65,3 +65,8 @@ demo:   # hosted demo on Hugging Face Spaces (scripts/build_space.py)
   emoji: "🔎"
   short_description: Cited answers over filings + entitled research
 links: {repo: "", blog: "blog/research-qa-rag"}
+card:   # the row for this project on the home page (or the Personal projects page) — scripts/mkdocs_hooks.py
+  name: "Research Q&A"
+  problem: "Analysts re-read filings to answer questions"
+  pattern: "RAG"
+  stack: "FastAPI, hybrid search (FTS5 + sqlite-vec), entitlements"

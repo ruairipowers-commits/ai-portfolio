@@ -66,3 +66,8 @@ demo:   # hosted demo on Hugging Face Spaces (scripts/build_space.py)
   emoji: "🧾"
   short_description: LangGraph + MCP agent with human approval
 links: {repo: "", blog: "blog/trade-ops-exceptions"}
+card:   # the row for this project on the home page (or the Personal projects page) — scripts/mkdocs_hooks.py
+  name: "Trade-ops exception agent"
+  problem: "Settlement breaks need lookups across 4 systems"
+  pattern: "Agent + human approval"
+  stack: "LangGraph, MCP (TypeScript), Streamlit, Postgres"

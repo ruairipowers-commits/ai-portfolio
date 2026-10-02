@@ -1,4 +1,5 @@
-"""MkDocs hook: substitute portfolio placeholders ({{SITE_URL}}, {{GITHUB_OWNER}}, {{HF_OWNER}}).
+"""MkDocs hook: substitute portfolio placeholders ({{SITE_URL}}, {{GITHUB_OWNER}}, {{HF_OWNER}}), and build the
+project tables from portfolio.yaml (<!-- projects:featured -->, <!-- projects:platform -->, <!-- projects:personal -->).
 
 Values come from scripts/portfolio_config.py (env in CI, else gh login, else portfolio.yaml),
 so no personal details need to be committed. Runs on rendered HTML so it also covers
@@ -8,7 +9,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from portfolio_config import resolve  # noqa: E402
+import posixpath  # noqa: E402
+
+from portfolio_config import demo_url, resolve, tiers  # noqa: E402
 
 _cfg = resolve()
 _SUBS = {"SITE_URL": _cfg["site_url"], "GITHUB_OWNER": _cfg["github_owner"], "HF_OWNER": _cfg["hf_owner"],
@@ -38,5 +41,48 @@ def _source_links(html: str) -> str:
     return html
 
 
+def _table(tier: str, page_uri: str) -> str:
+    rows = tiers(_cfg)[tier]
+    if not rows:
+        return "*None yet.*" if tier == "personal" else ""
+    here = posixpath.dirname(page_uri)
+    out = ["| Project | Problem | Pattern | Stack highlights | Try it |", "|---|---|---|---|---|"]
+    for r in rows:
+        if r["post"]:
+            name = f"[{r['name']}]({posixpath.relpath(r['post'], here or '.')})"
+        elif r.get("url"):
+            name = f"[{r['name']}]({r['url']})"
+        else:
+            name = r["name"]
+        if r["demo"] and _cfg["demos_url"]:
+            link = f"✅ [Live demo]({demo_url(r['slug'], _cfg)})"
+        elif r.get("url"):
+            link = f"[Repo]({r['url']})"
+        else:
+            link = ""
+        out.append(f"| {name} | {r['problem']} | {r['pattern']} | {r['stack']} | {link} |")
+    return "\n".join(out)
+
+
+def on_page_markdown(markdown, page, config, files):
+    for tier in ("featured", "platform", "personal"):
+        tag = f"<!-- projects:{tier} -->"
+        if tag in markdown:
+            markdown = markdown.replace(tag, _table(tier, page.file.src_uri))
+    return markdown
+
+
 def on_page_content(html, page, config, files):
     return _source_links(_sub(html))
+
+
+def on_nav(nav, config, files):
+    """Read every page's front matter up front, so a page's `icon:` shows on the navigation tabs of every page,
+    not only on pages rendered after it."""
+    for page in nav.pages:
+        if not page.meta:
+            try:
+                page.read_source(config)
+            except Exception:  # noqa: BLE001 — generated pages (blog indexes) have no source to read yet
+                pass
+    return nav
