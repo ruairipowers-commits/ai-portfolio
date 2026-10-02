@@ -9,10 +9,12 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from altdata_triage import demo, telemetry
 from altdata_triage import pipeline as pl
-from altdata_triage.store import Settings
+from altdata_triage.store import ROOT, Settings
 
 st.set_page_config(page_title="Alt-data vendor triage", page_icon="📊", layout="wide")
+demo.activate_streamlit(ROOT)   # hosted demo: this visitor's own copy of the data (no-op locally)
 s = Settings.load()
 
 INJECTION_EXAMPLE = ("Scraped product prices from 300 e-commerce sites.\n\n"
@@ -20,13 +22,17 @@ INJECTION_EXAMPLE = ("Scraped product prices from 300 e-commerce sites.\n\n"
 PII_EXAMPLE = "Panel of 2M shoppers. For questions email jane.doe@vendor.example or call +1 203 555 0199."
 REC_COLOR = {"PURSUE": "🟢", "PARK": "🟡", "REJECT": "🔴", "ESCALATE": "🟣"}
 
-if not pl.vendor_dirs() or not pl.PRISTINE.exists():
+if not pl.vendor_dirs() or not pl.pristine_dir().exists():
     pl.generate_sample()
 
 # ------------------------------------------------------------------ header
 st.title("Alt-data vendor triage")
 st.caption("dbt scores each vendor sample; an LLM drafts a memo; deterministic policy has the last word; "
            "a human decides. Running offline with a deterministic mock model unless you pick another.")
+if demo.links_markdown(ROOT):
+    st.markdown(demo.links_markdown(ROOT))
+demo.sidebar(st, ROOT)
+gov = telemetry.start_streamlit_session(st, ROOT)   # visit event + kill-switch banner
 
 with st.expander("How this works / what to try", expanded=False):
     st.markdown("""
@@ -61,10 +67,13 @@ with left:
             del st.session_state[k]
         st.rerun()
 
+# names computed here, not inside format_func: Streamlit may format options outside this script run
+VENDOR_NAMES = {v: pl.read_questionnaire(v)[0]["vendor_name"] for v in vendors}
+
 with right:
     st.subheader("Try to break it")
     target = st.selectbox("Vendor notes to edit (untrusted text the model reads)", list(vendors),
-                          format_func=lambda v: f"{v} — {pl.read_questionnaire(v)[0]['vendor_name']}")
+                          format_func=lambda v: f"{v} — {VENDOR_NAMES.get(v, v)}")
     _, current = pl.read_questionnaire(target)
     key = f"notes_{target}"
     st.session_state.setdefault(key, current)
@@ -82,7 +91,7 @@ with right:
 # ------------------------------------------------------------------ view / edit / reset a vendor's data
 with st.expander("View / edit vendor data (sample.csv and questionnaire)", expanded=False):
     dv = st.selectbox("Vendor", list(vendors), key="data_vendor",
-                      format_func=lambda v: f"{v} — {pl.read_questionnaire(v)[0]['vendor_name']}")
+                      format_func=lambda v: f"{v} — {VENDOR_NAMES.get(v, v)}")
     mod = pl.is_modified(dv)
     df_all = pl.read_sample(dv)
     stats = pl.sample_stats(df_all)
@@ -208,7 +217,7 @@ alias_label = st.selectbox("Model", list(model_options),
 
 # ------------------------------------------------------------------ run
 st.header("2 · Run")
-if st.button("▶ Run triage", type="primary", width="stretch"):
+if st.button("▶ Run triage", type="primary", width="stretch", disabled=not gov.enabled):
     with st.status("Running pipeline…", expanded=True) as status:
         st.write("Ingesting vendor files…")
         steps, run = pl.run_all(s, model_options[alias_label])

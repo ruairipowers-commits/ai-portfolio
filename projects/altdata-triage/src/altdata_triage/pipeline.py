@@ -12,19 +12,31 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
 
-from . import evals
+from . import evals, telemetry
 from .llm import Budget, BudgetExceeded, LLMClient, Registry, RegistryError
-from .store import ROOT, Settings, connect, ingest
+from .store import ROOT, Settings, connect, ingest, workspace
 from .workflow import (DataQualityGateError, assert_dbt_tests_passed, get_vendor_facts, list_vendors, new_run_id,
-                       render_memo_md, triage_vendor)
+                       render_memo_md, report_run, triage_vendor)
 
-INCOMING = ROOT / "data" / "incoming"
-PRISTINE = ROOT / "data" / "pristine"   # untouched copy of every delivery, for per-vendor reset
+def incoming_dir() -> Path:
+    return workspace() / "data" / "incoming"
+
+
+def pristine_dir() -> Path:
+    """Untouched copy of every delivery, for per-vendor reset."""
+    return workspace() / "data" / "pristine"
+
+
+def dbt_target() -> Path:
+    return workspace() / "dbt" / "target"
+
+
 SAMPLE_COLUMNS = ["obs_date", "ticker", "metric_value"]
 PROVIDER_KEYS = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}
 
@@ -49,18 +61,19 @@ class TriageRun:
 # ------------------------------------------------------------------ inputs
 def generate_sample() -> StepResult:
     """Fresh synthetic deliveries (deterministic) — the default input."""
-    shutil.rmtree(INCOMING, ignore_errors=True)
+    shutil.rmtree(incoming_dir(), ignore_errors=True)
     r = subprocess.run([sys.executable, str(ROOT / "scripts" / "generate_sample_data.py")],
-                       capture_output=True, text=True, cwd=ROOT)
+                       capture_output=True, text=True, cwd=ROOT,
+                       env={**os.environ, "ALTDATA_INCOMING": str(incoming_dir())})
     if r.returncode == 0:
-        shutil.rmtree(PRISTINE, ignore_errors=True)
-        shutil.copytree(INCOMING, PRISTINE)
+        shutil.rmtree(pristine_dir(), ignore_errors=True)
+        shutil.copytree(incoming_dir(), pristine_dir())
     return StepResult(r.returncode == 0, r.stdout.strip() or r.stderr.strip()[-500:])
 
 
 def vendor_dirs() -> dict[str, Path]:
     out = {}
-    for d in sorted(p for p in INCOMING.glob("*") if p.is_dir()):
+    for d in sorted(p for p in incoming_dir().glob("*") if p.is_dir()):
         m = re.search(r"(?m)^vendor_id:\s*(\S+)", (d / "questionnaire.md").read_text())
         if m:
             out[m.group(1)] = d
@@ -93,11 +106,11 @@ def add_vendor(csv_bytes: bytes, meta: dict, notes: str) -> StepResult:
         return StepResult(False, "CSV larger than 20 MB")
     existing = vendor_dirs()
     vid = f"u{len([v for v in existing if v.startswith('u')]) + 1:02d}"
-    d = INCOMING / f"{vid}_{re.sub(r'[^a-z0-9]', '', meta['vendor_name'].lower())[:20] or 'upload'}"
+    d = incoming_dir() / f"{vid}_{re.sub(r'[^a-z0-9]', '', meta['vendor_name'].lower())[:20] or 'upload'}"
     d.mkdir(parents=True, exist_ok=True)
     (d / "sample.csv").write_bytes(csv_bytes)
     write_questionnaire(d / "questionnaire.md", {"vendor_id": vid, **meta}, notes)
-    shutil.copytree(d, PRISTINE / d.name, dirs_exist_ok=True)   # "reset" returns to the uploaded file
+    shutil.copytree(d, pristine_dir() / d.name, dirs_exist_ok=True)   # "reset" returns to the uploaded file
     return StepResult(True, f"Added {meta['vendor_name']} as {vid}")
 
 
@@ -150,7 +163,7 @@ def update_questionnaire_meta(vendor_id: str, meta: dict) -> StepResult:
 
 
 def _pristine_dir(vendor_id: str) -> Path | None:
-    p = PRISTINE / vendor_dirs()[vendor_id].name
+    p = pristine_dir() / vendor_dirs()[vendor_id].name
     return p if p.exists() else None
 
 
@@ -205,6 +218,7 @@ def ingest_step(settings: Settings) -> StepResult:
 def transform_step(settings: Settings) -> StepResult:
     env = {**os.environ, "DUCKDB_PATH": str(settings.db_path)}
     r = subprocess.run(["dbt", "build", "--project-dir", str(ROOT / "dbt"), "--profiles-dir", str(ROOT / "dbt"),
+                        "--target-path", str(dbt_target()), "--log-path", str(workspace() / "dbt" / "logs"),
                         "--vars", json.dumps({"as_of_date": settings["as_of_date"]})],
                        env=env, cwd=ROOT, capture_output=True, text=True)
     summary = next((ln for ln in reversed(r.stdout.splitlines()) if "PASS=" in ln), "").split("Done.")[-1].strip()
@@ -214,7 +228,7 @@ def transform_step(settings: Settings) -> StepResult:
 
 
 def dbt_test_results() -> list[dict]:
-    rr = ROOT / "dbt" / "target" / "run_results.json"
+    rr = dbt_target() / "run_results.json"
     if not rr.exists():
         return []
     return [{"node": r["unique_id"].split(".")[-1] if r["unique_id"].startswith("model") else r["unique_id"].split(".")[2],
@@ -224,9 +238,11 @@ def dbt_test_results() -> list[dict]:
 
 def triage_step(settings: Settings, alias: str | None = None) -> TriageRun:
     run = TriageRun(run_id=new_run_id(), spend_usd=0.0)
+    t0 = time.perf_counter()
     try:
+        telemetry.require_enabled("triage")             # kill switch, enforced here and not only in the UI
         if settings["data"]["require_dbt_tests_pass"]:
-            assert_dbt_tests_passed()
+            assert_dbt_tests_passed(workspace())
         c = settings["cost"]
         client = LLMClient(Registry(ROOT / "config" / "models.yaml"),
                            Budget(c["max_usd_per_run"], c["max_input_tokens_per_call"], c["allow_unpriced_models"]),
@@ -244,16 +260,27 @@ def triage_step(settings: Settings, alias: str | None = None) -> TriageRun:
                     "injection_flag": r.injection_suspected, "pii_redactions": r.pii_redactions,
                     "citation_errors": len(r.citation_errors), "cost_usd": round(r.cost_usd, 5),
                 })
+            report_run(con, run.run_id, "triage", int((time.perf_counter() - t0) * 1000))
         finally:
             con.close()
         run.spend_usd = client.budget.spent
+    except telemetry.WorkflowDisabled as e:
+        run.error = str(e)
     except (DataQualityGateError, BudgetExceeded, RegistryError) as e:
         run.error = str(e)
+        telemetry.emit("triage", status="blocked" if isinstance(e, DataQualityGateError) else "error",
+                        flags=["dq_gate_failed"] if isinstance(e, DataQualityGateError) else
+                        ["budget_blocked"] if isinstance(e, BudgetExceeded) else ["model_not_approved"],
+                        run_id=run.run_id, detail={"error": str(e)[:300]})
     return run
 
 
 def run_all(settings: Settings, alias: str | None = None) -> tuple[list[StepResult], TriageRun | None]:
     """ingest -> dbt build -> triage, stopping at the first failed step."""
+    try:
+        telemetry.require_enabled("triage")             # kill switch: nothing runs while governance has it switched off
+    except telemetry.WorkflowDisabled as e:
+        return [StepResult(False, str(e))], None
     steps = [ingest_step(settings)]
     if steps[-1].ok:
         steps.append(transform_step(settings))
@@ -272,6 +299,9 @@ def record_review(settings: Settings, vendor_id: str, decision: str, reviewer: s
             return StepResult(False, "Run triage first")
         con.execute("insert into audit.reviews values (now(),?,?,?,?,?,?,?)",
                     [row[0], vendor_id, reviewer, row[1], decision, row[1] == decision, note])
+        telemetry.emit("review", actor=reviewer, actor_type="named", records_in=1, run_id=row[0],
+                        flags=[] if row[1] == decision else ["human_override"],
+                        detail={"vendor_id": vendor_id, "ai": row[1], "decision": decision})
         return StepResult(True, f"Recorded {reviewer}: {vendor_id} → {decision} (AI said {row[1]})")
     finally:
         con.close()
@@ -280,7 +310,11 @@ def record_review(settings: Settings, vendor_id: str, decision: str, reviewer: s
 def eval_step(settings: Settings, alias: str = "triage-primary") -> dict:
     con = connect(settings)
     try:
-        return evals.run_eval(con, settings, alias)
+        rep = evals.run_eval(con, settings, alias)
+        report_run(con, rep["run_id"], "eval", 0, status="ok" if rep["passed"] else "failed",
+                   extra_flags=() if rep["passed"] else ("eval_failed",),
+                   detail={"metrics": rep["metrics"], "failures": rep["failures"]})
+        return rep
     finally:
         con.close()
 

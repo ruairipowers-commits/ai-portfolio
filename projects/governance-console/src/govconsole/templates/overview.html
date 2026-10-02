@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from "_macros.html" import swatch, state_chip, risk_chip, event_line %}
+{% block content %}
+<h1>AI workflows across the firm</h1>
+<p class="sub">Usage, spend, safety signals and control coverage for every registered AI workflow{{ ' — ' ~ f.wf if f.wf }}.
+  Last {{ f.days }} days{{ ', live events only' if not f.sim }}.</p>
+
+{% set unreg = rows|selectattr('registered', 'equalto', false)|list %}
+{% if unreg %}<div class="banner critical"><span>⛔</span><div><b>{{ unreg|length }} unregistered workflow{{ 's' if unreg|length > 1 }} sending AI usage:</b>
+  {% for r in unreg %}<a href="/workflows/{{ r.slug }}">{{ r.slug }}</a> ({{ r.cost_30d|usd }} in 30 days){{ ', ' if not loop.last }}{% endfor %}.
+  No owner, risk tier or control mapping is on file — this is shadow AI until it's registered. <a href="/audit">Details</a></div></div>{% endif %}
+{% set warn = rows|selectattr('budget_warn')|list %}
+{% if warn %}<div class="banner"><span>⚠️</span><div><b>Budget:</b>
+  {% for r in warn %}{{ r.name }} has used {{ r.budget_pct }}% of its {{ r.budget|usd }} monthly budget in the last 30 days{{ '; ' if not loop.last }}{% endfor %}.</div></div>{% endif %}
+
+<section class="grid kpis" id="kpis" aria-live="polite">
+  {% for k in ['AI spend', 'AI runs', 'Active users', 'Human decisions', 'Tokens', 'Records processed', 'Escalated / refused', 'p95 latency'] %}
+  <div class="card kpi"><div class="label">{{ k }}</div><div class="value">—</div><div class="delta">&nbsp;</div></div>
+  {% endfor %}
+</section>
+
+<section class="grid charts-2">
+  <div class="card"><div class="card-head"><h2>Daily AI spend by workflow</h2><span class="muted small">USD per day</span></div>
+    <div class="chart-box"><canvas id="c-cost" role="img" aria-label="Daily AI spend by workflow, stacked bars"></canvas></div>
+    <details class="table-view"><summary>Data table</summary><div class="table-wrap" id="t-cost"></div></details></div>
+  <div class="card"><div class="card-head"><h2>Cumulative AI spend</h2><span class="muted small">USD, period to date</span></div>
+    <div class="chart-box"><canvas id="c-cum" role="img" aria-label="Cumulative AI spend"></canvas></div></div>
+</section>
+<section class="grid charts-2b">
+  <div class="card"><div class="card-head"><h2>AI runs per day</h2><span class="muted small">runs, by workflow</span></div>
+    <div class="chart-box short"><canvas id="c-runs" role="img" aria-label="AI runs per day by workflow"></canvas></div></div>
+  <div class="card"><div class="card-head"><h2>Data throughput</h2><span class="muted small">records processed per day</span></div>
+    <div class="chart-box short"><canvas id="c-rec" role="img" aria-label="Records processed per day"></canvas></div></div>
+</section>
+
+<section class="card" style="margin-bottom:14px">
+  <div class="card-head"><h2>Workflows</h2><span class="muted small">last 30 days · budget use = 30-day spend ÷ monthly budget</span></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Workflow</th><th>State</th><th>Risk</th><th>Owner</th><th class="n">Runs</th><th class="n">Users</th>
+      <th class="n">Spend</th><th>Budget use</th><th class="n">Escalated</th><th class="n">Errors</th><th>Controls</th><th>Last run</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td class="wf">{{ swatch(r.slug, catalog) }}<a href="/workflows/{{ r.slug }}?days={{ f.days }}{{ '&sim=0' if not f.sim }}">{{ r.emoji }} {{ r.name }}</a>
+          {% if r.registered and not r.built %}<div class="muted small">{{ r.lifecycle }} — not deployed</div>{% endif %}
+          {% for a in r.anomalies[-1:] %}<div class="small"><span class="flag">anomaly {{ a.day }}: {{ a.factor }}× median</span></div>{% endfor %}</td>
+        <td>{{ state_chip(r) }}</td>
+        <td>{{ risk_chip(r.risk_tier) if r.registered else '—' }}</td>
+        <td class="small">{{ r.owner if r.registered else 'unknown' }}</td>
+        <td class="n">{{ r.runs_30d|num }}</td><td class="n">{{ r.users_30d|num }}</td><td class="n">{{ r.cost_30d|usd }}</td>
+        <td><div class="bar {{ 'warn' if r.budget_warn }}" title="{{ r.budget_pct }}% of {{ r.budget|usd }}"><i style="width: {{ [r.budget_pct, 100]|min }}%"></i></div>
+          <span class="small {{ '' if r.budget_warn else 'muted' }}">{{ '⚠️ ' if r.budget_warn }}{{ r.budget_pct }}% of {{ r.budget|usd }}</span></td>
+        <td class="n">{{ r.escalation_rate|pct }}</td><td class="n">{{ r.error_rate|pct }}</td>
+        <td class="small nowrap">{% if r.controls_total %}✅ {{ r.controls_implemented }} · 🟡 {{ r.controls_partial }} · 🔷 {{ r.controls_option }} · ⚪ {{ r.controls_na }}
+          <div class="{{ 'muted' if r.attested else '' }}">{{ r.attested }} attested{% if r.attest_stale %} · <b>{{ r.attest_stale }} stale</b>{% endif %}</div>{% else %}<span class="muted">no mapping</span>{% endif %}</td>
+        <td class="small muted">{{ r.last_run|ts }}</td>
+      </tr>
+    {% endfor %}
+    </tbody></table></div>
+</section>
+
+<section class="grid charts-2b">
+  <div class="card"><div class="card-head"><h2>Safety &amp; control signals</h2><span class="muted small">events carrying each flag</span></div>
+    <div class="table-wrap" id="flags"></div></div>
+  <div class="card"><div class="card-head"><h2>Spend by model</h2><span class="muted small">all workflows in range</span></div>
+    <div class="table-wrap" id="models"></div></div>
+</section>
+<section class="grid charts-2b">
+  <div class="card"><div class="card-head"><h2>Latest activity</h2><a class="small" href="/events?days={{ f.days }}">All events →</a></div>
+    <ul class="feed">{% for e in events %}{{ event_line(e, catalog) }}{% endfor %}</ul></div>
+  <div class="card"><div class="card-head"><h2>Kill-switch changes</h2><a class="small" href="/audit">Audit log →</a></div>
+    <ul class="feed">{% for c in changes %}<li><span class="t">{{ c.ts|ts }}</span><span>{{ swatch(c.workflow, catalog) }}<b>{{ c.workflow }}</b>
+      {{ 'disabled' if c.action == 'disable' else 'enabled' }} by {{ c.actor }} — {{ c.reason }}{% if c.source == 'simulated' %} <span class="muted">(simulated)</span>{% endif %}</span></li>
+    {% else %}<li class="muted">No changes recorded.</li>{% endfor %}</ul></div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="/static/vendor/chart.umd.js"></script>
+<script src="/static/app.js"></script>
+<script>
+  Gov.overview({ order: {{ order|tojson }}, names: {{ names|tojson }} });
+</script>
+{% endblock %}

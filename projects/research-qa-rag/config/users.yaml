@@ -1,0 +1,12 @@
+# Demo analysts and their research entitlements (FR-4). In production these come from SSO groups
+# (IAM Identity Center / Entra ID), never from the request.
+users:
+  public-analyst:
+    name: Analyst — public sources only
+    entitlements: [public]
+  equity-analyst:
+    name: Equity analyst — Northbridge licence
+    entitlements: [public, "broker:northbridge"]
+  portfolio-manager:
+    name: Portfolio manager — all broker licences
+    entitlements: [public, "broker:northbridge", "broker:aldgate", "broker:kestrel"]

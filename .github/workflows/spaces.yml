@@ -1,0 +1,44 @@
+# Syncs each project's live demo to its Hugging Face Space (Docker SDK) on every push to main.
+# One-time setup (see README → Live demos):
+#   secret   HF_TOKEN            Hugging Face token with write access
+#   variable HF_OWNER            HF user/org for the Spaces (optional; default = GitHub owner)
+#   variable HF_SPACE_HARDWARE   optional, e.g. cpu-upgrade to keep demos always on (billed by Hugging Face)
+#   secret   GOVERNANCE_INGEST_TOKEN   any long random string: the demo apps use it to post events to the console
+#   secret   GOVERNANCE_ADMIN_TOKEN    another one: your sign-in for permanent kill-switch changes in the console
+#   secret   GOVERNANCE_DATABASE_URL   optional Postgres URL (e.g. Neon free tier) so console history survives restarts
+# Without HF_TOKEN the job only builds the Space folders, so forks don't fail.
+name: spaces
+on:
+  push:
+    branches: [main]
+    paths: ["projects/**", "specs/**", "scripts/**", "governance/**", ".github/workflows/spaces.yml"]
+  workflow_dispatch:
+    inputs:
+      project: {description: "One project slug (blank = all with a Dockerfile.space)", required: false}
+permissions: {contents: read}
+concurrency: {group: spaces, cancel-in-progress: false}
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      PORTFOLIO_GITHUB_OWNER: ${{ github.repository_owner }}
+      PORTFOLIO_SITE_URL: ${{ vars.SITE_URL || format('https://{0}.github.io/{1}/', github.repository_owner, github.event.repository.name) }}
+      PORTFOLIO_HF_OWNER: ${{ vars.HF_OWNER }}
+      HF_SPACE_HARDWARE: ${{ vars.HF_SPACE_HARDWARE }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      GOVERNANCE_INGEST_TOKEN: ${{ secrets.GOVERNANCE_INGEST_TOKEN }}
+      GOVERNANCE_ADMIN_TOKEN: ${{ secrets.GOVERNANCE_ADMIN_TOKEN }}
+      GOVERNANCE_DATABASE_URL: ${{ secrets.GOVERNANCE_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pyyaml "huggingface_hub>=0.25"
+      - name: Build (and push when HF_TOKEN is set)
+        run: |
+          slugs="${{ github.event.inputs.project }}"
+          [ -n "$slugs" ] || slugs=$(ls projects/*/Dockerfile.space | cut -d/ -f2)
+          for s in $slugs; do
+            if [ -n "$HF_TOKEN" ]; then python scripts/build_space.py "$s" --push
+            else python scripts/build_space.py "$s"; echo "::notice::HF_TOKEN not set: built $s but did not push"; fi
+          done

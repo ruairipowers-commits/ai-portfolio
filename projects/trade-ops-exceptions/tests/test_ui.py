@@ -211,3 +211,41 @@ def test_walkthrough_injection_escalates_and_cannot_be_approved(app):
 def test_walkthrough_missing_confirm_chases(app):
     at = walk(app, "Broker never sends a confirm")
     assert any("CHASE_CONFIRM" in m.value for m in at.markdown)
+
+
+def test_hosted_demo_gives_each_visitor_a_private_sandbox(app, tmp_path, monkeypatch):
+    """PORTFOLIO_DEMO=1: investigate + approve write only to this session's copy, never the baseline."""
+    sessions = tmp_path / "sessions"
+    monkeypatch.setenv("PORTFOLIO_DEMO", "1")
+    monkeypatch.setenv("DEMO_SESSIONS_DIR", str(sessions))
+    monkeypatch.setenv("PORTFOLIO_BLOG_URL", "https://example.test/blog/trade-ops-exceptions/")
+    monkeypatch.setenv("PORTFOLIO_SOURCE_URL", "https://github.com/example/trade-ops-exceptions")
+    at = select(app.run(), "EX-0002")
+    at = press(at, "inv_one")
+    at = press(at, "approve")
+    assert not at.exception, at.exception
+    assert wf_status(at, "EX-0002")["status"] == "Resolved"
+    boxes = [d for d in (sessions / "trade-ops-exceptions").iterdir() if d.is_dir()]
+    assert len(boxes) == 1
+    assert (boxes[0] / "warehouse" / "tradeops.sqlite").exists()
+    assert (boxes[0] / "warehouse" / "checkpoints.sqlite").exists()
+    assert not (tmp_path / "warehouse" / "tradeops.sqlite").exists()     # baseline untouched
+    links = " ".join(m.value for m in at.markdown)
+    assert "example.test/blog/trade-ops-exceptions" in links and "github.com/example/trade-ops-exceptions" in links
+    assert any("Public demo" in i.value for i in at.sidebar.info)
+
+
+def test_investigate_and_approve_emit_governance_events(app, governance_spool):
+    import json
+    at = select(app.run(), "EX-0037")                                 # injection case -> escalated
+    at = press(at, "inv_one")
+    at = select(at, "EX-0002")
+    at = press(at, "inv_one")
+    at = press(at, "approve")
+    assert not at.exception, at.exception
+    ev = [json.loads(l) for l in governance_spool.read_text().splitlines()]
+    inv = {e["detail"]["exception_id"]: e for e in ev if e["event_type"] == "investigate"}
+    assert inv["EX-0037"]["status"] == "escalated" and "injection_detected" in inv["EX-0037"]["flags"]
+    assert inv["EX-0002"]["status"] == "ok" and inv["EX-0002"]["cost_usd"] > 0 and inv["EX-0002"]["model"] == "mock-agent"
+    appr = next(e for e in ev if e["event_type"] == "approve")
+    assert appr["actor"] == "demo-analyst" and appr["actor_type"] == "named" and appr["records_out"] == 1

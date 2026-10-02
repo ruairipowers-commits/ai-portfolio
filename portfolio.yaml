@@ -8,6 +8,9 @@ tagline: "AI solutions for investment firms — governed, measurable, portable."
 #   3. these values.
 site_url: https://REPLACE-GITHUB-USER.github.io/ai-portfolio
 github_owner: REPLACE-GITHUB-USER
+# Hugging Face user/org that hosts the live demos (Spaces). Env PORTFOLIO_HF_OWNER (CI: repo variable
+# HF_OWNER) wins; if unset, assumed to match the GitHub owner.
+hf_owner: REPLACE-HF-USER
 license: MIT
 default_domain: investment management (hedge fund / asset manager operations and research)
 
@@ -25,3 +28,4 @@ projects:
   - eod-heartbeat
   - trade-ops-exceptions
   - research-qa-rag
+  - governance-console      # platform: governs the workflows above

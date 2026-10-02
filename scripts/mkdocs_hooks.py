@@ -1,4 +1,4 @@
-"""MkDocs hook: substitute portfolio placeholders ({{SITE_URL}}, {{GITHUB_OWNER}}).
+"""MkDocs hook: substitute portfolio placeholders ({{SITE_URL}}, {{GITHUB_OWNER}}, {{HF_OWNER}}).
 
 Values come from scripts/portfolio_config.py (env in CI, else gh login, else portfolio.yaml),
 so no personal details need to be committed. Runs on rendered HTML so it also covers
@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from portfolio_config import resolve  # noqa: E402
 
 _cfg = resolve()
-_SUBS = {"SITE_URL": _cfg["site_url"], "GITHUB_OWNER": _cfg["github_owner"]}
+_SUBS = {"SITE_URL": _cfg["site_url"], "GITHUB_OWNER": _cfg["github_owner"], "HF_OWNER": _cfg["hf_owner"]}
 
 
 def _sub(text: str) -> str:

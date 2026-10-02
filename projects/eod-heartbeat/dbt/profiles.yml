@@ -1,0 +1,14 @@
+# Connection comes from the environment (set by eodhb from config/settings.yaml), so the same profile works for
+# the embedded Postgres, docker compose and RDS.
+eod_heartbeat:
+  target: local
+  outputs:
+    local:
+      type: postgres
+      host: "{{ env_var('EOD_PG_HOST', 'localhost') }}"
+      port: "{{ env_var('EOD_PG_PORT', '5432') | as_number }}"
+      user: "{{ env_var('EOD_PG_USER', 'postgres') }}"
+      password: "{{ env_var('EOD_PG_PASSWORD', '') }}"
+      dbname: "{{ env_var('EOD_PG_DBNAME', 'eod') }}"
+      schema: public
+      threads: 4

@@ -17,6 +17,7 @@ import pandas as pd
 import streamlit as st
 
 from tradeops import app_support as sup
+from tradeops import telemetry
 from tradeops.runner import decide, investigate
 
 FUNDS = {"Global Macro Fund": "GM-001", "Equity L/S Fund": "ELS-002"}
@@ -151,6 +152,7 @@ def _kv(d: dict):
 
 def render(models: dict, alias_label: str, flash):
     wt = st.session_state.setdefault("wt", {})
+    gov_on = telemetry.status().enabled   # kill switch: agent and approvals are off while disabled
     st.markdown("Follow **one trade** from booking to resolution. You play each party in turn; the app shows who is "
                 "acting at every step and which table each action writes to. Everything here also appears in the "
                 "**Bulk exception queue** and the **Data explorer** (manual trades use ids `T09xxx` / `EX-9xxx`).")
@@ -322,7 +324,7 @@ def render(models: dict, alias_label: str, flash):
             if run is None:
                 st.caption(f"Model: **{alias_label}** (change it in the sidebar). The agent can only *read*: it calls "
                            "tools to look up the trade, confirm, allocations, custodian and SSI, then submits a proposal.")
-                if st.button(f"🤖 Investigate {ex}", type="primary", key=K + "inv"):
+                if st.button(f"🤖 Investigate {ex}", type="primary", key=K + "inv", disabled=not gov_on):
                     with st.spinner("Agent investigating…"):
                         asyncio.run(investigate([ex], models[alias_label]))
                     st.rerun()
@@ -365,14 +367,14 @@ def render(models: dict, alias_label: str, flash):
                                     key=K + "body", height=90)
                 edits["email_draft"] = {**p["email_draft"], "body": body}
             a, b = st.columns(2)
-            if a.button(f"🧑‍💼 Approve as {approver or '…'}", type="primary", disabled=not approver, key=K + "approve",
+            if a.button(f"🧑‍💼 Approve as {approver or '…'}", type="primary", disabled=not approver or not gov_on, key=K + "approve",
                         help="Mints a signed token over exactly this content; only then can the write-scoped tool "
                              "record the fix and queue the email (never sent)."):
                 out = asyncio.run(decide(ex, "approve", approver, "walkthrough", edits))
                 flash(out["status"] == "resolved", f"{ex} resolved by {approver}" if out["status"] == "resolved"
                       else f"{ex}: {out['status']}")
                 st.rerun()
-            if b.button("Reject", disabled=not approver, key=K + "reject"):
+            if b.button("Reject", disabled=not approver or not gov_on, key=K + "reject"):
                 asyncio.run(decide(ex, "reject", approver, "walkthrough"))
                 st.rerun()
             if not approver:

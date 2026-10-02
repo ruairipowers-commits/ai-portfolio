@@ -1,0 +1,29 @@
+# EVAL-03 / SEC-06: unit + app tests on the embedded Postgres, the offline end-to-end run, the eval gate
+# (mock models, zero cost), an Airflow DAG import check and a dependency scan.
+name: ci
+on: [push, pull_request]
+permissions: {contents: read}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env: {GOVERNANCE_SPOOL: /tmp/governance-events.jsonl, EOD_PG_CLEANUP: stop}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install -e ".[ui,dev]" pip-audit
+      - run: pytest -q
+      - run: eodhb all && eodhb eval
+      - run: pip-audit --skip-editable || true   # report-only; make blocking once triaged
+  dag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: |
+          pip install "apache-airflow==3.1.*" --constraint https://raw.githubusercontent.com/apache/airflow/constraints-3.1.0/constraints-3.11.txt
+          pip install -e .
+          export AIRFLOW_HOME=$RUNNER_TEMP/airflow AIRFLOW__CORE__LOAD_EXAMPLES=False
+          airflow db migrate
+          python -c "from airflow.models.dagbag import DagBag; b = DagBag('dags', include_examples=False); assert not b.import_errors, b.import_errors; print(sorted(b.dags))"
