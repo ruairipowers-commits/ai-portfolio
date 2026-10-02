@@ -113,7 +113,10 @@ def render_selfhost(out: Path, c: dict) -> list[Path]:
                "environment": env, "mem_limit": a["memory"], "cpus": 2.0, "networks": ["demos"]}
         if a["kind"] == "fastapi":
             env.update({"GOVERNANCE_ADMIN_TOKEN": "${GOVERNANCE_ADMIN_TOKEN:-}", "DATABASE_URL": "${GOVERNANCE_DATABASE_URL:-}",
-                        "FORWARDED_ALLOW_IPS": "*"})
+                        "FORWARDED_ALLOW_IPS": "*",
+                        # governance alert emails (console Settings page); empty = kept in the console's outbox only
+                        **{k: "${%s:-}" % k for k in ("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD", "SMTP_FROM",
+                                                      "GOVERNANCE_ALERT_EMAIL")}})
             svc["volumes"] = ["console-data:/app/warehouse"]   # live history survives restarts and rebuilds
         services[a["slug"]] = svc
     services["caddy"] = {"image": "caddy:2-alpine", "restart": "unless-stopped",

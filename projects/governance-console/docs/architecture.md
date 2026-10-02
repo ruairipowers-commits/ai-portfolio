@@ -48,6 +48,30 @@ sequenceDiagram
     W-->>P: ⛔ Switched off by governance: reason (by cro) — no model call made
 ```
 
+## Sequence: a violation is escalated
+
+```mermaid
+sequenceDiagram
+    participant App as Workflow (e.g. eod-heartbeat)
+    participant C as Console
+    participant M as Email (SMTP)
+    actor O as Owner
+    App->>C: POST /api/events (flags: unsafe_action)
+    C->>C: rule unsafe-action (high) → open INC-0004
+    C->>C: high ≥ auto-shutdown level → kill switch off
+    C->>M: email: details + link to /incidents/INC-0004
+    App->>C: next run: GET status → disabled (Automatic: INC-0004)
+    App-->>App: refuses the run, logs "blocked"
+    M->>O: [HIGH] INC-0004 EOD heartbeat: AI proposed an action outside the approved runbook
+    O->>C: opens the link: evidence, guidance, timeline
+    O->>C: notes, then resolve: root cause + fix + documentation, re-confirm SEC-04, re-enable
+    App->>C: next run: GET status → enabled
+```
+
+Rules live in `config/escalation.yaml` (flag rules fire on ingest; budget, anomaly and shadow-AI rules every five
+minutes). Per-workflow recipients and levels are on the Settings page. Ticketing is designed in
+[integrations.md](integrations.md).
+
 ## Telemetry contract
 
 One JSON event per visit or action. No prompts, questions, documents or answers — counts, hashes and flags only.

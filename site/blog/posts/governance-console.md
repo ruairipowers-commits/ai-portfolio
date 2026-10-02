@@ -52,6 +52,8 @@ The console turns that into:
 - **Models** — every registered model per workflow: aliases in use, approved, priced, deprecation dates, usage.
 - **Events & people** and **Audit & alerts** — who did what, kill-switch history, spend anomalies, and workflows that
   send AI usage but aren't registered.
+- **Incidents** and **Settings** — governance issues escalated per workflow: an incident, an automatic switch-off
+  when it's serious enough, and an email with a link straight to the details.
 
 The demo seeds 90 days of **labelled** simulated history so the charts mean something on day one, with a story in it:
 trade-ops promotes its investigator to a larger model after passing its eval gate and daily spend roughly triples
@@ -59,6 +61,38 @@ trade-ops promotes its investigator to a larger model after passing its eval gat
 switches research Q&A off for a day over a licence question; and in the last week an unregistered
 `pm-notes-summarizer` starts sending usage. One checkbox hides all of it and shows only live events from people using
 the demos.
+
+## When something goes wrong: escalation
+
+Dashboards only help if someone is looking. So the console also escalates. Each workflow's guardrails already
+report what they catch — an AI-proposed step outside the runbook, restricted content, a request to change a
+counterparty's bank details, an injection, a failed eval or data gate. Rules in `config/escalation.yaml` map
+those signals, plus budget, spend-anomaly and shadow-AI checks, to a severity and a control. On the **Settings**
+page each workflow gets an escalation list, a severity that emails it and a severity that switches the workflow
+off by itself.
+
+When a rule fires, the console opens an incident. If the severity reaches the workflow's shutdown level, it turns
+the kill switch off; the app refuses the next run within 15 seconds. It emails the list with what happened, who
+triggered it, the signals, the control, what to do, and a button to the incident. One open incident per
+workflow and rule is the throttle, so a workflow that keeps tripping produces one email, not fifty. Resolving
+takes three things: the root cause, how the gap was closed, and where it's documented. The same step can
+re-confirm the control and switch the workflow back on. The console can switch a workflow off on its own; only a
+person can switch it back on.
+
+<video controls muted playsinline preload="metadata" poster="../img/governance-escalation-poster.png" style="width:100%;border-radius:6px">
+  <source src="../img/governance-escalation.mp4" type="video/mp4">
+</video>
+
+*The whole loop in under three minutes: a runbook edit makes the model propose a forced rerun → the policy blocks
+it and the console switches EOD heartbeat off → the email → the incident → an investigation note → the approved
+runbooks restored → root cause, fix and documentation, SEC-04 re-confirmed, workflow back on.*
+
+Email is built (SMTP; Gmail with an app password works). In a firm the same incident would more often open a
+ticket. PagerDuty for the ones that need someone now, ServiceNow for the ones that need a tracked record. That
+channel is designed but not built: each incident page shows the exact payload the console would send (one ticket
+per incident, deduplicated by its ID), and
+[docs/integrations.md](https://github.com/{{GITHUB_OWNER}}/governance-console/blob/main/docs/integrations.md)
+covers the mapping and what building it takes.
 
 ## Requirements
 
@@ -71,6 +105,7 @@ the demos.
 | FR-3 | Kill switch per workflow: admin-only, reason required, audited, enforced by the workflow |
 | FR-4 | Controls matrix with live evidence and reviewer attestations |
 | FR-5 | New workflows appear automatically; unregistered sources are flagged |
+| FR-6 | Escalate governance issues per workflow: incident, optional auto-shutdown, email with a link to the details |
 
 **Non-functional**
 
@@ -120,7 +155,8 @@ actor. *Not built:* reconciling against the provider invoice and cost-allocation
 
 **COST-04 · Alerts.** Trailing-30-day spend against each workflow's monthly budget with a warning at 80%, and a spend
 anomaly flag when a day exceeds 2.5× the trailing 14-day median. *Knobs:* `config/workflows.yaml`, `alerts.*`.
-*Not built:* Slack/email delivery and a monthly FinOps sign-off.
+Both are escalation rules, so a breach opens an incident and emails the workflow's list.
+*Not built:* PagerDuty/ServiceNow tickets (designed) and a monthly FinOps sign-off.
 
 **OBS-01 · Run log.** The events table is the cross-workflow run log, linked to each workflow's own audit trail by
 `run_id`. *Option:* emit OpenTelemetry GenAI spans to Datadog or Grafana instead of, or as well as, the console.
@@ -158,7 +194,9 @@ See [docs/aws-native.md](https://github.com/{{GITHUB_OWNER}}/governance-console/
   answer in production is to route model traffic through a gateway that reports on its behalf.
 - **OpenTelemetry.** The event contract maps onto the GenAI semantic conventions; exporting spans would put the same
   data in whatever observability stack the firm already runs.
-- **Calendar budgets and alert delivery** — trailing-30-day is easier to read mid-month but isn't how finance thinks.
+- **Calendar budgets** — trailing-30-day is easier to read mid-month but isn't how finance thinks.
+- **Tickets, not just email** — PagerDuty and ServiceNow channels from the designed payloads, closed automatically
+  when the incident is resolved.
 
 ---
 
