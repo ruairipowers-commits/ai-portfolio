@@ -4,7 +4,7 @@
 data flows through it, whether its controls are in place — and a switch to turn it off.**
 
 > Part of the [AI Workflow Portfolio]({{SITE_URL}}) by Ruairi Powers ·
-> Write-up: [{{BLOG_TITLE}}]({{SITE_URL}}/blog/governance-console/) · Live demo: [Hugging Face Space](https://huggingface.co/spaces/{{HF_OWNER}}/governance-console) ·
+> Write-up: [{{BLOG_TITLE}}]({{SITE_URL}}/blog/governance-console/) · Live demo: [try it]({{DEMOS_URL}}/governance-console/) ·
 > Governance: [standard]({{SITE_URL}}/blog/governance/) / [this project's mapping](docs/governance.md)
 
 ![python](https://img.shields.io/badge/python-3.11-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-service-teal) ![Chart.js](https://img.shields.io/badge/Chart.js-dashboards-orange) ![no model calls](https://img.shields.io/badge/model%20calls-none-lightgrey)
@@ -137,8 +137,9 @@ infra/aws/      Terraform starter (App Runner, Aurora Serverless v2, Secrets Man
 | Budget warning, anomaly factor, attestation window, demo switch-off length | `config/settings.yaml` |
 | Workflow side | `GOVERNANCE_URL`, `GOVERNANCE_INGEST_TOKEN`, `GOVERNANCE_FAIL_CLOSED=1`, `GOVERNANCE_TELEMETRY=off` |
 
-When hosted as a Hugging Face Space, sign in as admin on the Space's direct URL (`https://<owner>-governance-console.hf.space`):
-the admin cookie isn't sent inside the huggingface.co page's iframe.
+Behind a path prefix (e.g. `https://demos.example.com/governance-console/`) set `ROOT_PATH=/governance-console`;
+the portfolio's deploy scripts do this. On Hugging Face, sign in as admin on the Space's direct URL
+(`https://<owner>-governance-console.hf.space`): the admin cookie isn't sent inside the huggingface.co page's iframe.
 
 ## License
 

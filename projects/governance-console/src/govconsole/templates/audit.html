@@ -6,7 +6,7 @@
 <p class="sub">Kill-switch changes, spend anomalies and AI usage from workflows nobody registered.</p>
 <section class="card" style="margin-bottom:14px"><h2>Unregistered workflows (shadow AI)</h2>
   {% if unregistered %}<div class="table-wrap"><table><thead><tr><th>Workflow</th><th class="n">Runs (30d)</th><th class="n">Users</th><th class="n">Spend (30d)</th><th>Last run</th><th>What to do</th></tr></thead><tbody>
-  {% for r in unregistered %}<tr><td class="wf"><a href="/workflows/{{ r.slug }}">{{ r.slug }}</a></td><td class="n">{{ r.runs_30d|num }}</td><td class="n">{{ r.users_30d|num }}</td>
+  {% for r in unregistered %}<tr><td class="wf"><a href="{{ base }}/workflows/{{ r.slug }}">{{ r.slug }}</a></td><td class="n">{{ r.runs_30d|num }}</td><td class="n">{{ r.users_30d|num }}</td>
     <td class="n">{{ r.cost_30d|usd }}</td><td class="small muted">{{ r.last_run|ts }}</td>
     <td class="small">Add it to <code>portfolio.yaml</code> with a spec (owner, risk tier) and a <code>docs/governance.md</code> mapping — it then appears here as a governed workflow.</td></tr>{% endfor %}
   </tbody></table></div>{% else %}<p class="muted">None — every workflow sending events is registered.</p>{% endif %}</section>

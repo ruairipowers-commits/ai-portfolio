@@ -1,7 +1,7 @@
 """Resolve per-owner settings (site URL, GitHub owner) without storing them in git.
 
 Order: env PORTFOLIO_SITE_URL / PORTFOLIO_GITHUB_OWNER -> `gh api user` login -> portfolio.yaml.
-Usage from shell: python3 scripts/portfolio_config.py  ->  "<site_url> <github_owner> <hf_owner>"
+Usage from shell: python3 scripts/portfolio_config.py  ->  "<site_url> <github_owner> <hf_owner> <demos_url|->"
 """
 from __future__ import annotations
 
@@ -23,6 +23,9 @@ def _gh_login() -> str | None:
         return None
 
 
+TARGETS = ("selfhost", "huggingface", "cloudflare", "cloudrun")
+
+
 def resolve() -> dict:
     cfg = yaml.safe_load((ROOT / "portfolio.yaml").read_text())
     owner = os.getenv("PORTFOLIO_GITHUB_OWNER")
@@ -33,18 +36,52 @@ def resolve() -> dict:
     if not site:
         site = cfg["site_url"] if not cfg["site_url"].count("REPLACE") else f"https://{owner}.github.io/ai-portfolio"
     hf = os.getenv("PORTFOLIO_HF_OWNER") or ("" if cfg.get("hf_owner", "REPLACE").startswith("REPLACE") else cfg["hf_owner"])
-    return {**cfg, "site_url": site.rstrip("/"), "github_owner": owner, "hf_owner": hf or owner}
+    hf = hf or owner
+    demos = cfg.get("demos") or {}
+    target = (os.getenv("PORTFOLIO_DEMOS_TARGET") or demos.get("target") or "huggingface").strip().lower()
+    if target not in TARGETS:
+        raise SystemExit(f"demos target '{target}' must be one of {', '.join(TARGETS)}")
+    if target == "huggingface":
+        demos_url = f"https://huggingface.co/spaces/{hf}"
+    else:
+        base = os.getenv("PORTFOLIO_DEMOS_URL") or demos.get("base_url", "")
+        demos_url = "" if "REPLACE" in base else base
+    return {**cfg, "site_url": site.rstrip("/"), "github_owner": owner, "hf_owner": hf,
+            "demos_target": target, "demos_url": demos_url.rstrip("/")}
+
+
+def demo_url(slug: str, c: dict) -> str:
+    """Public URL of one app's live demo under the configured target ('' if the base URL isn't set)."""
+    if not c["demos_url"]:
+        return ""
+    return f"{c['demos_url']}/{slug}" + ("" if c["demos_target"] == "huggingface" else "/")
+
+
+def source_url(slug: str, c: dict) -> str:
+    if c.get("source_links", "monorepo") == "standalone":
+        return f"https://github.com/{c['github_owner']}/{slug}"
+    return f"https://github.com/{c['github_owner']}/{c.get('repo_name', 'ai-portfolio')}/tree/main/projects/{slug}"
 
 
 def links(slug: str, c: dict | None = None) -> dict:
-    """Where a project lives: write-up, source repo and live demo (Hugging Face Space)."""
+    """Where a project lives: write-up, source code, live demo, and the governance console's demo."""
     c = c or resolve()
     return {"project": slug, "site_url": c["site_url"], "github_owner": c["github_owner"], "hf_owner": c["hf_owner"],
+            "demos_target": c["demos_target"], "demos_url": c["demos_url"],
             "portfolio_url": c["site_url"] + "/",
             "blog_url": f"{c['site_url']}/blog/{slug}/",
-            "source_url": f"https://github.com/{c['github_owner']}/{slug}",
-            "demo_url": f"https://huggingface.co/spaces/{c['hf_owner']}/{slug}",
-            "console_url": f"https://huggingface.co/spaces/{c['hf_owner']}/{CONSOLE}"}
+            "source_url": source_url(slug, c),
+            "demo_url": demo_url(slug, c),
+            "console_url": demo_url(CONSOLE, c)}
+
+
+def governance_url(c: dict) -> str:
+    """What the apps post telemetry to and poll for the kill switch, per target."""
+    if c["demos_target"] == "huggingface":
+        return space_host(c["hf_owner"], CONSOLE)
+    if c["demos_target"] == "selfhost":
+        return f"http://{CONSOLE}:7860/{CONSOLE}"      # compose network, never leaves the machine
+    return demo_url(CONSOLE, c).rstrip("/")
 
 
 def space_host(owner: str, slug: str) -> str:
@@ -54,4 +91,4 @@ def space_host(owner: str, slug: str) -> str:
 
 if __name__ == "__main__":
     c = resolve()
-    print(c["site_url"], c["github_owner"], c["hf_owner"])
+    print(c["site_url"], c["github_owner"], c["hf_owner"], c["demos_url"] or "-")

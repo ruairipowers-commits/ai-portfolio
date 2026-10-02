@@ -2,7 +2,7 @@
 {% from "_macros.html" import swatch, state_chip, risk_chip, status_cell, event_line, attest_badge %}
 {% block title %}{{ row.name }} · AI Governance Console{% endblock %}
 {% block content %}
-<p class="small"><a href="/?days={{ f.days }}{{ '&sim=0' if not f.sim }}">← All workflows</a></p>
+<p class="small"><a href="{{ base }}/?days={{ f.days }}{{ '&sim=0' if not f.sim }}">← All workflows</a></p>
 <div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; justify-content:space-between">
   <div>
     <h1>{{ swatch(row.slug, catalog) }}{{ row.emoji }} {{ row.name }}</h1>
@@ -20,7 +20,7 @@
     <p class="small muted" style="margin:0 0 10px">The app checks this before every run and approval (within 15 s) and refuses while disabled.
       Each refused attempt is logged as <i>blocked</i>.</p>
     {% if rights and row.registered %}
-    <form method="post" action="/workflows/{{ row.slug }}/toggle" style="display:grid; gap:8px">
+    <form method="post" action="{{ base }}/workflows/{{ row.slug }}/toggle" style="display:grid; gap:8px">
       <input type="hidden" name="enabled" value="{{ '0' if row.enabled else '1' }}">
       {% if rights == 'temporary' %}<input type="text" name="name" required placeholder="Your name" maxlength="60">{% endif %}
       <input type="text" name="reason" required placeholder="Reason (recorded in the audit log)" maxlength="300">
@@ -29,7 +29,7 @@
     {% if rights == 'temporary' %}<p class="small muted" style="margin:8px 0 0">Public demo: try it, then open the
       {% if wf_links.get(row.slug, {}).demo %}<a href="{{ wf_links[row.slug].demo }}">app</a>{% else %}app{% endif %} and run it.
       A switch-off lapses after {{ settings.kill_switch.demo_expiry_minutes }} minutes so the demo stays usable for everyone.</p>{% endif %}
-    {% elif row.registered %}<p class="small">Changing it needs an <a href="/admin/login">admin sign-in</a>.</p>{% endif %}
+    {% elif row.registered %}<p class="small">Changing it needs an <a href="{{ base }}/admin/login">admin sign-in</a>.</p>{% endif %}
   </div>
 </div>
 
@@ -76,7 +76,7 @@
   <p class="small" style="margin-top:0">{{ row.attested }} confirmed · {{ row.attest_exceptions }} exception{{ 's' if row.attest_exceptions != 1 }} ·
     {{ row.attest_stale }} stale · {{ row.controls_total - row.controls_na - row.attested - row.attest_stale }} not yet attested (excluding n/a)</p>
   {% if can_attest %}
-  <form method="post" action="/workflows/{{ row.slug }}/attest" class="filters" style="margin-bottom:12px">
+  <form method="post" action="{{ base }}/workflows/{{ row.slug }}/attest" class="filters" style="margin-bottom:12px">
     <select name="control_id" aria-label="Control">{% for c in catalog.controls %}{% if wf.controls.get(c.id) %}<option value="{{ c.id }}">{{ c.id }} {{ c.name }}</option>{% endif %}{% endfor %}</select>
     <select name="verdict" aria-label="Verdict"><option value="confirmed">Confirm — evidence reviewed</option><option value="exception">Exception — gap accepted</option></select>
     <input type="text" name="note" placeholder="Note (what you checked)" maxlength="300" style="min-width:240px">
@@ -95,7 +95,7 @@
 {% endif %}
 
 <section class="grid charts-2b">
-  <div class="card"><div class="card-head"><h2>Recent events</h2><a class="small" href="/events?wf={{ row.slug }}&days={{ f.days }}">All →</a></div>
+  <div class="card"><div class="card-head"><h2>Recent events</h2><a class="small" href="{{ base }}/events?wf={{ row.slug }}&days={{ f.days }}">All →</a></div>
     <ul class="feed">{% for e in events %}{{ event_line(e, catalog) }}{% else %}<li class="muted">No events yet.</li>{% endfor %}</ul></div>
   <div class="card"><h2>Kill-switch history</h2>
     <ul class="feed">{% for c in changes %}<li><span class="t">{{ c.ts|ts }}</span><span><b>{{ 'Disabled' if c.action == 'disable' else 'Enabled' }}</b> by {{ c.actor }} — {{ c.reason }}{% if c.source == 'simulated' %} <span class="muted">(simulated)</span>{% endif %}</span></li>
@@ -103,7 +103,7 @@
 </section>
 {% endblock %}
 {% block scripts %}
-<script src="/static/vendor/chart.umd.js"></script>
-<script src="/static/app.js"></script>
+<script src="{{ base }}/static/vendor/chart.umd.js"></script>
+<script src="{{ base }}/static/app.js"></script>
 <script>Gov.workflow({ slug: {{ row.slug|tojson }}, order: {{ order|tojson }}, names: {{ names|tojson }} });</script>
 {% endblock %}

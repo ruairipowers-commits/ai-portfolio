@@ -5,7 +5,7 @@ If the documents you're entitled to don't support an answer, it refuses rather t
 stay with the people who hold the licence, and notes whose licence forbids AI processing never reach a model.
 
 > Part of the [AI Workflow Portfolio]({{SITE_URL}}) by Ruairi Powers ·
-> Write-up: [{{BLOG_TITLE}}]({{SITE_URL}}/blog/research-qa-rag/) · Live demo: [Hugging Face Space](https://huggingface.co/spaces/{{HF_OWNER}}/research-qa-rag) ·
+> Write-up: [{{BLOG_TITLE}}]({{SITE_URL}}/blog/research-qa-rag/) · Live demo: [try it]({{DEMOS_URL}}/research-qa-rag/) ·
 > Governance: [standard]({{SITE_URL}}/blog/governance/) / [this project's mapping](docs/governance.md)
 
 ![python](https://img.shields.io/badge/python-3.11-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-service-teal) ![hybrid search](https://img.shields.io/badge/search-BM25%20%2B%20vectors-purple) ![runs offline](https://img.shields.io/badge/runs-offline%20by%20default-green)

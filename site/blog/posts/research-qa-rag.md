@@ -15,7 +15,7 @@ notes: who may read them, and whether an AI may read them at all.
 <!-- more -->
 
 **Repo:** [github.com/{{GITHUB_OWNER}}/research-qa-rag](https://github.com/{{GITHUB_OWNER}}/research-qa-rag) · runs offline in 5 minutes, no API keys ·
-**Live demo:** [Hugging Face Space](https://huggingface.co/spaces/{{HF_OWNER}}/research-qa-rag) ·
+**Live demo:** [try it]({{DEMOS_URL}}/research-qa-rag/) ·
 **Try it:** ask for Northbridge's price target on Halvorsen as the public-only analyst, then as the equity analyst. ·
 **Stack:** Python, PyMuPDF, SQLite FTS5 + sqlite-vec (hybrid search), FastAPI, Streamlit, Anthropic / OpenAI / Bedrock via aliases, Terraform
 

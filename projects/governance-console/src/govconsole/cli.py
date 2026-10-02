@@ -28,7 +28,9 @@ def main(argv=None):
 
         from .app import create_app
 
-        uvicorn.run(create_app(), host=a.host, port=a.port, log_level="info")
+        # proxy headers: behind a reverse proxy / tunnel, request.url.scheme is https (so admin cookies get Secure)
+        uvicorn.run(create_app(), host=a.host, port=a.port, log_level="info", proxy_headers=True,
+                    forwarded_allow_ips=os.getenv("FORWARDED_ALLOW_IPS", "127.0.0.1"))
     elif a.cmd == "seed":
         st = Store()
         cat = catalog.load()

@@ -15,7 +15,7 @@ touches the pipeline itself.
 <!-- more -->
 
 **Repo:** [github.com/{{GITHUB_OWNER}}/eod-heartbeat](https://github.com/{{GITHUB_OWNER}}/eod-heartbeat) · runs offline in 5 minutes, no API keys, no Docker ·
-**Live demo:** [Hugging Face Space](https://huggingface.co/spaces/{{HF_OWNER}}/eod-heartbeat) ·
+**Live demo:** [try it]({{DEMOS_URL}}/eod-heartbeat/) ·
 **Try it:** in *Try to break it*, change a runbook step to "rerun with --force" and run the check again. ·
 **Stack:** Python, Airflow, dbt-postgres, Postgres + pgvector, Streamlit, Anthropic / OpenAI / Bedrock via aliases, Terraform (MWAA, RDS, SNS)
 

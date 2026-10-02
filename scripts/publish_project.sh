@@ -11,7 +11,8 @@ SRC="$ROOT/projects/$SLUG"; OUT="$ROOT/dist/$SLUG"
 
 python3 "$ROOT/scripts/check_governance.py" "$SLUG"
 
-read -r SITE OWNER HF < <(python3 "$ROOT/scripts/portfolio_config.py")
+read -r SITE OWNER HF DEMOS < <(python3 "$ROOT/scripts/portfolio_config.py")
+[ "$DEMOS" = "-" ] && DEMOS="#demos-not-configured"
 if [[ "$OWNER" == REPLACE* ]]; then echo "Can't determine GitHub owner: run 'gh auth login' or set PORTFOLIO_GITHUB_OWNER"; exit 1; fi
 TITLE=$(python3 -c "import yaml;print(yaml.safe_load(open('$ROOT/specs/$SLUG.yaml'))['title'])")
 
@@ -35,7 +36,7 @@ mkdir -p "$OUT/governance"
 cp "$ROOT/governance/controls.md" "$OUT/governance/controls.md"
 # Substitute portfolio placeholders.
 grep -rl --include='*.md' '{{' "$OUT" | while read -r f; do
-  sed -i.bak -e "s#{{SITE_URL}}#$SITE#g" -e "s#{{GITHUB_OWNER}}#$OWNER#g" -e "s#{{HF_OWNER}}#$HF#g" -e "s#{{BLOG_TITLE}}#$TITLE#g" "$f" && rm -f "$f.bak"
+  sed -i.bak -e "s#{{SITE_URL}}#$SITE#g" -e "s#{{GITHUB_OWNER}}#$OWNER#g" -e "s#{{HF_OWNER}}#$HF#g" -e "s#{{DEMOS_URL}}#$DEMOS#g" -e "s#{{BLOG_TITLE}}#$TITLE#g" "$f" && rm -f "$f.bak"
 done
 # The app reads this to link back to its write-up, source and live demo.
 python3 - "$ROOT" "$SLUG" "$OUT/portfolio_links.json" <<'PY'

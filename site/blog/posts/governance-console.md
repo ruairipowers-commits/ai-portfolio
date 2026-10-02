@@ -14,7 +14,7 @@ workflow in this portfolio reports to it, and it can switch any of them off.
 <!-- more -->
 
 **Repo:** [github.com/{{GITHUB_OWNER}}/governance-console](https://github.com/{{GITHUB_OWNER}}/governance-console) · runs locally in two minutes ·
-**Live demo:** [Hugging Face Space](https://huggingface.co/spaces/{{HF_OWNER}}/governance-console) ·
+**Live demo:** [try it]({{DEMOS_URL}}/governance-console/) ·
 **Try it:** use one of the other demos, untick *Include simulated history*, and find yourself in the console. Then switch
 that workflow off for ten minutes and go back to the app. ·
 **Stack:** Python, FastAPI, SQLite / Postgres, server-rendered HTML + Chart.js, Terraform (App Runner, Aurora, AppConfig)

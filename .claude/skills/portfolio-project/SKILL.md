@@ -108,8 +108,10 @@ project's events (`GOVERNANCE_URL=http://localhost:8600`) and check it appears w
 
 - `scripts/publish_project.sh <slug>` → `dist/<slug>/` + zip (runs the governance check, substitutes placeholders).
 - Only with the user's explicit go-ahead: `scripts/publish_project.sh <slug> --push` (creates/updates the public repo).
-- Hosted demo: `python scripts/build_space.py <slug>` builds `dist/spaces/<slug>/`; the spaces workflow pushes it on merge
-  to `main` once the user has set `HF_TOKEN` (never push a Space from a session without their go-ahead).
+- Hosted demo: any project with a `Dockerfile.space` is deployed by the **demos** workflow to the configured target
+  (`demos.target` in portfolio.yaml: selfhost | huggingface | cloudflare | cloudrun). `python scripts/demos.py list`
+  shows it; the image must serve at a root or under `/<slug>/` (Streamlit reads `STREAMLIT_SERVER_BASE_URL_PATH`;
+  FastAPI apps need a `ROOT_PATH` like the console). Never deploy from a session without the user's go-ahead.
 - Set spec `status: built` (or `published` — the script does this on push). Commit with a clear message.
 
 ## Update flows

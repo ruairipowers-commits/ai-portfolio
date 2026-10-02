@@ -5,7 +5,7 @@ email, then stops.** Nothing is recorded or sent until a named analyst approves.
 two places: the model never has the write tool, and the tool server rejects any write without a signed approval.
 
 > Part of the [AI Workflow Portfolio]({{SITE_URL}}) by Ruairi Powers ·
-> Write-up: [{{BLOG_TITLE}}]({{SITE_URL}}/blog/trade-ops-exceptions/) · Governance: [standard]({{SITE_URL}}/blog/governance/) / [this project's mapping](docs/governance.md)
+> Write-up: [{{BLOG_TITLE}}]({{SITE_URL}}/blog/trade-ops-exceptions/) · Live demo: [try it]({{DEMOS_URL}}/trade-ops-exceptions/) · Governance: [standard]({{SITE_URL}}/blog/governance/) / [this project's mapping](docs/governance.md)
 
 ![python](https://img.shields.io/badge/python-3.11-blue) ![node](https://img.shields.io/badge/node-22-green) ![LangGraph](https://img.shields.io/badge/LangGraph-agent-purple) ![MCP](https://img.shields.io/badge/MCP-TypeScript-black) ![runs offline](https://img.shields.io/badge/runs-offline%20by%20default-green)
 

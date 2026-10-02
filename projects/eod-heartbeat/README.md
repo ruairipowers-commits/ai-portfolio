@@ -6,7 +6,7 @@ explains each break from the runbooks and past incidents and cites them. People 
 edits or publishes anything, unsafe advice is blocked in code, and critical breaks always go to a person.
 
 > Part of the [AI Workflow Portfolio]({{SITE_URL}}) by Ruairi Powers ·
-> Write-up: [{{BLOG_TITLE}}]({{SITE_URL}}/blog/eod-heartbeat/) · Live demo: [Hugging Face Space](https://huggingface.co/spaces/{{HF_OWNER}}/eod-heartbeat) ·
+> Write-up: [{{BLOG_TITLE}}]({{SITE_URL}}/blog/eod-heartbeat/) · Live demo: [try it]({{DEMOS_URL}}/eod-heartbeat/) ·
 > Governance: [standard]({{SITE_URL}}/blog/governance/) / [this project's mapping](docs/governance.md)
 
 ![python](https://img.shields.io/badge/python-3.11-blue) ![Airflow](https://img.shields.io/badge/Airflow-3.1-017CEE) ![dbt-postgres](https://img.shields.io/badge/dbt-postgres-orange) ![pgvector](https://img.shields.io/badge/pgvector-RAG-purple) ![runs offline](https://img.shields.io/badge/runs-offline%20by%20default-green)

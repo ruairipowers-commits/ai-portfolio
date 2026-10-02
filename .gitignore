@@ -16,3 +16,7 @@ projects/*/dbt/.user.yml
 # Machine-local agent skill links (symlinks into a project's .venv) — never portable
 .agents/
 .claude/skills/developing-with-streamlit
+
+# Self-hosted demo machine: secrets and generated deploy files stay local
+deploy/selfhost/.env
+deploy/*/generated/

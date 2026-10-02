@@ -219,3 +219,28 @@ def test_no_prompt_text_in_events(store):
     """NFR-5: the ingest schema has no field for free text beyond a bounded detail dict; long detail is truncated."""
     from govconsole.app import Event
     assert set(Event.model_fields) >= {"event_id", "workflow", "cost_usd"} and "prompt" not in Event.model_fields
+
+
+def test_served_under_a_path_prefix(store, monkeypatch, tmp_path):
+    """Behind a reverse proxy at /governance-console: every link, redirect and fetch carries the prefix."""
+    import importlib
+
+    from fastapi.testclient import TestClient
+    monkeypatch.setenv("ROOT_PATH", "/governance-console")
+    for k in ("PORTFOLIO_DEMO", "GOVERNANCE_ADMIN_TOKEN"):
+        monkeypatch.delenv(k, raising=False)
+    from govconsole import app as appmod
+    importlib.reload(appmod)
+    try:
+        c = TestClient(appmod.create_app(store))
+        html = c.get("/").text
+        assert 'href="/governance-console/static/app.css"' in html and 'window.GOV_BASE = "/governance-console"' in html
+        assert 'href="/controls' not in html and 'href="/governance-console/controls' in html
+        r = c.post("/workflows/altdata-triage/toggle", data={"enabled": "0", "reason": "x"}, follow_redirects=False)
+        assert r.headers["location"] == "/governance-console/workflows/altdata-triage"
+        assert c.get("/static/app.js").status_code == 200                       # proxy stripped the prefix
+        assert c.get("/governance-console/static/app.js").status_code == 200    # or passed it through
+        assert c.get("/governance-console/api/health").json()["ok"]
+    finally:
+        monkeypatch.delenv("ROOT_PATH")
+        importlib.reload(appmod)
