@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import time
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -13,7 +14,7 @@ from langgraph.types import Command
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from . import db, demo, policy as P
+from . import db, demo, policy as P, telemetry
 from .agent import Runtime, build_graph, initial_state
 from .llm import Budget, Registry
 
@@ -73,7 +74,18 @@ def make_runtime(s: dict, con, alias: str | None = None) -> Runtime:
     return rt
 
 
+FLAG_WORDS = {"injection": "injection_detected", "bank-detail": "bank_change_request", "malformed": "bad_source_data",
+              "returned errors": "bad_source_data", "limit reached": "step_or_budget_cap", "evidence": "evidence_mismatch"}
+
+
+def _flags(reasons: list[str]) -> list[str]:
+    return sorted({f for r in reasons for w, f in FLAG_WORDS.items() if w in r.lower()})
+
+
 async def investigate(exception_ids: list[str] | None, alias: str | None = None, run_id: str | None = None) -> list[dict]:
+    is_eval = bool(run_id and run_id.startswith("eval-"))
+    if not is_eval:
+        telemetry.require_enabled("investigate")      # kill switch, enforced here and not only in the UI
     s = load_settings()
     con = db.connect(db_url(s))
     db.ensure_audit(con, ROOT)
@@ -91,7 +103,10 @@ async def investigate(exception_ids: list[str] | None, alias: str | None = None,
         for ex in exception_ids:
             st = initial_state(ex, run_id)
             cfg = {"configurable": {"thread_id": st["thread_id"], "runtime": rt}, "recursion_limit": 60}
+            t0 = time.perf_counter()
             final = await graph.ainvoke(st, cfg)
+            if not is_eval:
+                _report(con, st["thread_id"], ex, final, int((time.perf_counter() - t0) * 1000))
             out.append({"exception_id": ex, "thread_id": st["thread_id"], "status": final.get("status"),
                         "category": (final.get("proposal") or {}).get("category"),
                         "fix_type": (final.get("proposal") or {}).get("fix_type"),
@@ -99,6 +114,20 @@ async def investigate(exception_ids: list[str] | None, alias: str | None = None,
                         "cost_usd": final.get("cost_usd", 0.0), "tools_used": [n for n, _ in final.get("tool_results", [])]})
     con.close()
     return out
+
+
+def _report(con, thread_id: str, exception_id: str, final: dict, latency_ms: int) -> None:
+    """One governance event per investigation, read back from the audit row the graph just wrote."""
+    r = con.one("select model_name, input_tokens, output_tokens, cost_usd, tool_calls from agent_runs where thread_id = ?",
+                (thread_id,)) or {}
+    status = final.get("status")
+    telemetry.emit("investigate", status="escalated" if status == "escalated" else "ok" if status else "error",
+                    model=r.get("model_name") or "", input_tokens=r.get("input_tokens") or 0,
+                    output_tokens=r.get("output_tokens") or 0, cost_usd=float(r.get("cost_usd") or 0),
+                    latency_ms=latency_ms, records_in=int(r.get("tool_calls") or 0), records_out=1,
+                    flags=_flags(final.get("policy_reasons", [])) + (["escalated"] if status == "escalated" else []),
+                    run_id=final.get("run_id", ""), detail={"exception_id": exception_id, "status": status,
+                                                            "category": (final.get("proposal") or {}).get("category")})
 
 
 async def decide(exception_id: str, decision: str, approver: str, note: str = "", edits: dict | None = None) -> dict:
@@ -109,6 +138,7 @@ async def decide(exception_id: str, decision: str, approver: str, note: str = ""
                   "and run_id not like 'eval-%' order by started_at desc", (exception_id,))
     if not row:
         raise LookupError(f"No proposal awaiting approval for {exception_id}")
+    telemetry.require_enabled("approve" if decision == "approve" else "reject")
     key = P.signing_key(ROOT, os.getenv(s["approval"]["signing_key_env"]))
     rt = make_runtime(s, con)
     async with AsyncSqliteSaver.from_conn_string(checkpoint_path(s)) as saver, \
@@ -119,5 +149,10 @@ async def decide(exception_id: str, decision: str, approver: str, note: str = ""
         cfg = {"configurable": {"thread_id": row["thread_id"], "runtime": rt, "signing_key": key}}
         final = await graph.ainvoke(Command(resume={"decision": decision, "approver": approver, "note": note,
                                                     "edits": edits or {}}), cfg)
+    ok = final.get("status") in ("resolved", "rejected")
+    telemetry.emit("approve" if decision == "approve" else "reject", actor=approver, actor_type="named",
+                    status="ok" if ok else "error", records_in=1, records_out=1 if final.get("status") == "resolved" else 0,
+                    flags=(["edited_by_human"] if edits else []) + ([] if ok else ["write_failed"]),
+                    detail={"exception_id": exception_id, "status": final.get("status")})
     con.close()
     return {"exception_id": exception_id, "status": final.get("status"), "write_result": final.get("write_result")}

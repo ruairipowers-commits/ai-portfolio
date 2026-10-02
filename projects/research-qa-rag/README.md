@@ -148,19 +148,16 @@ src/research_qa/
   guardrails.py injection patterns, PII redaction, output schema, verification
   evals.py      golden-set gate + retrieval comparison
   api.py        FastAPI: /ask /documents /feedback /health
-  telemetry.py  governance-hub events, self-registration, kill switch
+  telemetry.py  governance-console events, self-registration, kill switch
   ui.py         Streamlit app
 evals/       golden_set.yaml (21 cases)
 infra/aws/   Terraform starter: S3, OpenSearch Serverless, Bedrock Knowledge Base, API role, Budgets
 ```
 
-## Governance hub
+## Governance console
 
-Every question, ingest and eval is reported to the portfolio's governance hub: who ran it, the model, tokens,
-cost, items and rows processed, and flags such as refused or entitlement-filtered. Question text is never sent,
-only a hash. The hub can switch the workflow off; `ask` then refuses with the reason. Events go to
-`~/.ai-governance/governance.sqlite` by default, or to `GOVERNANCE_DATABASE_URL` (Postgres). Set
-`GOVERNANCE_TELEMETRY=off` to disable.
+Every question, ingest and eval is reported to the portfolio's [governance console]({{SITE_URL}}/blog/governance-console/): who ran it, the model, tokens, cost, records in and out, the outcome and safety flags
+(never prompts, questions or document text — only counts and hashes). The console can switch the workflow off; `ask` then refuses with the reason. Point `GOVERNANCE_URL` at the console (events are posted with `GOVERNANCE_INGEST_TOKEN`); without it, events go to a local spool file (`~/.ai-portfolio/governance/events.jsonl`) that a console on the same machine imports. `GOVERNANCE_TELEMETRY=off` disables telemetry; `GOVERNANCE_FAIL_CLOSED=1` blocks runs when the console can't be reached.
 
 ## Commands
 

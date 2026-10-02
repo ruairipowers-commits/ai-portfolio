@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_macros.html" import swatch %}
+{% block title %}Events · AI Governance Console{% endblock %}
+{% block filters_extra %}
+  <input type="text" name="actor" value="{{ flt.actor or '' }}" placeholder="Person or service" aria-label="Actor">
+  <select name="status" aria-label="Status"><option value="">Any status</option>
+    {% for s in ['ok', 'escalated', 'refused', 'blocked', 'error', 'failed'] %}<option {{ 'selected' if flt.status == s }}>{{ s }}</option>{% endfor %}</select>
+  <input type="text" name="event_type" value="{{ flt.event_type or '' }}" placeholder="Event type" aria-label="Event type" size="12">
+  <button class="btn">Apply</button>
+  <a class="btn" href="/api/events.csv?{{ request.query_params }}">Download CSV</a>
+{% endblock %}
+{% block content %}
+<h1>Events &amp; people</h1>
+<p class="sub">Every visit and action reported by the workflows: who, what, which model, what it cost and what came out.</p>
+<section class="card" style="margin-bottom:14px"><h2>People and services (last {{ f.days }} days)</h2>
+  <div class="table-wrap"><table><thead><tr><th>Actor</th><th>Type</th><th class="n">Events</th><th class="n">Runs</th><th class="n">Decisions</th>
+    <th class="n">Spend</th><th class="n">Workflows</th><th>Last seen</th></tr></thead><tbody>
+  {% for a in actors %}<tr><td><a href="?actor={{ a.actor|urlencode }}&days={{ f.days }}{{ '&sim=0' if not f.sim }}">{{ a.actor }}</a></td><td class="small">{{ a.actor_type }}</td>
+    <td class="n">{{ a.events|num }}</td><td class="n">{{ a.runs|num }}</td><td class="n">{{ a.decisions|num }}</td><td class="n">{{ a.cost|usd }}</td>
+    <td class="n">{{ a.workflows }}</td><td class="small muted">{{ a.last_seen|ts }}</td></tr>{% endfor %}
+  </tbody></table></div></section>
+<section class="card"><h2>Latest {{ events|length }} events</h2><div class="table-wrap"><table>
+  <thead><tr><th>Time (UTC)</th><th>Workflow</th><th>Event</th><th>Status</th><th>Actor</th><th>Model</th><th class="n">Tokens</th>
+    <th class="n">Cost</th><th class="n">Latency</th><th class="n">Records in/out</th><th>Flags</th><th>Source</th></tr></thead><tbody>
+  {% for e in events %}<tr><td class="small">{{ e.ts|ts }}</td><td class="small">{{ swatch(e.workflow, catalog) }}{{ e.workflow }}</td><td>{{ e.event_type }}</td>
+    <td class="small">{{ e.status }}</td><td class="small">{{ e.actor }}</td><td class="small">{{ e.model or '—' }}</td>
+    <td class="n small">{{ (e.input_tokens + e.output_tokens)|num }}</td><td class="n small">{{ e.cost_usd|usd }}</td>
+    <td class="n small">{{ e.latency_ms|num }} ms</td><td class="n small">{{ e.records_in|num }} / {{ e.records_out|num }}</td>
+    <td>{% for fl in e.flags %}<span class="flag">{{ fl }}</span>{% endfor %}</td><td class="small">{{ e.source }}</td></tr>
+  {% else %}<tr><td colspan="12" class="muted">No events match.</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

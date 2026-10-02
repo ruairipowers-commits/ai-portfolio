@@ -1,0 +1,24 @@
+# Per-workflow governance settings the console owns (the catalog itself comes from the portfolio repo).
+# Workflows not listed get `defaults`. Owners are fictional roles for the demo organisation.
+defaults:
+  monthly_budget_usd: 25
+  owner: Unassigned
+  technical_owner: AI platform team
+
+workflows:
+  altdata-triage:
+    owner: Head of Data Sourcing
+    technical_owner: Data engineering
+    monthly_budget_usd: 20
+  eod-heartbeat:
+    owner: Head of Fund Operations
+    technical_owner: Data engineering on-call
+    monthly_budget_usd: 10
+  trade-ops-exceptions:
+    owner: Head of Middle Office
+    technical_owner: Ops engineering
+    monthly_budget_usd: 130
+  research-qa-rag:
+    owner: Director of Research
+    technical_owner: Research engineering
+    monthly_budget_usd: 60

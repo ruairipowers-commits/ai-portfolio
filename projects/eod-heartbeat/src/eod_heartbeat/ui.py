@@ -125,7 +125,7 @@ st.caption("End-of-day checks for a fictional fund: SQL (dbt on Postgres) finds 
 if demo.links_markdown(ROOT):
     st.markdown(demo.links_markdown(ROOT))
 if not enabled:
-    st.error(f"This workflow is switched off in the governance hub: {why_disabled}", icon="⛔")
+    st.error(f"This workflow is switched off by governance: {why_disabled}", icon="⛔")
 if "flash" in st.session_state:
     st.success(st.session_state.pop("flash"))
 

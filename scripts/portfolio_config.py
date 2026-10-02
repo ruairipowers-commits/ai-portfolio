@@ -12,6 +12,7 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+CONSOLE = "governance-console"   # slug of the governance console project
 
 
 def _gh_login() -> str | None:
@@ -38,10 +39,17 @@ def resolve() -> dict:
 def links(slug: str, c: dict | None = None) -> dict:
     """Where a project lives: write-up, source repo and live demo (Hugging Face Space)."""
     c = c or resolve()
-    return {"project": slug, "portfolio_url": c["site_url"] + "/",
+    return {"project": slug, "site_url": c["site_url"], "github_owner": c["github_owner"], "hf_owner": c["hf_owner"],
+            "portfolio_url": c["site_url"] + "/",
             "blog_url": f"{c['site_url']}/blog/{slug}/",
             "source_url": f"https://github.com/{c['github_owner']}/{slug}",
-            "demo_url": f"https://huggingface.co/spaces/{c['hf_owner']}/{slug}"}
+            "demo_url": f"https://huggingface.co/spaces/{c['hf_owner']}/{slug}",
+            "console_url": f"https://huggingface.co/spaces/{c['hf_owner']}/{CONSOLE}"}
+
+
+def space_host(owner: str, slug: str) -> str:
+    """Direct URL of a Space's app (what the apps call for telemetry), e.g. https://me-governance-console.hf.space"""
+    return "https://" + f"{owner}-{slug}".lower().replace("_", "-").replace(".", "-") + ".hf.space"
 
 
 if __name__ == "__main__":

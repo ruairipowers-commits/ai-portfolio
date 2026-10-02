@@ -3,6 +3,9 @@
 #   secret   HF_TOKEN            Hugging Face token with write access
 #   variable HF_OWNER            HF user/org for the Spaces (optional; default = GitHub owner)
 #   variable HF_SPACE_HARDWARE   optional, e.g. cpu-upgrade to keep demos always on (billed by Hugging Face)
+#   secret   GOVERNANCE_INGEST_TOKEN   any long random string: the demo apps use it to post events to the console
+#   secret   GOVERNANCE_ADMIN_TOKEN    another one: your sign-in for permanent kill-switch changes in the console
+#   secret   GOVERNANCE_DATABASE_URL   optional Postgres URL (e.g. Neon free tier) so console history survives restarts
 # Without HF_TOKEN the job only builds the Space folders, so forks don't fail.
 name: spaces
 on:
@@ -23,6 +26,9 @@ jobs:
       PORTFOLIO_HF_OWNER: ${{ vars.HF_OWNER }}
       HF_SPACE_HARDWARE: ${{ vars.HF_SPACE_HARDWARE }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      GOVERNANCE_INGEST_TOKEN: ${{ secrets.GOVERNANCE_INGEST_TOKEN }}
+      GOVERNANCE_ADMIN_TOKEN: ${{ secrets.GOVERNANCE_ADMIN_TOKEN }}
+      GOVERNANCE_DATABASE_URL: ${{ secrets.GOVERNANCE_DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

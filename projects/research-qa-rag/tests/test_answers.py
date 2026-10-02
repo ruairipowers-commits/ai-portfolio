@@ -1,4 +1,8 @@
 """FR-2/3/4, OBS-02, SEC-04: entitlements, refusals, verification, injection, budgets, kill switch."""
+import json
+import os
+from pathlib import Path
+
 import pytest
 
 
@@ -85,20 +89,20 @@ def test_embedding_change_requires_reindex(m, built, monkeypatch):
         m.answer.ask(built, "What was Halvorsen Robotics' revenue in fiscal 2025?", "public-analyst")
 
 
-def test_kill_switch_blocks_and_is_logged(m, built):
-    m.telemetry._execute("insert into gov_workflow_state values (?,?,?,?,?)",
-                       ("research-qa-rag", 0, "provider incident", "head-of-risk", m.telemetry.now()))
-    m.telemetry._state_cache = (0.0, True, "")
+def test_kill_switch_blocks_and_is_logged(m, built, console):
+    console.update(enabled=False, reason="provider incident", changed_by="head-of-risk")
+    m.telemetry._state_cache = (0.0, None)
     with pytest.raises(m.telemetry.WorkflowDisabled, match="provider incident"):
         m.answer.ask(built, "What was Halvorsen Robotics' revenue in fiscal 2025?", "public-analyst")
-    rows = m.telemetry._execute("select event_type, status from gov_events where event_type = 'blocked'", fetch=True)
-    assert rows == [("blocked", "blocked")]
+    m.telemetry.flush()
+    blocked = [e for e in console["events"] if e["status"] == "blocked"]
+    assert len(blocked) == 1 and blocked[0]["flags"] == ["kill_switch"]
 
 
 def test_telemetry_records_runs_without_question_text(m, built):
     m.answer.ask(built, "What was Halvorsen Robotics' revenue in fiscal 2025?", "public-analyst", actor="ana")
-    rows = m.telemetry._execute("select actor, model, cost_usd, rows_in, detail from gov_events where action = 'ask'",
-                              fetch=True)
-    actor, model, cost, rows_in, detail = rows[-1]
-    assert actor == "ana" and model == "mock-extractive" and cost > 0 and rows_in == 5
-    assert "Halvorsen" not in detail and "question_sha" in detail
+    from conftest import read_spool
+
+    ev = [e for e in read_spool(Path(os.environ["GOVERNANCE_SPOOL"])) if e["event_type"] == "ask"][-1]
+    assert ev["actor"] == "ana" and ev["model"] == "mock-extractive" and ev["cost_usd"] > 0 and ev["records_in"] == 5
+    assert "Halvorsen" not in json.dumps(ev["detail"]) and "question_sha" in ev["detail"]

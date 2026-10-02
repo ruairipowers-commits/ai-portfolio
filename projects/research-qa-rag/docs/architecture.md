@@ -27,7 +27,7 @@ flowchart LR
         VER -->|fail| NO[refusal + reason]
     end
     IX --> F
-    OK & NO -. answers log .-> L[(answers · feedback<br/>governance hub)]
+    OK & NO -. answers log .-> L[(answers · feedback<br/>governance console)]
 ```
 <!-- --8<-- [end:flow] -->
 

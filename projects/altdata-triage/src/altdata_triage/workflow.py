@@ -138,3 +138,30 @@ def render_memo_md(r: TriageResult, facts: dict) -> str:
     lines += ["", "## Next steps", *[f"- {s}" for s in m.next_steps or ["—"]], "",
               "_AI-drafted, advisory only. A named reviewer must record a decision (`altdata-triage review`)._"]
     return "\n".join(lines) + "\n"
+
+
+def report_run(con, run_id: str, event_type: str, latency_ms: int, error: str | None = None,
+               status: str | None = None, extra_flags: tuple = (), detail: dict | None = None) -> None:
+    """One governance event per run, summarised from the audit tables (telemetry never re-derives numbers)."""
+    from . import telemetry
+
+    calls = con.execute("""select coalesce(string_agg(distinct model_name, ','), ''), coalesce(sum(input_tokens), 0),
+                                  coalesce(sum(output_tokens), 0), coalesce(sum(cost_usd), 0),
+                                  count(*) filter (where status = 'budget_blocked')
+                           from audit.ai_calls where run_id = ?""", [run_id]).fetchone()
+    res = con.execute("""select count(*), count(*) filter (where injection_suspected),
+                                count(*) filter (where final_recommendation = 'ESCALATE'),
+                                count(*) filter (where final_recommendation <> llm_recommendation),
+                                count(*) filter (where citation_errors not in ('', '[]'))
+                         from audit.triage_results where run_id = ?""", [run_id]).fetchone()
+    try:
+        rows = con.execute("select count(*) from raw.vendor_panels").fetchone()[0]
+    except Exception:
+        rows = 0
+    flags = [f for f, n in [("injection_detected", res[1]), ("escalated", res[2]), ("policy_override", res[3]),
+                            ("citation_error", res[4]), ("budget_blocked", calls[4])] if n]
+    telemetry.emit(event_type, status=status or ("error" if error else "ok"), model=calls[0], input_tokens=calls[1],
+                    output_tokens=calls[2], cost_usd=calls[3], latency_ms=latency_ms, records_in=rows,
+                    records_out=res[0], flags=flags + list(extra_flags), run_id=run_id,
+                    detail={"vendors": res[0], "escalated": res[2], "injections": res[1], "error": error or "",
+                            **(detail or {})})

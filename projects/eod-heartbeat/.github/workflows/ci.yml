@@ -6,7 +6,7 @@ permissions: {contents: read}
 jobs:
   test:
     runs-on: ubuntu-latest
-    env: {GOVERNANCE_DB: /tmp/governance.sqlite, EOD_PG_CLEANUP: stop}
+    env: {GOVERNANCE_SPOOL: /tmp/governance-events.jsonl, EOD_PG_CLEANUP: stop}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

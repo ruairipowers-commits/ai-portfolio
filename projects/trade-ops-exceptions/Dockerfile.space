@@ -20,7 +20,7 @@ COPY --from=server --chown=user /srv/node_modules ./mcp-server/node_modules
 USER user
 RUN pip install --no-cache-dir --user -e ".[ui]"
 # Pre-build the baseline every visitor's sandbox is copied from: 40 exceptions, all investigated.
-RUN tradeops all
+RUN GOVERNANCE_TELEMETRY=off tradeops all
 ENV PORTFOLIO_DEMO=1
 EXPOSE 7860
 CMD ["streamlit", "run", "src/tradeops/ui.py", "--server.port=7860", "--server.address=0.0.0.0", \

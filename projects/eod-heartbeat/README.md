@@ -147,17 +147,15 @@ src/eod_heartbeat/
   kb.py         redact · quarantine · chunk · embed · retrieve (pgvector)
   explain.py    explainer → policy → alerts → run_eod (used by the DAG, CLI and app)
   evals.py      golden-set gate              retention.py  archive + delete past retention
-  telemetry.py  governance-hub events + kill switch
+  telemetry.py  governance-console events + kill switch
   ui.py         Streamlit app
 infra/aws/   Terraform starter: S3, RDS Postgres, MWAA, SNS, S3 Object Lock archive, Budgets
 ```
 
-## Governance hub
+## Governance console
 
-Every heartbeat, KB index and eval is reported to the portfolio's governance hub: who or what triggered it,
-breaks, explanations, cost, rows landed, and flags. The hub can switch the workflow off; `run_eod` then refuses with
-the reason, and the DAG task fails visibly. Events go to `~/.ai-governance/governance.sqlite` by default, or to
-`GOVERNANCE_DATABASE_URL`.
+Every heartbeat, knowledge-base index and eval is reported to the portfolio's [governance console]({{SITE_URL}}/blog/governance-console/): who ran it, the model, tokens, cost, records in and out, the outcome and safety flags
+(never prompts, questions or document text — only counts and hashes). The console can switch the workflow off; `run_eod` (and the DAG task, visibly) then refuses with the reason. Point `GOVERNANCE_URL` at the console (events are posted with `GOVERNANCE_INGEST_TOKEN`); without it, events go to a local spool file (`~/.ai-portfolio/governance/events.jsonl`) that a console on the same machine imports. `GOVERNANCE_TELEMETRY=off` disables telemetry; `GOVERNANCE_FAIL_CLOSED=1` blocks runs when the console can't be reached.
 
 ## Commands
 

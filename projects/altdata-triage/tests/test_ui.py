@@ -144,3 +144,16 @@ def test_hosted_demo_gives_each_visitor_a_private_sandbox(app, tmp_path, monkeyp
     links = " ".join(m.value for m in at.markdown)
     assert "example.test/blog/altdata-triage" in links and "github.com/example/altdata-triage" in links
     assert any("Public demo" in i.value for i in at.sidebar.info)
+
+
+def test_run_emits_governance_events(app, governance_spool):
+    at = click(app.run(), "Run triage")
+    assert not at.exception, at.exception
+    events = [__import__("json").loads(l) for l in governance_spool.read_text().splitlines()]
+    kinds = [e["event_type"] for e in events]
+    assert {"register", "visit", "triage"} <= set(kinds)
+    reg = next(e for e in events if e["event_type"] == "register")
+    assert reg["detail"]["risk_tier"] == "medium" and reg["detail"]["models"]   # controls too, when docs/ is present
+    run = next(e for e in events if e["event_type"] == "triage")
+    assert run["records_out"] == 5 and run["records_in"] > 1000 and run["cost_usd"] > 0
+    assert {"injection_detected", "escalated"} <= set(run["flags"])

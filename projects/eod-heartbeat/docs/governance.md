@@ -24,7 +24,7 @@ unsafe steps are blocked in code, and critical breaks always go to a person.
 | COST-01 Hard budgets | ✅ | Per-run budget across all explanations, per-call token cap, unpriced models refused. | `cost.*` | Gateway budgets per team |
 | COST-02 Cost attribution | ✅ | `audit.explanations` (tokens, $ per break, model, prod vs eval); `cost-report`; governance events per run. | — | Langfuse dashboards |
 | COST-03 Efficiency levers | 🟡 | A break already explained with the same model, prompt and knowledge-base version is not sent to the model again on the next 5-minute tick (`cached`); alerts are de-duplicated; the lite fallback is priced ~4× lower; the context is a handful of sections. | `retrieval.*`, aliases | Cache explanations by break signature; prompt caching |
-| COST-04 Alerts & review | ✅ | `cost-report` vs monthly alert; the governance hub charts spend per workflow against budget; AWS Budgets in the Terraform. | `cost.monthly_alert_usd` | FinOps review |
+| COST-04 Alerts & review | ✅ | `cost-report` vs monthly alert; the governance console charts spend per workflow against budget; AWS Budgets in the Terraform. | `cost.monthly_alert_usd` | FinOps review |
 | MODEL-01 Registry & aliases | ✅ | `explain-primary/fallback/candidate`, `embed-primary`; code never names a model. | `config/models.yaml` | — |
 | MODEL-02 Eval-gated changes | ✅ | `eval --alias explain-candidate --baseline explain-primary`; `promote` refuses without a passing eval on the current prompt. | `eval.*` | Shadow explanations alongside production for a week |
 | MODEL-03 Deprecation monitoring | 🟡 | `models-check` with a warning window. Embedding changes force a full KB re-index (`kb-index --full`). | `governance.deprecation_warning_days` | Provider deprecation feed |

@@ -7,7 +7,7 @@ ENV HOME=/home/user PATH=/home/user/.local/bin:$PATH PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY --chown=user . .
 USER user
-RUN pip install --no-cache-dir --user -e ".[ui,governance-pg]"
+RUN pip install --no-cache-dir --user -e ".[ui]"
 # Pre-build the baseline every visitor's sandbox is copied from (12 documents, indexed).
 RUN GOVERNANCE_TELEMETRY=off rqa data && GOVERNANCE_TELEMETRY=off rqa ingest --full
 ENV PORTFOLIO_DEMO=1

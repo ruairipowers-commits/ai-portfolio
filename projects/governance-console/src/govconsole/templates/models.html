@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_macros.html" import swatch %}
+{% block title %}Models · AI Governance Console{% endblock %}
+{% block content %}
+<h1>Model inventory</h1>
+<p class="sub">Every model each workflow has registered (<code>config/models.yaml</code>), which aliases point at it, whether it is
+  approved and priced, deprecation dates, and how much it was used in the last {{ f.days }} days. Code only ever names aliases (MODEL-01),
+  so a migration is an alias change gated by the eval suite (MODEL-02).</p>
+<section class="card"><div class="table-wrap"><table>
+  <thead><tr><th>Workflow</th><th>Model</th><th>Provider · ID</th><th>Kind</th><th>In use as</th><th>Approved</th><th>Priced</th>
+    <th>Deprecation</th><th class="n">Events</th><th class="n">Spend</th><th>Last used</th></tr></thead><tbody>
+  {% for w in catalog.workflows %}{% for m in w.models %}{% set u = usage.get((w.slug, m.name)) %}
+    <tr><td class="small">{{ swatch(w.slug, catalog) }}{{ w.name }}</td><td class="small"><b>{{ m.name }}</b></td>
+      <td class="small muted">{{ m.provider }} · {{ m.model_id }}</td><td class="small">{{ m.kind }}</td>
+      <td class="small">{{ m.aliases|join(', ') or '—' }}</td>
+      <td>{% if m.approved %}<span class="chip good small"><span class="dot"></span>Approved</span>{% else %}<span class="chip neutral small"><span class="dot"></span>Not approved</span>{% endif %}</td>
+      <td class="small">{{ 'yes' if m.priced else 'no — refused until priced' }}</td>
+      <td class="small">{% if m.deprecation_date %}{% if m.deprecation_date < today %}<span class="chip critical small"><span class="dot"></span>Retired {{ m.deprecation_date }}</span>
+        {% elif m.deprecation_date < warn_by %}<span class="chip warning small"><span class="dot"></span>{{ m.deprecation_date }}</span>{% else %}{{ m.deprecation_date }}{% endif %}{% else %}<span class="muted">none announced</span>{% endif %}</td>
+      <td class="n small">{{ (u.calls if u else 0)|num }}</td><td class="n small">{{ (u.cost if u else 0)|usd }}</td>
+      <td class="small muted">{{ u.last_used|ts if u else '—' }}</td></tr>
+  {% endfor %}{% endfor %}
+  </tbody></table></div></section>
+<p class="small muted" style="margin-top:10px">Usage in the simulated history is priced at illustrative rates, not vendor prices. Live events from the
+  demo apps come from the offline mock models.</p>
+{% endblock %}

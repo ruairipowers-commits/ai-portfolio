@@ -13,19 +13,30 @@ same [governance standard](blog/posts/governance.md).
 
 | Project | Problem | Pattern | Stack highlights | Status |
 |---|---|---|---|---|
-| [Alt-data vendor triage](blog/posts/altdata-triage.md) | Analysts spend days profiling vendor samples | Workflow | dbt, DuckDB, Streamlit, Bedrock | ✅ Live |
-| EOD heartbeat | End-of-day pipeline breaks found late, fixed from tribal knowledge | RAG + monitor | Airflow, Postgres/pgvector, dbt | In progress |
-| [Trade-ops exception agent](blog/posts/trade-ops-exceptions.md) | Settlement breaks need lookups across 4 systems | Agent + human approval | LangGraph, MCP (TypeScript), Streamlit, Postgres | ✅ Live |
-| Research Q&A | Analysts re-read filings to answer questions | RAG | FastAPI, hybrid pgvector search, RAGAS-style evals | Planned |
+| [Alt-data vendor triage](blog/posts/altdata-triage.md) | Analysts spend days profiling vendor samples | Workflow | dbt, DuckDB, Streamlit, Bedrock | ✅ [Live demo](https://huggingface.co/spaces/{{HF_OWNER}}/altdata-triage) |
+| [EOD heartbeat](blog/posts/eod-heartbeat.md) | End-of-day pipeline breaks found late, fixed from tribal knowledge | RAG + monitor | Airflow, dbt-postgres, pgvector, Streamlit | ✅ [Live demo](https://huggingface.co/spaces/{{HF_OWNER}}/eod-heartbeat) |
+| [Trade-ops exception agent](blog/posts/trade-ops-exceptions.md) | Settlement breaks need lookups across 4 systems | Agent + human approval | LangGraph, MCP (TypeScript), Streamlit, Postgres | ✅ [Live demo](https://huggingface.co/spaces/{{HF_OWNER}}/trade-ops-exceptions) |
+| [Research Q&A](blog/posts/research-qa-rag.md) | Analysts re-read filings to answer questions | RAG | FastAPI, hybrid search (FTS5 + sqlite-vec), entitlements | ✅ [Live demo](https://huggingface.co/spaces/{{HF_OWNER}}/research-qa-rag) |
+
+### Governing them
+
+| Project | Problem | Pattern | Stack highlights | Status |
+|---|---|---|---|---|
+| [AI governance console](blog/posts/governance-console.md) | Nobody can say what AI runs, who uses it, what it costs, or how to stop it | Platform | FastAPI, Chart.js, Postgres, kill switch | ✅ [Live demo](https://huggingface.co/spaces/{{HF_OWNER}}/governance-console) |
+
+Every workflow above reports each visit and action to the console — usage, cost, data throughput, safety signals —
+and obeys its kill switch. Use any demo, then find yourself in the console with *Include simulated history* unticked.
 
 ## What every project includes
 
 - A write-up: business problem, functional and non-functional requirements, architecture diagrams and the *why*
-- A browser app (Streamlit): a default input, a Run button and the results — plus a "try to break it" input
+- A browser app (Streamlit): a default input, a Run button and the results — plus a "try to break it" input —
+  hosted as a live demo where every visitor gets a private copy of the data
 - A public repo that runs offline with a mock model — no API keys — and switches to Claude, OpenAI or Bedrock by config
 - A control-by-control governance mapping, with configuration and the options I didn't build
 - An AWS-native path: Terraform starter and a local-vs-AWS comparison
 - Tests, a golden-set eval gate, and CI
+- Telemetry to the [governance console](blog/posts/governance-console.md) and a kill switch it controls
 
 ## Start here
 

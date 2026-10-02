@@ -28,7 +28,7 @@ flowchart LR
 | Explainer | `explain-primary: mock-explainer` | Bedrock | Set `bedrock-claude.model_id` + pricing, `explain-candidate: bedrock-claude`, eval gate, `promote` |
 | Alerts | `audit.alerts` outbox (+ optional Slack webhook) | SNS topic with subscriptions | Add an `sns` branch to `send_pending` (`boto3.client("sns").publish`) |
 | Retention archive | `output/archive/` JSONL + manifest | S3 bucket with Object Lock in COMPLIANCE mode for the retention period | Point `governance.archive_dir` at the bucket (write with boto3) |
-| Spend | `cost-report`, governance hub | AWS Budgets on the project tag | `terraform apply` |
+| Spend | `cost-report`, governance console | AWS Budgets on the project tag | `terraform apply` |
 
 ## Steps
 

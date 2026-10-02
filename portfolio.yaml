@@ -28,3 +28,4 @@ projects:
   - eod-heartbeat
   - trade-ops-exceptions
   - research-qa-rag
+  - governance-console      # platform: governs the workflows above

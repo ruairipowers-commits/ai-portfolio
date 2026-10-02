@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 import yaml
 
 from . import db
+from . import telemetry
 from .runner import ROOT, db_url, investigate, load_settings, workspace
 from .llm import Registry
 
@@ -76,6 +77,9 @@ async def run_eval(alias: str) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     (out / f"{report['ts'][:19].replace(':', '')}_{spec.name}.json").write_text(json.dumps(report, indent=2))
     (out / f"latest_{spec.name}.json").write_text(json.dumps(report, indent=2))
+    telemetry.emit("eval", status="ok" if report["passed"] else "failed", model=spec.name,
+                    cost_usd=m["total_cost_usd"], records_in=len(rows), records_out=len(rows), run_id=run_id,
+                    flags=[] if report["passed"] else ["eval_failed"], detail={"metrics": m, "failures": failures})
     return report
 
 

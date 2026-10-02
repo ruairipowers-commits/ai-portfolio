@@ -1,0 +1,15 @@
+# EVAL-03 / SEC-06: tests (ingest, kill switch, attestations, catalog discovery, client round-trip) and a
+# dependency scan on every push. The console makes no model calls, so there is no eval gate.
+name: ci
+on: [push, pull_request]
+permissions: {contents: read}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install -e ".[dev]" pip-audit
+      - run: pytest -q
+      - run: pip-audit --skip-editable || true   # report-only; make blocking once triaged

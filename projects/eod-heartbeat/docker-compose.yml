@@ -13,7 +13,8 @@ services:
     command: airflow standalone
     environment:
       EOD_DATABASE_URL: postgresql://eod:eod@db:5432/postgres
-      GOVERNANCE_DB: /opt/airflow/governance.sqlite
+      GOVERNANCE_URL: ${GOVERNANCE_URL:-}            # governance console; empty = spool file
+      GOVERNANCE_SPOOL: /opt/airflow/governance-events.jsonl
     ports: ["8080:8080"]
     volumes: [eoddata:/opt/eod/data]        # landing files + runbooks, shared with the app
     depends_on: {db: {condition: service_healthy}}
