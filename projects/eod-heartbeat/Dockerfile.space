@@ -3,7 +3,8 @@
 # Embedded Postgres (pgserver) inside the container; mock models only, no API keys.
 # Each visitor gets a private copy of the files and their own database (CREATE DATABASE … TEMPLATE eod).
 FROM python:3.11-slim
-RUN useradd -m -u 1000 user
+# /app must belong to the app user: the build writes data/ and warehouse/ there (WORKDIR alone creates it as root)
+RUN useradd -m -u 1000 user && install -d -o user -g user /app
 ENV HOME=/home/user PATH=/home/user/.local/bin:$PATH PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY --chown=user . .

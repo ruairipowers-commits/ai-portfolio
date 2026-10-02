@@ -11,7 +11,8 @@ RUN npm run build && npm prune --omit=dev
 FROM python:3.11-slim
 # Node 22.13+ is required (node:sqlite); copy it from the build stage rather than the older distro package.
 COPY --from=server /usr/local/bin/node /usr/local/bin/node
-RUN useradd -m -u 1000 user
+# /app must belong to the app user: the build writes data/ and warehouse/ there (WORKDIR alone creates it as root)
+RUN useradd -m -u 1000 user && install -d -o user -g user /app
 ENV HOME=/home/user PATH=/home/user/.local/bin:$PATH PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY --chown=user . .

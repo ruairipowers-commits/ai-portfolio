@@ -4,12 +4,15 @@
 # GOVERNANCE_ADMIN_TOKEN (permanent kill-switch changes), optional DATABASE_URL (Postgres, so live history
 # survives restarts — a free Space's disk is wiped when it sleeps).
 FROM python:3.11-slim
-RUN useradd -m -u 1000 user
+# /app must belong to the app user: the build writes data/ and warehouse/ there (WORKDIR alone creates it as root)
+RUN useradd -m -u 1000 user && install -d -o user -g user /app
 ENV HOME=/home/user PATH=/home/user/.local/bin:$PATH PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY --chown=user . .
 USER user
 RUN pip install --no-cache-dir --user -e ".[postgres]"
+# Pre-create the store dir so a mounted Docker volume starts out owned by the app user.
+RUN mkdir -p warehouse
 ENV PORTFOLIO_DEMO=1 HOST=0.0.0.0 PORT=7860
 EXPOSE 7860
 # Simulated history is (re)seeded at start-up, relative to today; live events are never touched.
