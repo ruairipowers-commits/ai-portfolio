@@ -34,7 +34,7 @@ rules:
     title: Prompt-injection attempt detected (blocked)
     control: SEC-02
     severity: medium
-    match: {flags: [injection_detected, injection_text_dropped]}
+    match: {flags: [injection_detected, injection_text_dropped, injection_suspected]}
     guidance: The defence held. Check where the text came from (vendor file, document, ticket) and whether the source should be blocked.
   - id: data-quality-gate
     title: Data-quality gate failed before the AI step

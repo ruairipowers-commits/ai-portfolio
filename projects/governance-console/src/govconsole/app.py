@@ -248,7 +248,12 @@ def _routes(app: FastAPI) -> None:
     def api_summary(request: Request):
         _local_import()
         f = _flt(request)
-        return M.summary(S.store, get_catalog(), f["days"], f["wf"], f["sim"], f["env"])
+        end = request.query_params.get("end")      # YYYY-MM-DD: a past period (e.g. yesterday, for daily reports)
+        try:
+            end_d = datetime.strptime(end, "%Y-%m-%d").date() if end else None
+        except ValueError:
+            raise HTTPException(422, "end must be YYYY-MM-DD")
+        return M.summary(S.store, get_catalog(), f["days"], f["wf"], f["sim"], f["env"], end=end_d)
 
     @app.get("/api/events.csv")
     def events_csv(request: Request):

@@ -1,0 +1,97 @@
+slug: site-assistant
+title: 'Site assistant: search and chat over the portfolio blog with a local model, logged and governed'
+status: built
+domain: the portfolio itself (public website)
+use_case: 'Visitors — often hiring managers — want answers about the projects and Ruairi''s background without reading
+  every post. A search box and chat assistant answers from the blog only, with links to the pages used, runs on a local
+  open model, logs every search and question, and emails a daily engagement summary.
+
+  '
+business_problem:
+  who: blog visitors (hiring managers, recruiters, engineers) and the blog's owner
+  pain: the content is spread over long posts and technology pages; the owner can't see what visitors look for or how
+    many read and run the demos
+  outcome: cited answers in seconds; a log of what people search for; one daily email with blog, demo, Cloudflare and
+    GitHub engagement
+pattern: rag
+risk_tier: low
+risk_rationale: answers questions about public blog content; no actions, no private data; the main risks are wrong statements
+  about a real person and prompt injection, so answers are grounded in cited excerpts and the model can be switched off
+stack:
+  language: python + javascript (widget)
+  data: the blog's own MkDocs search index (search_index.json) → passages in SQLite
+  orchestration: FastAPI service with background refresh and a daily digest scheduler
+  llm_access: registry alias → Ollama (local open model) or an extractive fallback
+  retrieval: SQLite FTS5 BM25 over page/section/text, at most two passages per page; profile pages added for questions
+    about Ruairi
+  ui: 'an Ask button in the blog header opening a panel: suggested questions, streamed answers with numbered citations,
+    matching pages'
+  aws_native: Bedrock (open-weight or Claude models) behind API Gateway + Lambda, OpenSearch Serverless or Bedrock Knowledge
+    Bases over the site, CloudWatch for the activity log
+showcases:
+- RAG over a website using its own search index
+- local LLM with Ollama
+- streaming answers with citations
+- 'governed public chatbot: kill switch, budgets, rate limits'
+- privacy-conscious analytics (no IPs, daily-rotating visitor key)
+- daily engagement email combining first-party, Cloudflare and GitHub data
+functional_requirements:
+- FR-1 Search the whole blog (posts, technology pages, release notes, about) and return ranked passages with links
+- FR-2 Answer questions from the blog only, streaming, with numbered citations; say when the blog doesn't cover it
+- FR-3 Answer questions about Ruairi's fit for a role from his published background and projects, balanced, with citations
+- FR-4 Log every search (assistant and the blog's own search box), question and page view
+- 'FR-5 Email a daily engagement summary: blog, searches and questions, demos, Cloudflare, GitHub views and clones'
+non_functional_requirements:
+- NFR-1 Search < 200 ms; first answer token in seconds on the home server's model
+- NFR-2 Works with no model (extractive fallback) and offline in CI
+- NFR-3 No IP addresses or cookies stored; logs deleted after retention_days
+- NFR-4 Per-visitor rate limits and a daily token budget; the console can switch answering off
+- NFR-5 New blog pages searchable within an hour, with no deploy
+governance:
+  deep_dive:
+  - SEC-02
+  - DATA-03
+  - COST-01
+  - OBS-01
+  - HITL-04
+  not_applicable: {}
+synthetic_data:
+  description: 'None: it indexes the real published blog. Tests use a small fixture search index.
+
+    '
+  adversarial_cases:
+  - a question telling the assistant to ignore its rules
+  - a page excerpt containing instructions
+  - a question about a topic the blog doesn't cover
+  - a fit question with a misspelt name
+demo:
+  title: Ask the portfolio
+  emoji: 💬
+  short_description: Search and chat over the blog with a local model
+  server: fastapi
+  memory: 1g
+  needs:
+  - ollama
+  volume: /app/warehouse
+  env:
+  - SMTP_HOST
+  - SMTP_PORT
+  - SMTP_USER
+  - SMTP_PASSWORD
+  - SMTP_FROM
+  - DIGEST_EMAIL
+  - GOVERNANCE_ALERT_EMAIL
+  - CF_API_TOKEN
+  - CF_ZONE_ID
+  - GITHUB_TRAFFIC_TOKEN
+  - GITHUB_REPOS
+  - ASSISTANT_ADMIN_TOKEN
+  - ASSISTANT_SALT
+links:
+  repo: ''
+  blog: personal/site-assistant
+card:
+  name: Site assistant
+  problem: Visitors can't quickly find what the blog says; the owner can't see what they look for
+  pattern: RAG (local model)
+  stack: FastAPI, SQLite FTS5, Ollama, MkDocs Material

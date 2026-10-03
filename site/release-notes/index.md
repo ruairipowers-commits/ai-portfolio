@@ -7,6 +7,19 @@ hide: [navigation]
 
 The big changes to this portfolio, newest first. Each project's repository has the detail in its commit history.
 
+## 3 October 2026
+
+**Ask the portfolio.** Every page now has an **Ask** button.
+- It searches the whole blog and answers questions with a local open model, citing the sections it used. That
+  includes questions about my background and whether I'd fit a role.
+- Searches, questions and page views are logged, without IP addresses or cookies.
+- A daily email summarises engagement: blog views, searches, demo runs, Cloudflare traffic and GitHub views,
+  clones and stars.
+- It's governed like the other workflows: the console can switch it off.
+- The [write-up](../personal/posts/site-assistant.md) is the first entry on the Personal projects page.
+
+**Narrated walkthrough.** The governance escalation video now has a spoken voice-over.
+
 ## 2 October 2026
 
 **Technology pages.** Every technology named in a post's stack line, or in a project table, now links to its own page.

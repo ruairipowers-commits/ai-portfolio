@@ -7,6 +7,7 @@ Values come from scripts/portfolio_config.py (env in CI, else gh login, else por
 so no personal details need to be committed. Runs on rendered HTML so it also covers
 content pulled in by pymdownx.snippets.
 """
+import os
 import sys
 from pathlib import Path
 
@@ -167,3 +168,11 @@ def on_nav(nav, config, files):
             except Exception:  # noqa: BLE001 — generated pages (blog indexes) have no source to read yet
                 pass
     return nav
+
+
+def on_config(config):
+    """The site assistant's URL for the Ask button (overrides/main.html): its live demo URL, when the demos are
+    deployed. Unset (local preview without DEMOS_URL) → no button, and no page-view or search logging."""
+    url = demo_url("site-assistant", _cfg) if "site-assistant" in _cfg["projects"] and _cfg["demos_url"] else ""
+    config.extra["assistant_url"] = os.getenv("PORTFOLIO_ASSISTANT_URL", url).rstrip("/")
+    return config

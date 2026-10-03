@@ -1467,6 +1467,271 @@
      "aliases": []
     }
    ]
+  },
+  {
+   "slug": "site-assistant",
+   "title": "Site assistant: search and chat over the portfolio blog with a local model, logged and governed",
+   "name": "Ask the portfolio",
+   "emoji": "💬",
+   "status": "built",
+   "built": true,
+   "pattern": "rag",
+   "domain": "the portfolio itself (public website)",
+   "risk_tier": "low",
+   "risk_rationale": "answers questions about public blog content; no actions, no private data; the main risks are wrong statements about a real person and prompt injection, so answers are grounded in cited excerpts and the model can be switched off",
+   "users": "blog visitors (hiring managers, recruiters, engineers) and the blog's owner",
+   "deep_dive": [
+    "SEC-02",
+    "DATA-03",
+    "COST-01",
+    "OBS-01",
+    "HITL-04"
+   ],
+   "stack": {
+    "language": "python + javascript (widget)",
+    "data": "the blog's own MkDocs search index (search_index.json) → passages in SQLite",
+    "orchestration": "FastAPI service with background refresh and a daily digest scheduler",
+    "llm_access": "registry alias → Ollama (local open model) or an extractive fallback",
+    "retrieval": "SQLite FTS5 BM25 over page/section/text, at most two passages per page; profile pages added for questions about Ruairi",
+    "ui": "an Ask button in the blog header opening a panel: suggested questions, streamed answers with numbered citations, matching pages",
+    "aws_native": "Bedrock (open-weight or Claude models) behind API Gateway + Lambda, OpenSearch Serverless or Bedrock Knowledge Bases over the site, CloudWatch for the activity log"
+   },
+   "controls": {
+    "DATA-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "One source: the published blog's `search/search_index.json`. `index_runs` records each refresh (source, passages, pages, status), and every passage keeps its page URL and section.",
+     "configure": "`index.source`, `SITE_INDEX`",
+     "options": "Sitemap crawl; per-page content hashes"
+    },
+    "DATA-02": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "A refresh that yields no passages is rejected and the last good index keeps serving. Tiny sections, search and pagination pages are dropped.",
+     "configure": "`index.min_words`",
+     "options": "Validate the index schema; alert on a sharp drop in pages"
+    },
+    "DATA-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "IP addresses and cookies are never stored. The visitor key is a hash of a daily-rotating salt, IP and browser. Searches and questions are kept as typed because the owner asked to see them. The console receives only lengths and hashes.",
+     "configure": "`privacy.*`, `ASSISTANT_SALT`",
+     "options": "Redact emails/phone numbers typed into questions; opt-out banner"
+    },
+    "DATA-04": {
+     "status": "not_applicable",
+     "mark": "⚪",
+     "how": "All content is the author's own published blog.",
+     "configure": "—",
+     "options": "—"
+    },
+    "DATA-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Rebuilt from the live site every hour, so deleted pages disappear. Sections are split into ≤ 180-word passages, with at most two passages per page in results.",
+     "configure": "`index.refresh_minutes`",
+     "options": "Versioned index snapshots"
+    },
+    "SEC-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Tokens come only from the environment (SMTP, Cloudflare, GitHub, admin). The model is local, so there's no model API key.",
+     "configure": "`.env` on the host",
+     "options": "Secrets Manager"
+    },
+    "SEC-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Excerpts are wrapped as delimited data, and the system prompt says to ignore instructions inside them. Questions with injection patterns are flagged (`injection_suspected`) and reported. The model has no tools, so it can only write text. The golden set includes an injection case.",
+     "configure": "`prompts/answer.md`, `llm.INJECTION`",
+     "options": "An LLM classifier (Llama Guard) on questions and answers"
+    },
+    "SEC-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "No tools. The service reads the public index. The GitHub token needs read-only Administration, the Cloudflare token read-only Analytics. The service holds only an append-only ingest token for the console.",
+     "configure": "token scopes",
+     "options": "—"
+    },
+    "SEC-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "The widget escapes all model text and allows only bold, quotes and citation links built from the server's own source list. No HTML from the model reaches the page.",
+     "configure": "`widget.js`",
+     "options": "Answer-level PII scan"
+    },
+    "SEC-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Questions never leave the owner's server: the model runs locally in Ollama.",
+     "configure": "`OLLAMA_URL`",
+     "options": "—"
+    },
+    "SEC-06": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Four version-bounded Python dependencies, no front-end dependencies. Model weights are pulled by name from the Ollama library.",
+     "configure": "`pyproject.toml`, `OLLAMA_MODEL`",
+     "options": "Pin the model by digest; `pip-audit`"
+    },
+    "COST-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Per-visitor limits (searches and questions per hour), a daily cap on questions and a daily token budget. Past them, answering stops and search keeps working.",
+     "configure": "`limits.*`, `cost.daily_budget_tokens`",
+     "options": "Per-country or ASN limits at Cloudflare"
+    },
+    "COST-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Every answer logs its model and tokens, locally and to the console. Cost is $0 per token on the local model.",
+     "configure": "`cost.usd_per_1k_tokens`",
+     "options": "Electricity estimate per token"
+    },
+    "COST-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Search answers instantly with no model. The model sees six excerpts, not whole pages, and the answer length is capped.",
+     "configure": "`chat.top_k`, `chat.max_answer_tokens`",
+     "options": "Cache answers to repeated questions"
+    },
+    "COST-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "The daily engagement email shows questions and searches against a 7-day average. The console's escalation rules cover budget stops and injection flags.",
+     "configure": "`digest.*`, console Settings",
+     "options": "—"
+    },
+    "MODEL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Code asks for the `chat` alias, and `config/models.yaml` maps it to a model. The extractive fallback is registered too.",
+     "configure": "`config/models.yaml`, `OLLAMA_MODEL`",
+     "options": "—"
+    },
+    "MODEL-02": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "`siteassist eval` runs the retrieval golden set with a hit-rate gate. Answer quality with a new model is reviewed by hand.",
+     "configure": "`evals/golden_set.yaml`",
+     "options": "LLM-as-judge faithfulness eval on a fixed question set"
+    },
+    "MODEL-03": {
+     "status": "not_applicable",
+     "mark": "⚪",
+     "how": "Open-weight local models don't get retired by a provider.",
+     "configure": "—",
+     "options": "Track the Ollama library for newer versions"
+    },
+    "MODEL-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "The prompt is a file in git (`prompts/answer.md`), so every change is a reviewed commit.",
+     "configure": "`prompts/`",
+     "options": "Log the prompt hash per answer"
+    },
+    "MODEL-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "If the model is missing, still downloading or fails mid-answer, the service quotes the best passages instead (status `fallback`). Search doesn't depend on the model.",
+     "configure": "—",
+     "options": "A second, smaller local model"
+    },
+    "EVAL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "16 retrieval cases covering projects, technologies, the About page, fit questions, release notes and an injection.",
+     "configure": "`evals/golden_set.yaml`",
+     "options": "—"
+    },
+    "EVAL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "hit@6 ≥ 0.9 (measured 1.00 on the current blog). Tests check citations, the profile-first rule for fit questions, fallback, limits and the kill switch.",
+     "configure": "`gate.hit_rate`",
+     "options": "Answer faithfulness and refusal accuracy"
+    },
+    "EVAL-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "The portfolio CI runs the tests (with a stand-in Ollama) on every push.",
+     "configure": "`.github/workflows/ci.yml`",
+     "options": "Run `siteassist eval` against the built site in CI"
+    },
+    "OBS-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`activity` holds every page view, search and question, with model, tokens, latency and status. The console gets one event per search and question.",
+     "configure": "`privacy.retention_days`",
+     "options": "—"
+    },
+    "OBS-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Each answer streams its source list first, and citations link to the exact page section. The owner's `/stats` page shows every question.",
+     "configure": "—",
+     "options": "Store the answer text alongside the question"
+    },
+    "OBS-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Activity older than `retention_days` (365) is deleted at every index refresh. Daily metrics are kept as aggregates.",
+     "configure": "`privacy.retention_days`",
+     "options": "—"
+    },
+    "HITL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Low, with the rationale above. Fit questions get a balanced, cited answer that names what the blog doesn't show.",
+     "configure": "`risk_tier`",
+     "options": "—"
+    },
+    "HITL-02": {
+     "status": "not_applicable",
+     "mark": "⚪",
+     "how": "Answers are informational and nothing is executed. Its own kill switch is in the governance console.",
+     "configure": "—",
+     "options": "—"
+    },
+    "HITL-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "The daily email lists searches with no results and the questions asked, which become new posts or golden cases.",
+     "configure": "`digest.top_n`",
+     "options": "👍/👎 on each answer"
+    },
+    "HITL-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "See README → *Use-case card*.",
+     "configure": "`README.md`",
+     "options": "—"
+    }
+   },
+   "models": [
+    {
+     "name": "local-chat",
+     "provider": "ollama",
+     "model_id": "None",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": [
+      "chat"
+     ]
+    },
+    {
+     "name": "extractive",
+     "provider": "mock",
+     "model_id": "None",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    }
+   ]
   }
  ],
  "author": "Ruairi Powers"

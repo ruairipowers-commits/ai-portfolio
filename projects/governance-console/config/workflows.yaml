@@ -22,3 +22,7 @@ workflows:
     owner: Director of Research
     technical_owner: Research engineering
     monthly_budget_usd: 60
+  site-assistant:
+    owner: Ruairi Powers (blog owner)
+    technical_owner: Ruairi Powers
+    monthly_budget_usd: 5         # local model: $0 per token; the budget only matters if it moves to a paid API

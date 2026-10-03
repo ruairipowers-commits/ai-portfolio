@@ -1,0 +1,31 @@
+[project]
+name = "site-assistant"
+version = "0.1.0"
+description = "Search and chat over the portfolio blog (local model via Ollama), with logged searches, page views and a daily engagement email"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.110,<1",
+  "uvicorn>=0.29,<1",
+  "pyyaml>=6,<7",
+  "httpx>=0.27,<1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+siteassist = "siteassistant.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+siteassistant = ["static/*", "templates/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
