@@ -2,7 +2,7 @@
 date: 2026-09-01
 slug: applied-agentic-ai
 categories: [Learning, Agents, AI governance]
-tags: [agentic ai, crawl walk run, nist ai rmf, nist csf, hipaa, eu ai act, shadow mode, risk register]
+tags: [agentic ai, crawl walk run, nist ai rmf, nist csf, hipaa, eu ai act, shadow mode, risk register, vibe coding, kpis]
 ---
 
 # MIT Applied Agentic AI: bringing agents into an organisation without losing control
@@ -58,14 +58,17 @@ The course's frameworks, and the ones I used in my assignments, apply across dom
 | **Asymmetric error costs** | Set thresholds by what each mistake costs | A missed escalation costs far more than a false alarm |
 | **Risk register** | Each risk typed (compliance or operational) with an owner and mitigation | Both governance plans |
 | **Cross-functional governance committee** | Standing oversight with the authority to pause or roll back | Clinicians, compliance, legal, IT security, a patient advocate |
-| **Cost guardrails** | Caps on tokens, spend and per-user use, decided before launch | Module 1 cost analysis |
+| **Cost guardrails** | Caps on tokens, spend and per-user use, decided before launch | Module 1 cost analysis; the capstone's model tiering and hard cap |
+| **Business KPIs plus a trust KPI** | Measure outcomes the business cares about, and separately how often people overrule the AI | Module 6 demand-forecasting pilot |
+| **Proof before promotion** | Don't sell or scale a capability until something real backs it | Capstone: no service marketed without a case study |
 
 The thread through all of them: **autonomy is earned with evidence, and every step must be reversible.**
 
 ## Governance
 
 Governance ran through every module, and module 7 was built on it. I wrote two governance plans, both for healthcare
-AI, one of the most heavily regulated places to deploy it.
+AI, one of the most heavily regulated places to deploy it. I submitted the telehealth plan; the hospital plan is a
+second, more formal version.
 
 **Telehealth escalation.** A model watches a virtual visit and flags when a patient should go to the ER instead.
 
@@ -108,28 +111,79 @@ For my own firm, the plan put three prerequisites ahead of any more agent autono
 
 ## The assignments: a series of thought exercises
 
-Each assignment was a small exercise that built toward the capstone:
+Each assignment was a short exercise, usually a page or two, that asked one question. Read in order, they build
+the pieces the capstone needed: cost, a way to build, integration, security, value, measurement and governance.
 
-1. **What does it cost?** I costed a website chatbot by varying input tokens, output tokens and call volume. Spend went
-   from about $270 to $27,000 across my scenarios, and output tokens cost several times more than input.
-   Conclusion: every dimension needs a failsafe (spend caps, token limits, per-user limits) before launch, not
-   after the first bill.
-2. **What can you build quickly?** A vibe-coding exercise with the new agent platforms.
-3. **How does an agent reach real systems?** TravelGuru, an agent connected to Discord, for the APIs and
-   integration module.
-4. **How secure is the way we use AI today?** I surveyed my own small firm against the NIST Cybersecurity
-   Framework and wrote a report to leadership.
-   - **Strong:** we know what our AI workflows can reach. We'd deliberately chosen on-demand workflows over
-     autonomous agents.
-   - **Weak:** no formal training, no central monitoring, and no recovery plan beyond version control.
-   - **Recommended:** training, central logging with a kill switch, and an incident playbook.
-5. **Which business functions benefit, and how?** Agents mapped to business functions.
-6. **How do you get from pilot to production?** Crawl / Walk / Run applied to a rollout.
-7. **How do you govern it under regulation?** The telehealth and hospital governance plans above.
-8. **Capstone: put it all together.** AI integration plans for the sales pipeline and business development.
+| Module | The question | What I did |
+|---|---|---|
+| 1 | **What does it cost?** | Ran a car-rental question through the OpenAI tokenizer and pricing calculator, then varied tokens and volume. Spend went from about $270 to $27,000 across my scenarios. Output tokens cost several times more than input. Every dimension needs a failsafe before launch: spend caps, token limits, per-user limits, model disclosure. |
+| 2 | **How fast can AI build?** | Vibe coding: prompted an image model for a mock web interface for an agentic AI services company, then had a model turn it into working HTML and Tailwind. |
+| 3 | **How does an agent meet customers where they are?** | TravelGuru, a travel-planning agent on Discord. It curates itineraries and answers booking questions through booking APIs, hands curated trips to human agents, keeps a human in the loop for every transaction and guards personal data. Success is measured by conversion and fewer basic help tickets. |
+| 4 | **How safe is the way we use AI today?** | Surveyed my own small firm against the NIST Cybersecurity Framework and reported to leadership. |
+| 5 | **Where do agents add value in a business process?** | Two agents for the front of a retailer's product-development process. The first reads every customer ticket and Slack request, then ranks and buckets them by frequency, impact, revenue potential and source. The second drafts business cases for the top ideas and records each decision and its reasoning, so the next prioritisation can learn from the last. |
+| 6 | **How do you know it's working?** | Four KPIs for an AI demand-forecasting and inventory pilot at a retailer: forecast error (MAPE under 15%), stockout rate (under 3% of SKU-days), turnover up 10% with excess stock under 8%, and planner override rate under 10%. |
+| 7 | **How do you govern it under regulation?** | The telehealth governance plan below, plus a second, more formal version for a hospital system. |
+| 8 | **Capstone: put it all together** | An AI adoption plan for a one-person consulting practice, described below. |
 
-<!-- TODO(Ruairi): fill in one line each for modules 2, 3, 5, 6 and the capstone from the PDFs — only file names were
-     available when this was written. -->
+Three of them taught me more than I expected.
+
+**Module 2: vibe coding is only useful if it doesn't forget.** The generated site was surprisingly complete. But
+the lesson I wrote down was about context. A coding assistant has to extend what's already there, not restart
+every time. That means saving prompts as requirements, keeping feature summaries, and keeping a human reviewing
+the architecture and the separation of concerns. It's how this portfolio is built: standards, specs and an
+instructions file that persist between sessions.
+
+**Module 4: we were safer than we were watching.** The survey found real strengths and real gaps.
+
+- **Strong:** we knew what our AI workflows could reach, and we'd deliberately chosen on-demand workflows over
+  autonomous agents.
+- **Weak:** no formal training, no central monitoring, and no recovery plan beyond version control.
+- **Recommended:** training, central logging with a kill switch, and an incident playbook.
+
+**Module 6: measure the business, and measure the trust separately.** Forecast accuracy, stockouts and turnover
+are business outcomes; they'd look the same whether a model or a planner produced them. The override rate is the
+one KPI that measures the AI itself. If accuracy improves but stockouts don't, the problem is probably adoption,
+not the model: planners don't trust it yet. A falling override rate is the signal that trust is being earned.
+
+## The capstone: an AI plan I'd actually run
+
+The capstone asked for a full plan to adopt and scale AI in a real organisation. I wrote it for my own one-person
+consulting practice. A small firm has the same problem as a large one with none of the staff: business
+development, marketing and content compete with billable work for the same hours.
+
+**What it builds:**
+
+- a rebuilt, SEO-ready website with a chatbot that answers inbound questions and books intro calls;
+- a content agent that turns AI news and roundtable notes into draft posts and case studies;
+- a publisher agent that posts approved content on a schedule and logs what went out;
+- an orchestration layer that connects calendar, contacts, content backlog and engagement data, and escalates
+  high-intent leads to me.
+
+**How it stays responsible:**
+
+- **Cost.** The cheapest model by default, a stronger one only when needed, and a local model as the fallback.
+  Common questions are answered from a cached FAQ. Every call has a token ceiling. There's a hard monthly cap of
+  $100 with an alert at $50, against projected usage of a few dollars a month for the chatbot.
+- **Authority.** The chatbot can schedule and answer FAQs, but it can't quote prices, send contracts or make
+  commitments. It says it's an AI.
+- **Data.** It never asks for regulated personal data. Client-confidential and prior-employer information never
+  goes into a model, and an agent checks published content for it.
+- **Proof before promotion.** No service is marketed until a case study backs it, and the content agents flag any
+  promotion that lacks one.
+- **Human review** of everything external, at least through the first two phases.
+
+**How it scales, Crawl / Walk / Run:**
+
+1. **Crawl, months 1–2.** Rebuild the site. The chatbot goes live, but I read every transcript. AI drafts posts,
+   and I edit and post them by hand.
+2. **Walk, months 3–4.** The first roundtable feeds the content agent. The publisher agent takes over posting
+   approved content. Every link is tagged so engagement can be traced to its source. Review moves to a weekly batch.
+3. **Run, month 5 on.** The orchestration agent runs the loop end to end and flags strong leads to me directly. I
+   stay the closer on every deal.
+
+**How it's measured.** Ten KPIs, most starting from zero. They include booked calls with a known source (target
+over 90%), cost per booked intro call (under $5) and the share of AI drafts I still have to fix (under 30%, and
+falling).
 
 ## How it's applied in this portfolio
 
@@ -155,6 +209,8 @@ The [governance standard](../../blog/posts/governance.md) lists every control.
   Earn autonomy one use case at a time.
 - **Governance is how you scale.** A shadow period, a rollback threshold and a named owner are what let you say yes
   to the next use case.
+- **Measure trust, not just accuracy.** An override rate tells you whether people believe the model, and adoption
+  fails there more often than on accuracy.
 - **Regulated industries already know how to do this.** Healthcare's change-control plans and model cards map
   closely to what financial firms need for model risk.
 
