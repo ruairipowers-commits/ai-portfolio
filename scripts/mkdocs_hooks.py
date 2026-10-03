@@ -100,7 +100,8 @@ def link_tech(text: str, page_uri: str) -> str:
 
 
 def _tech_index(page_uri: str) -> str:
-    order = ["Languages", "Data & storage", "Search & retrieval", "Orchestration & agents", "Model providers",
+    order = ["Languages", "Data & storage", "Search & retrieval", "Machine learning & data science",
+             "Orchestration & agents", "Model providers",
              "Apps & APIs", "Infrastructure & delivery", "Cloud (AWS)"]
     here = posixpath.dirname(page_uri) or "."
     out = []
@@ -133,6 +134,8 @@ def _table(tier: str, page_uri: str) -> str:
             name = r["name"]
         if r["demo"] and _cfg["demos_url"]:
             link = f"✅ [Live demo]({demo_url(r['slug'], _cfg)})"
+        elif r.get("try_url"):
+            link = f"✅ [{r['try_label']}]({r['try_url']})"
         elif r.get("url"):
             link = f"[Repo]({r['url']})"
         else:

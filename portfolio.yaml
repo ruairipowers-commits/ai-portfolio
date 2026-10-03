@@ -52,8 +52,18 @@ projects:
 # moves the project's post. A personal project doesn't need to live in this repo: give a title, summary and link.
 personal_projects:
   - site-assistant
+  - title: Loan default prediction (MIT capstone)
+    summary: Which home-equity loans will default, and why — an explainable credit model and a parallel-run rollout plan
+    pattern: Classical ML (decision trees, random forests)
+    stack: Python, pandas, scikit-learn, Google Colab
+    url: https://github.com/{{GITHUB_OWNER}}/ai-portfolio/tree/main/coursework/loan-default-prediction
+    post: classes/posts/loan-default-capstone.md
+    try_url: https://colab.research.google.com/github/{{GITHUB_OWNER}}/ai-portfolio/blob/main/coursework/loan-default-prediction/loan_default_prediction.ipynb
+    try_label: Open in Colab (read-only)
 #  - eod-heartbeat                       # a project from the list above
 #  - title: Kitchen inventory bot         # or one that lives elsewhere
 #    summary: Telegram bot that tracks what's in the freezer
 #    url: https://github.com/<you>/freezer-bot
+#    post: classes/posts/x.md            # optional: a write-up anywhere under site/
+#    try_url: https://…                    # optional: a live demo link, labelled try_label
 #    stack: Python, SQLite, Telegram API

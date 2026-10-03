@@ -9,6 +9,15 @@ The big changes to this portfolio, newest first. Each project's repository has t
 
 ## 3 October 2026
 
+**Classes.** A new [Classes](../classes/index.md) tab covers the two MIT Professional Education courses I took
+this year: what each covered, why it matters for AI and agentic workflows, how I've applied it, and the work I
+completed. The first explains how the models work. The second covers bringing AI into an organisation responsibly:
+frameworks, governance and staged rollout.
+
+**Loan default capstone.** My [capstone](../classes/posts/loan-default-capstone.md) for the first course is now a
+project you can run. The notebook opens read-only in Google Colab and reruns end to end. The write-up walks through
+the presentation deck, and the project is listed under Personal projects.
+
 **Ask the portfolio.** Every page now has an **Ask** button.
 - It searches the whole blog and answers questions with a local open model, citing the sections it used. That
   includes questions about my background and whether I'd fit a role.
