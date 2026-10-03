@@ -164,4 +164,12 @@ def test_bench_compares_models_and_writes_answers(store, fake_ollama, tmp_path, 
     cli.bench(store, [MODEL], str(out))
     printed = capsys.readouterr().out
     assert MODEL in printed and "first word" in printed and printed.count(MODEL) >= 6
-    assert "## " + MODEL in out.read_text() and "Kubernetes and Rust" in out.read_text()
+    assert "## " + MODEL in out.read_text() and "Kubernetes and Rust" in out.read_text() and "## Speed" in out.read_text()
+
+
+def test_person_questions_end_with_the_checklist_and_others_dont(client, fake_ollama):
+    stream(client, question="Does Ruairi have experience with Rust?")
+    user = fake_ollama["body"]["messages"][-1]["content"]
+    assert user.rstrip().endswith("his resume.") and "on Ruairi's plate to review" in user and 'exactly "Ruairi"' in user
+    stream(client, question="What does pgvector do?")
+    assert "Before you answer this question about Ruairi" not in fake_ollama["body"]["messages"][-1]["content"]
