@@ -1,7 +1,7 @@
 ---
 date: 2026-09-30
 slug: governance
-categories: [governance]
+categories: [AI governance, Security, Cost & FinOps, Evaluation, Human in the loop]
 tags: [ai governance, model risk, llm security, finops, evals]
 pin: true
 ---
@@ -182,4 +182,4 @@ will ask: *what AI do you use, how do you know it works, and who's accountable.*
 Each project post has a "Governance in practice" section and a full mapping in its repo:
 
 - [Alt-data vendor triage](altdata-triage.md) — data quality gate, injection defence, eval-gated model promotion, hard budgets.
-- More projects on the [portfolio home](../../index.md).
+- More projects on the [Projects page](../../projects/index.md).

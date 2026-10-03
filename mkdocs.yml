@@ -21,21 +21,31 @@ theme:
 
 plugins:
   - search
+  - tags                         # each post's keywords (front-matter tags) shown at the top of the post
   - blog:
       blog_dir: blog
       post_url_format: "{slug}"
       post_excerpt: required
-      categories: true
+      categories: false          # topics: front-matter `categories`, shown on each post and filtered on the blog page
+      archive: false
+      pagination_per_page: 50
   - blog:                        # personal projects: a separate blog, so they stay out of the main one
       blog_dir: personal
       post_url_format: "{slug}"
       post_excerpt: required
       categories: false
+      archive: false
   - blog:                        # classes: course write-ups and coursework
       blog_dir: classes
       post_url_format: "{slug}"
       post_excerpt: required
       categories: false
+      archive: false
+
+extra_css:
+  - assets/portfolio.css
+extra_javascript:
+  - assets/blog-filter.js
 
 hooks:
   - scripts/mkdocs_hooks.py
@@ -46,6 +56,9 @@ markdown_extensions:
   - attr_list
   - md_in_html
   - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.snippets:
       base_path: ["."]          # repo root: posts include governance/ and projects/*/docs/
       check_paths: true
@@ -57,9 +70,11 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Governance: blog/governance/
+  - AI Governance: blog/governance/
+  - Projects:
+      - Industry projects: projects/index.md
+      - Personal projects: personal/index.md
   - Blog: blog/index.md
-  - Personal projects: personal/index.md
   - Classes: classes/index.md
   - Technologies: tech/index.md
   - Release notes: release-notes/index.md

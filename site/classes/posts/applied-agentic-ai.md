@@ -1,6 +1,8 @@
 ---
 date: 2026-09-01
 slug: applied-agentic-ai
+categories: [Learning, Agents, AI governance]
+tags: [agentic ai, crawl walk run, nist ai rmf, nist csf, hipaa, eu ai act, shadow mode, risk register]
 ---
 
 # MIT Applied Agentic AI: bringing agents into an organisation without losing control

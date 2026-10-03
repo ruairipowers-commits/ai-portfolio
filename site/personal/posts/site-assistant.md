@@ -1,6 +1,8 @@
 ---
 date: 2026-10-03
 slug: site-assistant
+categories: [RAG & retrieval, Self-hosting, AI governance]
+tags: [ollama, fastapi, sqlite fts5, local model, citations, analytics, kill switch]
 ---
 
 # An assistant for this blog, running on my own hardware
@@ -63,4 +65,4 @@ covers all 30 controls.
 
 ---
 
-*A personal project. The main portfolio is on the [home page](../../index.md).*
+*A personal project. The main portfolio is on the [Projects page](../../projects/index.md).*

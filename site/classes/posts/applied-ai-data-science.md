@@ -1,6 +1,8 @@
 ---
 date: 2026-05-10
 slug: applied-ai-data-science
+categories: [Learning, Machine learning, Evaluation]
+tags: [statistics, regression, classification, decision trees, random forests, deep learning, recommenders, generative ai]
 ---
 
 # MIT Applied AI and Data Science: what's under the hood

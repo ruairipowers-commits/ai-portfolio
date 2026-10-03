@@ -10,4 +10,4 @@ Ruairi Powers — technical product and data engineering leader in financial ser
 - MIT Professional Education (2026): [*Applied AI and Data Science*](classes/posts/applied-ai-data-science.md) (16 CEUs);
   [*Applied Agentic AI for Organizational Transformation*](classes/posts/applied-agentic-ai.md) (7 CEUs) — see [Classes](classes/index.md)
 
-Contact: [LinkedIn](https://www.linkedin.com/) · [GitHub](https://github.com/{{GITHUB_OWNER}})
+Contact: [LinkedIn](https://www.linkedin.com/in/ruairi-powers) · [Resume (PDF)](assets/Ruairi-Powers-Resume.pdf) · [GitHub](https://github.com/{{GITHUB_OWNER}})
