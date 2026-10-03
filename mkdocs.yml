@@ -31,6 +31,11 @@ plugins:
       post_url_format: "{slug}"
       post_excerpt: required
       categories: false
+  - blog:                        # classes: course write-ups and coursework
+      blog_dir: classes
+      post_url_format: "{slug}"
+      post_excerpt: required
+      categories: false
 
 hooks:
   - scripts/mkdocs_hooks.py
@@ -55,6 +60,7 @@ nav:
   - Governance: blog/governance/
   - Blog: blog/index.md
   - Personal projects: personal/index.md
+  - Classes: classes/index.md
   - Technologies: tech/index.md
   - Release notes: release-notes/index.md
   - About: about.md

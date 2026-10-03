@@ -110,7 +110,8 @@ def tiers(c: dict | None = None) -> dict:
         if isinstance(p, dict):
             out["personal"].append({"slug": p.get("slug", ""), "name": p["title"], "problem": p.get("summary", ""),
                                     "pattern": p.get("pattern", ""), "stack": p.get("stack", ""), "url": p.get("url", ""),
-                                    "post": post_path(p["slug"], "personal") if p.get("slug") else None,
+                                    "post": p.get("post") or (post_path(p["slug"], "personal") if p.get("slug") else None),
+                                    "try_url": p.get("try_url", ""), "try_label": p.get("try_label", "Try it"),
                                     "demo": False, "external": True})
     return out
 
