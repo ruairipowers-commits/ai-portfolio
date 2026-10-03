@@ -27,7 +27,8 @@ the presentation deck, and the project is listed under Personal projects.
 - It's governed like the other workflows: the console can switch it off.
 - The [write-up](../personal/posts/site-assistant.md) is the first entry on the Personal projects page.
 
-**Narrated walkthrough.** The governance escalation video now has a spoken voice-over.
+**Narrated walkthrough.** The governance escalation video now has a spoken voice-over: a neural voice (Piper)
+rendered on the demo server. Page loads, waits and pauses are cut, so the whole loop runs 1 min 23 s.
 
 ## 2 October 2026
 
