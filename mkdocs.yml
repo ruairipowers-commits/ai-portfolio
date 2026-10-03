@@ -46,6 +46,7 @@ extra_css:
   - assets/portfolio.css
 extra_javascript:
   - assets/blog-filter.js
+  - assets/suggest.js
 
 hooks:
   - scripts/mkdocs_hooks.py

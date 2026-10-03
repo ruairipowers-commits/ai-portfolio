@@ -1,6 +1,7 @@
 ---
 date: 2026-10-03
 slug: site-assistant
+short: "Site assistant (Ask button)"
 categories: [RAG & retrieval, Self-hosting, AI governance]
 tags: [ollama, fastapi, sqlite fts5, local model, citations, analytics, kill switch]
 ---

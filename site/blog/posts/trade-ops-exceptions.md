@@ -1,6 +1,7 @@
 ---
 date: 2026-09-30
 slug: trade-ops-exceptions
+short: "Trade-ops exception agent"
 categories: [Agents, Operations, Human in the loop, Security]
 tags: [langgraph, mcp, typescript, human-in-the-loop, prompt injection, evals, bedrock]
 ---

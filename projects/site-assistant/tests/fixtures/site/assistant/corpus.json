@@ -1,0 +1,30 @@
+{
+ "generated": "2026-10-03",
+ "profile": "Profile and evidence for Ruairi Powers, generated 2026-10-03 from his published site.\nBackground (About page):\n- Bridgewater Associates (2000–2020): trading analytics tech manager\nMIT Professional Education coursework:\n- MIT Applied AI and Data Science (course) (2026-05-10): statistics, ML models, deep learning, generative AI; capstone predicting loan defaults\nMost recent work:\n- 2026-10-02 · AI governance · AI governance console",
+ "profile_url": "https://example.github.io/ai-portfolio/about/#skills-and-evidence",
+ "pages": {
+  "blog/governance-console/": {
+   "title": "One console for every AI workflow",
+   "short": "AI governance console",
+   "date": "2026-10-02",
+   "kind": "AI governance",
+   "topics": [
+    "AI governance"
+   ]
+  }
+ },
+ "docs": [
+  {
+   "url": "https://github.com/example/ai-portfolio/blob/main/projects/governance-console/docs/integrations.md#ticketing",
+   "title": "GitHub · projects/governance-console/docs/integrations.md",
+   "section": "Ticketing",
+   "text": "The console builds PagerDuty Events API v2 and ServiceNow incident payloads from each governance incident, ready to send when an integration key is configured."
+  },
+  {
+   "url": "https://example.github.io/ai-portfolio/assets/Ruairi-Powers-Resume.pdf",
+   "title": "Resume (PDF)",
+   "section": "",
+   "text": "RUAIRI POWERS TECHNOLOGY LEAD INVESTMENT DATA AND AI SYSTEMS 25 years building and running investment technology. Technical skills: Kubernetes, CircleCI, Snowflake, Databricks."
+  }
+ ]
+}

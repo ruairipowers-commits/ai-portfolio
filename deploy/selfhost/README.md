@@ -52,22 +52,59 @@ Then re-run the **site** workflow.
 ## The site assistant and its model
 
 The stack includes `site-assistant` (the blog's **Ask** button) and an `ollama` container for its local model.
-On first start the assistant asks Ollama to download `OLLAMA_MODEL` (about 5 GB for `llama3.1:8b`). Until that
-finishes, it answers by quoting passages. Check progress with `docker compose … logs -f ollama`, or look for
-`model_ready` in `https://demos.<your-domain>/site-assistant/api/health`.
+On first start the assistant asks Ollama to download `OLLAMA_MODEL`. Until that finishes, it answers by quoting
+passages. Check progress with `docker compose … logs -f ollama`, or look for `model_ready` in
+`https://demos.<your-domain>/site-assistant/api/health`.
 
-**GPU (optional).** CPU inference works. To use the AMD GPU, set `OLLAMA_IMAGE=ollama/ollama:rocm` in `.env` and
-create `deploy/selfhost/docker-compose.override.yml` (git-ignored):
+### Faster answers
+
+Most of the wait on a CPU is the model *reading* the prompt, not writing the answer. What's already done for you:
+
+- **The model stays loaded** (`keep_alive` 24 h) and is **warmed up** at start-up, so nobody waits for a cold load.
+- **The prompt starts the same way every time.** The rules and the profile card come first and don't change between
+  questions, so Ollama reuses its cached reading of them and only reads the question and the search results.
+  One model and one request at a time (`OLLAMA_NUM_PARALLEL=1`) keeps that cache warm.
+- **A context window sized to the prompt** (`num_ctx` 8192 in `config/settings.yaml`), so nothing is cut off and
+  memory isn't wasted.
+- **Reasoning switched off** for reasoning models (`OLLAMA_THINK=false`): they answer directly instead of thinking
+  first.
+
+**Pick the model on this machine.** Compare candidates with the same questions, then set `OLLAMA_MODEL` in `.env`:
+
+```bash
+docker compose -f generated/docker-compose.yml --env-file .env exec site-assistant \
+  siteassist bench qwen3.5:9b gemma4:e4b llama3.1:8b --out /tmp/answers.md
+docker compose -f generated/docker-compose.yml --env-file .env exec site-assistant cat /tmp/answers.md
+```
+
+It pulls any missing model, then prints the load time, time to the first word, reading and writing speed for a fit
+question, a gap question and a technical one, run twice (the second run uses the cached prefix). The answers file
+lets you judge quality side by side. A good choice answers in a few seconds, cites its sources, and turns the gap
+question into "on Ruairi's plate to review" without inventing anything.
+
+| Model | Download | Why try it |
+|---|---|---|
+| `qwen3.5:9b` | 6.6 GB | The default: a recent generation, good at following rules and citing; run with `OLLAMA_THINK=false` |
+| `gemma4:e4b` | 6.6–9.5 GB | Google's on-device size: quick, if `qwen3.5:9b` feels slow |
+| `qwen3.5:4b` | 3.4 GB | The fastest of these, for a CPU-only box |
+| `gemma4:26b` | 16–19 GB | Mixture-of-experts with about 4B active: bigger-model quality at small-model speed, if memory allows |
+| `llama3.1:8b` | 4.9 GB | The previous default, as a baseline |
+
+**Use the iGPU (Vulkan).** The Radeon iGPU reads prompts much faster than the CPU. Recent Ollama builds can use it
+through Vulkan (still marked experimental). Create `deploy/selfhost/docker-compose.override.yml` (git-ignored):
 
 ```yaml
 services:
   ollama:
-    devices: ["/dev/kfd", "/dev/dri"]
+    devices: ["/dev/dri:/dev/dri"]
     group_add: ["video", "render"]
+    environment:
+      OLLAMA_VULKAN: "1"
 ```
 
-ROCm support varies by chip and driver. If the container logs say no GPU was found, remove the override and stay
-on CPU.
+Then `docker compose … up -d ollama` and check `docker compose … logs ollama | grep -i vulkan`: it should list the
+GPU. If it doesn't, delete the override and stay on CPU. The iGPU shares system memory: the amount it may use is set
+in the BIOS (UMA frame buffer) and by the kernel. Run `siteassist bench` before and after to see the difference.
 
 **Owner pages.** `https://demos.<your-domain>/site-assistant/stats?token=<ASSISTANT_ADMIN_TOKEN>` shows the last
 14 days, every search and question, and a button that sends the daily engagement email now. The email also goes

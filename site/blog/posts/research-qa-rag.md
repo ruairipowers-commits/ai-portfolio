@@ -1,6 +1,7 @@
 ---
 date: 2026-10-02
 slug: research-qa-rag
+short: "Research Q&A (RAG)"
 categories: [RAG & retrieval, Research, Security, Evaluation]
 tags: [hybrid search, sqlite-vec, fts5, fastapi, entitlements, prompt injection, evals, bedrock knowledge bases]
 ---

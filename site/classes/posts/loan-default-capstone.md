@@ -1,6 +1,7 @@
 ---
 date: 2026-05-10
 slug: loan-default-capstone
+short: "Loan default prediction (MIT capstone)"
 categories: [Machine learning, Evaluation, Learning]
 tags: [credit risk, hmeq, decision trees, random forests, recall, explainability, ecoa, google colab]
 ---

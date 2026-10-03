@@ -117,7 +117,8 @@ def render_selfhost(out: Path, c: dict) -> list[Path]:
         if a["slug"] != CONSOLE and a["kind"] == "fastapi":
             env.update({"FORWARDED_ALLOW_IPS": "*", **{k: "${%s:-}" % k for k in a.get("env_passthrough", [])}})
         if "ollama" in a["needs"]:
-            env.update({"OLLAMA_URL": "http://ollama:11434", "OLLAMA_MODEL": "${OLLAMA_MODEL:-}"})
+            env.update({"OLLAMA_URL": "http://ollama:11434", "OLLAMA_MODEL": "${OLLAMA_MODEL:-}",
+                        "OLLAMA_THINK": "${OLLAMA_THINK:-}", "OLLAMA_NUM_THREAD": "${OLLAMA_NUM_THREAD:-}"})
         if a["slug"] != CONSOLE and a.get("volume"):
             svc["volumes"] = [f"{a['slug']}-data:{a['volume']}"]
         if a["slug"] == CONSOLE:
@@ -129,11 +130,13 @@ def render_selfhost(out: Path, c: dict) -> list[Path]:
             svc["volumes"] = ["console-data:/app/warehouse"]   # live history survives restarts and rebuilds
         services[a["slug"]] = svc
     if any("ollama" in a["needs"] for a in items):
-        # local open models for apps that need them (site-assistant). CPU by default; on an AMD GPU set
-        # OLLAMA_IMAGE=ollama/ollama:rocm and add the GPU devices in docker-compose.override.yml (see README).
+        # local open models for apps that need them (site-assistant). CPU by default; for the AMD iGPU see the
+        # README ("Faster answers"): Vulkan via docker-compose.override.yml. One model, one request at a time keeps
+        # memory low and lets the cached prompt prefix (rules + profile card) be reused between questions.
         services["ollama"] = {"image": "${OLLAMA_IMAGE:-ollama/ollama:latest}", "restart": "unless-stopped",
                               "volumes": ["ollama-models:/root/.ollama"], "networks": ["demos"],
-                              "environment": {"OLLAMA_KEEP_ALIVE": "24h"}}
+                              "environment": {"OLLAMA_KEEP_ALIVE": "24h", "OLLAMA_NUM_PARALLEL": "1",
+                                              "OLLAMA_MAX_LOADED_MODELS": "1"}}
     services["caddy"] = {"image": "caddy:2-alpine", "restart": "unless-stopped",
                          "ports": ["${DEMOS_BIND:-127.0.0.1}:${DEMOS_PORT:-8088}:80"],
                          "volumes": ["./Caddyfile:/etc/caddy/Caddyfile:ro", "./site:/srv:ro"],

@@ -69,3 +69,23 @@ def test_stats_page_needs_the_owner_token_in_public(client, monkeypatch):
     monkeypatch.setenv("ASSISTANT_ADMIN_TOKEN", "s3cret")
     assert client.get("/stats").status_code == 403
     assert "Recent searches" in client.get("/stats", params={"token": "s3cret"}).text
+
+
+def test_digest_lists_asks_about_you_with_gaps_and_suggestions(client, store):
+    from siteassistant import app as A, digest
+
+    day = date.today().isoformat()
+    store.log("ask", "v1", "/", "Would Ruairi be a good fit for a Kubernetes platform role?", 4, "ok", "m",
+              answer="Thanks for asking! The site doesn't show Kubernetes work yet, so that's now on Ruairi's plate to review.")
+    store.log("ask", "v2", "/", "Does Ruairi have experience with RAG?", 4, "ok", "m",
+              answer="Yes: the research Q&A project and the site assistant are both retrieval-augmented [2][3].")
+    store.log("ask", "v3", "/", "What is pgvector?", 4, "ok", "m", answer="A Postgres extension [2].")
+    client.post("/api/suggest", json={"idea": "Build an agent that reconciles corporate actions", "name": "Pat",
+                                      "contact": "pat@example.com"})
+    r = digest.run(store, A.SETTINGS, day, send_email=False)
+    text, html = r["text"], r["html"]
+    assert "Questions about you: 2" in text and "Project suggestions: 1" in text
+    assert "Asks about you" in text and "Kubernetes platform role? [on your plate to review]" in text
+    assert "What is pgvector?" not in text.split("Asks about you")[1].split("Project suggestions:")[0]
+    assert "On your plate to review" in text and "Build an agent that reconciles corporate actions — Pat, pat@example.com" in text
+    assert "on your plate to review" in html

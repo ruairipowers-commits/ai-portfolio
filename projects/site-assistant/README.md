@@ -10,15 +10,21 @@ the pages it used, logs every search, and sends the owner a daily engagement ema
 ## What it does
 
 - **Ask button on every blog page.** It opens a panel with suggested questions. Answers stream from a local model
-  (Ollama) and cite the blog sections they used. A list of matching pages appears alongside. Questions about
-  Ruairi, such as "would he be a good fit for an AI product role?", always get the About page in context. The answer
-  is balanced: evidence with citations, plus what the blog doesn't show.
-- **Search** over every post, technology page, the release notes and the About page. It reads the blog's own
-  MkDocs search index, so a new page is searchable within an hour with no deploy.
+  (Ollama) and cite the blog sections they used. A list of matching pages appears alongside.
+- **Questions about Ruairi.** Every prompt starts with a profile card that the site build generates from the posts:
+  background, MIT coursework, evidence by topic, technologies by project, newest work first. A new project or
+  technology shows up in answers as soon as it's published. Questions like "would he be a good fit for an AI product
+  role?" also get his resume. Answers lead with cited evidence. A skill the site doesn't show is never claimed;
+  it's turned into a chance to grow and "on Ruairi's plate to review", and it's listed in the daily email.
+- **Search** over every post, technology page, the release notes and the About page, plus public text that isn't
+  on the site: project READMEs and docs on GitHub, the governance controls, coursework and the resume. It reads the
+  site's MkDocs search index and `assistant/corpus.json`, so a new page is searchable within an hour with no deploy.
+- **Suggestion box** on the About page: visitors suggest projects to try. Ideas arrive in the daily email.
 - **Logging.** Page views, the blog's built-in search box, assistant searches and questions. Text is stored as
   typed, but no IP addresses and no cookies. The visitor key is a hash that rotates daily.
 - **Daily engagement email** with yesterday's numbers against a 7-day average:
   - blog views and visitors, top pages and referrers;
+  - questions about Ruairi with their answers, gaps "on his plate to review", and project suggestions;
   - top searches, searches with no results (content gaps) and the questions asked;
   - demo visits and runs (from the governance console);
   - Cloudflare requests, page views and visitors;

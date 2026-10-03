@@ -11,11 +11,15 @@ flowchart LR
     W -->|/api/search| S[Search<br/>SQLite FTS5 BM25]
     W -->|/api/chat · NDJSON stream| C[Answer<br/>excerpts → prompt]
     I[Blog search_index.json<br/>every hour · DATA-05] --> P[(passages)]
+    K[assistant/corpus.json<br/>repo docs · resume · post dates] --> P
+    K --> PC[Profile card<br/>generated from the posts]
     P --> S
     S --> C
+    PC -->|fixed prompt prefix,<br/>cached by Ollama| C
     C -->|alias 'chat' · MODEL-01| O[Ollama<br/>local open model]
     C -.->|model missing · MODEL-05| X[Quote best passages]
     T[/api/track/] --> A[(activity log<br/>no IPs · DATA-03)]
+    SB[About page<br/>suggestion box] -->|/api/suggest| A
     S --> A
     C --> A
     C -->|event per question,<br/>kill switch| G[Governance console]

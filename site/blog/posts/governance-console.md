@@ -1,6 +1,7 @@
 ---
 date: 2026-10-02
 slug: governance-console
+short: "AI governance console"
 categories: [AI governance, Cost & FinOps, Security, Operations]
 tags: [ai governance, telemetry, finops, kill switch, attestation, fastapi, shadow ai]
 ---
