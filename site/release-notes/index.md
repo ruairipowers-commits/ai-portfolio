@@ -12,7 +12,7 @@ The big changes to this portfolio, newest first. Each project's repository has t
 **Safer, watched, backed up.** The demo machine runs code from a public repo, so now:
 - **Deploy guard.** A root-owned guard refuses any deploy that could take over the machine (privileged containers,
   the Docker socket, host mounts, missing CPU and memory limits). Every container drops its Linux capabilities, and
-  the demo apps have no route to the internet.
+  the demo apps have no route to the internet. The demos force HTTPS and send HSTS and the standard security headers.
 - **Host tab.** The governance console shows the server's load and history, and emails alerts and a weekly health
   and security report.
 - **Backups.** The databases are backed up nightly, integrity-checked, with `.env` encrypted.

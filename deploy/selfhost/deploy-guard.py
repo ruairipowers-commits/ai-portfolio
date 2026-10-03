@@ -8,7 +8,7 @@ the repo can't loosen it: the repo copy is only the source that `sudo install.sh
 
 Every service must:
   - not be privileged, and not share the host's network, PID, IPC or user namespaces;
-  - drop all capabilities (`cap_drop: [ALL]`) and add back nothing beyond NET_BIND_SERVICE;
+  - drop all capabilities (`cap_drop: [ALL]`) and add back nothing beyond NET_BIND_SERVICE (none of ours do);
   - set `no-new-privileges`, and not switch off seccomp or AppArmor;
   - have a memory limit and a CPU limit;
   - only bind-mount paths inside deploy/selfhost (never the Docker socket or anything else on the host);
