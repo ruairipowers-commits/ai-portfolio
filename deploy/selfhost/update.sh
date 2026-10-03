@@ -24,6 +24,7 @@ exec 9>"$STATE/lock"
 flock -n 9 || { echo "another deploy is running"; exit 0; }
 
 COMPOSE=(docker compose -f "$HERE/generated/docker-compose.yml" --env-file "$HERE/.env")
+[ -f "$HERE/docker-compose.override.yml" ] && COMPOSE+=(-f "$HERE/docker-compose.override.yml")   # local tweaks (GPU)
 [ -n "${TUNNEL_TOKEN:-}" ] && COMPOSE+=(--profile tunnel)
 log() { echo "$(date -Is) $*"; }
 running() { [ -f "$HERE/generated/docker-compose.yml" ] && "${COMPOSE[@]}" ps -q 2>/dev/null | grep -q .; }

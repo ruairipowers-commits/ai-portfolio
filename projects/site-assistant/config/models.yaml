@@ -1,0 +1,20 @@
+# Model registry: code asks for an alias, never a model ID (MODEL-01).
+aliases:
+  chat: local-chat
+models:
+  local-chat:
+    provider: ollama
+    model: llama3.1:8b              # override with OLLAMA_MODEL; any Ollama chat model works
+    approved: true
+    priced: true                    # local: $0 per token
+    usd_per_1k_input: 0.0
+    usd_per_1k_output: 0.0
+    deprecation_date: null
+  extractive:
+    provider: mock                  # offline fallback: quotes the best passages, no generation
+    model: extractive-v1
+    approved: true
+    priced: true
+    usd_per_1k_input: 0.0
+    usd_per_1k_output: 0.0
+    deprecation_date: null

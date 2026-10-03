@@ -1,0 +1,40 @@
+# site-assistant settings. Secrets (tokens, SMTP password) come from the environment, never this file.
+workflow:
+  name: Site assistant
+  owner: Ruairi Powers
+risk_tier: low                     # HITL-01: answers questions about public blog content; no actions, no private data
+
+index:
+  source: ""                       # search_index.json of the MkDocs site: URL or file. Empty = $SITE_URL/search/search_index.json
+  refresh_minutes: 60              # re-read the blog's index so new posts are searchable without a restart
+  min_words: 8                     # skip tiny sections (nav stubs)
+
+search:
+  max_results: 8
+  max_query_chars: 300
+
+chat:
+  model_alias: chat                # config/models.yaml
+  top_k: 6                         # excerpts given to the model
+  max_question_chars: 500
+  max_answer_tokens: 450
+  temperature: 0.2
+  history_turns: 2                 # earlier question/answer pairs sent along for follow-ups
+
+limits:                            # per visitor (hashed IP + browser, rotated daily)
+  searches_per_hour: 120
+  chats_per_hour: 20
+  chats_per_day_total: 1500        # COST-01: local model, so the budget is compute time, not dollars
+
+cost:
+  usd_per_1k_tokens: 0.0           # local model on our own hardware: no per-token charge
+  daily_budget_tokens: 2000000     # stop answering (search still works) past this many tokens a day
+
+privacy:
+  retention_days: 365              # OBS-03: searches, questions and page views are deleted after this
+  log_query_text: true             # searches and questions are kept as typed (the owner asked for them); no IPs stored
+
+digest:
+  hour: 7                          # local time the daily engagement email goes out
+  timezone: America/New_York
+  top_n: 8

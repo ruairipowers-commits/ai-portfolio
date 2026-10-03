@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask the portfolio</title>
+<style>
+:root{color-scheme:light dark;--bg:#f9f9f7;--ink:#1f2933;--mut:#5f6b76}
+@media (prefers-color-scheme:dark){:root{--bg:#121212;--ink:#e8eaed;--mut:#a7b0b9}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{background:#546e7a;color:#fff;padding:14px 20px;font-weight:700}
+main{max-width:720px;margin:0 auto;padding:36px 18px}
+p{color:var(--mut)} a{color:inherit}
+</style></head>
+<body>
+<header>Ask the portfolio</header>
+<main>
+<h1>Search and ask about the AI workflow portfolio</h1>
+<p>This service answers questions about the projects, the governance standard, the technologies and Ruairi's
+background, using only what's published on <a href="{{SITE_URL}}/">the blog</a>, with a link to every page it
+used. It runs an open model locally on the portfolio's own server, so answers can be slower than a commercial
+assistant. Press <b>Ask</b> (bottom right) to try it.</p>
+<p>Every search and question is logged as typed, without IP addresses, and the assistant reports each one to the
+portfolio's governance console, which can switch it off.</p>
+</main>
+<script src="{{BASE}}/widget.js" data-endpoint="{{BASE}}" defer></script>
+</body></html>

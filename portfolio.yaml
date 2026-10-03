@@ -44,12 +44,14 @@ projects:
   - trade-ops-exceptions
   - research-qa-rag
   - governance-console      # platform: governs the workflows above
+  - site-assistant          # the blog's search + chat assistant (personal project)
 
 # Which projects are FEATURED (home page + main blog) and which are smaller PERSONAL projects (listed on the
 # "Personal projects" page, with posts under site/personal/posts/). Every project above is featured unless it's
 # listed here. To move one:  python scripts/set_tier.py <slug> personal   (or featured) — it edits this list and
 # moves the project's post. A personal project doesn't need to live in this repo: give a title, summary and link.
-personal_projects: []
+personal_projects:
+  - site-assistant
 #  - eod-heartbeat                       # a project from the list above
 #  - title: Kitchen inventory bot         # or one that lives elsewhere
 #    summary: Telegram bot that tracks what's in the freezer

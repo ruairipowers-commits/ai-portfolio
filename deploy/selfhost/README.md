@@ -49,6 +49,31 @@ Open `https://demos.<your-domain>/` — a landing page lists the apps; each app 
 `DEMOS_URL = https://demos.<your-domain>` (and `DEMOS_TARGET = selfhost` if you ever change portfolio.yaml).
 Then re-run the **site** workflow.
 
+## The site assistant and its model
+
+The stack includes `site-assistant` (the blog's **Ask** button) and an `ollama` container for its local model.
+On first start the assistant asks Ollama to download `OLLAMA_MODEL` (about 5 GB for `llama3.1:8b`). Until that
+finishes, it answers by quoting passages. Check progress with `docker compose … logs -f ollama`, or look for
+`model_ready` in `https://demos.<your-domain>/site-assistant/api/health`.
+
+**GPU (optional).** CPU inference works. To use the AMD GPU, set `OLLAMA_IMAGE=ollama/ollama:rocm` in `.env` and
+create `deploy/selfhost/docker-compose.override.yml` (git-ignored):
+
+```yaml
+services:
+  ollama:
+    devices: ["/dev/kfd", "/dev/dri"]
+    group_add: ["video", "render"]
+```
+
+ROCm support varies by chip and driver. If the container logs say no GPU was found, remove the override and stay
+on CPU.
+
+**Owner pages.** `https://demos.<your-domain>/site-assistant/stats?token=<ASSISTANT_ADMIN_TOKEN>` shows the last
+14 days, every search and question, and a button that sends the daily engagement email now. The email also goes
+out by itself every day at 07:00 New York time. Add `CF_*` and `GITHUB_TRAFFIC_TOKEN` to `.env` to include
+Cloudflare and GitHub numbers; without them the email says what's missing.
+
 ## Reboots and continuous deployment
 
 `install.sh` sets up two things:

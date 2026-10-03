@@ -21,3 +21,4 @@ projects/*/dbt/.user.yml
 deploy/selfhost/.env
 deploy/*/generated/
 deploy/selfhost/.state/
+deploy/selfhost/docker-compose.override.yml
