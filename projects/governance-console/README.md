@@ -31,6 +31,8 @@ Never prompts, questions or documents. The console turns those events into:
 | **Events & people** | Who ran what and when, filterable, with CSV export |
 | **Incidents** | Every governance issue the console detected — evidence, guidance, timeline, auto-shutdown, emails, and the documented resolution |
 | **Audit & alerts** | Kill-switch log, spend anomalies, and **unregistered workflows** sending AI usage (shadow AI) |
+| **Content** | Top-rated posts and project-suggestion moderation on the portfolio site |
+| **Host** | The self-host box (EVO-X1): CPU, load, memory, disk, temperature and their history, the demo containers, backups, updates and the weekly security scan, with alerts and a weekly health & security email |
 | **Settings** | Per workflow: email alerts on or off, recipients, the severity that emails, the severity that **switches it off automatically**, which rules apply; plus the outbox |
 
 **New projects appear on their own.** The catalog is built from `portfolio.yaml`, each project's spec (owner, risk
@@ -68,6 +70,32 @@ week. Untick *Include simulated history* to see only **live events** from people
 costs use illustrative per-token rates, not vendor prices; live costs from the demos use the offline mock models'
 simulated pricing.
 
+### Host tab
+
+The machine that serves the live demos runs `deploy/selfhost/hostmon.sh` every minute (a systemd timer; the unit
+text is in the script's header). It reads `/proc`, `df` and the Docker CLI — no Python on the host — and posts one
+JSON sample to `POST /api/host` with the ingest token: CPU, load, memory, swap, disk for `/` and Docker's data root,
+the hottest temperature sensor, uptime; each `ai-portfolio-demos` container's state, health, restart count, CPU and
+memory against its limit; the deployed commit; and, when present, the backup, maintenance and security-scan status
+files from `deploy/selfhost/.state/`.
+
+- **Page** — headline tiles, CPU / memory / load / temperature history (1 h, 24 h, 7 d, 30 d), the containers,
+  status cards for backups, updates & maintenance and the security scan, and the alert log.
+- **Alerts** — CPU ≥ 90% averaged over 10 minutes, memory ≥ 90%, disk ≥ 85%, temperature ≥ 90 °C, a container down,
+  unhealthy or restarting, a backup older than 36 h or failed, a new scan with critical or high findings, and no
+  sample for 10 minutes ("EVO-X1 stopped reporting", from a background check; if the box itself is down the console
+  is down with it, so an external uptime check covers that). One open alert per kind; an email when it opens and
+  when it resolves, through the same outbox and SMTP settings as incidents. Thresholds: `config/settings.yaml` → `host:`.
+- **Weekly health & security report** — 7-day averages and peaks, restarts per container, alerts opened and
+  resolved, backup status, the maintenance actions with their exact commands, and the scan's top findings with their
+  fixes. Sent every 7 days or as soon as a new scan result arrives, whichever comes first; admins can send it from
+  the page (`POST /host/report/send`).
+- **Who sees what** — the public demo sees load, history, container states and finding *counts*. Findings, the full
+  scan report (`/host/security`), maintenance commands and host emails in the outbox need the admin sign-in.
+- **API** — `GET /api/host/summary` (public, numbers and counts only — the site assistant's daily email reads it)
+  and `GET /api/host/history?range=1h|24h|7d|30d`.
+- **Retention** — per-minute samples 30 days; an hourly rollup (average and peak) for a year.
+
 ## Quickstart
 
 ```bash
@@ -75,7 +103,7 @@ git clone <this repo> && cd governance-console
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 govconsole serve                 # http://localhost:8600 (seeds the simulated history on first start)
-pytest -q                        # 23 tests, incl. a round trip with the real telemetry client over HTTP
+pytest -q                        # 42 tests, incl. a round trip with the real telemetry client over HTTP
 ```
 
 Point the workflows at it and use them — their events appear on the next refresh (untick *Include simulated
@@ -120,7 +148,7 @@ it stops with *switched off by governance: \<reason\> (by \<you\>)*.
 | | |
 |---|---|
 | **Intended use** | Oversight of AI workflows: usage, spend, control coverage and evidence, attestations, kill switch. |
-| **Not for** | Approving individual AI outputs (each workflow keeps its own human-in-the-loop); security monitoring of the apps' infrastructure. |
+| **Not for** | Approving individual AI outputs (each workflow keeps its own human-in-the-loop); full infrastructure or security monitoring (the Host tab watches one self-host box and reports its scan; it isn't a SIEM). |
 | **Risk tier** | Low — no model calls. The kill switch is the one consequential action: admin-only, reasoned, audited. |
 | **Owner** | Chief risk officer (business) · AI platform team (technical) |
 | **Known limits** | Evidence is what workflows report — a workflow that doesn't send events is invisible except via the catalog; admin is a shared token (SSO in production); the hosted demo's live history is lost on restart unless `DATABASE_URL` points at Postgres; budgets are trailing-30-day, not calendar-month. |
@@ -141,8 +169,11 @@ src/govconsole/
   metrics.py    KPIs, daily series, budgets, anomalies, actors, control evidence
   escalation.py rules → incidents → auto-shutdown → notifications; resolution
   notify.py     the alert email, SMTP delivery, PagerDuty / ServiceNow payloads (design)
+  content.py    the Content tab, through the site assistant's owner API
+  host.py       the Host tab: sample validation, alerts, stale checker, weekly report, summary and history
   store.py      events · workflow_state · control_changes · attestations · workflow_meta · incidents ·
-                incident_log · notifications · escalation_settings (SQLite or Postgres)
+                incident_log · notifications · escalation_settings · host_metrics · host_hourly · host_status ·
+                host_alerts (SQLite or Postgres)
   simulate.py   labelled 90-day history
   templates/ static/   server-rendered pages, Chart.js (vendored)
 infra/aws/      Terraform starter (App Runner, Aurora Serverless v2, Secrets Manager, S3 Object Lock, AppConfig, Budgets)
@@ -158,6 +189,7 @@ infra/aws/      Terraform starter (App Runner, Aurora Serverless v2, Secrets Man
 | Owners and budgets | `config/workflows.yaml` |
 | Budget warning, anomaly factor, attestation window, demo switch-off length | `config/settings.yaml` |
 | Escalation rules, severities, defaults, email cap | `config/escalation.yaml`; per-workflow choices on the **Settings** page |
+| Host alert thresholds, report cadence, host-metric retention | `config/settings.yaml` → `host:`; host emails go to `GOVERNANCE_ALERT_EMAIL` |
 | Alert email | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `GOVERNANCE_ALERT_EMAIL`; link base `GOVERNANCE_PUBLIC_URL` |
 | Workflow side | `GOVERNANCE_URL`, `GOVERNANCE_INGEST_TOKEN`, `GOVERNANCE_FAIL_CLOSED=1`, `GOVERNANCE_TELEMETRY=off` |
 

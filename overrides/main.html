@@ -4,7 +4,7 @@
 {% block announce %}
 <a href="{{ 'release-notes/' | url }}" style="color:inherit">
   <span class="twemoji">{% include ".icons/material/rocket-launch-outline.svg" %}</span>
-  <strong>What's new:</strong> thumbs up on posts, upvotes for project ideas, blog filters in the side panel, and a faster Ask button. Release notes →
+  <strong>What's new:</strong> a safer, monitored, backed-up demo server, thumbs up or down on posts, and a Console button. Release notes →
 </a>
 {% endblock %}
 
@@ -13,6 +13,23 @@
     button shows even while the service is down; the panel then says so. -#}
 {% block scripts %}
   {{ super() }}
+  {#- Live demo of the AI governance console: a shield icon in the header, next to the search box. -#}
+  {% if config.extra.console_url %}
+  <template id="console-link-tpl"><a href="{{ config.extra.console_url }}" class="md-header__button md-icon console-link"
+     title="Live demo: the AI governance console" aria-label="Live demo: the AI governance console">
+     {% include ".icons/material/shield-check-outline.svg" %}<span class="console-link__label">Console</span></a></template>
+  <script>
+    (function () {
+      function place() {
+        var tpl = document.getElementById("console-link-tpl"), header = document.querySelector(".md-header__inner");
+        if (!tpl || !header || header.querySelector(".console-link")) return;
+        var search = header.querySelector(".md-search") || header.lastElementChild;
+        header.insertBefore(tpl.content.cloneNode(true), search);
+      }
+      if (window.document$ && window.document$.subscribe) window.document$.subscribe(place); else place();
+    })();
+  </script>
+  {% endif %}
   {% if config.extra.assistant_url %}
   <script src="{{ 'assets/assistant/widget.js' | url }}" data-endpoint="{{ config.extra.assistant_url }}" defer></script>
   {% endif %}

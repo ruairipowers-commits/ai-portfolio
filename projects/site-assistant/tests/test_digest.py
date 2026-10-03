@@ -87,6 +87,7 @@ def test_digest_lists_asks_about_you_suggestions_and_thumbs_up(client, store):
     for v in ("a", "b"):
         store.vote(old, v)
     client.post("/api/like", json={"path": "/ai-portfolio/blog/governance-console/"})
+    store.unhelpful_vote("blog/governance-console/", "z", "wanted the Terraform")
     r = digest.run(store, A.SETTINGS, day, send_email=False)
     text, html = r["text"], r["html"]
     assert "Questions about you: 2" in text and "New project suggestions: 1" in text and "Thumbs up on posts: 1" in text
@@ -96,4 +97,5 @@ def test_digest_lists_asks_about_you_suggestions_and_thumbs_up(client, store):
     assert top.index("2 votes · A desk-level P&L explainer") < top.index("[NEW] 0 votes · Build an agent")
     assert "(awaiting approval) — Pat, pat@example.com" in top and "https://claude.ai/new?q=" in top
     assert "Thumbs up yesterday" in text and "AI governance console (1)" in text or "blog/governance-console/ (1)" in text
+    assert "Thumbs down on posts: 1" in text and "AI governance console: wanted the Terraform" in text
     assert ">NEW</b>" in html and "Start in Claude" in html and "claude://claude.ai/new?q=" in html

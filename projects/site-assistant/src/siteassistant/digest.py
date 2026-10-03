@@ -96,6 +96,12 @@ def collect_likes(store: Store, day: str) -> None:
     store.put_metric(day, "likes", "thumbs_up", sum(r["n"] for r in yday))
     store.put_metric(day, "likes", "by_post", None, [(title(r["path"]), r["n"]) for r in yday[:10]])
     store.put_metric(day, "likes", "all_time", None, [(title(r["path"]), r["likes"]) for r in store.top_liked(5)])
+    down = store.query("select path, count(*) n from unhelpful where day = ? group by path order by n desc", (day,))
+    store.put_metric(day, "likes", "thumbs_down", sum(r["n"] for r in down))
+    store.put_metric(day, "likes", "down_by_post", None, [(title(r["path"]), r["n"]) for r in down[:10]])
+    store.put_metric(day, "likes", "down_notes", None,
+                     [f"{title(r['path'])}: {r['note']}" for r in store.query(
+                         "select path, note from unhelpful where day = ? and note != '' order by ts", (day,))][:20])
 
 
 # ---------------------------------------------------------------- "start this project" links for the owner
@@ -223,7 +229,7 @@ def collect(store: Store, settings: dict, day: str) -> None:
 HEADLINES = [("blog", "page_views", "Blog page views"), ("blog", "visitors", "Blog visitors"),
              ("searches", "searches", "Searches"), ("searches", "questions", "Questions to the assistant"),
              ("about", "questions", "Questions about you"), ("about", "suggestions", "New project suggestions"),
-             ("likes", "thumbs_up", "Thumbs up on posts"),
+             ("likes", "thumbs_up", "Thumbs up on posts"), ("likes", "thumbs_down", "Thumbs down on posts"),
              ("demos", "visits", "Demo visits"), ("demos", "runs", "Demo runs"),
              ("cloudflare", "page_views", "Cloudflare page views"), ("cloudflare", "visitors", "Cloudflare visitors"),
              ("github", "views", "GitHub repo views"), ("github", "clones", "Repo clones (downloads)"),
@@ -296,7 +302,9 @@ def render(store: Store, day: str, settings: dict) -> dict:
                 lst("On your plate to review (gaps the assistant told visitors you'd look into)", det("about", "gaps")),
                 lst_text("Top suggested projects (new ones marked)", det("about", "top_suggestions"), sugg_fmt, sugg_text),
                 lst("Thumbs up yesterday", det("likes", "by_post"), pair),
-                lst("Most liked posts (all time)", det("likes", "all_time"), pair),lst("Top pages", det("blog", "top_pages"), pair), lst("Where readers came from", det("blog", "referrers"), pair),
+                lst("Most liked posts (all time)", det("likes", "all_time"), pair),
+                lst("Not useful yesterday", det("likes", "down_by_post"), pair),
+                lst("What readers said was missing", det("likes", "down_notes")),lst("Top pages", det("blog", "top_pages"), pair), lst("Where readers came from", det("blog", "referrers"), pair),
                 lst("Top searches", det("searches", "top_queries"), pair),
                 lst("Searches with no results (content gaps)", det("searches", "no_results")),
                 lst("Questions asked", det("searches", "questions_asked")),

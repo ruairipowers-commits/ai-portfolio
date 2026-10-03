@@ -210,3 +210,19 @@ def test_person_questions_end_with_the_checklist_and_others_dont(client, fake_ol
     assert user.rstrip().endswith("his resume.") and "on Ruairi's plate to review" in user and 'exactly "Ruairi"' in user
     stream(client, question="What does pgvector do?")
     assert "Before you answer this question about Ruairi" not in fake_ollama["body"]["messages"][-1]["content"]
+
+
+def test_thumbs_down_with_a_note_is_private(client, store, monkeypatch):
+    r = client.post("/api/unhelpful", json={"path": "/ai-portfolio/blog/governance-console/"})
+    assert r.status_code == 200 and r.json() == {"path": "blog/governance-console/", "counted": True}
+    again = client.post("/api/unhelpful", json={"path": "/ai-portfolio/blog/governance-console/",
+                                                "note": "  needed   a diagram of the  escalation flow "})
+    assert again.json()["counted"] is False                                   # same reader, same day: the note is added
+    assert store.unhelpful_notes() == [{"path": "blog/governance-console/", "day": store.unhelpful_notes()[0]["day"],
+                                        "note": "needed a diagram of the escalation flow"}]
+    assert client.post("/api/unhelpful", json={"path": "/ai-portfolio/tech/pgvector/"}).status_code == 404
+    assert "unhelpful" not in client.get("/api/likes", params={"paths": "blog/governance-console/"}).text
+    monkeypatch.setenv("PORTFOLIO_DEMO", "1")
+    monkeypatch.setenv("ASSISTANT_ADMIN_TOKEN", "s3cret")
+    c = client.get("/admin/content", params={"token": "s3cret"}).json()
+    assert c["top_articles"][0]["unhelpful"] == 1 and c["unhelpful_notes"][0]["note"].startswith("needed a diagram")

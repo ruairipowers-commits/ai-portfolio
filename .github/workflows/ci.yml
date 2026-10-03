@@ -34,3 +34,28 @@ jobs:
       - name: Node tests (MCP server), if any
         if: hashFiles(format('projects/{0}/mcp-server/package.json', matrix.project)) != ''
         run: cd mcp-server && npm ci && npm test
+  security:
+    # Repo-side security self-assessment (security/pentest.py --repo): secrets anywhere in git history, dependency
+    # vulnerabilities, workflow and Dockerfile hygiene, and the generated compose stack's hardening. A critical or
+    # high finding fails CI, so the demo machine won't deploy the commit. Live and host checks run weekly on the
+    # machine itself and are emailed privately; they never appear in these public logs.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with: {fetch-depth: 0}            # the secret scan reads every commit
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.11"}
+      - run: pip install pip-audit pyyaml pytest
+      - run: python3 security/pentest.py --repo --strict --out /tmp/pentest.md --state /tmp/pentest.json
+      - name: findings
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          d = json.load(open("/tmp/pentest.json"))
+          print(d["counts"])
+          for f in d["findings"]:
+              print(f"{f['severity']:>8}  {f['id']}  {f['title']}")
+          PY
+      - run: python3 -m pytest security/tests -q
+

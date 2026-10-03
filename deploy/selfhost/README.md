@@ -40,7 +40,7 @@ cd ~/ai-portfolio/deploy/selfhost
 cp .env.example .env && nano .env      # DEMOS_URL, SITE_URL, GITHUB_OWNER, TUNNEL_TOKEN, two governance tokens
 sudo usermod -aG docker "$USER"        # once, then log out and back in
 ./update.sh --force                    # first build: 10–20 minutes (it builds all five images)
-./install.sh                           # Linux: start at boot + deploy every CI-passed commit on main
+sudo ./install.sh                      # Linux: timers for deploys, monitoring, backups, updates, security scans
 ```
 
 Open `https://demos.<your-domain>/` — a landing page lists the apps; each app is at `/<app>/`.
@@ -160,3 +160,98 @@ Windows without systemd: run `update.sh` from Task Scheduler every 2 minutes and
 - Only Caddy is reachable, and only from this machine (or the address in `DEMOS_BIND`); the public path is the tunnel.
 - Cloudflare's free plan adds DDoS protection; add a rate-limiting rule on `demos.<your-domain>` if you expect traffic.
 - When the machine is off or asleep, the demos are down — set it never to sleep.
+
+## Keeping the machine safe
+
+The demos run code from a public repository on a machine in your house, so the stack assumes the code could one
+day be hostile and limits what it can do.
+
+**What a deploy can and can't do.** update.sh deploys every CI-passed commit on main. Before each deploy, the
+**deploy guard** (`deploy-guard.py`) checks the resolved stack and refuses one that has any of these:
+- privileged or host-namespace containers;
+- the Docker socket, or host folders mounted outside `deploy/selfhost`;
+- extra Linux capabilities;
+- a container without CPU and memory limits;
+- ports published beyond loopback or Tailscale.
+
+`sudo ./install.sh` copies the guard, update.sh and every other host script to `/usr/local/lib/ai-portfolio`,
+owned by root, and the timers run those copies. A push to GitHub can't change what runs on this machine until you
+review it and re-run `sudo ./install.sh`. The daily maintenance check tells you when the repo's copies have changed.
+
+**Inside the stack:**
+- **Containers.** Every container drops all capabilities, can't gain privileges, and is capped on memory, CPU and
+  processes. Ollama is capped at `OLLAMA_CPUS` (8) and `OLLAMA_MEM_LIMIT` (14g), so a burst of questions can't take
+  the machine.
+- **Network.** The demo apps run on an internal network with no route to the internet, so a compromised demo can't
+  download anything or call out. Only the console, the assistant, Ollama, Caddy and the tunnel can reach out.
+- **Inbound.** Nothing listens on your LAN. Caddy is on 127.0.0.1, and the public reaches it only through the
+  Cloudflare Tunnel.
+
+**Secrets.**
+- `.env` is mode 600.
+- The deploy clone holds no push credentials, and `GITHUB_TOKEN` is read-only.
+- CI scans every commit in git history for secrets and fails if it finds one.
+- Backups encrypt `.env` with `BACKUP_PASSPHRASE`.
+
+**In GitHub** (settings only you can change):
+- A ruleset on `main`: no force pushes, no deletion, and the CI checks required.
+- Secret scanning with push protection.
+- Dependabot alerts.
+
+`.github/dependabot.yml` opens weekly update pull requests. Each one runs CI before you merge it.
+
+**Denial of service.**
+- **App limits.** The assistant rate-limits each visitor and has a daily cap. The suggestion box, votes and thumbs
+  have their own limits.
+- **Cloudflare.** For more, add a rate-limiting rule in Cloudflare (*Security → WAF → Rate limiting rules*; the free
+  plan includes one), for example 60 requests a minute per IP on `demos.<your-domain>`.
+
+## Monitoring, alerts and the weekly report
+
+The governance console's **Host** tab shows this machine's load: CPU, memory, disk, temperature and each
+container, live and as history. `hostmon.sh` sends a sample every minute. The console emails you when:
+- CPU stays high, or memory, disk or temperature cross a threshold;
+- a container stops, turns unhealthy or keeps restarting;
+- a backup is stale or failed;
+- a security scan finds something critical or high;
+- the machine stops reporting.
+
+It also sends a weekly health and security report. Thresholds are in the console's `config/settings.yaml` (`host:`).
+
+If the whole machine is down, it can't email you. `.github/workflows/uptime.yml` checks the blog and every demo
+from GitHub every 30 minutes. Add the SMTP values as repository secrets (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`,
+`SMTP_PASSWORD`, `SMTP_FROM`, `ALERT_EMAIL`) to get an email; otherwise GitHub's failed-workflow email is the alert.
+
+## Updates and restarts
+
+`maintenance.sh` runs daily and changes nothing. It lists:
+- OS updates (security ones counted separately) and whether a reboot is pending;
+- newer versions of the images the stack runs (Ollama, Caddy, cloudflared, the Python and Node base images);
+- the Ollama and Docker versions, free disk and backup age;
+- host scripts that changed in the repo since the last install.
+
+Each item comes with the exact command to run. The result reaches the console and its emails. Run it by hand with
+`./maintenance.sh`.
+
+## Backups
+
+`backup.sh` runs nightly. It covers everything git doesn't hold:
+- the console's and the assistant's databases (activity, suggestions, likes), copied safely while running and
+  integrity-checked;
+- other volume files;
+- `.env` and the override file, encrypted.
+
+The Ollama models aren't backed up, because they download again. Backups go to `~/ai-portfolio-backups`: 14
+dailies and 8 weeklies. Set `BACKUP_RCLONE_REMOTE` for an off-site copy, such as Cloudflare R2, whose free tier is
+plenty. `./restore.sh --help` explains getting data back. Test a restore once, so you know it works.
+
+## Security self-assessment
+
+`security/pentest.py` runs every Sunday. It's a repeatable, non-destructive check of the repo, the public site and
+demos, this machine and the GitHub settings; `security/README.md` lists every check. Findings come with severities
+and fixes. They're emailed to you and shown to admins on the console's Host tab, never in public logs. CI runs the
+repo part on every commit. To run it now:
+
+```bash
+python3 ~/ai-portfolio/security/pentest.py --all       # add sudo for the firewall and sshd checks
+```

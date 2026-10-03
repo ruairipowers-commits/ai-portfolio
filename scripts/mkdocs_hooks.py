@@ -230,9 +230,13 @@ def _posts_index(page_uri: str) -> str:
 
 
 LIKE_BOX = ('\n\n<div class="post-like" data-like><span class="post-like__q">Was this useful?</span> '
-            '<button type="button" class="md-button post-like__btn">👍 Yes</button> '
+            '<button type="button" class="md-button post-like__btn" data-like-yes>👍 Yes</button> '
+            '<button type="button" class="md-button post-like__btn" data-like-no>👎 No</button> '
             '<span class="post-like__n" data-like-n></span> <span class="post-like__thanks" data-like-thanks hidden>'
-            'Thanks for letting me know!</span></div>\n')
+            'Thanks for letting me know!</span>'
+            '<form class="post-like__why" data-like-why hidden><label for="like-why">What was missing? (optional, '
+            'never published)</label><textarea id="like-why" maxlength="500" rows="2"></textarea>'
+            '<button type="submit" class="md-button">Send</button></form></div>\n')
 
 
 def _post_topics(markdown: str, page) -> str:
@@ -315,6 +319,8 @@ def on_config(config):
     deployed. Unset (local preview without DEMOS_URL) → no button, and no page-view or search logging."""
     url = demo_url("site-assistant", _cfg) if "site-assistant" in _cfg["projects"] and _cfg["demos_url"] else ""
     config.extra["assistant_url"] = os.getenv("PORTFOLIO_ASSISTANT_URL", url).rstrip("/")
+    # the header's shield icon → the live governance console demo (only when the demos are deployed)
+    config.extra["console_url"] = demo_url("governance-console", _cfg) if _cfg["demos_url"] else ""
     return config
 
 

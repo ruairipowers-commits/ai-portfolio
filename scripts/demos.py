@@ -45,7 +45,10 @@ def apps() -> list[dict]:
                     "title": demo.get("title", slug), "emoji": demo.get("emoji", "🤖"),
                     "description": demo.get("short_description", spec.get("title", "")),
                     "memory": demo.get("memory", DEFAULT_MEMORY.get(slug, "2g")),
-                    "env_passthrough": demo.get("env", []), "volume": demo.get("volume", "")})
+                    "env_passthrough": demo.get("env", []), "volume": demo.get("volume", ""),
+                    # internet access: only apps that need it (email, fetching the site, model pulls); the console
+                    # always (alert emails). Everything else runs on an internal network with no route out.
+                    "egress": bool(demo.get("egress", slug == CONSOLE))})
     return out
 
 
@@ -103,6 +106,11 @@ Back to the <a href="{c['site_url']}/" style="color:var(--a)">portfolio</a>.</p>
 
 
 # ---------------------------------------------------------------- self-host (docker compose + Caddy + Cloudflare Tunnel)
+# Every container: no privilege escalation, no Linux capabilities (Caddy gets back the one it needs to bind :80), and a
+# cap on processes, on top of a memory and CPU limit. deploy/selfhost/deploy-guard.py refuses a stack without these.
+HARDEN = {"security_opt": ["no-new-privileges:true"], "cap_drop": ["ALL"], "pids_limit": 512}
+
+
 def render_selfhost(out: Path, c: dict) -> list[Path]:
     items = apps()
     out.mkdir(parents=True, exist_ok=True)
@@ -113,7 +121,8 @@ def render_selfhost(out: Path, c: dict) -> list[Path]:
         env["GOVERNANCE_INGEST_TOKEN"] = "${GOVERNANCE_INGEST_TOKEN:-}"
         svc = {"build": {"context": f"{rel}/projects/{a['slug']}", "dockerfile": "Dockerfile.space"},
                "image": f"ai-portfolio/{a['slug']}:latest", "restart": "unless-stopped",
-               "environment": env, "mem_limit": a["memory"], "cpus": 2.0, "networks": ["demos"]}
+               "environment": env, "mem_limit": a["memory"], "cpus": 2.0, **HARDEN,
+               "networks": ["demos", "egress"] if a["egress"] else ["demos"]}
         if a["slug"] != CONSOLE and a["kind"] == "fastapi":
             env.update({"FORWARDED_ALLOW_IPS": "*", **{k: "${%s:-}" % k for k in a.get("env_passthrough", [])}})
         if "ollama" in a["needs"]:
@@ -137,18 +146,24 @@ def render_selfhost(out: Path, c: dict) -> list[Path]:
         # local open models for apps that need them (site-assistant). CPU by default; for the AMD iGPU see the
         # README ("Faster answers"): Vulkan via docker-compose.override.yml. One model, one request at a time keeps
         # memory low and lets the cached prompt prefix (rules + profile card) be reused between questions.
+        # Capped so a burst of questions can't starve the demos or the machine (OLLAMA_CPUS / OLLAMA_MEM_LIMIT in .env).
         services["ollama"] = {"image": "${OLLAMA_IMAGE:-ollama/ollama:latest}", "restart": "unless-stopped",
-                              "volumes": ["ollama-models:/root/.ollama"], "networks": ["demos"],
+                              "volumes": ["ollama-models:/root/.ollama"], "networks": ["demos", "egress"],
+                              "mem_limit": "${OLLAMA_MEM_LIMIT:-14g}", "cpus": "${OLLAMA_CPUS:-8}", **HARDEN,
                               "environment": {"OLLAMA_KEEP_ALIVE": "24h", "OLLAMA_NUM_PARALLEL": "1",
                                               "OLLAMA_MAX_LOADED_MODELS": "1"}}
     services["caddy"] = {"image": "caddy:2-alpine", "restart": "unless-stopped",
                          "ports": ["${DEMOS_BIND:-127.0.0.1}:${DEMOS_PORT:-8088}:80"],
                          "volumes": ["./Caddyfile:/etc/caddy/Caddyfile:ro", "./site:/srv:ro"],
-                         "depends_on": [a["slug"] for a in items], "networks": ["demos"]}
+                         "mem_limit": "256m", "cpus": 1.0, **HARDEN, "cap_add": ["NET_BIND_SERVICE"],
+                         "depends_on": [a["slug"] for a in items], "networks": ["demos", "egress"]}
     services["cloudflared"] = {"image": "cloudflare/cloudflared:latest", "restart": "unless-stopped",
                                "command": "tunnel --no-autoupdate run", "environment": {"TUNNEL_TOKEN": "${TUNNEL_TOKEN:-}"},
-                               "depends_on": ["caddy"], "networks": ["demos"], "profiles": ["tunnel"]}
-    compose = {"name": "ai-portfolio-demos", "services": services, "networks": {"demos": {}},
+                               "mem_limit": "256m", "cpus": 1.0, **HARDEN,
+                               "depends_on": ["caddy"], "networks": ["demos", "egress"], "profiles": ["tunnel"]}
+    compose = {"name": "ai-portfolio-demos", "services": services,
+               # demos: internal only (no route to the internet); egress: for the services that need to reach out
+               "networks": {"demos": {"internal": True}, "egress": {}},
                "volumes": {"console-data": {}, "ollama-models": {},
                            **{f"{a['slug']}-data": {} for a in items if a["slug"] != CONSOLE and a.get("volume")}}}
     header = ("# GENERATED by scripts/demos.py render selfhost — edit the generator, not this file.\n"

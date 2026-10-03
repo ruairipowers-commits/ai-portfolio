@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% from "_macros.html" import sev_chip %}
+{% block title %}Host · AI Governance Console{% endblock %}
+{% block filters %}{% endblock %}
+{% block content %}
+{% set n = sum.now or {} %}{% set d = sum.last_24h or {} %}
+<h1>Host · {{ hcfg.name }}</h1>
+<p class="sub">The machine that serves the live demos and this console: load and history, the containers, backups,
+updates and the weekly security scan. A sample arrives every minute{% if sum.last_seen %}; the latest {{ sum.last_seen|ts }} UTC{% endif %}.</p>
+
+{% if sent %}<div class="banner info"><span>✓</span><div>Health &amp; security report sent — see the <a href="{{ base }}/outbox">outbox</a>.</div></div>{% endif %}
+{% if not sum.last_seen %}
+<div class="banner info"><span>ℹ️</span><div><b>No host data yet.</b>
+  {% if admin %}Install the monitor on the host: copy the systemd service and timer from the header of
+  <code>deploy/selfhost/hostmon.sh</code> into <code>/etc/systemd/system/</code>, then
+  <code>sudo systemctl daemon-reload &amp;&amp; sudo systemctl enable --now ai-portfolio-hostmon.timer</code>. It posts to
+  <code>/api/host</code> with <code>GOVERNANCE_INGEST_TOKEN</code> from <code>deploy/selfhost/.env</code>; samples show up here within a minute.
+  {% else %}The monitor on the host hasn't reported yet.{% endif %}</div></div>
+{% elif not sum.reporting %}
+<div class="banner critical"><span>🚨</span><div><b>{{ hcfg.name }} stopped reporting</b> — no sample for {{ (sum.age_s // 60)|int }} minutes. The figures below are from the last sample.</div></div>
+{% endif %}
+{% set open_alerts = alerts|selectattr('resolved_ts', 'none')|list %}
+{% if open_alerts %}<div class="banner critical"><span>⚠️</span><div><b>{{ open_alerts|length }} open host alert{{ 's' if open_alerts|length > 1 }}:</b>
+  {% for a in open_alerts[:5] %}{{ a.message }}{{ ' · ' if not loop.last }}{% endfor %}</div></div>{% endif %}
+
+<section class="grid kpis">
+  <div class="card kpi"><div class="label">CPU now</div><div class="value">{{ '%.0f'|format(n.cpu_pct) ~ '%' if n.cpu_pct is number else '—' }}</div>
+    <div class="delta">24 h peak {{ '%.0f'|format(d.cpu_peak) ~ '%' if d.cpu_peak is number else '—' }} · avg {{ '%.0f'|format(d.cpu_avg) ~ '%' if d.cpu_avg is number else '—' }}</div></div>
+  <div class="card kpi"><div class="label">Load (1 / 5 / 15 min)</div><div class="value">{{ '%.2f'|format(n.load1) if n.load1 is number else '—' }}</div>
+    <div class="delta">{{ '%.2f'|format(n.load5) if n.load5 is number else '—' }} / {{ '%.2f'|format(n.load15) if n.load15 is number else '—' }} · {{ n.cpu_count or '?' }} cores</div></div>
+  <div class="card kpi"><div class="label">Memory</div><div class="value">{{ '%.0f'|format(n.mem_used_pct) ~ '%' if n.mem_used_pct is number else '—' }}</div>
+    <div class="delta">of {{ '%.0f'|format(n.mem_total_gb) ~ ' GB' if n.mem_total_gb else '?' }} · swap {{ '%.0f'|format(n.swap_used_pct) ~ '%' if n.swap_used_pct is number else '—' }}</div></div>
+  <div class="card kpi"><div class="label">Disk (fuller volume)</div><div class="value">{{ '%.0f'|format(n.disk_used_pct) ~ '%' if n.disk_used_pct is number else '—' }}</div>
+    <div class="delta">{% for dk in n.disks or [] %}{{ dk.which }} {{ '%.0f'|format(dk.free_gb) ~ ' GB free' if dk.free_gb is number else '?' }}{{ ' · ' if not loop.last }}{% else %}&nbsp;{% endfor %}</div></div>
+  <div class="card kpi"><div class="label">Temperature</div><div class="value">{{ '%.0f'|format(n.temp_c) ~ ' °C' if n.temp_c is number else '—' }}</div>
+    <div class="delta">{{ '24 h peak %.0f °C'|format(d.temp_peak) if d.temp_peak is number else ('no sensor' if sum.last_seen else '&nbsp;'|safe) }}</div></div>
+  <div class="card kpi"><div class="label">Uptime</div><div class="value">{% if n.uptime_s is number %}{{ (n.uptime_s // 86400)|int }}d {{ ((n.uptime_s % 86400) // 3600)|int }}h{% else %}—{% endif %}</div>
+    <div class="delta">{{ n.hostname or '&nbsp;'|safe }}</div></div>
+  <div class="card kpi"><div class="label">Containers up</div><div class="value">{{ sum.containers.up }} / {{ sum.containers.total }}</div>
+    <div class="delta">{{ sum.containers.unhealthy }} unhealthy{% if sum.containers.down %} · down: {{ sum.containers.down|join(', ') }}{% endif %}</div></div>
+  <div class="card kpi"><div class="label">Last deploy</div><div class="value" style="font-family:ui-monospace,monospace;font-size:20px">{{ sum.deploy.deployed or '—' }}</div>
+    <div class="delta">{% if sum.deploy.failed %}<span class="flag">failed {{ sum.deploy.failed }}</span>{% elif sum.deploy.at %}seen {{ sum.deploy.at|ts }}{% else %}&nbsp;{% endif %}</div></div>
+</section>
+
+<section class="card" style="margin-bottom:14px">
+  <div class="card-head"><h2>History</h2>
+    <span class="seg" role="group" aria-label="History range" id="host-range">
+      {% for r in ['1h', '24h', '7d', '30d'] %}<a href="#" data-range="{{ r }}" class="{{ 'on' if r == '24h' }}">{{ r }}</a>{% endfor %}
+    </span></div>
+  <div class="grid charts-2b" style="margin-bottom:0">
+    <div><h2 class="small muted" style="font-weight:500">CPU &amp; memory, % used</h2><div class="chart-box short"><canvas id="h-util" role="img" aria-label="CPU and memory use over time"></canvas></div></div>
+    <div><h2 class="small muted" style="font-weight:500">Load average (1 min)</h2><div class="chart-box short"><canvas id="h-load" role="img" aria-label="Load average over time"></canvas></div></div>
+  </div>
+  <div style="margin-top:14px"><h2 class="small muted" style="font-weight:500">Temperature, °C</h2><div class="chart-box short"><canvas id="h-temp" role="img" aria-label="Temperature over time"></canvas></div></div>
+  <p class="small muted" id="h-empty" hidden>No samples in this range.</p>
+  <p class="small muted">1 h: every minute · 24 h: 10-minute averages · 7 d and 30 d: hourly averages (per-minute samples are kept {{ hcfg.minute_retention_days }} days, hourly {{ hcfg.hourly_retention_days }}).</p>
+</section>
+
+<section class="card" style="margin-bottom:14px">
+  <div class="card-head"><h2>Containers</h2><span class="muted small">compose project ai-portfolio-demos</span></div>
+  <div class="table-wrap"><table><thead><tr><th>Container</th><th>State</th><th>Health</th><th class="n">Restarts</th><th class="n">CPU</th><th>Memory vs limit</th></tr></thead><tbody>
+  {% for c in containers|sort(attribute='name') %}
+    {% set pct = (100 * c.mem_mb / c.mem_limit_mb) if c.mem_mb is number and c.mem_limit_mb else none %}
+    <tr><td class="wf">{{ c.service or c.name }}{% if c.service and c.service != c.name %}<div class="muted small" style="font-weight:400">{{ c.name }}</div>{% endif %}</td>
+      <td><span class="chip {{ 'good' if c.state == 'running' else 'critical' }}"><span class="dot"></span>{{ c.state or '?' }}</span></td>
+      <td>{% if c.health in ('', 'none', none) %}<span class="muted small">no healthcheck</span>{% else %}<span class="chip {{ {'healthy': 'good', 'unhealthy': 'critical', 'starting': 'warning'}.get(c.health, 'neutral') }}"><span class="dot"></span>{{ c.health }}</span>{% endif %}</td>
+      <td class="n">{{ c.restarts if c.restarts is number else '—' }}</td>
+      <td class="n">{{ '%.1f%%'|format(c.cpu_pct) if c.cpu_pct is number else '—' }}</td>
+      <td>{% if pct is number %}<div class="bar {{ 'warn' if pct >= 85 }}"><i style="width: {{ [pct, 100]|min }}%"></i></div>
+        <span class="small">{{ '%.0f'|format(c.mem_mb) }} / {{ '%.0f'|format(c.mem_limit_mb) }} MB ({{ '%.0f'|format(pct) }}%)</span>
+        {% elif c.mem_mb is number %}<span class="small">{{ '%.0f'|format(c.mem_mb) }} MB</span>{% else %}<span class="muted small">—</span>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="6" class="muted">No container data yet.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+
+<section class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin-bottom:14px">
+  <div class="card"><div class="card-head"><h2>Backups</h2></div>
+    {% set b = sum.backup %}
+    {% if not b.reported %}<p class="muted">No backup status reported yet.</p>
+    {% else %}
+    <p>{% if not b.ok %}<span class="chip critical"><span class="dot"></span>Last backup failed</span>
+      {% elif b.stale %}<span class="chip warning"><span class="dot"></span>Overdue</span>
+      {% else %}<span class="chip good"><span class="dot"></span>OK</span>{% endif %}</p>
+    <dl class="kv"><dt>Last run</dt><dd>{{ b.last|ts if b.last else '—' }}</dd>
+      <dt>Age</dt><dd>{{ b.age_h ~ ' h' if b.age_h is number else '—' }} <span class="muted small">(alert after {{ hcfg.backup_max_age_hours }} h)</span></dd></dl>
+    {% endif %}</div>
+
+  <div class="card"><div class="card-head"><h2>Updates &amp; maintenance</h2></div>
+    {% set m = sum.maintenance %}
+    {% if not m.reported %}<p class="muted">No maintenance report yet.</p>
+    {% else %}
+    <p class="small muted">Last run {{ maint_ts|ts if maint_ts else '—' }} · {{ m.actions }} action{{ 's' if m.actions != 1 }} recommended or taken.
+      They go in the weekly report; no alert.</p>
+    {% if admin %}<ul class="feed">{% for a in actions %}<li><span>{{ a.what }}{% if a.command %}<br><code>{{ a.command }}</code>{% endif %}</span></li>
+      {% else %}<li class="muted">Nothing to do.</li>{% endfor %}</ul>
+    {% elif m.actions %}<p class="small muted">Sign in as admin to see the actions and their commands.</p>{% endif %}
+    {% endif %}</div>
+
+  <div class="card"><div class="card-head"><h2>Security scan</h2><a class="small" href="{{ base }}/host/security">Report →</a></div>
+    {% set p = sum.pentest %}
+    {% if not p.reported %}<p class="muted">No scan result yet. The scan runs weekly.</p>
+    {% else %}
+    <p class="small muted">Latest scan {{ p.ts|ts if p.ts else '—' }}</p>
+    <p>{% for s in ['critical', 'high', 'medium', 'low', 'info'] %}<span class="chip {{ {'critical': 'critical', 'high': 'serious', 'medium': 'warning'}.get(s, 'neutral') }}" style="margin:0 4px 4px 0"><span class="dot"></span>{{ p.counts[s] }} {{ s }}</span>{% endfor %}</p>
+    {% if admin %}<ul class="feed">{% for x in top %}<li><span>{{ sev_chip(x.severity) }} {{ x.title }}{% if x.fix %}<div class="small muted">Fix: {{ x.fix }}</div>{% endif %}</span></li>{% endfor %}</ul>
+    {% else %}<p class="small muted">Findings are sensitive: <a href="{{ base }}/admin/login">sign in</a> to see details.</p>{% endif %}
+    {% endif %}</div>
+</section>
+
+<section class="card" style="margin-bottom:14px">
+  <div class="card-head"><h2>Alerts</h2><span class="muted small">CPU ≥ {{ hcfg.cpu_pct }}% over {{ hcfg.cpu_window_minutes }} min · memory ≥ {{ hcfg.mem_used_pct }}% ·
+    disk ≥ {{ hcfg.disk_used_pct }}% · temperature ≥ {{ hcfg.temp_c }} °C · containers · backup &gt; {{ hcfg.backup_max_age_hours }} h · no sample for {{ hcfg.stale_minutes }} min · scan findings</span></div>
+  <div class="table-wrap"><table><thead><tr><th>Opened</th><th>Severity</th><th>Alert</th><th>Status</th></tr></thead><tbody>
+  {% for a in alerts %}<tr><td class="small">{{ a.ts|ts }}</td><td>{{ sev_chip(a.severity) }}</td><td>{{ a.message }}{% if a.occurrences > 1 %} <span class="muted small">({{ a.occurrences }} samples)</span>{% endif %}</td>
+    <td class="small">{% if a.resolved_ts %}<span class="chip good"><span class="dot"></span>Resolved</span> {{ a.resolved_ts|ts }} — {{ a.resolution }}{% else %}<span class="chip critical"><span class="dot"></span>Open</span>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="4" class="muted">No host alerts.</td></tr>{% endfor %}
+  </tbody></table></div>
+  <p class="small muted">Each alert emails once when it opens and once when it resolves (outbox: Settings → Outbox).
+    A weekly health &amp; security report goes out every {{ hcfg.report_every_days }} days, or as soon as a new scan arrives{% if sum.last_report %}; last sent {{ sum.last_report|ts }}{% endif %}.</p>
+  {% if admin %}<form method="post" action="{{ base }}/host/report/send" style="margin:0"><button class="btn small">Send the health &amp; security report now</button></form>{% endif %}
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ base }}/static/vendor/chart.umd.js"></script>
+<script src="{{ base }}/static/app.js"></script>
+<script>Gov.host({ range: "24h" });</script>
+{% endblock %}

@@ -185,8 +185,57 @@
     setInterval(async () => render(await fetchSummary(extra), opts), 60000);   // live tail
   }
 
+  // ---- Host tab: time-series from /api/host/history (labels are ISO timestamps, not days)
+  function hostTick(rng) {
+    return function (v) {
+      const t = new Date(this.getLabelForValue(v));
+      return rng === "1h" || rng === "24h"
+        ? t.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+        : t.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    };
+  }
+  function hostDraw(id, labels, datasets, yFmt, rng, yMax) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const o = baseOptions(yFmt, false, datasets.length > 1);
+    o.scales.x.ticks.callback = hostTick(rng);
+    o.spanGaps = true;
+    if (yMax) o.scales.y.max = yMax;
+    o.plugins.tooltip.filter = () => true;
+    o.plugins.tooltip.callbacks.title = (items) => new Date(items[0].label).toLocaleString();
+    charts[id]?.destroy();
+    charts[id] = new Chart(el, { type: "line", data: { labels, datasets }, options: o });
+  }
+  function hostRender(d) {
+    const pct = (v) => (v == null ? "—" : Math.round(v) + "%");
+    hostDraw("h-util", d.labels, [lineSet("CPU", d.cpu, css("--s1")), lineSet("Memory", d.mem, css("--s3"))], pct, d.range, 100);
+    hostDraw("h-load", d.labels, [lineSet("Load (1 min)", d.load1, css("--s7"))], (v) => (v == null ? "—" : Number(v).toFixed(2)), d.range);
+    hostDraw("h-temp", d.labels, [lineSet("Temperature", d.temp, css("--s2"))], (v) => (v == null ? "—" : Math.round(v) + " °C"), d.range);
+    const empty = document.getElementById("h-empty");
+    if (empty) empty.hidden = d.labels.length > 0;
+  }
+  async function host(opts) {
+    let rng = opts.range || "24h", d;
+    const load = async () => {
+      const r = await fetch((window.GOV_BASE || "") + "/api/host/history?range=" + encodeURIComponent(rng));
+      d = await r.json();
+      hostRender(d);
+    };
+    document.querySelectorAll("#host-range a").forEach((a) => a.addEventListener("click", (e) => {
+      e.preventDefault();
+      rng = a.dataset.range;
+      document.querySelectorAll("#host-range a").forEach((b) => b.classList.toggle("on", b === a));
+      load();
+    }));
+    await load();
+    window.addEventListener("themechange", () => d && hostRender(d));
+    matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => d && hostRender(d));
+    setInterval(load, 60000);
+  }
+
   window.Gov = {
     overview: (opts) => run(overviewRender, opts),
     workflow: (opts) => run(workflowRender, opts, { wf: opts.slug }),
+    host,
   };
 })();

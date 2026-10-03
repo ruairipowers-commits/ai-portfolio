@@ -9,6 +9,21 @@ The big changes to this portfolio, newest first. Each project's repository has t
 
 ## 3 October 2026
 
+**Safer, watched, backed up.** The demo machine runs code from a public repo, so now:
+- **Deploy guard.** A root-owned guard refuses any deploy that could take over the machine (privileged containers,
+  the Docker socket, host mounts, missing CPU and memory limits). Every container drops its Linux capabilities, and
+  the demo apps have no route to the internet.
+- **Host tab.** The governance console shows the server's load and history, and emails alerts and a weekly health
+  and security report.
+- **Backups.** The databases are backed up nightly, integrity-checked, with `.env` encrypted.
+- **Updates.** A daily check lists OS, image and model updates with the exact commands to run.
+- **Security self-assessment.** It runs on every commit in CI and weekly on the machine, alongside a 30-minute uptime
+  check from GitHub.
+
+**Thumbs down and a Console button.** Posts now ask "Was this useful?" with 👍 or 👎. A 👎 can say what was missing;
+that's private and goes into the daily email. The site header has a shield button that opens the live governance
+console.
+
 **Thumbs up, upvotes and a Content tab.**
 - **Posts:** every post ends with "Was this useful?" and a thumbs up. The blog list shows the counts.
 - **Suggestions:** project suggestions have their own page under Projects. Visitors upvote ideas, and new ones

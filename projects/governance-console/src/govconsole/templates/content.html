@@ -10,11 +10,14 @@ suggestions stay off the site until they're published here.</p>
 
 <section class="card">
 <h2>Top rated articles</h2>
-<p class="small muted">Thumbs up from readers ("Was this useful?" at the end of each post). One per reader per post per day.</p>
-<div class="table-wrap"><table><thead><tr><th>Article</th><th style="text-align:right">👍 All time</th><th style="text-align:right">Last 7 days</th><th>Last liked</th></tr></thead><tbody>
+<p class="small muted">"Was this useful?" at the end of each post: one answer per reader per post per day. Ranked by 👍 minus 👎.</p>
+<div class="table-wrap"><table><thead><tr><th>Article</th><th style="text-align:right">👍 All time</th><th style="text-align:right">👍 Last 7 days</th><th style="text-align:right">👎 All time</th><th>Last liked</th></tr></thead><tbody>
 {% for a in data.top_articles or [] %}<tr><td><a href="{{ a.url }}">{{ a.title }}</a></td>
-  <td style="text-align:right"><b>{{ a.likes }}</b></td><td style="text-align:right">{{ a.last_7_days }}</td><td class="small">{{ a.last_day }}</td></tr>
-{% else %}<tr><td colspan="4" class="muted">No thumbs up yet.</td></tr>{% endfor %}</tbody></table></div>
+  <td style="text-align:right"><b>{{ a.likes }}</b></td><td style="text-align:right">{{ a.last_7_days }}</td>
+  <td style="text-align:right">{{ a.unhelpful or 0 }}</td><td class="small">{{ a.last_day }}</td></tr>
+{% else %}<tr><td colspan="5" class="muted">No thumbs up yet.</td></tr>{% endfor %}</tbody></table></div>
+{% if admin and data.unhelpful_notes %}<h3>What readers said was missing</h3><ul>
+{% for n in data.unhelpful_notes %}<li class="small"><b>{{ n.title }}</b> ({{ n.day }}): {{ n.note }}</li>{% endfor %}</ul>{% endif %}
 </section>
 
 <section class="card">
