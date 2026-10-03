@@ -83,7 +83,7 @@ person can switch it back on.
   <source src="../img/governance-escalation.mp4" type="video/mp4">
 </video>
 
-*The whole loop in under two minutes, narrated (synthetic voice): a runbook edit makes the model propose a forced rerun → the policy blocks
+*The whole loop in under two minutes, narrated with a neural voice (Piper, running locally): a runbook edit makes the model propose a forced rerun → the policy blocks
 it and the console switches EOD heartbeat off → the email → the incident → an investigation note → the approved
 runbooks restored → root cause, fix and documentation, SEC-04 re-confirmed, workflow back on.*
 
