@@ -1542,7 +1542,7 @@
     "SEC-02": {
      "status": "implemented",
      "mark": "✅",
-     "how": "Excerpts are wrapped as delimited data, and the system prompt says to ignore instructions inside them. Questions with injection patterns are flagged (`injection_suspected`) and reported. The model has no tools, so it can only write text. The golden set includes an injection case.",
+     "how": "Excerpts are wrapped as delimited data, and the system prompt says to ignore instructions inside them. Questions with injection patterns are flagged (`injection_suspected`) and reported. The model has no tools, so it can only write text. Visitor suggestions placed into the owner's Claude kickoff prompt are fenced and labelled as an idea, not instructions. The golden set includes an injection case.",
      "configure": "`prompts/answer.md`, `llm.INJECTION`",
      "options": "An LLM classifier (Llama Guard) on questions and answers"
     },
@@ -1687,10 +1687,10 @@
      "options": "—"
     },
     "HITL-02": {
-     "status": "not_applicable",
-     "mark": "⚪",
-     "how": "Answers are informational and nothing is executed. Its own kill switch is in the governance console.",
-     "configure": "—",
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Answers are informational and nothing is executed. Visitor-submitted project suggestions stay off the site until the owner publishes them in the governance console's Content tab, and the email's \"start in Claude\" links only pre-fill a prompt that asks for a spec to approve first. Its own kill switch is in the governance console.",
+     "configure": "`suggestions.auto_publish`",
      "options": "—"
     },
     "HITL-03": {
