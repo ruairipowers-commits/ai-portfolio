@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs: {list: "${{ steps.l.outputs.list }}"}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - id: l   # every project with a pyproject.toml — a new project is tested with no change here
         run: echo "list=$(ls -d projects/*/pyproject.toml | cut -d/ -f2 | jq -R . | jq -cs .)" >> "$GITHUB_OUTPUT"
   test:
@@ -24,8 +24,8 @@ jobs:
     defaults: {run: {working-directory: "projects/${{ matrix.project }}"}}
     env: {GOVERNANCE_TELEMETRY: "off"}   # tests never report to a console
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with: {python-version: "3.11", cache: pip}
       - run: pip install -e ".[dev,ui]"
       - name: build the offline demo data (make all), if the project has it
@@ -41,9 +41,9 @@ jobs:
     # machine itself and are emailed privately; they never appear in these public logs.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with: {fetch-depth: 0}            # the secret scan reads every commit
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with: {python-version: "3.11"}
       - run: pip install pip-audit pyyaml pytest
       - run: python3 security/pentest.py --repo --strict --out /tmp/pentest.md --state /tmp/pentest.json
