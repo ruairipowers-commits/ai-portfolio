@@ -176,3 +176,15 @@ def on_config(config):
     url = demo_url("site-assistant", _cfg) if "site-assistant" in _cfg["projects"] and _cfg["demos_url"] else ""
     config.extra["assistant_url"] = os.getenv("PORTFOLIO_ASSISTANT_URL", url).rstrip("/")
     return config
+
+
+def on_post_build(config):
+    """Ship the assistant's widget with the blog, so the Ask button is always there (one source: the service)."""
+    if not config.extra.get("assistant_url"):
+        return
+    import shutil
+    src = Path(__file__).resolve().parents[1] / "projects" / "site-assistant" / "src" / "siteassistant" / "static"
+    dst = Path(config["site_dir"]) / "assets" / "assistant"
+    dst.mkdir(parents=True, exist_ok=True)
+    for name in ("widget.js", "widget.css"):
+        shutil.copy2(src / name, dst / name)

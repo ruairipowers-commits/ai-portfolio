@@ -9,10 +9,11 @@
 {% endblock %}
 
 {#- Site assistant: the Ask button in the header (search + chat over this blog), page-view and search logging.
-    Loaded from the assistant service itself, so the widget ships with the service. -#}
+    The widget is copied from the service into the site at build time (scripts/mkdocs_hooks.py), so the
+    button shows even while the service is down; the panel then says so. -#}
 {% block scripts %}
   {{ super() }}
   {% if config.extra.assistant_url %}
-  <script src="{{ config.extra.assistant_url }}/widget.js" data-endpoint="{{ config.extra.assistant_url }}" defer></script>
+  <script src="{{ 'assets/assistant/widget.js' | url }}" data-endpoint="{{ config.extra.assistant_url }}" defer></script>
   {% endif %}
 {% endblock %}
