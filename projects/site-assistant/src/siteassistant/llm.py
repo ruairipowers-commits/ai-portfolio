@@ -16,6 +16,8 @@ from typing import Iterator
 import httpx
 import yaml
 
+from .index import is_about_person
+
 ROOT = Path(__file__).resolve().parents[2]
 INJECTION = re.compile(r"ignore (all |any )?(previous|prior|above) (instructions|rules)|system prompt|you are now|"
                        r"disregard (the|your) (rules|instructions)|jailbreak", re.I)
@@ -84,9 +86,26 @@ def build_messages(question: str, passages: list[dict], history: list[dict], tod
             msgs.append({"role": h["role"], "content": h["content"][:1500]})
     blocks = [_excerpt(i, p) for i, p in enumerate(passages, 1) if not p.get("profile")]  # excerpts are data
     today = today or dt.date.today().isoformat()
+    tail = PERSON_CHECKLIST if is_about_person(question) else ""
     msgs.append({"role": "user", "content": f"Today is {today}. Excerpts from the site:\n\n" + "\n\n".join(blocks) +
-                 f"\n\nQuestion: {question}"})
+                 f"\n\nQuestion: {question}" + tail})
     return msgs
+
+
+# Small local models follow the last instructions they read best, so questions about Ruairi end with a short
+# checklist (the system prompt stays identical for every question, which keeps its cached prefix valid).
+PERSON_CHECKLIST = """
+
+Before you answer this question about Ruairi, check:
+- Spell his name exactly "Ruairi".
+- Every claim has a citation. Name the specific roles, MIT courses and projects (with dates) that show it.
+- Only something the excerpts state counts as evidence. A related fact (a library written in another language,
+  a cloud service described as an optional path) is not experience. Say what is built versus documented as an option.
+- For each thing asked about that the excerpts don't show, write exactly this, filling in the topic:
+  "Thank you for asking about <topic>! The site doesn't show <topic> yet. Ruairi is excited to hear more about
+  what he may not know and sees it as a chance to grow, so it's now on Ruairi's plate to review — he's encouraged
+  to learn new things."
+- End by pointing to the About page and his resume."""
 
 
 def warm_up(settings: dict, passages: list[dict]) -> None:

@@ -131,11 +131,14 @@ def bench(store, models: list[str], out: str) -> None:
                              meta.get("output_tokens", 0) / ev if ev else 0, meta.get("status", "")))
                 if rnd == 1:
                     md += [f"**{q}**", "", "".join(text).strip(), ""]
-    print(f"\n{'model':<22}{'run':>4}  {'question':<40}{'first word':>11}{'total':>8}{'read tok/s':>11}"
-          f"{'write tok/s':>12}  status")
-    for r in rows:
-        print(f"{r[0]:<22}{r[1]:>4}  {r[2]:<40}{r[3]:>10.1f}s{r[4]:>7.1f}s{r[5]:>11.0f}{r[6]:>12.1f}  {r[7]}")
+    table = [f"{'model':<22}{'run':>4}  {'question':<40}{'first word':>11}{'total':>8}{'read tok/s':>11}"
+             f"{'write tok/s':>12}  status"]
+    table += [f"{r[0]:<22}{r[1]:>4}  {r[2]:<40}{r[3]:>10.1f}s{r[4]:>7.1f}s{r[5]:>11.0f}{r[6]:>12.1f}  {r[7]}"
+              for r in rows]
+    print("\n" + "\n".join(table))
     print("\nRun 2 reuses the cached prompt prefix (rules + profile card), so 'first word' should drop.")
+    md[2:2] = ["## Speed", "", "```", *table, "```", "",
+               "Run 2 reuses the cached prompt prefix (rules + profile card), so 'first word' should drop.", ""]
     Path(out).write_text("\n".join(md))
     print(f"Answers written to {out}")
 
