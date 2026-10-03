@@ -9,6 +9,17 @@ The big changes to this portfolio, newest first. Each project's repository has t
 
 ## 3 October 2026
 
+**A home page that explains the site.** [Home](../index.md) now says what this site is for: a record of my
+journey learning to use and govern AI responsibly, open for others to learn from. It also covers what I bring, how
+I directed Claude to build the site, and the two MIT courses, with a link to my resume.
+
+**Projects tab.** The project tables moved from Home to [Projects](../projects/index.md), with sub-tabs for
+industry projects and personal projects. The Governance tab is now **AI Governance**.
+
+**Blog topics and filters.** The [Blog](../blog/index.md) now lists every write-up on the site: industry projects,
+governance, personal projects and classes. Each post is tagged with topics and keywords, and the list filters by
+topic, type and date.
+
 **Classes.** A new [Classes](../classes/index.md) tab covers the two MIT Professional Education courses I took
 this year: what each covered, why it matters for AI and agentic workflows, how I've applied it, and the work I
 completed. The first explains how the models work. The second covers bringing AI into an organisation responsibly:
@@ -27,7 +38,7 @@ the presentation deck, and the project is listed under Personal projects.
 - It's governed like the other workflows: the console can switch it off.
 - The [write-up](../personal/posts/site-assistant.md) is the first entry on the Personal projects page.
 
-**Narrated walkthrough.** The governance escalation video now has a spoken voice-over: a neural voice (Piper)
+**Narrated walkthrough.** The governance escalation video now has a spoken voice-over: a neutral Piper voice
 rendered on the demo server. Page loads, waits and pauses are cut, so the whole loop runs 1 min 23 s.
 
 ## 2 October 2026

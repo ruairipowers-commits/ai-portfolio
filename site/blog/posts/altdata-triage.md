@@ -1,7 +1,7 @@
 ---
 date: 2026-09-30
 slug: altdata-triage
-categories: [workflow, data sourcing]
+categories: [Data quality, Evaluation, Security, Research]
 tags: [dbt, duckdb, python, pydantic, bedrock, evals, prompt injection]
 ---
 
@@ -91,7 +91,7 @@ The decision I'd defend hardest in an interview is **workflow, not agent**. It's
 model a SQL tool and say "evaluate this vendor". But the triage steps are known in advance,
 the metrics need to be the same every time, and an agent adds tokens, variance and audit surface
 for no gain. The model does the part that genuinely needs language — weighing evidence and writing
-a clear memo — and nothing else. (The [trade-ops project](../../index.md) is where a real agent earns its keep.)
+a clear memo — and nothing else. (The [trade-ops project](trade-ops-exceptions.md) is where a real agent earns its keep.)
 
 ## Governance in practice
 

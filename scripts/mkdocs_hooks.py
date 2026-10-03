@@ -144,7 +144,104 @@ def _table(tier: str, page_uri: str) -> str:
     return "\n".join(out)
 
 
+# ---------------------------------------------------------------- all posts, filterable (blog index)
+import html as _html  # noqa: E402
+
+_SITE = Path(__file__).resolve().parents[1] / "site"
+# blog folder → (section label, URL prefix); posts use post_url_format "{slug}"
+_POST_DIRS = {"blog": ("Industry project", "blog"), "personal": ("Personal project", "personal"),
+              "classes": ("Class", "classes")}
+_GOVERNANCE_SLUGS = {"governance", "governance-console"}
+
+
+def _strip_md(text: str) -> str:
+    text = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", text)            # images
+    text = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", text)         # links → their text
+    text = re.sub(r"[*_`]", "", text)
+    return " ".join(text.split())
+
+
+def all_posts() -> list[dict]:
+    """Every post from the three blogs, newest first: title, date, topics, keywords, section, excerpt, URL."""
+    out = []
+    for folder, (section, prefix) in _POST_DIRS.items():
+        for f in sorted((_SITE / folder / "posts").glob("*.md")):
+            text = f.read_text()
+            m = re.match(r"^---\n(.*?)\n---\n", text, re.S)
+            meta = yaml.safe_load(m.group(1)) if m else {}
+            body = text[m.end():] if m else text
+            title = next((ln[2:].strip() for ln in body.splitlines() if ln.startswith("# ")), f.stem)
+            intro = body.split("<!-- more -->")[0]
+            intro = "\n".join(ln for ln in intro.splitlines() if not ln.startswith("# "))
+            slug = meta.get("slug", f.stem)
+            out.append({"title": title, "date": str(meta.get("date", "")), "slug": slug,
+                        "topics": meta.get("categories") or [], "tags": meta.get("tags") or [],
+                        "section": "AI governance" if slug in _GOVERNANCE_SLUGS else section,
+                        "url": f"{prefix}/{slug}/", "excerpt": _strip_md(intro)})
+    return sorted(out, key=lambda p: p["date"], reverse=True)
+
+
+def _posts_index(page_uri: str) -> str:
+    """Server-rendered list of every post (works without JS); assets/blog-filter.js adds the topic/section/date
+    filters on top, reading the data-* attributes."""
+    import datetime as dt
+    depth = posixpath.dirname(page_uri).count("/") + (1 if posixpath.dirname(page_uri) else 0)
+    up = "../" * depth
+    e = _html.escape
+    posts = all_posts()
+    topics = sorted({t for p in posts for t in p["topics"]}, key=str.lower)
+    sections = [s for s in ("Industry project", "AI governance", "Personal project", "Class")
+                if any(p["section"] == s for p in posts)]
+    months = sorted({p["date"][:7] for p in posts if p["date"]}, reverse=True)
+    month_name = lambda ym: dt.date(int(ym[:4]), int(ym[5:7]), 1).strftime("%B %Y")  # noqa: E731
+    h = ['<div class="post-filter" data-posts-filter>',
+         '<div class="post-filter__row"><span class="post-filter__label">Topic</span>',
+         '<button type="button" class="post-chip" data-topic="" aria-pressed="true">All</button>']
+    h += [f'<button type="button" class="post-chip" data-topic="{e(t)}" aria-pressed="false">{e(t)}</button>'
+          for t in topics]
+    h += ['</div><div class="post-filter__row">',
+          '<label class="post-filter__label" for="post-section">Type</label>',
+          '<select id="post-section" data-section-select><option value="">All types</option>']
+    h += [f'<option value="{e(s)}">{e(s)}s</option>' for s in sections]
+    h += ['</select><label class="post-filter__label" for="post-when">When</label>',
+          '<select id="post-when" data-when-select><option value="">Any time</option>',
+          '<option value="30">Last 30 days</option><option value="90">Last 90 days</option>']
+    h += [f'<option value="{m}">{month_name(m)}</option>' for m in months]
+    h += ['</select><span class="post-filter__count" data-count></span></div></div>', '<div class="post-list">']
+    for p in posts:
+        d = dt.date.fromisoformat(p["date"]) if p["date"] else None
+        chips = "".join(f'<span class="post-topic">{e(t)}</span>' for t in p["topics"])
+        keys = ", ".join(p["tags"])
+        h.append(
+            f'<article class="post-card" data-date="{p["date"]}" data-section="{e(p["section"])}" '
+            f'data-topics="{e("|".join(p["topics"]))}">'
+            f'<p class="post-card__meta"><span class="post-card__section">{e(p["section"])}</span> · '
+            f'<time datetime="{p["date"]}">{d.strftime("%-d %B %Y") if d else ""}</time></p>'
+            f'<h2 class="post-card__title"><a href="{up}{p["url"]}">{e(p["title"])}</a></h2>'
+            f'<p class="post-card__excerpt">{e(p["excerpt"])}</p>'
+            f'<p class="post-card__topics">{chips}</p>'
+            + (f'<p class="post-card__keys">Keywords: {e(keys)}</p>' if keys else "")
+            + '</article>')
+    h.append('<p class="post-empty" data-empty hidden>No posts match those filters.</p></div>')
+    return "\n".join(h)
+
+
+def _post_topics(markdown: str, page) -> str:
+    """Under a post's title: its topics, each linking to the blog page filtered to that topic."""
+    from urllib.parse import quote
+    topics = page.meta.get("categories") or []
+    if not topics:
+        return markdown
+    links = " ".join(f'<a class="post-topic" href="../../blog/?topic={quote(t)}">{_html.escape(t)}</a>' for t in topics)
+    line = f'<p class="post-card__topics post-topics">{links}</p>'
+    return re.sub(r"(?m)^(# .+)$", lambda m: m.group(1) + "\n\n" + line, markdown, count=1)
+
+
 def on_page_markdown(markdown, page, config, files):
+    if re.match(r"(blog|personal|classes)/posts/", page.file.src_uri):
+        markdown = _post_topics(markdown, page)
+    if "<!-- posts:all -->" in markdown:
+        markdown = markdown.replace("<!-- posts:all -->", _posts_index(page.file.src_uri))
     for tier in ("featured", "platform", "personal"):
         tag = f"<!-- projects:{tier} -->"
         if tag in markdown:

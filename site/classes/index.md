@@ -47,7 +47,7 @@ monitor it and control every change.
 - how to roll them out in stages (Crawl / Walk / Run, sandbox → shadow → phased rollout);
 - how to govern them under real regulation.
 
-**This portfolio is where I apply both.** Every [project](../index.md) is measured against a golden set before a
+**This portfolio is where I apply both.** Every [project](../projects/index.md) is measured against a golden set before a
 change ships, and governed by the [same standard](../blog/posts/governance.md). Any of them can be switched off
 from the [governance console](../blog/posts/governance-console.md).
 

@@ -1,6 +1,8 @@
 ---
 date: 2026-05-10
 slug: loan-default-capstone
+categories: [Machine learning, Evaluation, Learning]
+tags: [credit risk, hmeq, decision trees, random forests, recall, explainability, ecoa, google colab]
 ---
 
 # Capstone: predicting home-loan defaults, and how I'd put the model into production

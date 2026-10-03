@@ -53,7 +53,7 @@ designed integration option: each incident page shows the exact payloads ([docs/
 
 [![Escalation walkthrough: violation, auto-shutdown, email, investigate, fix, document, re-enable (1:23, narrated)](docs/img/escalation-email.png)](docs/img/escalation.mp4)
 
-*Narrated walkthrough video (1 min 23 s, neural Piper voice, [docs/img/escalation.mp4](docs/img/escalation.mp4)): a runbook is edited so the
+*Narrated walkthrough video (1 min 23 s, neutral Piper voice, [docs/img/escalation.mp4](docs/img/escalation.mp4)): a runbook is edited so the
 model proposes a forced rerun → the policy blocks it and the console switches EOD heartbeat off → the owner's
 email → the incident page → investigation note → approved runbooks restored → root cause, fix and documentation
 recorded, SEC-04 re-confirmed, workflow re-enabled. Recorded against a local console and a local mail server; the narration is text-to-speech, and loads and waits are edited out ([docs/video](docs/video/README.md)).*

@@ -1,7 +1,7 @@
 ---
 date: 2026-10-02
 slug: governance-console
-categories: [governance, platform]
+categories: [AI governance, Cost & FinOps, Security, Operations]
 tags: [ai governance, telemetry, finops, kill switch, attestation, fastapi, shadow ai]
 ---
 
@@ -83,7 +83,7 @@ person can switch it back on.
   <source src="../img/governance-escalation.mp4" type="video/mp4">
 </video>
 
-*The whole loop in under two minutes, narrated with a neural voice (Piper, running locally): a runbook edit makes the model propose a forced rerun → the policy blocks
+*The whole loop in under two minutes, narrated with a neutral Piper voice, generated locally: a runbook edit makes the model propose a forced rerun → the policy blocks
 it and the console switches EOD heartbeat off → the email → the incident → an investigation note → the approved
 runbooks restored → root cause, fix and documentation, SEC-04 re-confirmed, workflow back on.*
 
