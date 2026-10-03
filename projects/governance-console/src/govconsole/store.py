@@ -10,6 +10,11 @@ Tables:
   incident_log         each incident's timeline: opened, repeats, auto-shutdown, emails, notes, fix, resolution
   notifications        every email (or ticket) the console sent or would have sent — the outbox
   escalation_settings  per-workflow alert and auto-shutdown choices from the Settings page
+  host_metrics         one row per minute from the self-host box (deploy/selfhost/hostmon.sh): headline numbers as
+                       columns, the full sample (host + containers, no report text) in `doc`. Kept 30 days.
+  host_hourly          hourly rollup of host_metrics (avg / peak), kept a year: the 7- and 30-day charts read this
+  host_status          latest document per key: backup · maintenance · pentest · containers · deploy · report
+  host_alerts          host alerts (one open per kind), opened and resolved on each sample or by the stale checker
 Timestamps are ISO-8601 UTC text and `day` is YYYY-MM-DD, so the same SQL runs on both databases.
 """
 from __future__ import annotations
@@ -65,7 +70,24 @@ create table if not exists notifications (
 );
 create table if not exists escalation_settings (
   workflow text primary key, settings text not null, updated_by text, updated_at text
-)
+);
+create table if not exists host_metrics (
+  ts text not null, hostname text, cpu_pct real, load1 real, mem_used_pct real, disk_used_pct real, temp_c real,
+  doc text not null
+);
+create index if not exists ix_host_metrics_ts on host_metrics (ts);
+create table if not exists host_hourly (
+  hour text primary key, samples integer not null, cpu_avg real, cpu_max real, load1_avg real, load1_max real,
+  mem_avg real, mem_max real, disk_max real, temp_avg real, temp_max real
+);
+create table if not exists host_status (
+  key text primary key, ts text not null, doc text not null
+);
+create table if not exists host_alerts (
+  alert_id text primary key, ts text not null, kind text not null, severity text not null, message text not null,
+  last_seen text, occurrences integer default 1, resolved_ts text, resolution text
+);
+create index if not exists ix_host_alerts_open on host_alerts (kind, resolved_ts)
 """
 EVENT_COLS = ["event_id", "ts", "day", "workflow", "event_type", "status", "actor", "actor_type", "session_id",
               "environment", "app_version", "run_id", "model", "input_tokens", "output_tokens", "cost_usd",
@@ -270,6 +292,87 @@ class Store:
         with self._lock, self._conn() as c:
             c.execute("delete from escalation_settings where workflow = ?", (workflow,))
             c.execute("insert into escalation_settings values (?,?,?,?)", (workflow, json.dumps(settings), actor, now_iso()))
+
+    # -------------------------------------------------------------- host monitoring (host.py has the logic)
+    def add_host_sample(self, ts: str, row: dict, doc: dict) -> None:
+        self.execute("insert into host_metrics (ts, hostname, cpu_pct, load1, mem_used_pct, disk_used_pct, temp_c, doc) "
+                     "values (?,?,?,?,?,?,?,?)", (ts, row.get("hostname"), row.get("cpu_pct"), row.get("load1"),
+                                                  row.get("mem_used_pct"), row.get("disk_used_pct"), row.get("temp_c"),
+                                                  json.dumps(doc)))
+
+    def host_samples(self, since: str, limit: int = 50_000) -> list[dict]:
+        return self.query("select ts, cpu_pct, load1, mem_used_pct, disk_used_pct, temp_c from host_metrics "
+                          f"where ts >= ? order by ts limit {int(limit)}", (since,))
+
+    def latest_host_sample(self, offset: int = 0) -> dict | None:
+        rows = self.query(f"select * from host_metrics order by ts desc limit 1 offset {int(offset)}")
+        return {**rows[0], "doc": json.loads(rows[0]["doc"])} if rows else None
+
+    def rollup_host_hour(self, hour: str) -> None:
+        """(Re)compute one hour's rollup from the per-minute rows. `hour` is 'YYYY-MM-DDTHH'."""
+        with self._lock, self._conn() as c:
+            r = c.query("select count(*) as n, avg(cpu_pct) as cpu_avg, max(cpu_pct) as cpu_max, avg(load1) as load1_avg, "
+                        "max(load1) as load1_max, avg(mem_used_pct) as mem_avg, max(mem_used_pct) as mem_max, "
+                        "max(disk_used_pct) as disk_max, avg(temp_c) as temp_avg, max(temp_c) as temp_max "
+                        "from host_metrics where ts >= ? and ts < ?", (hour, _next_hour(hour)))[0]
+            if not r["n"]:
+                return
+            c.execute("delete from host_hourly where hour = ?", (hour,))
+            c.execute("insert into host_hourly values (?,?,?,?,?,?,?,?,?,?,?)",
+                      (hour, r["n"], r["cpu_avg"], r["cpu_max"], r["load1_avg"], r["load1_max"], r["mem_avg"],
+                       r["mem_max"], r["disk_max"], r["temp_avg"], r["temp_max"]))
+
+    def host_hourly(self, since_hour: str) -> list[dict]:
+        return self.query("select * from host_hourly where hour >= ? order by hour", (since_hour,))
+
+    def prune_host(self, minute_before: str, hourly_before: str) -> None:
+        self.execute("delete from host_metrics where ts < ?", (minute_before,))
+        self.execute("delete from host_hourly where hour < ?", (hourly_before,))
+
+    def set_host_status(self, key: str, doc, ts: str | None = None) -> None:
+        with self._lock, self._conn() as c:
+            c.execute("delete from host_status where key = ?", (key,))
+            c.execute("insert into host_status values (?,?,?)", (key, ts or now_iso(), json.dumps(doc)))
+
+    def host_status(self) -> dict[str, dict]:
+        """{key: {"ts": received, "doc": ...}}"""
+        return {r["key"]: {"ts": r["ts"], "doc": json.loads(r["doc"])} for r in self.query("select * from host_status")}
+
+    def open_host_alert(self, kind: str) -> dict | None:
+        rows = self.query("select * from host_alerts where kind = ? and resolved_ts is null order by ts desc limit 1",
+                          (kind,))
+        return rows[0] if rows else None
+
+    def create_host_alert(self, kind: str, severity: str, message: str, ts: str) -> dict:
+        a = {"alert_id": "HA-" + os.urandom(4).hex(), "ts": ts, "kind": kind, "severity": severity,
+             "message": message, "last_seen": ts, "occurrences": 1, "resolved_ts": None, "resolution": None}
+        self.execute("insert into host_alerts values (?,?,?,?,?,?,?,?,?)", tuple(a.values()))
+        return a
+
+    def touch_host_alert(self, alert_id: str, ts: str, message: str | None = None) -> None:
+        if message:
+            self.execute("update host_alerts set last_seen = ?, occurrences = occurrences + 1, message = ? "
+                         "where alert_id = ?", (ts, message, alert_id))
+        else:
+            self.execute("update host_alerts set last_seen = ?, occurrences = occurrences + 1 where alert_id = ?",
+                         (ts, alert_id))
+
+    def resolve_host_alert(self, alert_id: str, ts: str, resolution: str) -> None:
+        self.execute("update host_alerts set resolved_ts = ?, resolution = ? where alert_id = ?", (ts, resolution, alert_id))
+
+    def host_alerts(self, open_only: bool = False, since: str | None = None, limit: int = 100) -> list[dict]:
+        where, p = [], []
+        if open_only:
+            where.append("resolved_ts is null")
+        if since:
+            where.append("(ts >= ? or resolved_ts >= ? or resolved_ts is null)"), p.extend([since, since])
+        return self.query("select * from host_alerts" + (" where " + " and ".join(where) if where else "") +
+                          f" order by ts desc limit {int(limit)}", p)
+
+
+def _next_hour(hour: str) -> str:
+    from datetime import timedelta
+    return (datetime.strptime(hour, "%Y-%m-%dT%H") + timedelta(hours=1)).strftime("%Y-%m-%dT%H")
 
 
 def _incident(r: dict) -> dict:

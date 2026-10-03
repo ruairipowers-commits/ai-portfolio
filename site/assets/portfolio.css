@@ -100,3 +100,17 @@
   padding: .05rem .45rem; border-radius: .6rem; margin-right: .4rem; }
 .md-typeset .idea__meta { font-size: .68rem; color: var(--md-default-fg-color--light); margin-top: .2rem; }
 .md-typeset .ideas__empty { color: var(--md-default-fg-color--light); }
+.md-typeset .post-like__why { flex-basis: 100%; display: flex; flex-direction: column; gap: .35rem; margin-top: .3rem; }
+.md-typeset .post-like__why[hidden] { display: none; }
+.md-typeset .post-like__why label { font-size: .72rem; color: var(--md-default-fg-color--light); }
+.md-typeset .post-like__why textarea { font: inherit; font-size: .78rem; padding: .4rem .5rem; border-radius: .2rem;
+  border: 1px solid var(--md-default-fg-color--lighter); background: var(--md-default-bg-color); color: var(--md-default-fg-color); }
+.md-typeset .post-like__why button { align-self: flex-start; margin: 0; padding: .25rem .8rem; cursor: pointer; }
+
+/* Header: shield icon → the live governance console demo */
+.md-header__button.console-link { display: inline-flex; align-items: center; gap: .25rem; margin: 0 .2rem;
+  padding: .25rem .55rem; border: 1px solid rgba(255,255,255,.45); border-radius: 1rem; color: inherit; opacity: .95; }
+.md-header__button.console-link:hover { opacity: 1; background: rgba(255,255,255,.12); }
+.md-header__button.console-link svg { width: 1.1rem; height: 1.1rem; fill: currentColor; }
+.console-link__label { font-size: .68rem; font-weight: 600; }
+@media (max-width: 44.984375em) { .console-link__label { display: none; } .md-header__button.console-link { border: 0; } }

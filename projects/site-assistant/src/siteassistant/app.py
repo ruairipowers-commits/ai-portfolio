@@ -7,6 +7,7 @@ Public (called from the blog, CORS-limited to the site's origin):
   POST /api/suggest             {idea, name?, contact?} → a project suggestion (pending until approved; daily email)
   GET  /api/suggestions         published suggestions with votes;  POST /api/suggestions/{id}/vote  one per day
   POST /api/like {path}         thumbs up on a post;  GET /api/likes?paths=a,b  counts
+  POST /api/unhelpful {path, note?}  thumbs down, with an optional "what was missing" (never published)
   GET  /widget.js, /widget.css  the Ask button and panel the blog loads
   GET  /                        a standalone "Ask the portfolio" page
 Owner (ASSISTANT_ADMIN_TOKEN, or GOVERNANCE_ADMIN_TOKEN):
@@ -88,6 +89,11 @@ class SuggestIn(BaseModel):
 
 class LikeIn(BaseModel):
     path: str = Field(min_length=1, max_length=300)
+
+
+class UnhelpfulIn(BaseModel):
+    path: str = Field(min_length=1, max_length=300)
+    note: str = Field("", max_length=500)
 
 
 class StatusIn(BaseModel):
@@ -327,6 +333,21 @@ def _routes(app: FastAPI) -> None:
                        records_out=1 if counted else 0, detail={"path": path})
         return {"path": path, "likes": S.store.like_counts([path]).get(path, 0), "counted": counted}
 
+    @app.post("/api/unhelpful")
+    def api_unhelpful(body: UnhelpfulIn, request: Request):
+        """Thumbs down on a post, optionally saying what was missing. Never published; summarised in the daily email."""
+        who = visitor(request)
+        limit("unhelpful", who, SETTINGS.get("likes", {}).get("per_hour", 60))
+        path = post_key(body.path)
+        if path not in (S.store.get_kv("pages", {}) or {}):
+            raise HTTPException(404, "Feedback works on posts only.")
+        note = " ".join(body.note.split())
+        counted = S.store.unhelpful_vote(path, who, note)
+        S.store.log("unhelpful", who, path, note[:200], 1 if counted else 0)
+        telemetry.emit("unhelpful", actor=f"visitor-{who[:8]}", actor_type="visitor", records_in=1,
+                       records_out=1 if counted else 0, detail={"path": path, "has_note": bool(note)})
+        return {"path": path, "counted": counted}
+
     @app.get("/api/likes")
     def api_likes(paths: str = ""):
         keys = [post_key(p) for p in paths.split(",") if p.strip()][:60]
@@ -341,9 +362,17 @@ def _routes(app: FastAPI) -> None:
         pages = S.store.get_kv("pages", {}) or {}
         week = (datetime.now(timezone.utc).date() - timedelta(days=7)).isoformat()
         recent = {r["path"]: r["likes"] for r in S.store.top_liked(100, week)}
-        top = [{**r, "title": (pages.get(r["path"]) or {}).get("short") or r["path"], "url": f"{site_url()}/{r['path']}",
-                "last_7_days": recent.get(r["path"], 0)} for r in S.store.top_liked(20)]
-        return {"top_articles": top, "suggestions": S.store.suggestions(None, 500),
+        down = S.store.unhelpful_counts()
+        title = lambda p: (pages.get(p) or {}).get("short") or p                          # noqa: E731
+        paths = [r["path"] for r in S.store.top_liked(20)]
+        paths += [p for p in sorted(down, key=down.get, reverse=True) if p not in paths][:10]
+        likes = S.store.like_counts(paths)
+        last = {r["path"]: r["last_day"] for r in S.store.top_liked(100)}
+        top = sorted([{"path": p, "title": title(p), "url": f"{site_url()}/{p}", "likes": likes.get(p, 0),
+                       "unhelpful": down.get(p, 0), "last_7_days": recent.get(p, 0), "last_day": last.get(p, "")}
+                      for p in paths], key=lambda r: (r["likes"] - r["unhelpful"], r["likes"]), reverse=True)
+        notes = [{**n, "title": title(n["path"])} for n in S.store.unhelpful_notes(None, 30)]
+        return {"top_articles": top, "unhelpful_notes": notes, "suggestions": S.store.suggestions(None, 500),
                 "kickoff": {str(r["id"]): kickoff_links(r) for r in S.store.suggestions(None, 500)}}
 
     @app.post("/admin/suggestions/{sid}")

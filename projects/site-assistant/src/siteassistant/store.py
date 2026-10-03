@@ -37,6 +37,8 @@ create table if not exists daily_metrics (
 create table if not exists kv (key text primary key, value text, ts text);
 create table if not exists likes (path text not null, visitor text not null, day text not null, ts text not null,
   primary key (path, visitor, day));
+create table if not exists unhelpful (path text not null, visitor text not null, day text not null, ts text not null,
+  note text, primary key (path, visitor, day));
 create table if not exists suggestions (
   id integer primary key, ts text not null, day text not null, idea text not null, name text, contact text,
   visitor text, page text, status text not null default 'pending', updated_at text, updated_by text
@@ -126,6 +128,30 @@ class Store:
         else:
             rows = self.query("select path, count(*) n from likes group by path")
         return {r["path"]: r["n"] for r in rows}
+
+    def unhelpful_vote(self, path: str, visitor: str, note: str = "") -> bool:
+        """"Not useful", with an optional note on what was missing. One per post per visitor per day; a later note
+        on the same day replaces the earlier one. True if it's a new vote."""
+        ts = now_iso()
+        with self._lock, self._conn() as c:
+            cur = c.execute("insert or ignore into unhelpful values (?,?,?,?,?)", (path, visitor, ts[:10], ts, note))
+            if cur.rowcount == 0 and note:
+                c.execute("update unhelpful set note = ?, ts = ? where path = ? and visitor = ? and day = ?",
+                          (note, ts, path, visitor, ts[:10]))
+            return cur.rowcount == 1
+
+    def unhelpful_counts(self, paths: list[str] | None = None) -> dict[str, int]:
+        if paths:
+            marks = ",".join("?" * len(paths))
+            rows = self.query(f"select path, count(*) n from unhelpful where path in ({marks}) group by path", paths)
+        else:
+            rows = self.query("select path, count(*) n from unhelpful group by path")
+        return {r["path"]: r["n"] for r in rows}
+
+    def unhelpful_notes(self, since_day: str | None = None, limit: int = 50) -> list[dict]:
+        where, params = ("and day >= ?", (since_day,)) if since_day else ("", ())
+        return self.query(f"""select path, day, note from unhelpful where note is not null and note != '' {where}
+                              order by ts desc limit ?""", (*params, limit))
 
     def top_liked(self, limit: int = 10, since_day: str | None = None) -> list[dict]:
         where, params = ("where day >= ?", (since_day,)) if since_day else ("", ())

@@ -70,6 +70,7 @@ demo:
   short_description: Search and chat over the blog with a local model
   server: fastapi
   memory: 1g
+  egress: true                     # fetches the published site, sends the daily email, asks Cloudflare and GitHub
   needs:
   - ollama
   volume: /app/warehouse

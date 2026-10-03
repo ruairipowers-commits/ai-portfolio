@@ -11,7 +11,8 @@
 #   deploy/selfhost/update.sh --status   # what's deployed, what's on main, and the CI state
 # Needs: git, curl, Docker with the compose plugin. Python runs inside a container; nothing else on the host.
 set -euo pipefail
-HERE="$(cd "$(dirname "$0")" && pwd)"
+# Installed copies (/usr/local/lib/ai-portfolio, root-owned) are told where the deploy clone is.
+if [ -n "${AI_PORTFOLIO_REPO:-}" ]; then HERE="$AI_PORTFOLIO_REPO/deploy/selfhost"; else HERE="$(cd "$(dirname "$0")" && pwd)"; fi
 REPO="$(cd "$HERE/../.." && pwd)"
 STATE="$HERE/.state"; mkdir -p "$STATE"
 MODE="${1:-}"
@@ -89,6 +90,24 @@ docker run --rm -v "$REPO:/repo" -w /repo -u "$(id -u):$(id -g)" -e HOME=/tmp \
   -e PORTFOLIO_DEMOS_TARGET=selfhost -e PORTFOLIO_DEMOS_URL="$DEMOS_URL" \
   -e PORTFOLIO_SITE_URL="$SITE_URL" -e PORTFOLIO_GITHUB_OWNER="$GITHUB_OWNER" \
   python:3.11-slim sh -c "pip install -q --user --disable-pip-version-check pyyaml 2>/dev/null && python scripts/demos.py render selfhost"
+
+# Deploy guard (root-owned, outside the repo): refuse a stack that could take over this machine — privileged or
+# host-namespace containers, the Docker socket, host bind mounts, extra capabilities, no CPU/memory limits, ports
+# on the LAN. A push to main can't switch it off: the guard and this script run from /usr/local/lib/ai-portfolio.
+GUARD="${DEPLOY_GUARD:-/usr/local/lib/ai-portfolio/deploy-guard.py}"
+"${COMPOSE[@]}" config --format json > "$STATE/compose.resolved.json"
+if [ -f "$GUARD" ]; then
+  if command -v python3 >/dev/null; then guard() { python3 "$GUARD" "$STATE/compose.resolved.json" --root "$REPO"; }
+  else guard() { docker run --rm -v "$GUARD:/guard.py:ro" -v "$STATE:$STATE:ro" -v "$REPO:$REPO:ro" python:3.11-slim \
+                   python /guard.py "$STATE/compose.resolved.json" --root "$REPO"; }; fi
+  if ! guard > "$STATE/guard.txt" 2>&1; then
+    echo "$target" > "$STATE/failed"
+    log "deploy guard REFUSED ${target:0:7} — keeping ${deployed:0:7}:"; sed 's/^/  /' "$STATE/guard.txt"
+    exit 1
+  fi
+else
+  log "deploy guard not installed — run: sudo $HERE/install.sh"
+fi
 
 if "${COMPOSE[@]}" up -d --build --remove-orphans; then
   # Caddy reads its config only at start (admin API is off), so a new route needs a restart

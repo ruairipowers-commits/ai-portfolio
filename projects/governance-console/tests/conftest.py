@@ -24,6 +24,7 @@ def client(store, monkeypatch, tmp_path):
     for k in ("PORTFOLIO_DEMO", "GOVERNANCE_ADMIN_TOKEN", "GOVERNANCE_INGEST_TOKEN"):
         monkeypatch.delenv(k, raising=False)
     monkeypatch.setenv("GOVERNANCE_SPOOL", str(tmp_path / "no-spool.jsonl"))
+    monkeypatch.setenv("GOVERNANCE_HOST_CHECK", "0")       # tests drive host.check() themselves
     appmod.S.hits.clear()
     return TestClient(appmod.create_app(store))
 

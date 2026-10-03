@@ -1,0 +1,39 @@
+# Outside-in uptime check, every 30 minutes, from GitHub's servers — so it still alerts when the demo machine itself
+# is down, asleep or offline (the machine's own monitoring can't). It checks the blog and every live demo.
+#
+# Alerts: the job fails, and if these repository secrets are set it also emails you (Settings → Secrets and
+# variables → Actions): SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, ALERT_EMAIL — the same values as
+# the machine's .env (Resend works). Without them, rely on GitHub's own failed-workflow email.
+# URLs come from the repository variables SITE_URL and DEMOS_URL, like the site build.
+name: uptime
+on:
+  schedule: [{cron: "7,37 * * * *"}]
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency: {group: uptime, cancel-in-progress: false}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env: {HAS_SMTP: "${{ secrets.SMTP_HOST != '' }}"}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.11"}
+      - run: pip install pyyaml
+      - name: check the blog and every demo
+        id: check
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}           # empty → https://<owner>.github.io/<repo>
+          DEMOS_URL: ${{ vars.DEMOS_URL }}
+        run: python3 scripts/uptime.py --out /tmp/uptime.txt
+      - name: email the failure
+        if: failure() && env.HAS_SMTP == 'true'
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
+        run: python3 scripts/uptime.py --email /tmp/uptime.txt

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_macros.html" import sev_chip %}
+{% block title %}Security scan · AI Governance Console{% endblock %}
+{% block filters %}{% endblock %}
+{% block content %}
+<p class="small"><a href="{{ base }}/host">← Host</a></p>
+<h1>Security scan · {{ hcfg.name }}</h1>
+<p class="sub">The weekly penetration test of the self-hosted stack{% if pt_ts %}: latest {{ pt_ts|ts }} UTC{% endif %}.</p>
+{% if not reported %}
+<div class="banner info"><span>ℹ️</span><div>No scan result yet.</div></div>
+{% else %}
+<section class="card" style="margin-bottom:14px">
+  <h2>Findings by severity</h2>
+  <p>{% for s in ['critical', 'high', 'medium', 'low', 'info'] %}<span class="chip {{ {'critical': 'critical', 'high': 'serious', 'medium': 'warning'}.get(s, 'neutral') }}" style="margin:0 4px 4px 0"><span class="dot"></span>{{ counts[s] }} {{ s }}</span>{% endfor %}</p>
+  {% if not admin %}<p class="muted">Findings describe weaknesses in a live system, so the details are for the owner:
+    <a href="{{ base }}/admin/login">sign in</a> to see them.</p>{% endif %}
+</section>
+{% if admin %}
+{% if findings %}<section class="card" style="margin-bottom:14px"><h2>Findings</h2>
+  <div class="table-wrap"><table><thead><tr><th>Severity</th><th>Finding</th><th>Where</th><th>Fix</th></tr></thead><tbody>
+  {% for x in findings %}<tr><td>{{ sev_chip(x.severity) }}</td><td>{{ x.title }}</td><td class="small">{{ x.where }}</td><td class="small">{{ x.fix }}</td></tr>{% endfor %}
+  </tbody></table></div></section>{% endif %}
+<section class="card report">
+  <h2>Full report</h2>
+  {% if report_html %}{{ report_html }}{% else %}<p class="muted">The scan sent no report text.</p>{% endif %}
+</section>
+{% endif %}
+{% endif %}
+{% endblock %}

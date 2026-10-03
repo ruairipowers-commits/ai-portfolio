@@ -5,6 +5,9 @@ Apps:    POST /api/events            Bearer GOVERNANCE_INGEST_TOKEN when set (al
 Admin:   POST /workflows/{slug}/toggle   needs the admin cookie, set by /admin/login with GOVERNANCE_ADMIN_TOKEN.
          With no admin token configured, admin is open only when running locally (never in the hosted demo).
          POST /settings/escalation/{slug}  who gets emailed, auto-shutdown level, which rules (admin only)
+Host:    POST /api/host (ingest token) one sample a minute from deploy/selfhost/hostmon.sh; GET /api/host/summary and
+         /api/host/history (public, counts only); /host page; /host/security (findings: admin only);
+         POST /host/report/send (admin) — see host.py.
 Incidents: governance issues found in incoming events (escalation.py) open INC-nnnn, may switch the workflow off and
          email its recipients with a link to /incidents/{id}, where they're investigated, documented and resolved.
 """
@@ -32,7 +35,7 @@ from pydantic import BaseModel, Field, ValidationError
 from . import catalog as cat
 from . import content
 from . import metrics as M
-from . import escalation, links, notify, simulate, spool
+from . import escalation, host, links, notify, simulate, spool
 from .store import Store, now_iso
 
 HERE = Path(__file__).resolve().parent
@@ -111,6 +114,8 @@ def create_app(store: Store | None = None, seed: bool = True) -> FastAPI:
     _routes(app)
     if os.getenv("GOVERNANCE_ESCALATION_CHECK", "1") != "0":
         escalation.start_checker(lambda: S.store, get_catalog, lambda: S.console_url or console_url(None))
+        if os.getenv("GOVERNANCE_HOST_CHECK", "1") != "0":
+            host.start_checker(lambda: S.store, lambda: SETTINGS, lambda: S.console_url or console_url(None))
     return app
 
 
@@ -484,10 +489,12 @@ def _routes(app: FastAPI) -> None:
                                                                         smtp=notify.smtp_summary()))
 
     @app.get("/outbox/{nid}", response_class=HTMLResponse)
-    def outbox_message(nid: str):
+    def outbox_message(request: Request, nid: str):
         m = S.store.notification(nid)
         if not m:
             raise HTTPException(404, "unknown message")
+        if (m.get("incident_id") or "").startswith("host:") and not is_admin(request):
+            raise HTTPException(403, "host emails can carry security findings and commands: admin sign-in required")
         return HTMLResponse(m["body_html"] or f"<pre>{escape(m['body_text'] or '')}</pre>")
 
     # ------------------------------------------------------------ content: ratings and suggestions on the site
@@ -515,6 +522,62 @@ def _routes(app: FastAPI) -> None:
         except Exception as e:  # noqa: BLE001
             raise HTTPException(502, f"the site assistant didn't accept the change ({type(e).__name__})") from e
         return RedirectResponse(f"{BASE}/content?saved={sid}#s-{sid}", status_code=303)
+
+    # ------------------------------------------------------------ host: the self-host box (host.py)
+    @app.post("/api/host", status_code=202)
+    async def host_ingest(request: Request):
+        _check_ingest(request)
+        body = await request.body()
+        if len(body) > host.cfg(SETTINGS)["max_body_bytes"]:
+            raise HTTPException(413, "payload too large")
+        try:
+            raw = json.loads(body)
+            if not isinstance(raw, dict):
+                raise ValueError("expected one JSON object")
+            sample = host.Sample(**raw).model_dump()
+        except (ValueError, ValidationError, TypeError) as e:
+            raise HTTPException(422, f"invalid host sample: {str(e)[:300]}")
+        S.console_url = console_url(request)
+        return host.ingest(S.store, sample, SETTINGS, S.console_url)
+
+    @app.get("/api/host/summary")
+    def host_summary(request: Request):
+        return host.summary(S.store, SETTINGS, console_url(request))
+
+    @app.get("/api/host/history")
+    def host_history(range: str = "24h"):  # noqa: A002 — the query parameter's name
+        return host.history(S.store, range)
+
+    @app.get("/host", response_class=HTMLResponse)
+    def host_page(request: Request, sent: str = ""):
+        admin = is_admin(request)
+        st = S.store.host_status()
+        latest = S.store.latest_host_sample()
+        pt = (st.get("pentest") or {}).get("doc")
+        mt = (st.get("maintenance") or {}).get("doc")
+        return templates.TemplateResponse(request, "host.html", _ctx(
+            request, page="host", sum=host.summary(S.store, SETTINGS, console_url(request)), hcfg=host.cfg(SETTINGS),
+            latest=latest, containers=(latest or {}).get("doc", {}).get("containers", []) if latest else [],
+            actions=host.maintenance_actions(mt) if admin else [], maint_ts=(mt or {}).get("ts"),
+            top=host.pentest_findings(pt)[:5] if admin else [], has_report=bool((pt or {}).get("report_md")),
+            alerts=S.store.host_alerts(limit=25), sent=sent))
+
+    @app.get("/host/security", response_class=HTMLResponse)
+    def host_security(request: Request):
+        admin = is_admin(request)
+        pt = (S.store.host_status().get("pentest") or {}).get("doc")
+        return templates.TemplateResponse(request, "host_security.html", _ctx(
+            request, page="host", pt_ts=host.pentest_ts(pt), counts=host.pentest_counts(pt), reported=bool(pt),
+            findings=host.pentest_findings(pt) if admin else [],
+            report_html=Markup(host.md_to_html(pt.get("report_md") or "")) if admin and pt else "",
+            hcfg=host.cfg(SETTINGS)))
+
+    @app.post("/host/report/send")
+    def host_report_send(request: Request):
+        if not is_admin(request):
+            raise HTTPException(403, "admin sign-in required")
+        host.send_report(S.store, SETTINGS, console_url(request), "on demand")
+        return RedirectResponse(f"{BASE}/host?sent=1", status_code=303)
 
     @app.get("/models", response_class=HTMLResponse)
     def models_page(request: Request):

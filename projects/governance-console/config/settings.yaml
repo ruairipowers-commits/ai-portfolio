@@ -26,3 +26,18 @@ simulation:                         # labelled history so the dashboards mean so
 
 retention:
   live_events_days: 2555            # OBS-03: ~7 years for live events (Postgres); demo SQLite is ephemeral
+
+host:                               # the self-host box (deploy/selfhost/hostmon.sh posts a sample every minute)
+  name: EVO-X1                      # shown on the Host tab and in alert / report emails
+  max_body_bytes: 400000            # one sample, including the pentest report text
+  stale_minutes: 10                 # no sample for this long → "EVO-X1 stopped reporting"
+  cpu_pct: 90                       # alert when CPU averaged over cpu_window_minutes reaches this
+  cpu_window_minutes: 10
+  mem_used_pct: 90
+  disk_used_pct: 85                 # the fuller of / and Docker's data root
+  temp_c: 90
+  restart_quiet_minutes: 30         # a container-restart alert resolves after this long without another restart
+  backup_max_age_hours: 36
+  report_every_days: 7              # weekly health & security email; also sent when a new pentest result arrives
+  minute_retention_days: 30         # per-minute samples; older ones live on only in the hourly rollup
+  hourly_retention_days: 365

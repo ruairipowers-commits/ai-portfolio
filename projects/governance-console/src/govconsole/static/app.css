@@ -146,3 +146,9 @@ code { font-size: 12px; background: var(--surface-2); border: 1px solid var(--bo
 footer { max-width: 1440px; margin: 0 auto; padding: 8px 20px 30px; color: var(--muted); font-size: 12px; }
 
 .tabs .count { display:inline-block; min-width:18px; padding:0 5px; margin-left:3px; border-radius:9px; background: var(--critical); color:#fff; font-size:11px; line-height:18px; text-align:center; font-weight:600; }
+
+/* ---- host: security report rendered from Markdown */
+.report h2, .report h3, .report h4 { margin: 18px 0 6px; }
+.report pre { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; overflow-x: auto; }
+.report pre code { border: 0; padding: 0; background: none; }
+.report blockquote { margin: 8px 0; padding: 4px 12px; border-left: 3px solid var(--grid); color: var(--ink-2); }
