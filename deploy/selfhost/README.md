@@ -73,7 +73,7 @@ Most of the wait on a CPU is the model *reading* the prompt, not writing the ans
 
 ```bash
 docker compose -f generated/docker-compose.yml --env-file .env exec site-assistant \
-  siteassist bench qwen3.5:9b gemma4:e4b llama3.1:8b --out /tmp/answers.md
+  siteassist bench gemma4:e4b qwen3.5:9b --out /tmp/answers.md
 docker compose -f generated/docker-compose.yml --env-file .env exec site-assistant cat /tmp/answers.md
 ```
 
@@ -82,13 +82,15 @@ question, a gap question and a technical one, run twice (the second run uses the
 lets you judge quality side by side. A good choice answers in a few seconds, cites its sources, and turns the gap
 question into "on Ruairi's plate to review" without inventing anything.
 
-| Model | Download | Why try it |
+| Model | Download | Measured on the EVO-X1 (CPU, 3 October 2026) |
 |---|---|---|
-| `qwen3.5:9b` | 6.6 GB | The default: a recent generation, good at following rules and citing; run with `OLLAMA_THINK=false` |
-| `gemma4:e4b` | 6.6–9.5 GB | Google's on-device size: quick, if `qwen3.5:9b` feels slow |
-| `qwen3.5:4b` | 3.4 GB | The fastest of these, for a CPU-only box |
-| `gemma4:26b` | 16–19 GB | Mixture-of-experts with about 4B active: bigger-model quality at small-model speed, if memory allows |
-| `llama3.1:8b` | 4.9 GB | The previous default, as a baseline |
+| `gemma4:e4b` | 6.6–9.5 GB | **The default.** First word in 6–10 s, answers in 10–18 s, writes about 28 tokens/s. Accurate, cites sources, and uses the "on Ruairi's plate to review" wording for gaps |
+| `qwen3.5:9b` | 6.6 GB | First word in 12–27 s, answers in 25–55 s, about 12.5 tokens/s. Fuller answers, but misspelt the name and stretched some claims |
+| `llama3.1:8b` | 4.9 GB | The previous default; slower to load, fewer citations |
+| `qwen3.5:4b` | 3.4 GB | Not measured; the smallest option if memory is tight |
+
+Most of the time to the first word is the model reading the prompt (about 450 tokens/s on the CPU). The iGPU is the
+biggest remaining lever for that:
 
 **Use the iGPU (Vulkan).** The Radeon iGPU reads prompts much faster than the CPU. Recent Ollama builds can use it
 through Vulkan (still marked experimental). Create `deploy/selfhost/docker-compose.override.yml` (git-ignored):

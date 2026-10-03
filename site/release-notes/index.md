@@ -9,6 +9,21 @@ The big changes to this portfolio, newest first. Each project's repository has t
 
 ## 3 October 2026
 
+**Thumbs up, upvotes and a Content tab.**
+- **Posts:** every post ends with "Was this useful?" and a thumbs up. The blog list shows the counts.
+- **Suggestions:** project suggestions have their own page under Projects. Visitors upvote ideas, and new ones
+  appear once I've approved them.
+- **Daily email:** thumbs up by post, and the top ten suggestions with new ones marked. Each suggestion has links
+  that start it in Claude as an industry or personal project.
+- **Governance console:** a new **Content** tab shows the top-rated articles. It's also where I publish, hide or
+  close suggestions.
+
+**Blog filters in the side panel.** On wide screens, the topic, type and date filters sit in the left panel. The
+newest post is always first.
+
+**A faster Ask button.** After [measuring three local models](../personal/posts/choosing-the-ask-model.md) on the
+server, the default is now `gemma4:e4b`. It's more than twice as fast as the runner-up and more accurate.
+
 **A smarter Ask button.**
 - **Every answer starts from a profile card** that the site builds from the posts on each publish: background, MIT
   coursework, evidence by topic, the technologies each project uses, and the newest work first. A new project shows

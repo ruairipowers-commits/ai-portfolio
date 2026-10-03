@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Content · AI Governance Console{% endblock %}
+{% block filters %}{% endblock %}
+{% block content %}
+<h1>Content</h1>
+<p class="sub">What visitors rate and suggest on the portfolio site, and what they're allowed to see. New project
+suggestions stay off the site until they're published here.</p>
+{% if data.error %}<div class="banner warning"><span>⚠️</span><div>Site assistant {{ data.error }}. Ratings and suggestions live there.</div></div>{% endif %}
+{% if saved %}<div class="banner info"><span>✓</span><div>Suggestion #{{ saved }} updated.</div></div>{% endif %}
+
+<section class="card">
+<h2>Top rated articles</h2>
+<p class="small muted">Thumbs up from readers ("Was this useful?" at the end of each post). One per reader per post per day.</p>
+<div class="table-wrap"><table><thead><tr><th>Article</th><th style="text-align:right">👍 All time</th><th style="text-align:right">Last 7 days</th><th>Last liked</th></tr></thead><tbody>
+{% for a in data.top_articles or [] %}<tr><td><a href="{{ a.url }}">{{ a.title }}</a></td>
+  <td style="text-align:right"><b>{{ a.likes }}</b></td><td style="text-align:right">{{ a.last_7_days }}</td><td class="small">{{ a.last_day }}</td></tr>
+{% else %}<tr><td colspan="4" class="muted">No thumbs up yet.</td></tr>{% endfor %}</tbody></table></div>
+</section>
+
+<section class="card">
+<h2>Project suggestions</h2>
+<p class="small muted">From the site's <i>Suggest a project</i> page, most upvoted first.
+{% if admin %}{{ counts.pending }} awaiting review · {{ counts.published }} published · {{ counts.hidden }} hidden · {{ counts.done }} done.
+Publishing shows an idea on the site and opens it for upvotes; names and contacts are never shown.
+{% else %}Showing what the site shows. Sign in as admin to review new suggestions.{% endif %}</p>
+<div class="table-wrap"><table><thead><tr><th style="text-align:right">▲</th><th>Idea</th><th>Suggested</th><th>Status</th>{% if admin %}<th>From</th><th>Change</th><th>Start in Claude</th>{% endif %}</tr></thead><tbody>
+{% for s in suggestions %}<tr id="s-{{ s.id }}">
+  <td style="text-align:right"><b>{{ s.votes }}</b></td>
+  <td>{{ s.idea }}</td>
+  <td class="small">{{ s.day }}</td>
+  <td><span class="chip {{ {'published': 'good', 'pending': 'warning', 'hidden': 'neutral', 'done': 'neutral'}[s.status] }}"><span class="dot"></span>{{ s.status }}</span>
+    {% if admin and s.updated_by %}<div class="small muted">{{ s.updated_by }}</div>{% endif %}</td>
+  {% if admin %}
+  <td class="small">{{ s.name or '—' }}{% if s.contact %}<br>{{ s.contact }}{% endif %}</td>
+  <td><form method="post" action="{{ base }}/content/suggestions/{{ s.id }}" style="display:flex;gap:4px;flex-wrap:wrap;margin:0">
+    {% for st, label in [('published', 'Publish'), ('hidden', 'Hide'), ('done', 'Done'), ('pending', 'Back to review')] if st != s.status %}
+    <button class="btn small{{ ' primary' if st == 'published' }}" name="status" value="{{ st }}">{{ label }}</button>{% endfor %}
+  </form></td>
+  <td class="small">{% set k = kickoff.get(s.id|string) %}{% if k %}<a href="{{ k.industry }}" target="_blank" rel="noopener">industry</a> ·
+    <a href="{{ k.personal }}" target="_blank" rel="noopener">personal</a>{% endif %}</td>
+  {% endif %}</tr>
+{% else %}<tr><td colspan="{{ 7 if admin else 4 }}" class="muted">No suggestions{{ ' yet' if admin else ' published yet' }}.</td></tr>{% endfor %}
+</tbody></table></div>
+{% if admin %}<p class="small muted">"Start in Claude" opens claude.ai with a prompt for the portfolio-project skill: it drafts the spec for your approval first. The visitor's text is fenced off as an idea, not instructions.</p>{% endif %}
+</section>
+{% endblock %}

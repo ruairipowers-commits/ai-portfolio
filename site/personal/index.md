@@ -8,6 +8,7 @@ title: Personal projects
 <nav class="subtabs" markdown>
 [Industry projects](../projects/index.md)
 [Personal projects](index.md){ .active }
+[Suggest a project](../projects/suggestions.md)
 </nav>
 
 Smaller things I've built for myself, kept apart from the [industry projects](../projects/index.md). They're less

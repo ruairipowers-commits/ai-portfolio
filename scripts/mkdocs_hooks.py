@@ -179,7 +179,7 @@ def all_posts() -> list[dict]:
                         "topics": meta.get("categories") or [], "tags": meta.get("tags") or [],
                         "section": "AI governance" if slug in _GOVERNANCE_SLUGS else section,
                         "url": f"{prefix}/{slug}/", "excerpt": _strip_md(intro)})
-    return sorted(out, key=lambda p: p["date"], reverse=True)
+    return sorted(sorted(out, key=lambda p: p["title"]), key=lambda p: p["date"], reverse=True)   # newest first
 
 
 def _posts_index(page_uri: str) -> str:
@@ -209,15 +209,17 @@ def _posts_index(page_uri: str) -> str:
           '<option value="30">Last 30 days</option><option value="90">Last 90 days</option>']
     h += [f'<option value="{m}">{month_name(m)}</option>' for m in months]
     h += ['</select><span class="post-filter__count" data-count></span></div></div>', '<div class="post-list">']
-    for p in posts:
+    for i, p in enumerate(posts):
         d = dt.date.fromisoformat(p["date"]) if p["date"] else None
+        newest = '<span class="post-card__newest">Newest</span> ' if i == 0 else ""
         chips = "".join(f'<span class="post-topic">{e(t)}</span>' for t in p["topics"])
         keys = ", ".join(p["tags"])
         h.append(
             f'<article class="post-card" data-date="{p["date"]}" data-section="{e(p["section"])}" '
-            f'data-topics="{e("|".join(p["topics"]))}">'
-            f'<p class="post-card__meta"><span class="post-card__section">{e(p["section"])}</span> · '
-            f'<time datetime="{p["date"]}">{d.strftime("%-d %B %Y") if d else ""}</time></p>'
+            f'data-topics="{e("|".join(p["topics"]))}" data-path="{p["url"]}" data-key="{p["url"]}">'
+            f'<p class="post-card__meta">{newest}<span class="post-card__section">{e(p["section"])}</span> · '
+            f'<time datetime="{p["date"]}">{d.strftime("%-d %B %Y") if d else ""}</time>'
+            f'<span class="post-card__likes" data-card-likes hidden></span></p>'
             f'<h2 class="post-card__title"><a href="{up}{p["url"]}">{e(p["title"])}</a></h2>'
             f'<p class="post-card__excerpt">{e(p["excerpt"])}</p>'
             f'<p class="post-card__topics">{chips}</p>'
@@ -225,6 +227,12 @@ def _posts_index(page_uri: str) -> str:
             + '</article>')
     h.append('<p class="post-empty" data-empty hidden>No posts match those filters.</p></div>')
     return "\n".join(h)
+
+
+LIKE_BOX = ('\n\n<div class="post-like" data-like><span class="post-like__q">Was this useful?</span> '
+            '<button type="button" class="md-button post-like__btn">👍 Yes</button> '
+            '<span class="post-like__n" data-like-n></span> <span class="post-like__thanks" data-like-thanks hidden>'
+            'Thanks for letting me know!</span></div>\n')
 
 
 def _post_topics(markdown: str, page) -> str:
@@ -267,7 +275,7 @@ def _build_stats() -> str:
 
 def on_page_markdown(markdown, page, config, files):
     if re.match(r"(blog|personal|classes)/posts/", page.file.src_uri):
-        markdown = _post_topics(markdown, page)
+        markdown = _post_topics(markdown, page) + LIKE_BOX
     if "<!-- posts:all -->" in markdown:
         markdown = markdown.replace("<!-- posts:all -->", _posts_index(page.file.src_uri))
     for tier in ("featured", "platform", "personal"):
