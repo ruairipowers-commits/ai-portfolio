@@ -1,6 +1,7 @@
 ---
 date: 2026-09-30
 slug: governance
+short: "AI governance standard"
 categories: [AI governance, Security, Cost & FinOps, Evaluation, Human in the loop]
 tags: [ai governance, model risk, llm security, finops, evals]
 pin: true

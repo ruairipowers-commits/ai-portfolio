@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import posixpath  # noqa: E402
 
 from portfolio_config import demo_url, resolve, tiers  # noqa: E402
+import assistant_corpus  # noqa: E402
 
 _cfg = resolve()
 _SUBS = {"SITE_URL": _cfg["site_url"], "GITHUB_OWNER": _cfg["github_owner"], "HF_OWNER": _cfg["hf_owner"],
@@ -237,6 +238,33 @@ def _post_topics(markdown: str, page) -> str:
     return re.sub(r"(?m)^(# .+)$", lambda m: m.group(1) + "\n\n" + line, markdown, count=1)
 
 
+def _build_stats() -> str:
+    """One line of facts about how this site was built, computed at build time from git and the content."""
+    import datetime as dt
+    import subprocess
+    root = Path(__file__).resolve().parents[1]
+
+    def git(*args):
+        try:
+            return subprocess.run(["git", *args], cwd=root, capture_output=True, text=True, timeout=20).stdout.strip()
+        except Exception:  # noqa: BLE001
+            return ""
+    first = (git("log", "--reverse", "--format=%ad", "--date=short") or "").splitlines()[:1]
+    commits = git("rev-list", "--count", "HEAD")
+    posts = assistant_corpus.posts()
+    techs = len([f for f in (root / "site" / "tech").glob("*.md") if f.name != "index.md"])
+    projects = len([p for p in (root / "projects").iterdir() if p.is_dir()])
+    parts = []
+    if first:
+        start = dt.date.fromisoformat(first[0])
+        days = (dt.date.today() - start).days + 1
+        parts.append(f"First commit **{start:%-d %B %Y}**; **{days} days** to this build")
+    if commits and int(commits) > 1:
+        parts.append(f"**{commits} commits**")
+    parts += [f"**{projects} runnable projects**", f"**{len(posts)} write-ups**", f"**{techs} technology pages**"]
+    return " · ".join(parts) + "."
+
+
 def on_page_markdown(markdown, page, config, files):
     if re.match(r"(blog|personal|classes)/posts/", page.file.src_uri):
         markdown = _post_topics(markdown, page)
@@ -246,6 +274,10 @@ def on_page_markdown(markdown, page, config, files):
         tag = f"<!-- projects:{tier} -->"
         if tag in markdown:
             markdown = markdown.replace(tag, _table(tier, page.file.src_uri))
+    if "<!-- build:stats -->" in markdown:
+        markdown = markdown.replace("<!-- build:stats -->", _build_stats())
+    if "<!-- evidence -->" in markdown:
+        markdown = markdown.replace("<!-- evidence -->", assistant_corpus.evidence_markdown(page.file.src_uri))
     if "<!-- tech:index -->" in markdown:
         markdown = markdown.replace("<!-- tech:index -->", _tech_index(page.file.src_uri))
     # a post's **Stack:** line names its technologies: link each to its page
@@ -279,7 +311,9 @@ def on_config(config):
 
 
 def on_post_build(config):
-    """Ship the assistant's widget with the blog, so the Ask button is always there (one source: the service)."""
+    """Publish the assistant's extra knowledge (assistant/corpus.json: profile card, post dates, public repo docs,
+    resume text), and ship its widget with the blog so the Ask button is always there (one source: the service)."""
+    assistant_corpus.write(config["site_dir"], _cfg["site_url"], _cfg["github_owner"], _cfg.get("repo_name", "ai-portfolio"))
     if not config.extra.get("assistant_url"):
         return
     import shutil

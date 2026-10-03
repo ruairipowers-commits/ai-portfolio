@@ -4,7 +4,9 @@ aliases:
 models:
   local-chat:
     provider: ollama
-    model: llama3.1:8b              # override with OLLAMA_MODEL; any Ollama chat model works
+    model: qwen3.5:9b               # override with OLLAMA_MODEL (+ OLLAMA_THINK); compare candidates with
+                                    # deploy/selfhost/ollama-bench.sh on the machine that serves it
+    think: false                    # reasoning models answer directly: far faster, and RAG answers don't need it
     approved: true
     priced: true                    # local: $0 per token
     usd_per_1k_input: 0.0

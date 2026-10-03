@@ -1500,7 +1500,7 @@
     "DATA-01": {
      "status": "implemented",
      "mark": "✅",
-     "how": "One source: the published blog's `search/search_index.json`. `index_runs` records each refresh (source, passages, pages, status), and every passage keeps its page URL and section.",
+     "how": "Two published sources: the site's `search/search_index.json` and `assistant/corpus.json`, which the site build generates from public files only (project READMEs and docs on GitHub, the controls, coursework, the resume PDF, and a profile card built from the posts). `index_runs` records each refresh (source, passages, pages, status), and every passage keeps its page URL and section.",
      "configure": "`index.source`, `SITE_INDEX`",
      "options": "Sitemap crawl; per-page content hashes"
     },
@@ -1514,7 +1514,7 @@
     "DATA-03": {
      "status": "implemented",
      "mark": "✅",
-     "how": "IP addresses and cookies are never stored. The visitor key is a hash of a daily-rotating salt, IP and browser. Searches and questions are kept as typed because the owner asked to see them. The console receives only lengths and hashes.",
+     "how": "IP addresses and cookies are never stored. The visitor key is a hash of a daily-rotating salt, IP and browser. Searches, questions and answers are kept as typed because the owner asked to see them. Suggestion-box name and contact are optional, only emailed to the owner, and deleted with the rest of the activity. The console receives only lengths and hashes.",
      "configure": "`privacy.*`, `ASSISTANT_SALT`",
      "options": "Redact emails/phone numbers typed into questions; opt-out banner"
     },
@@ -1528,7 +1528,7 @@
     "DATA-05": {
      "status": "implemented",
      "mark": "✅",
-     "how": "Rebuilt from the live site every hour, so deleted pages disappear. Sections are split into ≤ 180-word passages, with at most two passages per page in results.",
+     "how": "Rebuilt from the live site and its corpus every hour, so deleted pages disappear. Repo docs and the resume rank slightly below the site's own pages for the same match. Sections are split into ≤ 180-word passages, with at most two passages per page in results.",
      "configure": "`index.refresh_minutes`",
      "options": "Versioned index snapshots"
     },
@@ -1591,7 +1591,7 @@
     "COST-03": {
      "status": "partial",
      "mark": "🟡",
-     "how": "Search answers instantly with no model. The model sees six excerpts, not whole pages, and the answer length is capped.",
+     "how": "Search answers instantly with no model. The rules and profile card form a fixed prompt prefix that Ollama caches, the model stays loaded and is warmed up at start-up, and reasoning is switched off. The model sees six excerpts, not whole pages, and the answer length is capped.",
      "configure": "`chat.top_k`, `chat.max_answer_tokens`",
      "options": "Cache answers to repeated questions"
     },
@@ -1640,7 +1640,7 @@
     "EVAL-01": {
      "status": "implemented",
      "mark": "✅",
-     "how": "16 retrieval cases covering projects, technologies, the About page, fit questions, release notes and an injection.",
+     "how": "22 retrieval cases covering projects, technologies, the About page and resume, fit questions, MIT coursework, GitHub docs, release notes and an injection. `siteassist bench` compares models' speed and answers on the serving machine.",
      "configure": "`evals/golden_set.yaml`",
      "options": "—"
     },
@@ -1696,7 +1696,7 @@
     "HITL-03": {
      "status": "partial",
      "mark": "🟡",
-     "how": "The daily email lists searches with no results and the questions asked, which become new posts or golden cases.",
+     "how": "The daily email lists searches with no results, the questions asked, every question about the owner with its answer, gaps the assistant said are \"on Ruairi's plate to review\", and suggestion-box ideas. These become new posts, projects or golden cases.",
      "configure": "`digest.top_n`",
      "options": "👍/👎 on each answer"
     },

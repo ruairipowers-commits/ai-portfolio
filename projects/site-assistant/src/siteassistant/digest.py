@@ -3,6 +3,9 @@
 Sources (each optional — a missing token is reported in the email, never an error):
   blog       page views, unique visitors, top pages and referrers   this service's /api/track log
   searches   site searches, assistant searches and questions         this service's log (text as typed)
+  about you  questions about Ruairi, with the answer and any gap it    this service's log
+             put "on his plate to review"; project suggestions from
+             the About page's suggestion box
   demos      runs, visitors, tokens and spend in the live demos      governance console /api/summary (live only)
   cloudflare requests, page views, unique visitors for the zone      CF_API_TOKEN (Analytics: Read) + CF_ZONE_ID
   github     repo views, clones (≈ downloads), stars, forks           GITHUB_TRAFFIC_TOKEN (Administration: read)
@@ -27,6 +30,7 @@ from zoneinfo import ZoneInfo
 
 import httpx
 
+from .index import is_about_person
 from .store import Store, now_iso
 
 
@@ -52,6 +56,28 @@ def collect_site(store: Store, day: str, top_n: int) -> None:
     store.put_metric(day, "searches", "no_results", None,
                      sorted({r["query"] for r in srch if r["status"] == "no_results"})[:top_n])
     store.put_metric(day, "searches", "questions_asked", None, [r["query"] for r in asks][:top_n])
+    collect_about_you(store, day)
+
+
+GAP_PHRASE = "plate to review"
+
+
+def collect_about_you(store: Store, day: str, limit: int = 25) -> None:
+    """Questions about Ruairi (with what the assistant answered, and whether it found a gap) and project suggestions."""
+    rows = store.query("select ts, query, status, answer from activity where day = ? and kind = 'ask' order by ts",
+                       (day,))
+    about = [{"q": r["query"], "answer": " ".join((r["answer"] or "").split())[:400], "status": r["status"],
+              "gap": GAP_PHRASE in (r["answer"] or "").lower()} for r in rows if is_about_person(r["query"] or "")]
+    store.put_metric(day, "about", "questions", len(about))
+    store.put_metric(day, "about", "asks", None, about[:limit])
+    store.put_metric(day, "about", "gaps", None, [a["q"] for a in about if a["gap"]][:limit])
+    sugg = store.query("select ts, query, answer from activity where day = ? and kind = 'suggestion' order by ts", (day,))
+    items = []
+    for r in sugg:
+        who = json.loads(r["answer"] or "{}")
+        items.append({"idea": r["query"], "name": who.get("name", ""), "contact": who.get("contact", "")})
+    store.put_metric(day, "about", "suggestions", len(items))
+    store.put_metric(day, "about", "suggestion_list", None, items[:limit])
 
 
 def collect_demos(store: Store, day: str) -> None:
@@ -153,6 +179,7 @@ def collect(store: Store, settings: dict, day: str) -> None:
 # ---------------------------------------------------------------- the email
 HEADLINES = [("blog", "page_views", "Blog page views"), ("blog", "visitors", "Blog visitors"),
              ("searches", "searches", "Searches"), ("searches", "questions", "Questions to the assistant"),
+             ("about", "questions", "Questions about you"), ("about", "suggestions", "Project suggestions"),
              ("demos", "visits", "Demo visits"), ("demos", "runs", "Demo runs"),
              ("cloudflare", "page_views", "Cloudflare page views"), ("cloudflare", "visitors", "Cloudflare visitors"),
              ("github", "views", "GitHub repo views"), ("github", "clones", "Repo clones (downloads)"),
@@ -186,7 +213,32 @@ def render(store: Store, day: str, settings: dict) -> dict:
         return h, t
 
     pair = lambda i: f"{escape(str(i[0]) or '/')} <span style='color:#5f6b76'>({i[1]})</span>"   # noqa: E731
-    sections = [lst("Top pages", det("blog", "top_pages"), pair), lst("Where readers came from", det("blog", "referrers"), pair),
+
+    def ask_fmt(a):
+        tag = " <b style='color:#b45309'>· on your plate to review</b>" if a.get("gap") else ""
+        ans = f"<br><span style='color:#5f6b76;font-size:13px'>{escape(a['answer'])}</span>" if a.get("answer") else ""
+        return f"“{escape(a['q'])}”{tag}{ans}"
+
+    def ask_text(a):
+        return f"{a['q']}{' [on your plate to review]' if a.get('gap') else ''}" + \
+            (f"\n      → {a['answer'][:200]}" if a.get("answer") else "")
+
+    def sugg_fmt(x):
+        who = " — " + ", ".join(v for v in (x.get("name"), x.get("contact")) if v) if (x.get("name") or x.get("contact")) else ""
+        return f"{escape(x['idea'])}<span style='color:#5f6b76'>{escape(who)}</span>"
+
+    def sugg_text(x):
+        who = ", ".join(v for v in (x.get("name"), x.get("contact")) if v)
+        return x["idea"] + (f" — {who}" if who else "")
+
+    def lst_text(title, items, fmt_html, fmt_text):
+        h, _ = lst(title, items, fmt_html)
+        t = f"\n{title}:\n" + "\n".join(f"  - {fmt_text(i)}" for i in items) if items else ""
+        return h, t
+
+    sections = [lst_text("Asks about you", det("about", "asks"), ask_fmt, ask_text),
+                lst("On your plate to review (gaps the assistant told visitors you'd look into)", det("about", "gaps")),
+                lst_text("Project suggestions", det("about", "suggestion_list"), sugg_fmt, sugg_text),lst("Top pages", det("blog", "top_pages"), pair), lst("Where readers came from", det("blog", "referrers"), pair),
                 lst("Top searches", det("searches", "top_queries"), pair),
                 lst("Searches with no results (content gaps)", det("searches", "no_results")),
                 lst("Questions asked", det("searches", "questions_asked")),
@@ -260,7 +312,8 @@ def run(store: Store, settings: dict, day: str | None = None, send_email: bool =
             except Exception as e:  # noqa: BLE001
                 status, error = "failed", f"{type(e).__name__}: {str(e)[:200]}"
     store.add_digest(day, to, mail["subject"], status, error, mail["html"])
-    return {"day": day, "status": status, "error": error, "subject": mail["subject"], "html": mail["html"]}
+    return {"day": day, "status": status, "error": error, "subject": mail["subject"], "html": mail["html"],
+            "text": mail["text"]}
 
 
 def start_scheduler(get_store, settings: dict) -> threading.Thread:

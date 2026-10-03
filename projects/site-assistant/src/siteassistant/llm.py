@@ -26,6 +26,9 @@ def model_config(alias: str = "chat") -> dict:
     m = dict(reg["models"][reg["aliases"].get(alias, alias)])
     if m["provider"] == "ollama" and os.getenv("OLLAMA_MODEL"):
         m["model"] = os.environ["OLLAMA_MODEL"]
+        m.pop("think", None)                     # a different model: its thinking setting comes from OLLAMA_THINK
+    if m["provider"] == "ollama" and os.getenv("OLLAMA_THINK", "").lower() in ("true", "false"):
+        m["think"] = os.environ["OLLAMA_THINK"].lower() == "true"
     return m
 
 
@@ -58,29 +61,71 @@ def pull_in_background(model: str) -> threading.Thread | None:
     return t
 
 
-def build_messages(question: str, passages: list[dict], history: list[dict]) -> list[dict]:
+def _excerpt(n: int, p: dict) -> str:
+    attrs = f'n="{n}" page="{p["page_title"]}" section="{p.get("section") or ""}"'
+    if p.get("date"):
+        attrs += f' date="{p["date"]}" type="{p.get("kind", "")}"'
+    return f"<excerpt {attrs}>\n{p['text']}\n</excerpt>"
+
+
+def system_prompt(passages: list[dict]) -> str:
+    """The rules, then the profile card as excerpt [1]. Both are identical on every request until the site changes,
+    so Ollama reuses the cached prefix and only has to read the question and the search results."""
     system = (ROOT / "prompts" / "answer.md").read_text()
-    blocks = []
-    for i, p in enumerate(passages, 1):   # excerpts are data: delimited, with their source
-        blocks.append(f"<excerpt n=\"{i}\" page=\"{p['page_title']}\" section=\"{p.get('section') or ''}\">\n"
-                      f"{p['text']}\n</excerpt>")
-    msgs = [{"role": "system", "content": system}]
+    card = next((p for p in passages if p.get("profile")), None)
+    return system + ("\n\nProfile card (excerpt [1]):\n" + _excerpt(1, card) if card else "")
+
+
+def build_messages(question: str, passages: list[dict], history: list[dict], today: str | None = None) -> list[dict]:
+    import datetime as dt
+    msgs = [{"role": "system", "content": system_prompt(passages)}]
     for h in history:
         if h.get("role") in ("user", "assistant") and isinstance(h.get("content"), str):
             msgs.append({"role": h["role"], "content": h["content"][:1500]})
-    msgs.append({"role": "user", "content": "Excerpts from the blog:\n\n" + "\n\n".join(blocks) +
+    blocks = [_excerpt(i, p) for i, p in enumerate(passages, 1) if not p.get("profile")]  # excerpts are data
+    today = today or dt.date.today().isoformat()
+    msgs.append({"role": "user", "content": f"Today is {today}. Excerpts from the site:\n\n" + "\n\n".join(blocks) +
                  f"\n\nQuestion: {question}"})
     return msgs
 
 
+def warm_up(settings: dict, passages: list[dict]) -> None:
+    """Load the model and pre-read the system prompt (rules + profile card) so the first visitor doesn't wait for it.
+    Called at start-up and whenever the profile card changes."""
+    m = model_config(settings["chat"]["model_alias"])
+    if m["provider"] != "ollama" or not ollama_ready(m["model"]):
+        return
+    body = {"model": m["model"], "stream": False, "keep_alive": settings["chat"].get("keep_alive", "24h"),
+            "messages": [{"role": "system", "content": system_prompt(passages)},
+                         {"role": "user", "content": "Reply with OK."}],
+            "options": {**_options(settings, m), "num_predict": 1}}
+    if "think" in m:
+        body["think"] = m["think"]
+    try:
+        httpx.post(f"{ollama_url()}/api/chat", json=body, timeout=httpx.Timeout(600, connect=5))
+    except Exception as e:  # noqa: BLE001
+        print(f"warm-up failed: {e}")
+
+
+def _options(settings: dict, m: dict) -> dict:
+    c = settings["chat"]
+    opts = {"temperature": m.get("temperature", c["temperature"]), "num_predict": c["max_answer_tokens"],
+            "num_ctx": c.get("num_ctx", 8192)}
+    if os.getenv("OLLAMA_NUM_THREAD"):
+        opts["num_thread"] = int(os.environ["OLLAMA_NUM_THREAD"])
+    return opts
+
+
 def extractive(question: str, passages: list[dict]) -> Iterator[str | dict]:
-    """No model: quote the two best passages, with their citations."""
+    """No model: quote the two best passages, with their citations (the profile card only if nothing else matched)."""
+    numbered = list(enumerate(passages, 1))
+    best = [(i, p) for i, p in numbered if not p.get("profile")] or numbered
     if not passages:
         yield "The blog doesn't cover that — try different words, or browse the Technologies and Blog pages."
         yield {"model": "extractive-v1", "input_tokens": 0, "output_tokens": 0, "status": "refused"}
         return
     yield "The local model isn't available right now, so here are the most relevant passages:\n\n"
-    for i, p in enumerate(passages[:2], 1):
+    for i, p in best[:2]:
         sent = " ".join(p["text"].split()[:60])
         yield f"> {sent}… [{i}]\n\n"
     yield {"model": "extractive-v1", "input_tokens": 0, "output_tokens": 0, "status": "fallback"}
@@ -96,11 +141,18 @@ def answer(question: str, passages: list[dict], history: list[dict], settings: d
         yield {"model": m["model"], "input_tokens": 0, "output_tokens": 0, "status": "refused"}
         return
     body = {"model": m["model"], "messages": build_messages(question, passages, history), "stream": True,
-            "options": {"temperature": settings["chat"]["temperature"],
-                        "num_predict": settings["chat"]["max_answer_tokens"]}}
+            "keep_alive": settings["chat"].get("keep_alive", "24h"), "options": _options(settings, m)}
+    if "think" in m:            # reasoning models: answer directly (much faster); set per model in models.yaml
+        body["think"] = m["think"]
     tin = tout = 0
+    timing: dict = {}
     try:
         with httpx.stream("POST", f"{ollama_url()}/api/chat", json=body, timeout=httpx.Timeout(120, connect=5)) as r:
+            if r.status_code == 400 and "think" in body:     # a model without a thinking switch: ask again without it
+                r.read()
+                body.pop("think")
+                yield from _stream_again(body, m)
+                return
             r.raise_for_status()
             for line in r.iter_lines():
                 if not line:
@@ -111,10 +163,34 @@ def answer(question: str, passages: list[dict], history: list[dict], settings: d
                     yield piece
                 if d.get("done"):
                     tin, tout = d.get("prompt_eval_count", 0), d.get("eval_count", 0)
-        yield {"model": m["model"], "input_tokens": tin, "output_tokens": tout, "status": "ok"}
+                    timing = _timing(d)
+        yield {"model": m["model"], "input_tokens": tin, "output_tokens": tout, "status": "ok", **timing}
     except Exception as e:  # noqa: BLE001 — a model failure degrades to quotes, never to an error page
         yield f"\n\n(The model stopped: {type(e).__name__}. Showing passages instead.)\n\n"
         yield from extractive(question, passages)
+
+
+def _timing(d: dict) -> dict:
+    """Ollama's own timings (nanoseconds) → seconds: model load, reading the prompt, writing the answer."""
+    return {k: round(d.get(f"{k}_duration", 0) / 1e9, 3) for k in ("load", "prompt_eval", "eval")}
+
+
+def _stream_again(body: dict, m: dict) -> Iterator[str | dict]:
+    tin = tout = 0
+    timing: dict = {}
+    with httpx.stream("POST", f"{ollama_url()}/api/chat", json=body, timeout=httpx.Timeout(120, connect=5)) as r:
+        r.raise_for_status()
+        for line in r.iter_lines():
+            if not line:
+                continue
+            d = json.loads(line)
+            piece = (d.get("message") or {}).get("content", "")
+            if piece:
+                yield piece
+            if d.get("done"):
+                tin, tout = d.get("prompt_eval_count", 0), d.get("eval_count", 0)
+                timing = _timing(d)
+    yield {"model": m["model"], "input_tokens": tin, "output_tokens": tout, "status": "ok", **timing}
 
 
 def time_ms(t0: float) -> int:

@@ -9,6 +9,23 @@ The big changes to this portfolio, newest first. Each project's repository has t
 
 ## 3 October 2026
 
+**A smarter Ask button.**
+- **Every answer starts from a profile card** that the site builds from the posts on each publish: background, MIT
+  coursework, evidence by topic, the technologies each project uses, and the newest work first. A new project shows
+  up in answers as soon as it's published.
+- **It reads more of what's public:** project READMEs and docs on GitHub, the governance controls, the capstone
+  notebook's commentary and my resume.
+- **Questions about me get cited evidence.** When I don't have something a visitor asks about, the answer says so
+  honestly and turns it into a chance to grow. It's now on my plate to review, and the daily email lists those
+  questions.
+- **Faster:** the model stays loaded, the fixed start of every prompt is cached, and reasoning is switched off. A
+  benchmark command compares models on the server, and the setup guide covers using the iGPU through Vulkan.
+
+**How this site was built, and a suggestion box.** [About](../about.md) now explains the framework behind the site:
+free, open source, repeatable, CI/CD and expandable, built in days with AI. A generated **Skills and evidence**
+section maps every topic and technology to the work that shows it. Visitors can suggest projects for me to try, and
+their ideas arrive in my daily email.
+
 **A home page that explains the site.** [Home](../index.md) now says what this site is for: a record of my
 journey learning to use and govern AI responsibly, open for others to learn from. It also covers what I bring, how
 I directed Claude to build the site, and the two MIT courses, with a link to my resume.

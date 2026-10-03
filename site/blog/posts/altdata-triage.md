@@ -1,6 +1,7 @@
 ---
 date: 2026-09-30
 slug: altdata-triage
+short: "Alt-data vendor triage"
 categories: [Data quality, Evaluation, Security, Research]
 tags: [dbt, duckdb, python, pydantic, bedrock, evals, prompt injection]
 ---

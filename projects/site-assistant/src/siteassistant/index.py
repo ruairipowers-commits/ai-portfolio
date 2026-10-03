@@ -3,6 +3,14 @@
 MkDocs Material publishes search/search_index.json with every page split into sections. Reading that (by URL from
 the live site, or a file from a local build) means the assistant always matches what's published — new posts and
 technology pages are searchable within `refresh_minutes`, with no build step coupling the two.
+
+The site build also publishes assistant/corpus.json (scripts/assistant_corpus.py in the portfolio repo):
+  - a profile card about Ruairi, regenerated from the posts on every build (background, MIT coursework, evidence by
+    topic, technologies by project, newest work first). It goes into every prompt, so questions about him always
+    have it, and it's the same text every time, so Ollama can reuse its cached prefix;
+  - each post's date and type, so excerpts carry dates and the model can say what's recent;
+  - public text that isn't on the site: project READMEs and docs on GitHub, the governance controls, coursework
+    READMEs and notebook commentary, and the resume.
 """
 from __future__ import annotations
 
@@ -54,25 +62,53 @@ def passages_from(index: dict, site_url: str, min_words: int = 8, max_words: int
     return out
 
 
-def refresh(store: Store, source: str, site_url: str, min_words: int = 8) -> int:
+def corpus_source_for(source: str) -> str:
+    """assistant/corpus.json sits next to search/search_index.json, on the live site and in a local build."""
+    if re.match(r"^https?://", source):
+        return re.sub(r"search/search_index\.json$", "assistant/corpus.json", source)
+    return str(Path(source).resolve().parent.parent / "assistant" / "corpus.json")
+
+
+def corpus_passages(corpus: dict, max_words: int = 180) -> list[dict]:
+    out = []
+    for d in corpus.get("docs", []):
+        words = (d.get("text") or "").split()
+        for i in range(0, len(words), max_words):
+            out.append({"url": d["url"], "page_title": d.get("title", ""), "section": d.get("section", ""),
+                        "text": " ".join(words[i:i + max_words])})
+    return out
+
+
+def refresh(store: Store, source: str, site_url: str, min_words: int = 8, corpus_source: str | None = None) -> int:
     try:
         rows = passages_from(load_source(source), site_url, min_words)
         if not rows:
             raise ValueError("the site index had no usable passages")
-        return store.replace_passages(rows, source)
     except Exception as e:  # noqa: BLE001 — keep serving the last good index
         store.index_failed(source, f"{type(e).__name__}: {e}")
         raise
+    csrc = corpus_source or corpus_source_for(source)
+    try:                    # the corpus is extra: without it the assistant still answers from the site
+        corpus = load_source(csrc)
+        rows += corpus_passages(corpus)
+        store.set_kv("profile", {"text": corpus.get("profile", ""), "url": corpus.get("profile_url", ""),
+                                 "generated": corpus.get("generated", "")})
+        store.set_kv("pages", corpus.get("pages", {}))
+    except Exception as e:  # noqa: BLE001
+        print(f"assistant corpus not loaded from {csrc}: {type(e).__name__}: {e}")
+    return store.replace_passages(rows, source)
 
 
 def fts_query(q: str) -> str:
     """Free text → an FTS5 query: meaningful words, prefix-matched, OR'd (bm25 ranks the best matches first)."""
-    words = [w for w in re.findall(r"[A-Za-z0-9][A-Za-z0-9+.-]*", q.lower()) if w not in STOP and len(w) > 1]
-    words = [re.sub(r"[^a-z0-9]", "", w) for w in words]
+    words = [w for w in re.findall(r"[a-z0-9]+", q.lower()) if w not in STOP and len(w) > 1]   # scikit-learn → scikit, learn
     return " OR ".join(f'"{w}"*' for w in dict.fromkeys(w for w in words if w))[:500]
 
 
-def search(store: Store, q: str, limit: int = 8) -> list[dict]:
+OFFSITE_WEIGHT = 0.7   # repo docs and the resume rank a little below the site's own pages for the same match
+
+
+def search(store: Store, q: str, limit: int = 8, site_url: str = "") -> list[dict]:
     fq = fts_query(q)
     if not fq:
         return []
@@ -81,7 +117,12 @@ def search(store: Store, q: str, limit: int = 8) -> list[dict]:
                   snippet(passages_fts, 2, '<mark>', '</mark>', ' … ', 28) as snippet,
                   bm25(passages_fts, 3.0, 2.0, 1.0) as score
            from passages_fts join passages p on p.pid = passages_fts.rowid
-           where passages_fts match ? order by score limit ?""", (fq, limit * 3))
+           where passages_fts match ? order by score limit ?""", (fq, limit * 4))
+    if site_url:            # bm25 is negative (lower = better): shrinking it pushes off-site passages down
+        for r in rows:
+            if not r["url"].startswith(site_url.rstrip("/") + "/"):
+                r["score"] *= OFFSITE_WEIGHT
+        rows.sort(key=lambda r: r["score"])
     seen, out = set(), []
     for r in rows:   # at most two passages per page, so one long post doesn't fill the list
         page = r["url"].split("#")[0]
@@ -94,27 +135,54 @@ def search(store: Store, q: str, limit: int = 8) -> list[dict]:
     return out
 
 
-# Questions about the person ("would Ruairi be good for a PM role…", "what's his background") need his profile
-# in the context even when the wording (or a misspelt name) doesn't match it.
-PERSON = __import__("re").compile(r"\b(ruair\w*|rory|powers?|poers|he|him|his|candidate|hire|hiring|role|fit|"
-                                  r"background|experience|resume|cv|career|qualif\w*|suitable|good for)\b", __import__("re").I)
-PROFILE_PAGES = ("about/", "")      # the About page and the home page intro
+# Questions about the person ("would Ruairi be good for a PM role…", "what's his background") always get the profile
+# card, and the words that only say "is he a fit" are dropped from the search so the role's own words drive it.
+PERSON = re.compile(r"\b(ruair\w*|rory|powers?|poers|he|him|his|candidate|hire|hiring|role|fit|background|experience|"
+                    r"resume|cv|career|qualif\w*|suitable|good for|skills?|know|knows|can he|has he|does he)\b", re.I)
+FIT_WORDS = re.compile(r"\b(would|could|be|a|an|good|great|fit|for|role|position|job|candidate|hire|hiring|suitable|"
+                       r"ruair\w*|rory|powers?|poers|he|him|his|have|has|does|do|is|any|experience|with|in|about|"
+                       r"tell|me|skills?|know|knows|qualified|qualifications?|projects?)\b", re.I)
 
 
-def profile_passages(store: Store, site_url: str, limit: int = 3) -> list[dict]:
+def is_about_person(question: str) -> bool:
+    return bool(PERSON.search(question))
+
+
+def profile_passage(store: Store, site_url: str) -> dict | None:
+    """The profile card as excerpt [1] (always the same text, so the model's prompt prefix is cacheable)."""
+    prof = store.get_kv("profile") or {}
+    if not prof.get("text"):
+        return None
+    return {"pid": -1, "url": prof.get("url") or f"{site_url.rstrip('/')}/about/", "page_title": "Profile and evidence",
+            "section": f"generated {prof.get('generated', '')}", "text": prof["text"], "snippet": "", "score": 0,
+            "profile": True}
+
+
+def with_dates(store: Store, rows: list[dict], site_url: str) -> list[dict]:
+    """Attach each post's date and type, so the model can tell what's recent."""
+    pages = store.get_kv("pages", {}) or {}
     base = site_url.rstrip("/") + "/"
-    rows = []
-    for page in PROFILE_PAGES:
-        rows += store.query("select pid, url, page_title, section, text, '' as snippet, 0 as score from passages "
-                            "where url = ? or url like ? order by pid limit 2", (base + page, base + page + "#%"))
-    return rows[:limit]
+    for r in rows:
+        path = r["url"].split("#")[0].removeprefix(base)
+        meta = pages.get(path)
+        if meta:
+            r["date"], r["kind"] = meta.get("date", ""), meta.get("kind", "")
+    return rows
 
 
 def context_for(store: Store, question: str, site_url: str, top_k: int) -> list[dict]:
-    """Passages for the model: the best matches, plus the profile when the question is about Ruairi."""
-    hits = search(store, question, top_k)
-    if PERSON.search(question):
-        prof = profile_passages(store, site_url)          # the About page first, then the best other matches
-        ids = {p["pid"] for p in prof}
-        hits = prof + [h for h in hits if h["pid"] not in ids][: max(top_k - len(prof), 2)]
-    return hits
+    """Passages for the model: the profile card first, then the best matches (dated when they're posts).
+    For questions about Ruairi, the search uses the role's own words ("LLM features", "product management")."""
+    q = question
+    if is_about_person(question):
+        stripped = FIT_WORDS.sub(" ", question)
+        if fts_query(stripped):
+            q = stripped
+    card = profile_passage(store, site_url)
+    hits = search(store, q, top_k + 2, site_url)
+    if card:                    # the About page's evidence tables are the card itself: don't spend slots on them
+        hits = [h for h in hits if h["url"] != card["url"]]
+    if is_about_person(question):   # the resume has the detail the card summarises: always offer its best passage
+        resume = [r for r in search(store, q + " resume experience", 20, site_url) if "resume" in r["url"].lower()][:1]
+        hits = resume + [h for h in hits if h["pid"] not in {r["pid"] for r in resume}]
+    return ([card] if card else []) + with_dates(store, hits[:top_k], site_url)

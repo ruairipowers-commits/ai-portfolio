@@ -4,6 +4,7 @@ Public (called from the blog, CORS-limited to the site's origin):
   GET  /api/search?q=…          ranked passages with snippets and links (logged)
   POST /api/chat                {question, history, page} → NDJSON stream: sources, text deltas, done (logged)
   POST /api/track               {kind: pageview | site-search, path, title, referrer, q} (sendBeacon; logged)
+  POST /api/suggest             {idea, name?, contact?} → the About page suggestion box (in the daily email)
   GET  /widget.js, /widget.css  the Ask button and panel the blog loads
   GET  /                        a standalone "Ask the portfolio" page
 Owner (ASSISTANT_ADMIN_TOKEN, or GOVERNANCE_ADMIN_TOKEN):
@@ -72,6 +73,14 @@ class ChatIn(BaseModel):
     page: str = Field("", max_length=300)
 
 
+class SuggestIn(BaseModel):
+    idea: str = Field(min_length=10, max_length=1500)
+    name: str = Field("", max_length=80)
+    contact: str = Field("", max_length=120)        # optional: how to reply (email or LinkedIn), only ever emailed to Ruairi
+    page: str = Field("", max_length=300)
+    website: str = Field("", max_length=200)        # honeypot: hidden in the form; bots fill it in
+
+
 class State:
     store: Store
     salt: tuple[str, str] = ("", "")
@@ -117,14 +126,24 @@ def allowed_origins() -> list[str]:
 
 
 # ---------------------------------------------------------------- background jobs
+def corpus_source() -> str | None:
+    return os.getenv("ASSISTANT_CORPUS") or SETTINGS["index"].get("corpus") or None
+
+
 def _refresher() -> None:
+    warmed = None
     while True:
         try:
-            index.refresh(S.store, index_source(), site_url(), SETTINGS["index"]["min_words"])
+            index.refresh(S.store, index_source(), site_url(), SETTINGS["index"]["min_words"], corpus_source())
         except Exception as e:  # noqa: BLE001
             print(f"index refresh failed: {e}")
+        card = index.profile_passage(S.store, site_url())
+        key = (card or {}).get("text", "") + llm.model_config(SETTINGS["chat"]["model_alias"])["model"]
+        if key != warmed and llm.ollama_ready(llm.model_config(SETTINGS["chat"]["model_alias"])["model"]):
+            llm.warm_up(SETTINGS, [card] if card else [])     # load the model and cache the prompt prefix
+            warmed = key
         S.store.purge(SETTINGS["privacy"]["retention_days"])
-        time.sleep(60 * SETTINGS["index"]["refresh_minutes"])
+        time.sleep(60 * (SETTINGS["index"]["refresh_minutes"] if warmed else 5))   # retry sooner while the model downloads
 
 
 def create_app(store: Store | None = None, background: bool = True) -> FastAPI:
@@ -206,7 +225,8 @@ def _routes(app: FastAPI) -> None:
             ms = llm.time_ms(t0)
             status = meta.get("status", "ok")
             S.store.log("ask", who, page_path(body.page), q, len(passages), status, meta.get("model", ""),
-                        meta.get("input_tokens", 0), meta.get("output_tokens", 0), ms, flags=flags)
+                        meta.get("input_tokens", 0), meta.get("output_tokens", 0), ms, flags=flags,
+                        answer="".join(text))
             rate = SETTINGS["cost"]["usd_per_1k_tokens"]
             telemetry.emit("ask", actor=f"visitor-{who[:8]}", actor_type="visitor", model=meta.get("model", ""),
                            input_tokens=meta.get("input_tokens", 0), output_tokens=meta.get("output_tokens", 0),
@@ -217,6 +237,22 @@ def _routes(app: FastAPI) -> None:
                                    "answer_chars": len("".join(text))})
             yield json.dumps({"type": "done", "model": meta.get("model", ""), "status": status, "ms": ms}) + "\n"
         return StreamingResponse(stream(), media_type="application/x-ndjson")
+
+    @app.post("/api/suggest", status_code=201)
+    def api_suggest(body: SuggestIn, request: Request):
+        """The About page's suggestion box: a project idea for Ruairi to try. Stored, and listed in the daily email."""
+        who = visitor(request)
+        lim = SETTINGS.get("suggestions", {})
+        if body.website.strip():                       # a bot: accept quietly, keep nothing
+            return {"ok": True}
+        limit("suggestion", who, lim.get("per_hour", 5))
+        if S.store.count_since("suggestion", None, 24 * 60) >= lim.get("per_day_total", 100):
+            raise HTTPException(429, "The suggestion box is full for today — please try again tomorrow.")
+        S.store.log("suggestion", who, page_path(body.page), " ".join(body.idea.split()), 0, "ok",
+                    answer=json.dumps({"name": body.name.strip(), "contact": body.contact.strip()}))
+        telemetry.emit("suggest", actor=f"visitor-{who[:8]}", actor_type="visitor", records_in=1, records_out=1,
+                       detail={"idea_chars": len(body.idea), "has_contact": bool(body.contact.strip())})
+        return {"ok": True}
 
     @app.post("/api/track", status_code=204)
     async def api_track(request: Request):

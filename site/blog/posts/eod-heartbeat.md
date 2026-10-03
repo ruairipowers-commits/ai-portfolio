@@ -1,6 +1,7 @@
 ---
 date: 2026-10-02
 slug: eod-heartbeat
+short: "EOD heartbeat"
 categories: [Operations, RAG & retrieval, Data quality]
 tags: [airflow, dbt, postgres, pgvector, runbooks, alerting, degraded mode, retention]
 ---

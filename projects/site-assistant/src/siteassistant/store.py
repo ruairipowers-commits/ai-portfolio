@@ -34,6 +34,7 @@ create table if not exists daily_metrics (
   day text not null, source text not null, metric text not null, value real, detail text,
   primary key (day, source, metric)
 );
+create table if not exists kv (key text primary key, value text, ts text);
 create table if not exists digests (
   ts text not null, day text not null, recipients text, subject text, status text, error text, body_html text
 );
@@ -55,6 +56,9 @@ class Store:
         self._lock = threading.Lock()
         with self._conn() as c:
             c.executescript(SCHEMA)
+            cols = {r[1] for r in c.execute("pragma table_info(activity)")}
+            if "answer" not in cols:              # older databases: answers weren't kept before
+                c.execute("alter table activity add column answer text")
 
     def _conn(self) -> sqlite3.Connection:
         c = sqlite3.connect(self.path, timeout=30)
@@ -91,15 +95,23 @@ class Store:
     def passage_count(self) -> int:
         return self.query("select count(*) n from passages")[0]["n"]
 
+    # -------------------------------------------------------------- small key/value facts (the profile card, post dates)
+    def set_kv(self, key: str, value) -> None:
+        self.execute("insert or replace into kv values (?,?,?)", (key, json.dumps(value), now_iso()))
+
+    def get_kv(self, key: str, default=None):
+        r = self.query("select value from kv where key = ?", (key,))
+        return json.loads(r[0]["value"]) if r else default
+
     # -------------------------------------------------------------- activity
     def log(self, kind: str, visitor: str = "", page: str = "", query: str = "", results: int = 0,
             status: str = "ok", model: str = "", input_tokens: int = 0, output_tokens: int = 0,
-            latency_ms: int = 0, referrer: str = "", flags: list[str] | None = None) -> None:
+            latency_ms: int = 0, referrer: str = "", flags: list[str] | None = None, answer: str = "") -> None:
         ts = now_iso()
         self.execute("""insert into activity (ts, day, kind, visitor, page, query, results, status, model, input_tokens,
-                        output_tokens, latency_ms, referrer, flags) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                        output_tokens, latency_ms, referrer, flags, answer) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                      (ts, ts[:10], kind, visitor, page[:300], query[:500], results, status, model, input_tokens,
-                      output_tokens, latency_ms, referrer[:300], json.dumps(flags or [])))
+                      output_tokens, latency_ms, referrer[:300], json.dumps(flags or []), answer[:4000]))
 
     def count_since(self, kind: str, visitor: str | None, minutes: int) -> int:
         since = (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat(timespec="seconds")

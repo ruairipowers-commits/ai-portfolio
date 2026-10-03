@@ -17,8 +17,10 @@ chat:
   model_alias: chat                # config/models.yaml
   top_k: 6                         # excerpts given to the model
   max_question_chars: 500
-  max_answer_tokens: 450
+  max_answer_tokens: 500
   temperature: 0.2
+  num_ctx: 8192                    # room for rules + profile card + 6 excerpts + history; Ollama's default is smaller
+  keep_alive: 24h                  # keep the model in memory between questions (a cold load takes seconds to minutes)
   history_turns: 2                 # earlier question/answer pairs sent along for follow-ups
 
 limits:                            # per visitor (hashed IP + browser, rotated daily)
@@ -29,6 +31,10 @@ limits:                            # per visitor (hashed IP + browser, rotated d
 cost:
   usd_per_1k_tokens: 0.0           # local model on our own hardware: no per-token charge
   daily_budget_tokens: 2000000     # stop answering (search still works) past this many tokens a day
+
+suggestions:                       # About page → "Suggest a project" (listed in the daily email)
+  per_hour: 5                      # per visitor
+  per_day_total: 100
 
 privacy:
   retention_days: 365              # OBS-03: searches, questions and page views are deleted after this
