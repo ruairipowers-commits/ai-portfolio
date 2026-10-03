@@ -10,7 +10,8 @@
   window.__siteAssistant = true;
 
   var css = document.createElement("link");
-  css.rel = "stylesheet"; css.href = API + "/widget.css";
+  // the stylesheet sits next to this script (the blog ships both, so the button shows even if the service is down)
+  css.rel = "stylesheet"; css.href = ((me && me.src) || API + "/widget.js").replace(/widget\.js(\?.*)?$/, "widget.css");
   document.head.appendChild(css);
 
   // ---------------------------------------------------------------- tracking
@@ -146,6 +147,10 @@
         }
         return pump();
       })
-      .catch(function (err) { a.innerHTML = '<p class="sa-err">' + esc(err.message || "Something went wrong.") + "</p>"; });
+      .catch(function (err) {
+        var msg = (err && err.message && !/fetch|network|load failed/i.test(err.message)) ? err.message :
+          "The assistant is offline right now. The search box at the top of the page still works.";
+        a.innerHTML = '<p class="sa-err">' + esc(msg) + "</p>";
+      });
   }
 })();
