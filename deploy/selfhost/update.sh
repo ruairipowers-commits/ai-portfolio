@@ -84,12 +84,17 @@ fi
 git merge --ff-only --quiet "$target" || { log "local changes block a fast-forward; this clone should be deploy-only"; exit 1; }
 log "deploying $(git rev-parse --short HEAD): $(git log -1 --format=%s)"
 
+caddy_before="$(sha256sum "$HERE/generated/Caddyfile" 2>/dev/null || true)"
 docker run --rm -v "$REPO:/repo" -w /repo -u "$(id -u):$(id -g)" -e HOME=/tmp \
   -e PORTFOLIO_DEMOS_TARGET=selfhost -e PORTFOLIO_DEMOS_URL="$DEMOS_URL" \
   -e PORTFOLIO_SITE_URL="$SITE_URL" -e PORTFOLIO_GITHUB_OWNER="$GITHUB_OWNER" \
   python:3.11-slim sh -c "pip install -q --user --disable-pip-version-check pyyaml 2>/dev/null && python scripts/demos.py render selfhost"
 
 if "${COMPOSE[@]}" up -d --build --remove-orphans; then
+  # Caddy reads its config only at start (admin API is off), so a new route needs a restart
+  if [ "$caddy_before" != "$(sha256sum "$HERE/generated/Caddyfile")" ]; then
+    log "routes changed — restarting caddy"; "${COMPOSE[@]}" restart caddy
+  fi
   echo "$target" > "$STATE/deployed"; rm -f "$STATE/failed"
   docker image prune -f >/dev/null
   log "done: $DEMOS_URL"
