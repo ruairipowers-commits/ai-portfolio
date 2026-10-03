@@ -1,0 +1,144 @@
+{
+ "cues": [
+  [
+   2.287,
+   "The AI governance console: every workflow, its spend, controls and kill switch."
+  ],
+  [
+   7.591,
+   "Escalation settings: EOD heartbeat emails at medium and above, and switches itself off at high."
+  ],
+  [
+   18.063,
+   "EOD heartbeat: AI explains end-of-day breaks from the firm's runbooks."
+  ],
+  [
+   23.416,
+   "Someone edits a runbook so step 1 becomes a forced full rerun \u2014 an unsafe action."
+  ],
+  [
+   33.937,
+   "Next EOD check for 24 Sep: the model picks up the edited runbook."
+  ],
+  [
+   53.609,
+   "The policy blocks the unsafe step (flag: unsafe_action) and reports it to the console."
+  ],
+  [
+   59.847,
+   "Within a second the console opened an incident and switched the workflow OFF automatically."
+  ],
+  [
+   69.669,
+   "The app now refuses to run: \u201cswitched off by governance: Automatic: INC-\u2026\u201d."
+  ],
+  [
+   74.932,
+   "The workflow's escalation list gets an email with the details\u2026"
+  ],
+  [
+   78.39,
+   "\u2026severity, control, who triggered it, the signals, what to do, and a link to the incident."
+  ],
+  [
+   82.462,
+   "Click \u201cReview incident\u201d."
+  ],
+  [
+   85.608,
+   "The incident: evidence from the event, guidance, and a timeline of what the console did."
+  ],
+  [
+   91.251,
+   "Investigate: the run's evidence points at runbook RB-11, step 1 \u2014 edited to force a full rerun."
+  ],
+  [
+   102.939,
+   "Close the loophole: restore the approved runbooks (and re-index) in the app."
+  ],
+  [
+   110.959,
+   "Document the resolution: root cause, the fix, and where it's written down."
+  ],
+  [
+   118.156,
+   "Re-confirm control SEC-04 and switch EOD heartbeat back on \u2014 in the same step."
+  ],
+  [
+   123.96,
+   "Resolved: the full record \u2014 detection, shutdown, email, investigation, fix, documentation, re-enable."
+  ],
+  [
+   132.562,
+   "EOD heartbeat is running again \u2014 with the loophole closed and the evidence on file."
+  ]
+ ],
+ "cuts": [
+  [
+   0.0,
+   1.283,
+   0.15,
+   "end"
+  ],
+  [
+   12.504,
+   17.058,
+   0.15,
+   "end"
+  ],
+  [
+   32.589,
+   32.934,
+   0.9,
+   "ends"
+  ],
+  [
+   41.734,
+   51.408,
+   0.9,
+   "ends"
+  ],
+  [
+   58.205,
+   58.844,
+   0.15,
+   "end"
+  ],
+  [
+   64.596,
+   68.047,
+   0.15,
+   "end"
+  ],
+  [
+   73.277,
+   73.929,
+   0.15,
+   "end"
+  ],
+  [
+   98.411,
+   101.934,
+   0.15,
+   "end"
+  ],
+  [
+   104.636,
+   105.544,
+   0.9,
+   "ends"
+  ],
+  [
+   107.14,
+   107.696,
+   0.15,
+   "end"
+  ],
+  [
+   127.545,
+   130.943,
+   0.15,
+   "end"
+  ]
+ ]
+}
