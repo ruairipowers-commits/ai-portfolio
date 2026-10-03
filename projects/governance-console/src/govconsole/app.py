@@ -30,6 +30,7 @@ from markupsafe import Markup, escape
 from pydantic import BaseModel, Field, ValidationError
 
 from . import catalog as cat
+from . import content
 from . import metrics as M
 from . import escalation, links, notify, simulate, spool
 from .store import Store, now_iso
@@ -488,6 +489,32 @@ def _routes(app: FastAPI) -> None:
         if not m:
             raise HTTPException(404, "unknown message")
         return HTMLResponse(m["body_html"] or f"<pre>{escape(m['body_text'] or '')}</pre>")
+
+    # ------------------------------------------------------------ content: ratings and suggestions on the site
+    @app.get("/content", response_class=HTMLResponse)
+    def content_page(request: Request, saved: str = ""):
+        data = content.fetch()
+        admin = is_admin(request)
+        sugg = data.get("suggestions", [])
+        if not admin:              # the public demo sees what the site shows, and no names or contacts
+            sugg = [{k: v for k, v in r.items() if k not in ("name", "contact", "visitor")}
+                    for r in sugg if r.get("status") == "published"]
+        counts = {st: sum(1 for r in data.get("suggestions", []) if r.get("status") == st) for st in content.STATUSES}
+        return templates.TemplateResponse(request, "content.html", _ctx(
+            request, page="content", data=data, suggestions=sugg, counts=counts, statuses=content.STATUSES,
+            kickoff=data.get("kickoff", {}) if admin else {}, saved=saved))
+
+    @app.post("/content/suggestions/{sid}")
+    def content_set_status(request: Request, sid: int, status: str = Form(...)):
+        if not is_admin(request):
+            raise HTTPException(403, "admin sign-in required to publish or hide suggestions")
+        try:
+            content.set_status(sid, status, admin_name(request))
+        except ValueError as e:
+            raise HTTPException(422, str(e)) from e
+        except Exception as e:  # noqa: BLE001
+            raise HTTPException(502, f"the site assistant didn't accept the change ({type(e).__name__})") from e
+        return RedirectResponse(f"{BASE}/content?saved={sid}#s-{sid}", status_code=303)
 
     @app.get("/models", response_class=HTMLResponse)
     def models_page(request: Request):

@@ -27,7 +27,7 @@ inside a framework I set up so the result would be free, open, reusable and able
 | **Repeatable** | Each project starts as a short spec. A reusable skill turns the spec into a repo, tests, a demo, a governance mapping and a write-up, following a style guide and an instructions file the AI reads every time. |
 | **CI/CD** | GitHub Actions runs the tests, evals and governance checks on every change and publishes the site. My server deploys a commit only after its checks pass. |
 | **Expandable** | A new project is one line in a config file plus a spec. The project tables, [technology pages](tech/index.md), [blog](blog/index.md) filters, the evidence below and the assistant's knowledge all update from it. |
-| **Evolves over time** | [Release notes](release-notes/index.md) record every step. My own edits always win over generated ones. A daily email shows what visitors read, search for and ask about, and the suggestion box below collects ideas. |
+| **Evolves over time** | [Release notes](release-notes/index.md) record every step. My own edits always win over generated ones. A daily email shows what visitors read, like, search for and ask about, and the [suggestion box](projects/suggestions.md) collects ideas that visitors upvote. |
 
 **AI and agentic workflows, in practice.**
 
@@ -55,21 +55,8 @@ The tools are listed on [Technologies](tech/index.md).
 
 ## Suggest a project
 
-What should I try next? Suggest a problem, a project or a technology you'd like to see me take on. Suggestions come
-to me in a daily email and are never published. Name and contact are optional; leave them only if you'd like a reply.
-
-<form class="suggest" data-suggest>
-  <label for="sg-idea">Your idea</label>
-  <textarea id="sg-idea" name="idea" rows="4" minlength="10" maxlength="1500" required
-    placeholder="e.g. An agent that reconciles corporate actions across custodians"></textarea>
-  <div class="suggest__row">
-    <div><label for="sg-name">Name (optional)</label><input id="sg-name" name="name" maxlength="80"></div>
-    <div><label for="sg-contact">Email or LinkedIn (optional)</label><input id="sg-contact" name="contact" maxlength="120"></div>
-  </div>
-  <input class="suggest__hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-  <button type="submit" class="md-button md-button--primary">Send suggestion</button>
-  <p class="suggest__status" data-status role="status"></p>
-</form>
+What should I try next? [Suggest a project](projects/suggestions.md), or upvote the ideas others have shared. The
+top ten arrive in my email every day.
 
 ## Skills and evidence
 

@@ -71,7 +71,7 @@ def test_stats_page_needs_the_owner_token_in_public(client, monkeypatch):
     assert "Recent searches" in client.get("/stats", params={"token": "s3cret"}).text
 
 
-def test_digest_lists_asks_about_you_with_gaps_and_suggestions(client, store):
+def test_digest_lists_asks_about_you_suggestions_and_thumbs_up(client, store):
     from siteassistant import app as A, digest
 
     day = date.today().isoformat()
@@ -82,10 +82,18 @@ def test_digest_lists_asks_about_you_with_gaps_and_suggestions(client, store):
     store.log("ask", "v3", "/", "What is pgvector?", 4, "ok", "m", answer="A Postgres extension [2].")
     client.post("/api/suggest", json={"idea": "Build an agent that reconciles corporate actions", "name": "Pat",
                                       "contact": "pat@example.com"})
+    old = store.add_suggestion("A desk-level P&L explainer", "", "", "v9", "/", "published")
+    store.execute("update suggestions set day = '2026-01-01' where id = ?", (old,))
+    for v in ("a", "b"):
+        store.vote(old, v)
+    client.post("/api/like", json={"path": "/ai-portfolio/blog/governance-console/"})
     r = digest.run(store, A.SETTINGS, day, send_email=False)
     text, html = r["text"], r["html"]
-    assert "Questions about you: 2" in text and "Project suggestions: 1" in text
-    assert "Asks about you" in text and "Kubernetes platform role? [on your plate to review]" in text
-    assert "What is pgvector?" not in text.split("Asks about you")[1].split("Project suggestions:")[0]
-    assert "On your plate to review" in text and "Build an agent that reconciles corporate actions — Pat, pat@example.com" in text
-    assert "on your plate to review" in html
+    assert "Questions about you: 2" in text and "New project suggestions: 1" in text and "Thumbs up on posts: 1" in text
+    assert "Kubernetes platform role? [on your plate to review]" in text
+    assert "What is pgvector?" not in text.split("Asks about you")[1].split("Top suggested projects")[0]
+    top = text.split("Top suggested projects (new ones marked):")[1]
+    assert top.index("2 votes · A desk-level P&L explainer") < top.index("[NEW] 0 votes · Build an agent")
+    assert "(awaiting approval) — Pat, pat@example.com" in top and "https://claude.ai/new?q=" in top
+    assert "Thumbs up yesterday" in text and "AI governance console (1)" in text or "blog/governance-console/ (1)" in text
+    assert ">NEW</b>" in html and "Start in Claude" in html and "claude://claude.ai/new?q=" in html

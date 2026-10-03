@@ -75,6 +75,7 @@ select, input[type=text], input[type=password], textarea { font: inherit; color:
   border-radius: 8px; margin-bottom: 14px; display: flex; gap: 10px; align-items: flex-start; }
 .banner.critical { border-left-color: var(--critical); }
 .banner.info { border-left-color: var(--accent); }
+.banner.warning { border-left-color: var(--warning); }
 
 /* ---- cards */
 .grid { display: grid; gap: 14px; }

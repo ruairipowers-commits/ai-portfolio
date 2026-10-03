@@ -47,6 +47,7 @@ extra_css:
 extra_javascript:
   - assets/blog-filter.js
   - assets/suggest.js
+  - assets/likes.js
 
 hooks:
   - scripts/mkdocs_hooks.py
@@ -75,6 +76,7 @@ nav:
   - Projects:
       - Industry projects: projects/index.md
       - Personal projects: personal/index.md
+      - Suggest a project: projects/suggestions.md
   - Blog: blog/index.md
   - Classes: classes/index.md
   - Technologies: tech/index.md

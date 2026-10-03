@@ -7,6 +7,7 @@ icon: material/briefcase-outline
 <nav class="subtabs" markdown>
 [Industry projects](index.md){ .active }
 [Personal projects](../personal/index.md)
+[Suggest a project](suggestions.md)
 </nav>
 
 AI workflows for the problems an investment firm actually has: vendor data triage, end-of-day breaks, trade

@@ -6,6 +6,19 @@
     var box = document.querySelector("[data-posts-filter]");
     if (!box || box.dataset.ready) return;
     box.dataset.ready = "1";
+
+    // On wide screens the filters live in the left side panel; on phones they stay above the list.
+    var home = document.createElement("div");
+    home.className = "post-filter-home";
+    box.parentNode.insertBefore(home, box);
+    var side = document.querySelector(".md-sidebar--primary .md-sidebar__inner");
+    var wide = window.matchMedia("(min-width: 76.25em)");
+    function place() {
+      if (wide.matches && side) { side.appendChild(box); box.classList.add("post-filter--side"); }
+      else { home.parentNode.insertBefore(box, home); box.classList.remove("post-filter--side"); }
+    }
+    place();
+    if (wide.addEventListener) wide.addEventListener("change", place); else if (wide.addListener) wide.addListener(place);
     var cards = Array.prototype.slice.call(document.querySelectorAll(".post-card"));
     var chips = Array.prototype.slice.call(box.querySelectorAll(".post-chip"));
     var section = box.querySelector("[data-section-select]");

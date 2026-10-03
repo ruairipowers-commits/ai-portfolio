@@ -35,6 +35,14 @@ create table if not exists daily_metrics (
   primary key (day, source, metric)
 );
 create table if not exists kv (key text primary key, value text, ts text);
+create table if not exists likes (path text not null, visitor text not null, day text not null, ts text not null,
+  primary key (path, visitor, day));
+create table if not exists suggestions (
+  id integer primary key, ts text not null, day text not null, idea text not null, name text, contact text,
+  visitor text, page text, status text not null default 'pending', updated_at text, updated_by text
+);
+create table if not exists suggestion_votes (sid integer not null, visitor text not null, day text not null,
+  ts text not null, primary key (sid, visitor, day));
 create table if not exists digests (
   ts text not null, day text not null, recipients text, subject text, status text, error text, body_html text
 );
@@ -103,6 +111,60 @@ class Store:
         r = self.query("select value from kv where key = ?", (key,))
         return json.loads(r[0]["value"]) if r else default
 
+    # -------------------------------------------------------------- thumbs up on posts
+    def like(self, path: str, visitor: str) -> bool:
+        """One thumbs up per post per visitor per day (the visitor key itself rotates daily). True if counted."""
+        ts = now_iso()
+        with self._lock, self._conn() as c:
+            cur = c.execute("insert or ignore into likes values (?,?,?,?)", (path, visitor, ts[:10], ts))
+            return cur.rowcount == 1
+
+    def like_counts(self, paths: list[str] | None = None) -> dict[str, int]:
+        if paths:
+            marks = ",".join("?" * len(paths))
+            rows = self.query(f"select path, count(*) n from likes where path in ({marks}) group by path", paths)
+        else:
+            rows = self.query("select path, count(*) n from likes group by path")
+        return {r["path"]: r["n"] for r in rows}
+
+    def top_liked(self, limit: int = 10, since_day: str | None = None) -> list[dict]:
+        where, params = ("where day >= ?", (since_day,)) if since_day else ("", ())
+        return self.query(f"""select path, count(*) as likes, max(day) as last_day from likes {where}
+                              group by path order by likes desc, last_day desc limit ?""", (*params, limit))
+
+    # -------------------------------------------------------------- project suggestions + upvotes
+    SUGGESTION_STATUSES = ("pending", "published", "hidden", "done")
+
+    def add_suggestion(self, idea: str, name: str, contact: str, visitor: str, page: str, status: str) -> int:
+        ts = now_iso()
+        with self._lock, self._conn() as c:
+            cur = c.execute("""insert into suggestions (ts, day, idea, name, contact, visitor, page, status)
+                               values (?,?,?,?,?,?,?,?)""", (ts, ts[:10], idea, name, contact, visitor, page, status))
+            return cur.lastrowid
+
+    def suggestions(self, statuses: tuple[str, ...] | None = None, limit: int = 200) -> list[dict]:
+        """Newest-voted first: votes, then newest. Each row carries its vote count."""
+        where, params = "", ()
+        if statuses:
+            where, params = f"where s.status in ({','.join('?' * len(statuses))})", statuses
+        return self.query(f"""select s.*, (select count(*) from suggestion_votes v where v.sid = s.id) as votes
+                              from suggestions s {where} order by votes desc, s.ts desc limit ?""", (*params, limit))
+
+    def suggestion(self, sid: int) -> dict | None:
+        r = self.query("""select s.*, (select count(*) from suggestion_votes v where v.sid = s.id) as votes
+                          from suggestions s where id = ?""", (sid,))
+        return r[0] if r else None
+
+    def vote(self, sid: int, visitor: str) -> bool:
+        ts = now_iso()
+        with self._lock, self._conn() as c:
+            cur = c.execute("insert or ignore into suggestion_votes values (?,?,?,?)", (sid, visitor, ts[:10], ts))
+            return cur.rowcount == 1
+
+    def set_suggestion_status(self, sid: int, status: str, actor: str) -> None:
+        self.execute("update suggestions set status = ?, updated_at = ?, updated_by = ? where id = ?",
+                     (status, now_iso(), actor[:80], sid))
+
     # -------------------------------------------------------------- activity
     def log(self, kind: str, visitor: str = "", page: str = "", query: str = "", results: int = 0,
             status: str = "ok", model: str = "", input_tokens: int = 0, output_tokens: int = 0,
@@ -128,6 +190,7 @@ class Store:
     def purge(self, retention_days: int) -> None:
         cutoff = (datetime.now(timezone.utc) - timedelta(days=retention_days)).date().isoformat()
         self.execute("delete from activity where day < ?", (cutoff,))
+        self.execute("update suggestions set contact = '' where day < ?", (cutoff,))   # keep the idea, drop contact
 
     # -------------------------------------------------------------- daily metrics + digests
     def put_metric(self, day: str, source: str, metric: str, value: float | None, detail=None) -> None:

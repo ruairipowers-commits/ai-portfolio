@@ -32,9 +32,16 @@ cost:
   usd_per_1k_tokens: 0.0           # local model on our own hardware: no per-token charge
   daily_budget_tokens: 2000000     # stop answering (search still works) past this many tokens a day
 
-suggestions:                       # About page → "Suggest a project" (listed in the daily email)
-  per_hour: 5                      # per visitor
+suggestions:                       # Projects → Suggest a project (listed in the daily email)
+  per_hour: 5                      # new suggestions per visitor
   per_day_total: 100
+  auto_publish: false              # false: new ideas wait for approval in the governance console's Content tab
+  votes_per_hour: 30
+  new_days: 7                      # "new" badge on the Suggestions page
+  top_n: 10                        # in the daily email
+
+likes:                             # thumbs up on posts (one per visitor per post per day)
+  per_hour: 60
 
 privacy:
   retention_days: 365              # OBS-03: searches, questions and page views are deleted after this
