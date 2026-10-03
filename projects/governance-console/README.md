@@ -51,12 +51,12 @@ the root cause, the fix and where it's documented, re-confirm the control and sw
 step. One open incident per workflow and rule means one email, not a flood. Ticketing (PagerDuty, ServiceNow) is a
 designed integration option: each incident page shows the exact payloads ([docs/integrations.md](docs/integrations.md)).
 
-[![Escalation walkthrough: violation, auto-shutdown, email, investigate, fix, document, re-enable (2:57, narrated)](docs/img/escalation-email.png)](docs/img/escalation.mp4)
+[![Escalation walkthrough: violation, auto-shutdown, email, investigate, fix, document, re-enable (1:38, narrated)](docs/img/escalation-email.png)](docs/img/escalation.mp4)
 
-*Narrated walkthrough video (2 min 57 s, synthetic voice, [docs/img/escalation.mp4](docs/img/escalation.mp4)): a runbook is edited so the
+*Narrated walkthrough video (1 min 38 s, synthetic voice, [docs/img/escalation.mp4](docs/img/escalation.mp4)): a runbook is edited so the
 model proposes a forced rerun → the policy blocks it and the console switches EOD heartbeat off → the owner's
 email → the incident page → investigation note → approved runbooks restored → root cause, fix and documentation
-recorded, SEC-04 re-confirmed, workflow re-enabled. Recorded against a local console and a local mail server; the narration is text-to-speech (SVOX Pico).*
+recorded, SEC-04 re-confirmed, workflow re-enabled. Recorded against a local console and a local mail server; the narration is text-to-speech, and loads and waits are edited out ([docs/video](docs/video/README.md)).*
 
 ### Simulated history vs live events
 
