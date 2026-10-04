@@ -49,6 +49,8 @@ config:                  # config/puzzles.yaml — every setting below is a key;
   scoring: 'base 100, decay 0.7 per extra attempt, floor 10, optional track multipliers (e.g. AI/ML × 1.5)'
   models: 'aliases for generator and solver (must differ, ideally different providers)'
   players: 'each subscriber picks which tracks they are emailed; leaderboard overall and per track'
+  packs: 'one-off puzzle packs: who may generate them (operator only by default; optionally signed-in players with a
+    daily quota), max puzzles per pack, default tracks/difficulty mix, PDF branding (title, footer)'
 
 stack:
   language: python
@@ -65,10 +67,12 @@ stack:
   llm_access: registry adapter (mock, ollama, anthropic, openai, bedrock)
   retrieval: none (de-duplication against past puzzles by normalized-text hash, kind and answer)
   public_data: Hugging Face Hub (small, permissively licensed models and datasets, pinned revisions, cached locally)
+  pdf: 'WeasyPrint (HTML → PDF from the same Jinja templates as the site; code blocks and tables render cleanly)'
   email: Resend (SMTP or API) with a file outbox in mock mode; double opt-in, one-click unsubscribe
   ui: 'player site in FastAPI + Jinja + HTMX (today''s puzzle with track and skill tags, starter notebook/code for
     coding and AI puzzles, submit, instant feedback, leaderboard overall and per track, archive with revealed answers
-    and worked solutions, track preferences); Streamlit operator app Input → Run → Output (edit config, simulate a
+    and worked solutions, track preferences); one-off pack generator (operator page + CLI `puzzle pack`);
+    Streamlit operator app Input → Run → Output (edit config, simulate a
     week: generate, verify, sandbox runs, simulated players, close, reveal, score; try-to-break-it: inject instructions
     into an answer, force an ambiguous puzzle, a non-reproducible fine-tune, a disallowed dataset, read the answer
     early; human step: approve/reject an escalated puzzle)'
@@ -84,6 +88,8 @@ showcases:
   - 'answer-key integrity: salted hash for grading, key sealed (encrypted) until close, reveal enforced server-side'
   - fully scheduled agentic operations with an escalation queue instead of a daily human step
   - configuration-driven product anyone can run with their own tracks, rotation and data allow-list
+  - 'one-off puzzle packs: the same generate-and-verify pipeline produces a questions PDF and a separate answer-key
+    PDF on demand'
   - FastAPI + HTMX player UI (first non-Streamlit end-user front end in the portfolio)
 
 functional_requirements:
@@ -104,6 +110,12 @@ functional_requirements:
     earlier last solve'
   - 'FR-6 Answer reveal only after submissions close (archive page and the next morning''s email); requests before
     close are refused server-side'
+  - 'FR-7 One-off puzzle pack: choose tracks (or random), number of puzzles, difficulty and an optional seed; every
+    puzzle goes through the same generate → blind-solve → sandbox checks; output is two PDFs: questions (with
+    starter snippets and data references for coding/AI) and a separate answer key (answers, tolerances, worked
+    solutions, reference code). Pack puzzles are not used as daily puzzles, never touch the leaderboard, and are
+    de-duplicated against the archive. From the CLI (`puzzle pack --tracks logic,ai_ml --count 5 --seed 7`) and the
+    operator app; optionally for signed-in players within a quota'
 non_functional_requirements:
   - 'NFR-1 Submission feedback p95 < 300 ms (grading is code, no model call, no sandbox run)'
   - 'NFR-2 Zero ambiguous or non-reproducible puzzles published: every published puzzle has a verifier pass recorded
@@ -114,6 +126,8 @@ non_functional_requirements:
     Ollama; sandbox runs within the configured CPU/time caps'
   - 'NFR-5 Sandbox: no secrets or host mounts, network only to allow-listed hosts, killed at the time limit;
     only safetensors weights load (no pickle)'
+  - 'NFR-7 A 5-puzzle pack on the offline mock builds both PDFs in < 1 minute; the questions PDF contains no
+    answer, key or reference code (tested by extracting its text)'
   - 'NFR-6 Offline demo (mock models, SQLite, file outbox, bundled tiny model and dataset fixtures) simulates a full
     week across all tracks in < 5 minutes'
 
@@ -158,13 +172,13 @@ golden_cases:
   - {id: a03-numeric-tolerance, expected: CORRECT, tags: [grading], why: within the puzzle''s tolerance}
   - {id: a04-injection, expected: INCORRECT, tags: [grading, adversarial]}
   - {id: a05-after-close, expected: CLOSED, tags: [grading]}
+  - {id: p01-pack-separation, expected: 'questions PDF has no answers; key PDF has all', tags: [pack, integrity]}
   - {id: s01-scoring, expected: '100/70/49/34/24/17/0', tags: [scoring]}
 
 open_questions:
   - '"Accepted": defined here as the player opened the puzzle and pressed Accept (starts their attempt count);
     alternative is "delivered to the player". Confirm.'
   - 'Open window: 07:00–23:59 ET assumed.'
-  - 'Tier: personal project (like the site assistant) assumed, hosted at demos.<domain>/daily-puzzle/.'
 
 demo:
   title: Daily puzzle
