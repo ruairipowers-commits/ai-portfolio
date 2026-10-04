@@ -28,6 +28,8 @@ jobs:
       - uses: actions/setup-python@v6
         with: {python-version: "3.11", cache: pip}
       - run: pip install -e ".[dev,ui]"
+      - name: the demo image has every library the code imports (tests install extras the image doesn't)
+        run: python ../../scripts/check_image_deps.py .
       - name: build the offline demo data (make all), if the project has it
         run: if grep -q '^all:' Makefile; then make all; fi
       - run: pytest -q
