@@ -1,0 +1,11 @@
+# One term or phrase per line, matched case-insensitively on word boundaries against every generated puzzle
+# (statement, title, solution). Extend for your audience; a match rejects the draft.
+kill yourself
+idiot
+moron
+retard
+nazi
+terrorist attack
+suicide method
+bomb making
+how to make a weapon

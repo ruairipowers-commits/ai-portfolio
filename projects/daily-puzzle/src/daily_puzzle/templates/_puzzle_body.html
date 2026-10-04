@@ -1,0 +1,13 @@
+<div class="meta">
+  <span class="chip {{ p.track }}">{{ TRACK_LABEL[p.track] }}</span>
+  <span class="chip soft">{{ p.difficulty }}</span>
+  {% if p.day %}<span>{{ p.day }}</span>{% endif %}
+  {% for t in p.skill_tags or [] %}<span class="chip soft">{{ t }}</span>{% endfor %}
+</div>
+<h1>{{ p.title }}</h1>
+<div class="statement">{{ p.statement|md|safe }}</div>
+{% if p.learning_objective %}<p class="learn"><b>What it teaches:</b> {{ p.learning_objective }}</p>{% endif %}
+{% if p.assets %}<p class="small muted">Data: {% for a in p.assets %}<code>{{ a.id }}</code> ({{ a.files|join(', ') }}{% if a.revision %}, revision <code>{{ a.revision[:12] }}</code>{% endif %}){% if not loop.last %}; {% endif %}{% endfor %}.
+{% if p.assets|map(attribute='id')|join(' ')|trim and 'fixture/' in p.assets|map(attribute='id')|join(' ') %}Bundled files: <a href="{{ base }}/data/">download</a>.{% endif %}</p>{% endif %}
+{% if p.starter %}<details><summary>Starter code</summary><pre><code>{{ p.starter }}</code></pre></details>{% endif %}
+{% if p.answer_format %}<p class="small muted">Answer format: {{ p.answer_format }}.</p>{% endif %}

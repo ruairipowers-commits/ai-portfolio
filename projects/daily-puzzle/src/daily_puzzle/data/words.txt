@@ -1,0 +1,8 @@
+# Word list for word puzzles: "category: words". Used by the generator (offline mock) and by the checkers that
+# prove a cipher or anagram has exactly one answer *within this list*. Extend it to widen the checks.
+animals: badger beaver bison camel cheetah cobra coyote donkey eagle falcon ferret gecko giraffe hamster heron jaguar koala lemur leopard llama lobster magpie marmot otter panda parrot pelican penguin rabbit raccoon salmon shark spider squirrel tiger toucan turtle walrus weasel zebra
+fruits: apple apricot banana cherry coconut damson grape guava kiwi lemon lime mango melon nectarine orange papaya peach pear plum quince raisin tangerine
+markets: alpha arbitrage asset basis bond broker capital coupon credit equity future hedge index ledger margin option portfolio premium rally spread stock swap tick volume yield dividend
+data: array cache column dataset delta graph join kernel matrix pipeline python query schema scalar sparse table tensor token vector parquet lambda
+ai: agent attention dropout embedding encoder gradient layer logit neuron prompt sampler softmax transformer weight bias epoch batch
+general: listen silent earth heart night thing stale least angel glean below elbow dusty study cider cried

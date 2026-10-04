@@ -1,0 +1,11 @@
+{% extends "base.html" %}{% block title %}Leaderboard · Daily puzzle{% endblock %}{% block body %}
+<h1>Leaderboard</h1>
+<p class="muted small">Points per puzzle: {{ scoring_line }}. Scores add up across puzzles. Ties go to fewer total attempts, then the earlier solve.</p>
+<div class="tabs">{% for k, lbl in [('all','All time'),('week','This week')] %}<a class="{{ 'on' if period == k }}" href="?period={{ k }}{{ '&track=' ~ track if track }}">{{ lbl }}</a>{% endfor %}</div>
+<div class="tabs"><a class="{{ 'on' if not track }}" href="?period={{ period }}">All tracks</a>{% for t in tracks %}<a class="{{ 'on' if track == t }}" href="?period={{ period }}&track={{ t }}">{{ TRACK_LABEL[t] }}</a>{% endfor %}</div>
+<div class="card" style="padding:8px 8px;overflow-x:auto">
+<table><thead><tr><th class="n">#</th><th>Player</th><th class="n">Accepted</th><th class="n">Attempted</th><th class="n">Solved</th><th class="n">Score</th></tr></thead>
+<tbody>{% for r in rows %}<tr class="{{ 'me' if me and r.handle == me.handle }}"><td class="n">{{ r.rank }}</td><td>{{ r.handle }}{% if r.simulated %} <span class="small muted">(sim)</span>{% endif %}</td>
+<td class="n">{{ r.accepted }}</td><td class="n">{{ r.attempted }}</td><td class="n">{{ r.solved }}</td><td class="n"><b>{{ r.score }}</b></td></tr>
+{% else %}<tr><td colspan="6" class="muted">No scores yet.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

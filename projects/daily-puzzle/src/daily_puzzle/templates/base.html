@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Daily puzzle{% endblock %}</title>
+<link rel="stylesheet" href="{{ base }}/static/site.css">
+<script src="{{ base }}/static/htmx.min.js" defer></script>
+<meta name="htmx-config" content='{"includeIndicatorStyles":false}'>
+</head>
+<body class="{{ 'has-bar' if bar else '' }}">
+{{ bar|safe }}
+<header class="site"><div class="wrap">
+  <a class="brand" href="{{ base }}/"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 2h4v3a2 2 0 1 0 4 0V2h4v8h-3a2 2 0 1 0 0 4h3v8h-8v-3a2 2 0 1 0-4 0v3H2v-8h3a2 2 0 1 0 0-4H2V2h8z"/></svg>Daily puzzle</a>
+  <nav class="main">
+    <a href="{{ base }}/" class="{{ 'on' if nav == 'today' }}">Today</a>
+    <a href="{{ base }}/leaderboard" class="{{ 'on' if nav == 'board' }}">Leaderboard</a>
+    <a href="{{ base }}/archive" class="{{ 'on' if nav == 'archive' }}">Archive</a>
+    {% if packs_open %}<a href="{{ base }}/packs" class="{{ 'on' if nav == 'packs' }}">Packs</a>{% endif %}
+    {% if me %}<a href="{{ base }}/me" class="{{ 'on' if nav == 'me' }}">{{ me.handle }}</a>
+    {% else %}<a href="{{ base }}/signin" class="{{ 'on' if nav == 'signin' }}">Sign in</a>
+    <a href="{{ base }}/subscribe" class="{{ 'on' if nav == 'subscribe' }}"><b>Subscribe</b></a>{% endif %}
+  </nav>
+</div></header>
+<main><div class="wrap">
+{% block body %}{% endblock %}
+</div></main>
+<footer class="site"><div class="wrap">
+One puzzle a day across logic, words, numbers, coding and AI. Each is written by one model and checked by a second
+that never sees the answer{% if links.blog_url %} — <a href="{{ links.blog_url }}">how it works</a>{% endif %}{% if links.source_url %} · <a href="{{ links.source_url }}">source</a>{% endif %}.
+</div></footer>
+</body></html>

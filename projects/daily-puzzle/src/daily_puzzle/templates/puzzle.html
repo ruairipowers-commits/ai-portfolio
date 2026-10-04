@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% block title %}{{ p.title }} · Daily puzzle{% endblock %}{% block body %}
+<div class="card">
+  {% include "_puzzle_body.html" %}
+  {% if open %}
+    <p class="small muted">Closes {{ closes }}.</p>
+    {% include "_play.html" %}
+  {% elif p.status == 'revealed' %}
+    <h2>Answer</h2>
+    <p class="fb solved">{{ p.reveal_answer }}</p>
+    {% if p.reveal_solution %}<h3>Worked solution</h3><div>{{ p.reveal_solution|md|safe }}</div>{% endif %}
+    {% if p.reveal_code %}<h3>Reference code</h3><pre><code>{{ p.reveal_code }}</code></pre>{% endif %}
+    {% if state %}<p class="muted">You: {{ 'solved in ' ~ state.attempts ~ ' attempt(s), ' ~ state.points ~ ' points' if state.solved_at else 'not solved (' ~ state.attempts ~ ' attempt(s))' }}.</p>{% endif %}
+    <p class="small muted">{{ stats.accepted }} accepted · {{ stats.solved }} solved{% if stats.solved %} · average {{ '%.1f'|format(stats.avg_attempts) }} attempts{% endif %}</p>
+  {% else %}
+    <p class="flash">Submissions are closed. The answer is published a few minutes after closing.</p>
+  {% endif %}
+</div>
+{% endblock %}

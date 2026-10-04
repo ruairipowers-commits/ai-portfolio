@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block body %}<div class="card"><h1>{{ heading }}</h1><p>{{ text }}</p>
+{% if extra %}<ul>{{ extra|safe }}</ul>{% endif %}
+{% if outbox_note %}<p class="small muted">{{ outbox_note }}</p>{% endif %}
+{% if form_action %}<form method="post" action="{{ form_action }}"><button class="{{ form_class or '' }}">{{ form_label }}</button></form>{% endif %}
+</div>{% endblock %}

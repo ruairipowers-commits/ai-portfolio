@@ -1,0 +1,22 @@
+# Live service image (self-host on the EVO-X1 behind Caddy at /daily-puzzle/, or a Hugging Face Docker Space).
+#   docker build -f Dockerfile.space -t daily-puzzle . && docker run -p 7860:7860 -e PUZZLE_KEY_SECRET=… -e PUZZLE_SALT=… daily-puzzle
+# The player site + the scheduler (one process). Mock models by default: no keys needed. Switch models with
+# PUZZLE_GENERATOR_MODEL / PUZZLE_SOLVER_MODEL (e.g. local-qwen / local-gemma with OLLAMA_URL). Email goes out
+# through Resend when RESEND_API_KEY is set; otherwise it is written to the outbox folder.
+FROM python:3.11-slim
+# WeasyPrint (puzzle-pack PDFs) needs Pango; DejaVu gives the PDFs a font with the Unicode the puzzles use
+RUN apt-get update && apt-get install -y --no-install-recommends libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b \
+      fonts-dejavu-core && rm -rf /var/lib/apt/lists/* \
+    && useradd -m -u 1000 user && install -d -o user -g user /app
+ENV HOME=/home/user PYTHONUNBUFFERED=1
+WORKDIR /app
+COPY --chown=user . .
+# Installed system-wide (not --user): the puzzle sandbox runs Python in isolated mode, which ignores the user site,
+# and its code needs numpy and safetensors.
+RUN pip install --no-cache-dir -e ".[ui]"
+USER user
+RUN mkdir -p warehouse output
+# Secrets are required in the service: no development defaults for the answer-key and hashing secrets (SEC-01)
+ENV PORTFOLIO_DEMO=1 HOST=0.0.0.0 PORT=7860 PUZZLE_SCHEDULER=1 PUZZLE_REQUIRE_SECRETS=1
+EXPOSE 7860
+CMD ["puzzle", "serve"]

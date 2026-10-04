@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% block title %}{{ me.handle }} · Daily puzzle{% endblock %}{% block body %}
+<h1>{{ me.handle }}</h1>
+<div class="grid2">
+<div class="card"><h3>Emails</h3>
+{% if me.unsubscribed_at %}<p class="muted">You're unsubscribed. You can still play on the site.</p>{% endif %}
+<form method="post" action="{{ base }}/me"><fieldset>{% for t in tracks %}<label><input type="checkbox" name="tracks" value="{{ t }}" {{ 'checked' if t in (me.tracks or []) }}> {{ TRACK_LABEL[t] }}</label>{% endfor %}</fieldset>
+<p><button>Save</button></p></form>
+<form method="post" action="{{ base }}/u/{{ me.id }}/{{ unsub }}"><button class="ghost">Unsubscribe from all email</button></form></div>
+<div class="card"><h3>Your record</h3><p>{{ mine.accepted or 0 }} accepted · {{ mine.attempted or 0 }} attempted · {{ mine.solved or 0 }} solved · <b>{{ mine.score or 0 }}</b> points</p>
+<form method="post" action="{{ base }}/signout"><button class="ghost">Sign out</button></form>
+<h3>Delete account</h3><p class="small muted">Removes you, your attempts and your scores. Your address is kept only as a one-way hash so it's never emailed again.</p>
+<form method="post" action="{{ base }}/me/delete" onsubmit="return confirm('Delete your account and all your scores?')"><button class="danger">Delete my account</button></form></div>
+</div>
+{% endblock %}

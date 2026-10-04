@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% block body %}
+{% if p %}
+<div class="card">
+  {% include "_puzzle_body.html" %}
+  <p class="verified">✓ Checked before publishing: a second model, which never saw the answer, reached the same one{{ ' by writing and running its own code' if p.sandbox }}.</p>
+  <p class="small muted">Closes {{ closes }} · scoring {{ scoring_line }}</p>
+  {% include "_play.html" %}
+</div>
+{% else %}
+<div class="card"><h1>No puzzle open right now</h1>
+<p>{% if next_open %}The next puzzle opens {{ next_open }}.{% else %}The next puzzle opens at {{ open_at }} ({{ tzname }}).{% endif %}</p>
+<p><a class="btn" href="{{ base }}/subscribe">Get it by email</a></p></div>
+{% endif %}
+{% if prev %}<p class="muted">Yesterday: <a href="{{ base }}/p/{{ prev.id }}">{{ prev.title }}</a> — answer and worked solution now public.</p>{% endif %}
+{% endblock %}
