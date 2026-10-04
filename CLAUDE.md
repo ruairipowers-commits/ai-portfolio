@@ -15,6 +15,7 @@ and one runnable public repo per project. To create or update a project, follow
 | Per-project intent | `specs/<slug>.yaml` | both (Claude drafts, Ruairi approves) |
 | Code + docs | `projects/<slug>/` | both |
 | Posts | `site/blog/posts/*.md` | both |
+| Open items and work in flight | `STATUS.md` | both — read it at the start of a chat; update it before ending one |
 
 ## Rules
 
