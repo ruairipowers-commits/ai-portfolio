@@ -3,6 +3,21 @@
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
 (or delete them) as they're done. Last updated 4 October 2026.
 
+## 0. Daily puzzle (new personal project, built 4 October 2026)
+
+`projects/daily-puzzle` + `site/personal/posts/daily-puzzle.md`. Built and verified offline (112 tests, `puzzle all`,
+eval gate, player site and operator app checked in a browser). Committed locally only — waiting for Ruairi's
+go-ahead to push and deploy.
+
+- [ ] **Push** (Ruairi's approval) — then the demos workflow picks up `Dockerfile.space` (`/daily-puzzle/`, 4g).
+- [ ] **Deploy secrets** in the demo host's `.env` before it starts (the image refuses dev defaults):
+      `PUZZLE_KEY_SECRET`, `PUZZLE_SALT`, `PUZZLE_ADMIN_TOKEN` (`openssl rand -hex 32`), `RESEND_API_KEY`,
+      `MAIL_FROM`, `PUZZLE_OPERATOR_EMAIL`, `PUZZLE_PUBLIC_URL`.
+- [ ] **Real models:** runs on the mock pair. Try `PUZZLE_GENERATOR_MODEL=local-qwen PUZZLE_SOLVER_MODEL=local-gemma`
+      on the EVO-X1, run `puzzle eval --role generator`, and update the post's "What I'd do next" with real pass rates.
+- [ ] Hugging Face live assets (`PUZZLE_LIVE_ASSETS=1`) not exercised yet: the Hub licence check and download path
+      are untested against the live Hub.
+
 ## 1. Security fixes on the EVO-X1 (Ruairi's steps)
 
 This repo is public, so the specifics live only in the private scan report on the machine

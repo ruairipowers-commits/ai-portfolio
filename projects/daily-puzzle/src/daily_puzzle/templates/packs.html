@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% block title %}Puzzle packs · Daily puzzle{% endblock %}{% block body %}
+<div class="card"><h1>Make a puzzle pack</h1>
+<p>A one-off set of new puzzles as two PDFs: the questions, and a separate answer key. Every puzzle is checked the same way as the daily one. {{ quota }} pack(s) per day.</p>
+{% if flash %}<p class="flash">{{ flash }}</p>{% endif %}
+{% if me %}<form method="post" action="{{ base }}/packs">
+<label>How many</label><input type="number" name="count" min="1" max="{{ pack_cfg.max_puzzles }}" value="{{ pack_cfg.default_count }}">
+<label>Tracks (none = random)</label><fieldset>{% for t in tracks %}<label><input type="checkbox" name="tracks" value="{{ t }}"> {{ TRACK_LABEL[t] }}</label>{% endfor %}</fieldset>
+<p><button>Generate</button></p></form>{% else %}<p><a href="{{ base }}/signin">Sign in</a> to make a pack.</p>{% endif %}
+{% for k in mine %}<p><code>{{ k }}</code>: <a href="{{ base }}/packs/{{ k }}/questions.pdf">questions</a> · <a href="{{ base }}/packs/{{ k }}/answers.pdf">answer key</a></p>{% endfor %}
+</div>{% endblock %}

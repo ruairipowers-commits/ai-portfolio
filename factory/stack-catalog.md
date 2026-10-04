@@ -49,3 +49,4 @@ and for no two projects to have identical stacks.
 | trade-ops-exceptions | agent | SQLite / Postgres | LangGraph (interrupt) | — | MCP server (TS) + Streamlit | RDS, Secrets Manager, split IAM roles |
 | research-qa-rag | RAG | PDF/HTML parsing (PyMuPDF) | FastAPI | hybrid: SQLite FTS5 + sqlite-vec, RRF | Streamlit + API | Bedrock KB, OpenSearch Serverless |
 | governance-console | platform (no model) | event store (SQLite / Postgres) | FastAPI | — | server-rendered HTML + Chart.js | App Runner, Aurora, AppConfig, Firehose → S3 |
+| daily-puzzle | multi-agent (generator + blind solver) | SQLite / Postgres (SQLAlchemy) | APScheduler in FastAPI | — | FastAPI + HTMX player site, Streamlit operator, sandboxed code runs, WeasyPrint PDFs | EventBridge Scheduler, Lambda, Fargate sandbox, KMS, SES |

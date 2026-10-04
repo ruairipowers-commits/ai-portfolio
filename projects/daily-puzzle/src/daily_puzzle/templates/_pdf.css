@@ -1,0 +1,15 @@
+@page{size:A4;margin:20mm 18mm 22mm;@bottom-left{content:"{{ footer }}";font:8pt Helvetica,Arial,sans-serif;color:#777}
+ @bottom-right{content:"page " counter(page) " of " counter(pages);font:8pt Helvetica,Arial,sans-serif;color:#777}}
+body{font:10.5pt/1.5 Georgia,"Times New Roman",serif;color:#1d2327}
+h1{font:700 22pt Georgia,serif;margin:0 0 2mm}
+h2{font:700 13pt Georgia,serif;margin:0 0 2mm}
+.sub{color:#5d6a72;font:9pt Helvetica,Arial,sans-serif;margin-bottom:8mm}
+.p{border-top:1px solid #ddd;padding-top:5mm;margin-top:6mm;page-break-inside:avoid}
+.meta{font:8.5pt Helvetica,Arial,sans-serif;color:#5d6a72;margin-bottom:2mm}
+.chip{display:inline-block;padding:0 6px;border-radius:8px;color:#fff;font-weight:700;margin-right:4px}
+.logic{background:#5b5bd6}.word{background:#b5476b}.numbers{background:#c2702a}.coding{background:#2f7d73}.ai_ml{background:#7a4fc2}
+pre{background:#f5f3ee;border:1px solid #e3ded3;padding:3mm;font:8.5pt/1.4 Menlo,Consolas,monospace;white-space:pre-wrap}
+code{font:9pt Menlo,Consolas,monospace}
+.ans{font:700 12pt Helvetica,Arial,sans-serif;background:#e7f4ec;color:#2e7d4f;padding:2mm 3mm;display:inline-block}
+.learn{border-left:2px solid #546e7a;padding-left:3mm;color:#444}
+.box{border:1px dashed #bbb;height:12mm;margin-top:2mm}

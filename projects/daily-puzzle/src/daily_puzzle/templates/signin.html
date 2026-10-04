@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block title %}Sign in · Daily puzzle{% endblock %}{% block body %}
+<div class="card"><h1>Sign in</h1><p>We'll email you a one-time sign-in link. No passwords.</p>
+<form class="inline" method="post" action="{{ base }}/signin"><input type="email" name="email" required placeholder="you@example.com" style="flex:1 1 260px"><button>Email me a link</button></form></div>
+{% endblock %}

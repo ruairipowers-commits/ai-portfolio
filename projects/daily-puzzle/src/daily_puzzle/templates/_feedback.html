@@ -1,0 +1,18 @@
+<div id="feedback">
+{% if fb %}
+  {% set msgs = {
+    'solved': 'Solved! +' ~ fb.points ~ ' points.',
+    'incorrect': 'Not yet.',
+    'out_of_attempts': 'Out of attempts. The answer is revealed after submissions close.',
+    'closed': 'Submissions for this puzzle are closed.',
+    'not_accepted': 'Accept the puzzle first.',
+    'already_solved': 'You already solved this one.',
+    'paused': 'Submissions are paused right now. Please try again later.',
+    'empty': 'Type an answer first.',
+    'duplicate': 'That attempt was already counted.',
+    'rate': 'Too many attempts too quickly. Wait a minute.',
+    'not_found': 'Puzzle not found.'} %}
+  <div class="fb {{ fb.status }}" role="status">{{ msgs.get(fb.status, fb.status) }}
+  {% if fb.status == 'incorrect' %}{{ fb.attempts_left }} attempt{{ '' if fb.attempts_left == 1 else 's' }} left.{% endif %}</div>
+{% endif %}
+</div>

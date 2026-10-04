@@ -1,0 +1,4 @@
+suffix             = "abc123"
+tick_function_arn  = "arn:aws:lambda:us-east-1:123456789012:function:daily-puzzle-tick"
+bedrock_model_arns = ["arn:aws:bedrock:us-east-1::foundation-model/SET-MODEL-ID"]
+alert_email        = "you@example.com"

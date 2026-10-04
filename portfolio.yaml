@@ -45,6 +45,7 @@ projects:
   - research-qa-rag
   - governance-console      # platform: governs the workflows above
   - site-assistant          # the blog's search + chat assistant (personal project)
+  - daily-puzzle            # daily AI puzzle agents (personal project)
 
 # Which projects are FEATURED (home page + main blog) and which are smaller PERSONAL projects (listed on the
 # "Personal projects" page, with posts under site/personal/posts/). Every project above is featured unless it's
@@ -52,6 +53,7 @@ projects:
 # moves the project's post. A personal project doesn't need to live in this repo: give a title, summary and link.
 personal_projects:
   - site-assistant
+  - daily-puzzle
   - title: Loan default prediction (MIT capstone)
     summary: Which home-equity loans will default, and why — an explainable credit model and a parallel-run rollout plan
     pattern: Classical ML (decision trees, random forests)

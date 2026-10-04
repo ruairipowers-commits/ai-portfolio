@@ -1,0 +1,13 @@
+<!doctype html><html><head><meta charset="utf-8"><style>{% include "_pdf.css" %}</style></head><body>
+<h1>{{ title }} — answer key</h1>
+<div class="sub">pack {{ pack_id }} · seed {{ seed }} · made {{ made }} · every answer was reached independently by a second model before the pack was made</div>
+{% for p in puzzles %}{% set k = keys[p.id] %}<div class="p">
+<div class="meta"><span class="chip {{ p.track }}">{{ TRACK_LABEL[p.track] }}</span>{{ p.kind }} · {{ p.difficulty }}</div>
+<h2>{{ loop.index }}. {{ p.title }}</h2>
+<p><span class="ans">{{ k.answer }}</span>{% if p.answer_type == 'float' %} <span class="meta">(compared at {{ p.decimals }} decimal places)</span>{% endif %}</p>
+{% if k.forms|length > 1 %}<p class="meta">Also accepted: {{ k.forms[1:]|join(' · ') }}</p>{% endif %}
+{% if k.solution %}<div>{{ k.solution|md|safe }}</div>{% endif %}
+{% if k.code %}<p class="meta">Reference code (prints the answer as its last line)</p><pre>{{ k.code }}</pre>{% endif %}
+<p class="meta">Verified: {% for st in p.verification.steps or [] %}{{ st.step }} {{ '✓' if st.ok else '✗' }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+</div>{% endfor %}
+</body></html>

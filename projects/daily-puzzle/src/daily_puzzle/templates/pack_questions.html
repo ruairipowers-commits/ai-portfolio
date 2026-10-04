@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset="utf-8"><style>{% include "_pdf.css" %}</style></head><body>
+<h1>{{ title }}</h1>
+<div class="sub">{{ puzzles|length }} puzzles · made {{ made }} · pack {{ pack_id }} · seed {{ seed }} · answers are in the separate answer key</div>
+{% for p in puzzles %}<div class="p">
+<div class="meta"><span class="chip {{ p.track }}">{{ TRACK_LABEL[p.track] }}</span>{{ p.difficulty }}{% for t in p.skill_tags or [] %} · {{ t }}{% endfor %}</div>
+<h2>{{ loop.index }}. {{ p.title }}</h2>
+{{ p.statement|md|safe }}
+{% if p.learning_objective %}<p class="learn">What it teaches: {{ p.learning_objective }}</p>{% endif %}
+{% if p.assets %}<p class="meta">Data: {% for a in p.assets %}{{ a.id }} ({{ a.files|join(', ') }}, revision {{ (a.revision or '')[:12] }}){% if not loop.last %}; {% endif %}{% endfor %}</p>{% endif %}
+{% if p.starter %}<p class="meta">Starter code</p><pre>{{ p.starter }}</pre>{% endif %}
+{% if p.answer_format %}<p class="meta">Answer: {{ p.answer_format }}</p>{% endif %}
+<div class="box"></div>
+</div>{% endfor %}
+</body></html>

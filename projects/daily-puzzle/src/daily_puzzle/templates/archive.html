@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% block title %}Archive · Daily puzzle{% endblock %}{% block body %}
+<h1>Archive</h1>
+<div class="card" style="padding:8px 8px;overflow-x:auto"><table><thead><tr><th>Day</th><th>Puzzle</th><th>Track</th><th>Status</th></tr></thead><tbody>
+{% for r in rows %}<tr><td>{{ r.day }}</td><td><a href="{{ base }}/p/{{ r.id }}">{{ r.title }}</a></td><td><span class="chip {{ r.track }}">{{ TRACK_LABEL[r.track] }}</span></td>
+<td class="small">{{ {'open':'open now','closed':'closed — answer soon','revealed':'answer public'}[r.status] }}</td></tr>
+{% else %}<tr><td colspan="4" class="muted">Nothing yet.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

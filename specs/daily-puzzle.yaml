@@ -1,7 +1,7 @@
 slug: daily-puzzle
 title: 'Daily puzzle agents: a generator and an independent solver publish one verified, educational puzzle a day
   across logic, words, numbers, coding and AI, grade attempts and keep a fair leaderboard'
-status: planned
+status: built
 domain: the portfolio itself (public subscriber app); learning and practice for people building data and AI skills
 use_case: >
   Subscribers get one AI-generated puzzle a day by email, on topics they choose: logic, word, number, coding and
@@ -197,6 +197,10 @@ demo:
   - PUZZLE_ADMIN_TOKEN
   - PUZZLE_SALT
   - HF_TOKEN                       # optional, read-only, for rate limits; never passed into the sandbox
+  - PUZZLE_OPERATOR_EMAIL
+  - PUZZLE_PUBLIC_URL
+  - PUZZLE_GENERATOR_MODEL
+  - PUZZLE_SOLVER_MODEL
 
 links:
   repo: ''

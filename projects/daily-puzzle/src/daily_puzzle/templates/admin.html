@@ -1,0 +1,35 @@
+{% extends "base.html" %}{% block title %}Operator · Daily puzzle{% endblock %}{% block body %}
+<h1>Operator</h1>
+{% if flash %}<p class="flash">{{ flash }}</p>{% endif %}
+{% for w in warnings %}<p class="flash">⚠️ {{ w }}</p>{% endfor %}
+<div class="grid2">
+<div class="card"><h3>Today</h3>
+<p>{% if today %}#{{ today.id }} {{ today.title }} — <b>{{ today.status }}</b> ({{ TRACK_LABEL[today.track] }}, {{ today.source }}){% else %}No puzzle for today yet.{% endif %}</p>
+<p>Reserve puzzles left: {% for t, n in reserve.items() %}<span class="chip {{ t }}">{{ TRACK_LABEL[t] }} {{ n }}</span> {% endfor %}</p>
+<form method="post" action="{{ base }}/admin/tick" class="inline"><button class="ghost">Run the scheduler now</button></form>
+<form method="post" action="{{ base }}/admin/reserve" class="inline" style="margin-top:8px"><button class="ghost">Top up reserve (3 per track)</button></form></div>
+<div class="card"><h3>New puzzle pack</h3>
+<form method="post" action="{{ base }}/admin/pack">
+<label>How many</label><input type="number" name="count" min="1" max="{{ pack_cfg.max_puzzles }}" value="{{ pack_cfg.default_count }}">
+<label>Tracks (none ticked = random)</label><fieldset>{% for t in tracks %}<label><input type="checkbox" name="tracks" value="{{ t }}"> {{ TRACK_LABEL[t] }}</label>{% endfor %}</fieldset>
+<label>Difficulty</label><select name="difficulty"><option value="mixed">mixed</option><option>easy</option><option>medium</option><option>hard</option></select>
+<label>Seed (optional — the same seed rebuilds the same pack)</label><input type="number" name="seed" min="0">
+<p><button>Generate and verify</button></p></form></div>
+</div>
+<div class="card"><h3>Packs</h3><table><thead><tr><th>Pack</th><th class="n">Puzzles</th><th>Tracks</th><th>PDFs</th></tr></thead><tbody>
+{% for k in packs %}<tr><td><code>{{ k.pack_id }}</code></td><td class="n">{{ k.count }}</td><td>{% for t in k.tracks|sort %}<span class="chip {{ t }}">{{ TRACK_LABEL[t] }}</span> {% endfor %}</td>
+<td><a href="{{ base }}/admin/pack/{{ k.pack_id }}/questions.pdf">questions</a> · <a href="{{ base }}/admin/pack/{{ k.pack_id }}/answers.pdf">answer key</a></td></tr>
+{% else %}<tr><td colspan="4" class="muted">No packs yet.</td></tr>{% endfor %}</tbody></table></div>
+<h2>Review queue <span class="muted small">(escalated drafts the verifier rejected)</span></h2>
+{% for e in escalated %}<div class="card" id="p{{ e.id }}">
+<div class="meta"><span class="chip {{ e.track }}">{{ TRACK_LABEL[e.track] }}</span><span class="chip soft">{{ e.kind }}</span><span>#{{ e.id }} · {{ e.created_at.strftime('%Y-%m-%d %H:%M') }} UTC</span></div>
+<h3>{{ e.title }}</h3><div class="statement small">{{ e.statement|md|safe }}</div>
+<p><b>Key:</b> <code>{{ e.key.answer }}</code> · <b>Why it was rejected:</b></p><ul>{% for r in e.verification.reasons or [] %}<li>{{ r }}</li>{% endfor %}
+{% for rd in e.verification.rounds or [] %}{% if rd.round < (e.verification.rounds|length) %}<li class="muted small">round {{ rd.round }}: {{ rd.reasons|join('; ') }}</li>{% endif %}{% endfor %}</ul>
+<form method="post" action="{{ base }}/admin/review/{{ e.id }}" class="inline">
+<input type="text" name="reviewer" placeholder="Your name" required><input type="text" name="note" placeholder="Note (why)" style="flex:1 1 200px">
+<button name="decision" value="approve">Approve → reserve</button><button class="ghost" name="decision" value="reject">Reject</button></form></div>
+{% else %}<p class="muted">Nothing to review.</p>{% endfor %}
+<div class="card"><h3>Recent jobs</h3><table><tbody>{% for j in jobs %}<tr><td class="small">{{ j.at.strftime('%m-%d %H:%M') }}</td><td>{{ j.job }}</td><td>{{ j.day or '' }}</td><td>{{ j.status }}</td></tr>{% endfor %}</tbody></table></div>
+<form method="post" action="{{ base }}/admin/logout"><button class="ghost">Sign out of operator</button></form>
+{% endblock %}

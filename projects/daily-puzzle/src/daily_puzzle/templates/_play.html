@@ -1,0 +1,21 @@
+<div id="play">
+{% if not me %}
+  <p><a class="btn" href="{{ base }}/subscribe">Subscribe to play</a> <a class="btn ghost" href="{{ base }}/signin">Sign in</a></p>
+{% elif not state %}
+  <form hx-post="{{ base }}/accept/{{ p.id }}" hx-target="#play" hx-swap="outerHTML" method="post" action="{{ base }}/accept/{{ p.id }}">
+    <button>Accept this puzzle</button>
+    <span class="small muted">Your attempts count from here: {{ max_attempts }} tries, fewer tries score more.</span>
+  </form>
+{% elif state.solved_at %}
+  <div class="fb solved">Solved in {{ state.attempts }} attempt{{ '' if state.attempts == 1 else 's' }} · {{ state.points }} points</div>
+{% elif state.attempts >= max_attempts %}
+  <div class="fb out_of_attempts">Out of attempts. The answer is revealed after submissions close.</div>
+{% else %}
+  <form class="inline" hx-post="{{ base }}/submit/{{ p.id }}" hx-target="#play" hx-swap="outerHTML" method="post" action="{{ base }}/submit/{{ p.id }}">
+    <input class="answer" type="text" name="answer" maxlength="200" autocomplete="off" placeholder="Your answer" aria-label="Your answer" required autofocus>
+    <button>Submit</button>
+    <span class="dots" title="attempts used">{% for i in range(max_attempts) %}<i class="{{ 'used' if i < state.attempts }}"></i>{% endfor %}</span>
+  </form>
+{% endif %}
+{% include "_feedback.html" %}
+</div>
