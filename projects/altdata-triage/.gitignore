@@ -2,6 +2,7 @@
 warehouse/
 output/
 data/incoming/
+data/pristine/
 dbt/seeds/security_master.csv
 dbt/target/
 dbt/logs/
