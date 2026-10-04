@@ -11,6 +11,8 @@ future projects are written — the generator reads it every time.
 - Concrete over grand: numbers, named trade-offs, what I'd do differently. No "revolutionize",
   "unlock", "seamless", "cutting-edge", "in today's fast-paced world".
 - Say plainly what is synthetic, what is mocked, and what isn't built yet.
+- Every project on this site is my own work, built for learning and as an example. Never say or imply a project
+  (or the EVO-X1 setup) is used for, built for or holds client or employer work or data.
 - 1,200–1,800 words per project post. Short paragraphs. Tables for trade-offs.
 
 ## Blog post structure (project)

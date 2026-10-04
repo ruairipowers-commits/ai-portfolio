@@ -21,7 +21,6 @@ run on hardware I own, and I can say exactly which data leaves the machine and w
 Most of what I'd like help with involves data I don't want to paste into someone else's service:
 
 - **Personal data:** finances, family photos, notes.
-- **Client work:** material I'm not allowed to share.
 - **Early-stage code and ideas.**
 
 Hosted assistants have good privacy terms. But terms are a promise, not a control, and I spent 25 years in
@@ -90,7 +89,7 @@ flowchart LR
 - **What crosses the network:** nothing beyond my house.
 - **Who sees the data:** me.
 
-This is the mode for anything personal or confidential. The local coding models fit here too: I can ask
+This is the mode for anything personal. The local coding models fit here too: I can ask
 `qwen2.5-coder:32b` about code I wouldn't paste anywhere else.
 
 **Hybrid.** Claude Desktop on the Mac connects to the EVO's MCP server. Claude plans, and the EVO does the work:
