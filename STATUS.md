@@ -38,6 +38,9 @@ before/after scan results:
 
 ## 3. Other open items
 
+- [ ] **Private AI workbench post** (`site/personal/posts/private-local-ai.md`): its "What's next" promises a GPU
+      benchmark of the local models (no speed figures are quoted yet) and OpenClaw on local models only. Update the
+      post when either is done.
 - [ ] **Faster Ask answers:** try Ollama on the iGPU through Vulkan (`deploy/selfhost/README.md`, "Faster
       answers"), then re-run `siteassist bench`.
 - [ ] **Agentic course post:** the module table in `site/classes/posts/applied-agentic-ai.md` isn't verified
