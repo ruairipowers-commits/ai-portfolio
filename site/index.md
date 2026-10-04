@@ -54,6 +54,9 @@ I've spent 25 years building and running investment technology.
 - **Two Sigma.** A data catalog and lineage product for researchers and the engineers who keep production pipelines
   running.
 - **Neudata.** Leading a team of thirteen through a zero-to-one SaaS launch.
+- **Silver Ridge Advisors.** Now: data and analytics director at a consulting firm, leading strategic assessments
+  and modernization for clients, from a retailer's inventory platform to a charity's fundraising and financial
+  systems.
 
 That background shapes how I approach AI. In trading and clearing, a wrong number costs money, so you design for
 verification, audit and rollback from the start. I think AI should be held to the same standard. What interests me

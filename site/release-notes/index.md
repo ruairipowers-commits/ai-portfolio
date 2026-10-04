@@ -7,6 +7,12 @@ hide: [navigation]
 
 The big changes to this portfolio, newest first. Each project's repository has the detail in its commit history.
 
+## 4 October 2026
+
+**My current role.** [Home](../index.md), [About](../about.md) and the [resume](../assets/Ruairi-Powers-Resume.pdf)
+now include my position since July 2026 as data and analytics director at Silver Ridge Advisors. The Ask button
+picks it up from the same pages.
+
 ## 3 October 2026
 
 **Safer, watched, backed up.** The demo machine runs code from a public repo, so now:
