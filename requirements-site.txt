@@ -1,4 +1,4 @@
 mkdocs>=1.6,<2          # MkDocs 2.0 drops the plugin system Material relies on
 mkdocs-material>=9.5,<10
-pyyaml>=6
+pyyaml>=6.0.3
 pypdf>=4               # resume text for the site assistant's corpus (scripts/assistant_corpus.py)
