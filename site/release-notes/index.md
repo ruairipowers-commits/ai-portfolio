@@ -9,6 +9,10 @@ The big changes to this portfolio, newest first. Each project's repository has t
 
 ## 4 October 2026
 
+**Private AI workbench.** A new [personal project](../personal/posts/private-local-ai.md) on the local AI setup
+on my mini PC: local models on its integrated GPU, notebooks and creative tools, and exactly what stays home in
+its fully local and hybrid modes.
+
 **My current role.** [Home](../index.md), [About](../about.md) and the [resume](../assets/Ruairi-Powers-Resume.pdf)
 now include my position since July 2026 as data and analytics director at Silver Ridge Advisors. The Ask button
 picks it up from the same pages.
