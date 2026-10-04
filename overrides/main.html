@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {#- Announcement bar: points at the release notes. Dismissable (theme.features: announce.dismiss); the
-    dismissal resets whenever this text changes. -#}
+    dismissal resets whenever this text changes. Material remembers a dismissal by hashing the bar's HTML, so the
+    HTML must be identical on every page: an absolute link, never `| url` (that renders ../ or ../../ per page,
+    which made the bar reappear on every page at a different depth). -#}
 {% block announce %}
-<a href="{{ 'release-notes/' | url }}" style="color:inherit">
+<a href="{{ config.site_url | trim('/') }}/release-notes/" style="color:inherit">
   <span class="twemoji">{% include ".icons/material/rocket-launch-outline.svg" %}</span>
   <strong>What's new:</strong> a safer, monitored, backed-up demo server, thumbs up or down on posts, and a Console button. Release notes →
 </a>
