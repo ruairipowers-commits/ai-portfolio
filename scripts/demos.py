@@ -107,7 +107,8 @@ Back to the <a href="{c['site_url']}/" style="color:var(--a)">portfolio</a>.</p>
 
 # ---------------------------------------------------------------- self-host (docker compose + Caddy + Cloudflare Tunnel)
 # Every container: no privilege escalation, no Linux capabilities and a cap on processes, on top of a memory and CPU
-# limit. (Caddy binds :80 without a capability: its network namespace treats every port as unprivileged.) deploy/selfhost/deploy-guard.py refuses a stack without these.
+# limit. Caddy gets back NET_BIND_SERVICE and nothing else: its image marks /usr/bin/caddy with that file capability,
+# so without it in the container the binary can't even start ("operation not permitted"), whatever port it binds. deploy/selfhost/deploy-guard.py refuses a stack without these.
 HARDEN = {"security_opt": ["no-new-privileges:true"], "cap_drop": ["ALL"], "pids_limit": 512}
 
 
@@ -155,8 +156,7 @@ def render_selfhost(out: Path, c: dict) -> list[Path]:
     services["caddy"] = {"image": "caddy:2-alpine", "restart": "unless-stopped",
                          "ports": ["${DEMOS_BIND:-127.0.0.1}:${DEMOS_PORT:-8088}:80"],
                          "volumes": ["./Caddyfile:/etc/caddy/Caddyfile:ro", "./site:/srv:ro"],
-                         "mem_limit": "256m", "cpus": 1.0, **HARDEN,
-                         "sysctls": {"net.ipv4.ip_unprivileged_port_start": 0},
+                         "mem_limit": "256m", "cpus": 1.0, **HARDEN, "cap_add": ["NET_BIND_SERVICE"],
                          "depends_on": [a["slug"] for a in items], "networks": ["demos", "egress"]}
     services["cloudflared"] = {"image": "cloudflare/cloudflared:latest", "restart": "unless-stopped",
                                "command": "tunnel --no-autoupdate run", "environment": {"TUNNEL_TOKEN": "${TUNNEL_TOKEN:-}"},
