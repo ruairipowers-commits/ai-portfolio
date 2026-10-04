@@ -28,9 +28,20 @@ def get(url: str, timeout: int = 20) -> tuple[int, str]:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.status, r.read(200_000).decode("utf-8", "replace")
     except urllib.error.HTTPError as e:
-        return e.code, ""
+        try:
+            body = e.read(4000).decode("utf-8", "replace")
+        except Exception:  # noqa: BLE001
+            body = ""
+        return e.code, body
     except Exception as e:  # noqa: BLE001
         return 0, f"{type(e).__name__}: {e}"
+
+
+def blocked(code: int, body: str) -> bool:
+    """Cloudflare refused the monitor itself (bot protection / WAF), so the site's state is unknown, not down."""
+    b = body.lower()
+    return code in (403, 503) and ("cloudflare" in b or "error code: 10" in b or "just a moment" in b
+                                   or "attention required" in b)
 
 
 def checks(site: str, demos: str) -> list[tuple[str, str, callable]]:
@@ -49,7 +60,7 @@ def checks(site: str, demos: str) -> list[tuple[str, str, callable]]:
 
 
 def run(site: str, demos: str) -> tuple[bool, str]:
-    lines, ok = [], True
+    lines, ok, unknown = [], True, []
     home_down = False
     for name, url, good in checks(site, demos):
         if home_down:                      # the whole machine is unreachable: don't wait on every app
@@ -60,16 +71,31 @@ def run(site: str, demos: str) -> tuple[bool, str]:
             time.sleep(20)
             code, body = get(url)
         up = good(code, body)
+        if not up and blocked(code, body):
+            unknown.append(name)
+            home_down = name == "demos home"          # the rest would be blocked the same way
+            lines.append(f"BLOCK {name:<22} {code:<9} {url}  (Cloudflare refused the monitor: "
+                         f"{' '.join(body.split())[:100]})")
+            continue
         ok &= up
         home_down = name == "demos home" and not up
         lines.append(f"{'UP  ' if up else 'DOWN'}  {name:<22} {code or 'no answer':<9} {url}"
-                     + ("" if up or code else f"  ({body[:120]})"))
+                     + ("" if up else f"  ({' '.join(body.split())[:120]})"))
     if not demos:
         lines.append("note: DEMOS_URL not set — only the blog was checked")
-    head = "Everything is up." if ok else "Something is DOWN. What to try, on the demo machine:\n" \
+    head = ("Up where it could check; Cloudflare blocked the monitor for the rest." if ok and unknown
+            else "Everything is up.") if ok else "Something is DOWN. What to try, on the demo machine:\n" \
         "  1. Is it awake and online? (Tailscale / ping)   2. deploy/selfhost/update.sh --status\n" \
         "  3. docker compose -f deploy/selfhost/generated/docker-compose.yml --env-file deploy/selfhost/.env ps\n" \
         "  4. journalctl -u ai-portfolio-demos -n 50      5. sudo systemctl restart docker  (last resort: reboot)"
+    if unknown:
+        lines.append("note: Cloudflare blocked the monitor, so those checks say nothing about the site. Fix: "
+                     "Cloudflare -> Security -> Settings: turn off Bot Fight Mode / Browser Integrity Check for "
+                     "this hostname, or add a WAF custom rule that skips them for User Agent 'ai-portfolio-uptime/1'.")
+    if os.environ.get("GITHUB_ACTIONS"):          # one-line annotations, readable on the run page and via the API
+        for l in lines:
+            if l.startswith(("DOWN", "BLOCK")):
+                print(f"::{'error' if l.startswith('DOWN') else 'warning'}::{l[:400]}")
     return ok, head + "\n\n" + "\n".join(lines)
 
 
