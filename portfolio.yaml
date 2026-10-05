@@ -96,3 +96,10 @@ audiences:
   - Data scientists
   - Operations leads
   - Students and career changers
+
+# The 3-minute tour (site/tour.md, the link for a resume or LinkedIn): the strongest projects, in order. Each shows
+# its measured result and links from its spec's `card`. Three is the point; more makes it a gallery again.
+tour:
+  - trade-ops-exceptions
+  - research-qa-rag
+  - governance-console

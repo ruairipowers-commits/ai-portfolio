@@ -211,3 +211,32 @@
 .md-typeset a.post-audience__role { color: var(--md-default-fg-color--light); text-decoration: underline dotted; text-underline-offset: 2px; }
 .md-typeset a.post-audience__role:hover { color: var(--md-accent-fg-color); }
 .md-typeset .post-card__audience { margin: .45rem 0 0; font-size: .68rem; color: var(--md-default-fg-color--light); }
+
+/* Home: who I am above the headline, then three ways in */
+.md-typeset .home-who { margin: 0 0 .3rem; font-size: .8rem; font-weight: 700; letter-spacing: .02em;
+  color: var(--md-accent-fg-color); }
+.md-typeset .start-here__label { margin: 1.4rem 0 .3rem; font-size: .66rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--md-default-fg-color--light); }
+.md-typeset .start-here.grid.cards { margin-top: .3rem; }
+@media (min-width: 45em) { .md-typeset .start-here.grid.cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.md-typeset .start-here.grid.cards > ul > li { border-color: var(--md-accent-fg-color); }
+
+/* The 3-minute tour: three project cards side by side, not a carousel */
+.md-typeset .tour-projects { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  margin: 1rem 0 1.4rem; }
+.md-typeset .tour-projects .gallery__card { min-width: 0; width: auto; }
+
+/* At a glance: the summary box at the top of every project write-up */
+.md-typeset .glance { margin: 1rem 0 1.6rem; padding: .8rem 1rem; border-left: .2rem solid var(--md-accent-fg-color);
+  background: var(--md-code-bg-color); border-radius: .2rem; font-size: .74rem; }
+.md-typeset .glance__title { margin: 0 0 .4rem; font-size: .64rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--md-default-fg-color--light); }
+.md-typeset .glance dl { display: grid; grid-template-columns: max-content 1fr; gap: .25rem .9rem; margin: 0; }
+.md-typeset .glance dt { font-weight: 700; margin: 0; }
+.md-typeset .glance dd { margin: 0; }
+.md-typeset .glance__basis { color: var(--md-default-fg-color--light); }
+.md-typeset .glance .gallery__links { margin-top: .6rem; }
+@media (max-width: 30em) { .md-typeset .glance dl { grid-template-columns: 1fr; } .md-typeset .glance dd { margin-bottom: .3rem; } }
+
+/* Footer links (release notes left the top menu) */
+.site-footer a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }

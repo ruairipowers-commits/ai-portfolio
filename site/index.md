@@ -2,6 +2,8 @@
 hide: [navigation]
 ---
 
+<p class="home-who">Ruairi Powers · AI and data systems for investment firms</p>
+
 # Learning to use AI responsibly, in the open
 
 This site is my working record of learning to build, use and govern AI in the kind of setting I've spent my career
@@ -12,40 +14,22 @@ differently, and the controls I now hold every AI workflow to. The second is so 
 project shows how to use AI responsibly and govern it, with the code and the reasoning. The site keeps changing as I
 learn; the [release notes](release-notes/index.md) record each step.
 
-<!-- home:side -->
+<p class="start-here__label">Start here</p>
 
-<!-- subscribe -->
+<div class="grid cards start-here" markdown>
 
-## What's here
+- :material-account-tie-outline: **[Hiring or recruiting?](tour.md)**
 
-<div class="grid cards" markdown>
+    A 3-minute tour: who I am, three projects with measured results, and the evidence behind each skill.
 
-- :material-shield-check-outline: **[AI Governance](blog/posts/governance.md)**
+- :material-school-outline: **[Learning to build or govern AI?](blog/posts/governance.md)**
 
-    The 30 controls every project is held to: data preparation, security, cost, model changes, evals, audit and
-    human oversight. Start here if you only read one thing.
+    Start with the governance standard, then the [projects](projects/index.md): each has a live demo, runnable code
+    and a write-up.
 
-- :material-briefcase-outline: **[Projects](projects/index.md)**
+- :material-compass-outline: **[Just browsing?](blog/index.md)**
 
-    Industry projects for real fund problems (vendor data, end-of-day breaks, trade exceptions, research Q&A), each
-    with a live demo and a runnable repo. Plus the console that governs them, and some personal projects.
-
-- :material-post-outline: **[Blog](blog/index.md)**
-
-    The write-up behind each project: the business problem, the design, the trade-offs. Filter by topic or date.
-
-- :material-school-outline: **[Classes](classes/index.md)**
-
-    Two MIT courses: one on how the models work, one on bringing AI into an organisation responsibly.
-
-- :material-toolbox-outline: **[Technologies](tech/index.md)**
-
-    Every tool used here: what it's for, where it fits in AI work, its trade-offs and a minimal example.
-
-- :material-chat-question-outline: **Ask**
-
-    The button in the header answers questions about anything on the site, citing its sources. It runs on a local
-    open model on my own server.
+    The blog, filtered by topic or by your role. Or press **Ask** in the header to question the whole site.
 
 </div>
 
@@ -79,6 +63,36 @@ right, measuring the model honestly, and governing it so people can trust it.
 - **Hands-on technical depth** in Python and SQL, data platforms and cloud, now extended into retrieval, agents and
   model evaluation.
 
+<!-- home:side -->
+
+## What's here
+
+<div class="grid cards" markdown>
+
+- :material-shield-check-outline: **[Governance](blog/posts/governance.md)**
+
+    The 30 controls every project is held to, how I apply them to this site, and a leader's guide to questioning
+    an AI team.
+
+- :material-briefcase-outline: **[Projects](projects/index.md)**
+
+    Industry projects for real fund problems (vendor data, end-of-day breaks, trade exceptions, research Q&A), each
+    with a live demo and a runnable repo. Plus the console that governs them, and some personal projects.
+
+- :material-book-open-variant: **[Learn](blog/index.md)**
+
+    The [blog](blog/index.md) behind every project, two MIT [classes](classes/index.md), and a page on every
+    [technology](tech/index.md) used here.
+
+- :material-chat-question-outline: **Ask**
+
+    The button in the header answers questions about anything on the site, citing its sources. It runs on a local
+    open model on my own server.
+
+</div>
+
+<!-- subscribe -->
+
 ## How this site was built
 
 I built this site with Claude Code as my engineering partner. I directed and reviewed the work; Claude wrote most of
@@ -103,4 +117,4 @@ taught me.
 ---
 
 **[Resume (PDF)](assets/Ruairi-Powers-Resume.pdf)** · [LinkedIn](https://www.linkedin.com/in/ruairi-powers) ·
-[About me](about.md) · [GitHub](https://github.com/{{GITHUB_OWNER}})
+[About me](about.md) · [3-minute tour](tour.md) · [GitHub](https://github.com/{{GITHUB_OWNER}})

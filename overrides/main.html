@@ -1,14 +1,6 @@
 {% extends "base.html" %}
-{#- Announcement bar: points at the release notes. Dismissable (theme.features: announce.dismiss); the
-    dismissal resets whenever this text changes. Material remembers a dismissal by hashing the bar's HTML, so the
-    HTML must be identical on every page: an absolute link, never `| url` (that renders ../ or ../../ per page,
-    which made the bar reappear on every page at a different depth). -#}
-{% block announce %}
-<a href="{{ config.site_url | trim('/') }}/release-notes/" style="color:inherit">
-  <span class="twemoji">{% include ".icons/material/rocket-launch-outline.svg" %}</span>
-  <strong>What's new:</strong> building an AI team, posts filtered by your role, editorial agents and email subscriptions. Release notes →
-</a>
-{% endblock %}
+{#- No announcement bar: the first screen is for the headline and the three ways in. What's new lives on the
+    Release notes page, linked from the footer (partials/copyright.html). -#}
 
 {#- Site assistant: the Ask button in the header (search + chat over this blog), page-view and search logging.
     The widget is copied from the service into the site at build time (scripts/mkdocs_hooks.py), so the

@@ -155,35 +155,80 @@ def _post_url(post: str) -> str:
     return f"{folder}/{name[:-3]}/"
 
 
-def _gallery(page_url: str, compact: bool = False) -> str:
+def _links(r: dict, up: str, compact: bool = False) -> list[str]:
+    """A project's buttons: live demo (or its try link), code, write-up."""
     from html import escape as e
-    up = "../" * page_url.strip("/").count("/") + ("../" if page_url.strip("/") else "")
-    cards = []
-    for tier in ("featured", "platform", "personal"):
-        for r in tiers(_cfg)[tier]:
-            post = up + _post_url(r["post"]) if r.get("post") else ""
-            links = []
-            if r["demo"] and _cfg["demos_url"]:
-                links.append(f'<a class="md-button md-button--primary" href="{e(demo_url(r["slug"], _cfg))}">▶ Live demo</a>')
-            elif r.get("try_url"):
-                links.append(f'<a class="md-button md-button--primary" href="{e(r["try_url"])}">▶ {e(r["try_label"])}</a>')
-            if r.get("source"):
-                links.append(f'<a class="md-button" href="{e(r["source"])}">Code</a>')
-            if post:
-                links.append(f'<a class="gallery__more" href="{e(post)}">Write-up →</a>')
-                if compact:
-                    links.append(f'<span class="post-likes" data-likes-key="{e(_post_url(r["post"]))}" hidden></span>')
-            title = f'<a href="{e(post)}">{e(r["name"])}</a>' if post else e(r["name"])
-            cards.append(
-                f'<article class="gallery__card"><div class="gallery__kind">{_KIND[tier]}'
-                + (f' · {e(r["pattern"])}' if r["pattern"] and r["pattern"] != _KIND[tier] else "") + '</div>'
-                f'<h3>{title}</h3><p class="gallery__problem">{e(r["problem"])}</p>'
-                + (f'<p class="gallery__result">{e(r["result"])}</p>' if r.get("result") and not compact else "")
-                + (f'<p class="gallery__basis">{e(r["result_basis"])}</p>' if r.get("result_basis") and not compact else "")
-                + f'<div class="gallery__links">{"".join(links)}</div></article>')
+    post = up + _post_url(r["post"]) if r.get("post") else ""
+    links = []
+    if r["demo"] and _cfg["demos_url"]:
+        links.append(f'<a class="md-button md-button--primary" href="{e(demo_url(r["slug"], _cfg))}">▶ Live demo</a>')
+    elif r.get("try_url"):
+        links.append(f'<a class="md-button md-button--primary" href="{e(r["try_url"])}">▶ {e(r["try_label"])}</a>')
+    if r.get("source"):
+        links.append(f'<a class="md-button" href="{e(r["source"])}">Code</a>')
+    if post:
+        links.append(f'<a class="gallery__more" href="{e(post)}">Write-up →</a>')
+        if compact:
+            links.append(f'<span class="post-likes" data-likes-key="{e(_post_url(r["post"]))}" hidden></span>')
+    return links
+
+
+def _card(r: dict, tier: str, up: str, compact: bool = False) -> str:
+    from html import escape as e
+    post = up + _post_url(r["post"]) if r.get("post") else ""
+    title = f'<a href="{e(post)}">{e(r["name"])}</a>' if post else e(r["name"])
+    return (f'<article class="gallery__card"><div class="gallery__kind">{_KIND[tier]}'
+            + (f' · {e(r["pattern"])}' if r["pattern"] and r["pattern"] != _KIND[tier] else "") + '</div>'
+            f'<h3>{title}</h3><p class="gallery__problem">{e(r["problem"])}</p>'
+            + (f'<p class="gallery__result">{e(r["result"])}</p>' if r.get("result") and not compact else "")
+            + (f'<p class="gallery__basis">{e(r["result_basis"])}</p>' if r.get("result_basis") and not compact else "")
+            + f'<div class="gallery__links">{"".join(_links(r, up, compact))}</div></article>')
+
+
+def _up(page_url: str) -> str:
+    return "../" * page_url.strip("/").count("/") + ("../" if page_url.strip("/") else "")
+
+
+def _gallery(page_url: str, compact: bool = False) -> str:
+    up = _up(page_url)
+    cards = [_card(r, tier, up, compact) for tier in ("featured", "platform", "personal") for r in tiers(_cfg)[tier]]
     return (f'<div class="carousel gallery{" gallery--compact" if compact else ""}" data-carousel data-interval="7000" '
             'aria-roledescription="carousel" aria-label="Projects"><div class="carousel__track">' + "".join(cards)
             + "</div></div>")
+
+
+def _tour_projects(page_url: str) -> str:
+    """The 3-minute tour's projects: portfolio.yaml `tour` (slugs, in order), as static cards with their result."""
+    want = list(yaml.safe_load((Path(__file__).resolve().parents[1] / "portfolio.yaml").read_text()).get("tour") or [])
+    rows = {r["slug"]: (tier, r) for tier in ("featured", "platform", "personal") for r in tiers(_cfg)[tier] if r["slug"]}
+    missing = [w for w in want if w not in rows]
+    if missing:
+        _log.warning(f"tour: unknown project(s) in portfolio.yaml `tour`: {', '.join(missing)}")
+    up = _up(page_url)
+    return '<div class="tour-projects">' + "".join(_card(rows[w][1], rows[w][0], up) for w in want if w in rows) + "</div>"
+
+
+def _glance(markdown: str, page) -> str:
+    """At the top of a project's write-up (after its intro): the project at a glance, from the same data as the
+    gallery: problem, approach, measured result, stack and links."""
+    from html import escape as e
+    src = page.file.src_uri
+    hit = next(((t, r) for t in ("featured", "platform", "personal") for r in tiers(_cfg)[t] if r.get("post") == src), None)
+    if not hit or "<!-- more -->" not in markdown:
+        return markdown
+    tier, r = hit
+    up = _up(page.url)
+    rows = [("Problem", e(r["problem"] or "")), ("Approach", e(r["pattern"] or ""))]
+    if r.get("result"):
+        rows.append(("Result", f'<b>{e(r["result"])}</b>' + (f' <span class="glance__basis">({e(r["result_basis"])})</span>'
+                                                         if r.get("result_basis") else "")))
+    if r.get("stack"):
+        rows.append(("Stack", e(r["stack"])))
+    body = "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in rows if v)
+    links = [x for x in _links(r, up) if "gallery__more" not in x]
+    box = (f'<aside class="glance" aria-label="At a glance"><p class="glance__title">At a glance · {_KIND[tier]}</p>'
+           f'<dl>{body}</dl>' + (f'<div class="gallery__links">{"".join(links)}</div>' if links else "") + "</aside>")
+    return markdown.replace("<!-- more -->", "<!-- more -->\n\n" + box + "\n", 1)
 
 
 def _posts_carousel(page_url: str, limit: int = 8) -> str:
@@ -419,7 +464,7 @@ def on_page_markdown(markdown, page, config, files):
     _lint_lists(markdown, page.file.src_uri)
     if re.match(r"(blog|personal|classes)/posts/", page.file.src_uri):
         _lint_audience(page.meta, page.file.src_uri)
-        markdown = _post_topics(markdown, page) + LIKE_BOX + SUBSCRIBE_BOX
+        markdown = _glance(_post_topics(markdown, page), page) + LIKE_BOX + SUBSCRIBE_BOX
     if "<!-- posts:all -->" in markdown:
         markdown = markdown.replace("<!-- posts:all -->", _posts_index(page.file.src_uri))
     for tier in ("featured", "platform", "personal"):
@@ -428,6 +473,8 @@ def on_page_markdown(markdown, page, config, files):
             markdown = markdown.replace(tag, _table(tier, page.file.src_uri))
     if "<!-- subscribe -->" in markdown:
         markdown = markdown.replace("<!-- subscribe -->", SUBSCRIBE_BOX)
+    if "<!-- tour:projects -->" in markdown:
+        markdown = markdown.replace("<!-- tour:projects -->", _tour_projects(page.url))
     if "<!-- home:side -->" in markdown:
         markdown = markdown.replace("<!-- home:side -->", _home_side(page.url))
     if "<!-- posts:carousel -->" in markdown:

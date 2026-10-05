@@ -7,8 +7,8 @@ site_dir: build
 
 theme:
   name: material
-  custom_dir: overrides          # announcement bar → release notes
-  features: [navigation.tabs, navigation.sections, content.code.copy, navigation.top, announce.dismiss]
+  custom_dir: overrides          # header Ask + Console buttons; footer links (release notes)
+  features: [navigation.tabs, navigation.sections, content.code.copy, navigation.top]
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -74,16 +74,22 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
 
 nav:
-  - Home: index.md
-  - AI Governance: blog/governance/
+  # Five tabs. Every page keeps its URL; only the menu moved (release notes are in the footer).
+  - Start here:
+      - Home: index.md
+      - 3-minute tour: tour.md
   - Projects:
       - Industry projects: projects/index.md
       - Personal projects: personal/index.md
       - Suggest a project: projects/suggestions.md
-  - Blog: blog/index.md
-  - Classes: classes/index.md
-  - Technologies: tech/index.md
-  - Release notes: release-notes/index.md
+  - Governance:
+      - The standard: blog/governance/
+      - How I govern this site: blog/how-i-govern-this-site/
+      - "Is our AI behaving?": blog/questions-for-your-ai-team/
+  - Learn:
+      - Blog: blog/index.md
+      - Classes: classes/index.md
+      - Technologies: tech/index.md
   - About: about.md
 
 validation:
