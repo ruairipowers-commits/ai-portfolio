@@ -12,6 +12,7 @@ draft / published state from the blog repo's pull requests every 30 minutes.
 """
 from __future__ import annotations
 
+import json
 import os
 import threading
 import time
@@ -76,17 +77,27 @@ def queue_md(store: Store) -> str:
 
 
 def _scheduler(store: Store) -> None:
+    """Daily scout (retried every 30 minutes, up to 4 times, if it fails or is skipped), weekly digest, GitHub sync.
+    Every outcome is recorded in `runs`, so /api/health can say why the queue is empty."""
     s = settings()["schedule"]
     tz = ZoneInfo(s["timezone"])
     done: set[str] = set()
+    tries: dict[str, tuple[int, float]] = {}
     last_sync = 0.0
     while True:
-        try:
-            now = datetime.now(tz)
-            day, hm, wd = now.date().isoformat(), now.strftime("%H:%M"), now.strftime("%a").lower()[:3]
-            if hm >= s["scout"] and f"scout:{day}" not in done:
-                done.add(f"scout:{day}")
+        now = datetime.now(tz)
+        day, hm, wd = now.date().isoformat(), now.strftime("%H:%M"), now.strftime("%a").lower()[:3]
+        n, last_try = tries.get(day, (0, 0.0))
+        if hm >= s["scout"] and f"scout:{day}" not in done and n < 4 and time.time() - last_try > 1800:
+            tries[day] = (n + 1, time.time())
+            try:
                 scout.run(store)
+                done.add(f"scout:{day}")
+            except telemetry.WorkflowDisabled as ex:
+                store.run("scout", "skipped", {"reason": str(ex), "attempt": n + 1})
+            except Exception as ex:  # noqa: BLE001 — keep the loop alive; record why
+                store.run("scout", "error", {"error": f"{type(ex).__name__}: {ex}"[:500], "attempt": n + 1})
+        try:
             if wd == s["digest_weekday"] and hm >= s["digest_time"] and f"digest:{day}" not in done:
                 done.add(f"digest:{day}")
                 digest.send(store)
@@ -95,8 +106,8 @@ def _scheduler(store: Store) -> None:
                 github_sync.sync(store)
         except telemetry.WorkflowDisabled as ex:
             print(f"skipped: {ex}")
-        except Exception as ex:  # noqa: BLE001 — keep the loop alive; the run table records failures
-            store.run("scheduler", "error", {"error": f"{type(ex).__name__}: {ex}"})
+        except Exception as ex:  # noqa: BLE001
+            store.run("scheduler", "error", {"error": f"{type(ex).__name__}: {ex}"[:500]})
         time.sleep(60)
 
 
@@ -117,16 +128,24 @@ def create_app(store: Store | None = None, background: bool | None = None) -> Fa
         telemetry.register(ROOT)
         threading.Thread(target=_scheduler, args=(store,), daemon=True, name="editorial-scheduler").start()
 
-    @app.get("/api/health")
+    @app.api_route("/api/health", methods=["GET", "HEAD"])
     def health():
         last = store.last_run("scout")
-        return {"ok": True, "queue": len(store.queue()), "last_scout": last["ts"] if last else None}
+        out = {"ok": True, "queue": len(store.queue()), "last_scout": last["ts"] if last else None,
+               "scheduler": os.getenv("EDITORIAL_SCHEDULER") == "1"}
+        if last:
+            out["last_scout_status"] = last["status"]
+            detail = last.get("detail") or {}
+            detail = json.loads(detail) if isinstance(detail, str) else detail
+            if last["status"] != "ok":                 # why the queue may be empty: skipped by governance, or an error
+                out["last_scout_problem"] = detail.get("reason") or detail.get("error") or ""
+        return out
 
-    @app.get("/api/queue")
+    @app.api_route("/api/queue", methods=["GET", "HEAD"])
     def api_queue():
         return JSONResponse(queue_rows(store))
 
-    @app.get("/queue.md", response_class=PlainTextResponse)
+    @app.api_route("/queue.md", methods=["GET", "HEAD"], response_class=PlainTextResponse)
     def md():
         return queue_md(store)
 
