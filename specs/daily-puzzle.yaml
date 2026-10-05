@@ -210,3 +210,5 @@ card:
   problem: A daily learning game needs writing, checking, grading and scoring every day, and AI puzzles are often wrong
   pattern: Multi-agent (generator + blind solver, sandboxed code)
   stack: FastAPI, HTMX, APScheduler, Docker sandbox, Hugging Face, Ollama, Resend
+  result: "9 of 9 deliberately broken puzzles rejected; 19 of 19 golden drafts decided correctly"   # home-page gallery
+  result_basis: "offline run with mock models; 8 of 8 daily puzzles verified first round, 291 attempts graded"
