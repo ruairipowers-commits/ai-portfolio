@@ -1,0 +1,11 @@
+name: crutch-phrases
+description: "Stock phrases that buy time"
+entries:
+  - {text: to be honest,          category: crutch phrase, rule: always}
+  - {text: at the end of the day, category: crutch phrase, rule: always}
+  - {text: if that makes sense,   category: crutch phrase, rule: always}
+  - {text: does that make sense,  category: crutch phrase, rule: always}
+  - {text: and stuff like that,   category: crutch phrase, rule: always}
+  - {text: or whatever,           category: crutch phrase, rule: always}
+  - {text: and so on and so forth, category: crutch phrase, rule: always}
+  - {text: needless to say,       category: crutch phrase, rule: always}

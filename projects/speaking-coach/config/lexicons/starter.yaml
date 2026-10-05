@@ -1,0 +1,13 @@
+# Ruairi's own list (the "Filler word list" from his practice notes): seven phrases plus a repetition habit.
+# Rules: always · opener (starts a sentence or clause) · closer (ends one) · context (neighbour rules, then a model).
+name: starter
+description: "Seven filler phrases to catch in meetings, plus repeated words"
+repetition: true
+entries:
+  - {text: um,       category: filler sound,      rule: always,  example: "I've, um, been working with..."}
+  - {text: uh,       category: filler sound,      rule: always,  example: "I've, uh, I've been working with..."}
+  - {text: like,     category: filler word,       rule: context}
+  - {text: you know, category: hedging phrase,    rule: context, note: "softens a statement or bridges a thought"}
+  - {text: kind of,  category: hedging phrase,    rule: context, note: "softens a statement"}
+  - {text: so,       category: sentence starter,  rule: opener,  note: "starting a sentence or clause with So"}
+  - {text: I guess,  category: closing crutch,    rule: closer,  note: "ending a thought with I guess"}

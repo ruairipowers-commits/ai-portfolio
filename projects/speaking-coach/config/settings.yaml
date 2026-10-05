@@ -1,0 +1,74 @@
+# Runtime + governance settings. Every key here is referenced in docs/governance.md.
+use_case: speaking-coach
+risk_tier: low            # HITL-01: personal feedback; no decisions about anyone else; content handled as sensitive
+
+lexicon:                  # what counts as a filler — anyone can change all of this
+  presets: [starter]      # files in config/lexicons/; starter = Ruairi's own list
+  custom_words: ""        # one per line: "phrase | category | weight | rule", e.g. "to be honest | crutch | 2"
+  repetition: null        # flag repeated words ("the the"); null = whatever the chosen presets say
+  ignore: []              # never flag these for this speaker (e.g. "basically" in a physics lecture)
+  repetition_allow: [had had, that that, is is, bye bye, very very, so so]   # real English repeats
+  max_custom_entries: 200
+
+thresholds:
+  target_per_100_words: 2.0       # the goal the score card compares against
+  grade_bands: {A: 1.0, B: 2.0, C: 3.5, D: 5.0}   # per-100-word rate at or below → grade; above D → F
+  cluster_window_words: 30
+  cluster_min_hits: 3
+  long_sentence_words: 35
+  wpm_band: [130, 170]            # only when the transcript has timestamps (.srt/.vtt)
+  long_pause_seconds: 1.0         # pauses this long are good: the practice plan says pause instead of filling
+  max_words: 15000                # longer transcripts are analysed in chunks, never silently truncated
+
+disambiguation:
+  min_confidence: 0.70            # below this a model verdict is "disputed" and not counted until you decide
+  context_words: 8                # words either side the model sees (DATA-03: never the whole transcript)
+  batch_size: 40
+
+coaching:
+  rewrite_passages: 3
+  tone: direct                    # direct | encouraging
+  audience: meeting               # meeting | interview | keynote | podcast
+  max_rewrite_attempts: 2
+  practice_plan:                  # from Ruairi's list; shown with the patterns they fix
+    - "Pick one habit first: um and uh, then layer in the rest."
+    - "Pause for one to two seconds instead of filling silence."
+    - "Slow your pace slightly so your brain can pick the next word."
+    - "Record yourself outside meetings and review transcripts regularly."
+    - "Ask a trusted colleague for a subtle signal when you hit a filler streak."
+
+privacy:                          # DATA-03
+  save_history: false             # SQLite progress file, per speaker; off by default
+  history_path: warehouse/history.sqlite
+  pseudonymize: true              # names, emails, phones → placeholders before any model; restored after
+  local_only: false               # true: refuse any model alias whose provider isn't mock or ollama
+
+llm:
+  disambiguator_alias: coach-disambiguator     # MODEL-01
+  coach_alias: coach-writer
+  fallback_alias: coach-fallback               # MODEL-05
+  max_output_tokens: 1500
+  retries: 2
+  prompts:                                     # MODEL-04: versioned files, hash logged per call
+    disambiguator: prompts/disambiguate.v1.md
+    coach: prompts/coach.v1.md
+
+cost:                                          # COST-01..04
+  max_usd_per_run: 0.10
+  max_input_tokens_per_call: 12000
+  monthly_alert_usd: 5.00
+  allow_unpriced_models: false
+
+eval:                                          # EVAL-02 thresholds; MODEL-02 gate
+  golden_set: evals/golden_set.yaml
+  min_precision: 0.90
+  min_recall: 0.85
+  min_ambiguous_precision: 0.90
+  min_ambiguous_recall: 0.85
+  min_schema_valid_rate: 1.00
+  min_guard_accuracy: 1.00
+  max_total_cost_usd: 0.10
+
+governance:
+  deprecation_warning_days: 90                 # MODEL-03
+  log_retention_days: 90                       # OBS-03: run log holds counts and hashes only

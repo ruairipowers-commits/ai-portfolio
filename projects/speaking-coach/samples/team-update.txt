@@ -1,0 +1,6 @@
+Dana Brooks: Morning all. Um, let's start with the release. Sam, where are we?
+Sam Ortiz: So, uh, the release is kind of on track. We merged the last two fixes yesterday, you know, the ones from the review.
+Dana Brooks: Great. Any risks?
+Sam Ortiz: Um, the main risk is the the migration. Like, we haven't tested it on the full data set. I like the plan we have, but we need a dry run on Thursday.
+Priya Nair: I can help with that. So, like, what kind of access do I need?
+Sam Ortiz: Read access to staging is enough. So I'll set that up today and we'll do the dry run with with the night team. That's the update, I guess.
