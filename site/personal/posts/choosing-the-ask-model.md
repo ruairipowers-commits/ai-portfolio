@@ -4,6 +4,7 @@ slug: choosing-the-ask-model
 short: "Choosing the Ask button's model"
 categories: [Evaluation, Self-hosting, RAG & retrieval]
 tags: [ollama, gemma4, qwen3.5, llama3.1, benchmark, prompt design, local models]
+audience: [AI and ML engineers, CTOs and heads of technology]
 ---
 
 # Picking the model behind the Ask button: measure on the box it runs on

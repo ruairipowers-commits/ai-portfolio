@@ -203,3 +203,11 @@
 .home-side--panel .post-slide__intro { -webkit-line-clamp: 3; }
 .post-likes { font-size: .64rem; color: var(--md-default-fg-color--light); white-space: nowrap; }
 .post-likes[hidden] { display: none; }
+
+/* Who a post is for: under its topics on the post, one line on each blog card; each role links to the filtered blog */
+.md-typeset .post-audience { margin: -.8rem 0 1.2rem; font-size: .7rem; display: flex; flex-wrap: wrap; gap: .25rem .6rem;
+  align-items: baseline; color: var(--md-default-fg-color--light); }
+.md-typeset .post-audience__label { font-weight: 700; text-transform: uppercase; letter-spacing: .04em; font-size: .62rem; }
+.md-typeset a.post-audience__role { color: var(--md-default-fg-color--light); text-decoration: underline dotted; text-underline-offset: 2px; }
+.md-typeset a.post-audience__role:hover { color: var(--md-accent-fg-color); }
+.md-typeset .post-card__audience { margin: .45rem 0 0; font-size: .68rem; color: var(--md-default-fg-color--light); }

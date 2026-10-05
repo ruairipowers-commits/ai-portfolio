@@ -4,6 +4,7 @@ slug: trade-ops-exceptions
 short: "Trade-ops exception agent"
 categories: [Agents, Operations, Human in the loop, Security]
 tags: [langgraph, mcp, typescript, human-in-the-loop, prompt injection, evals, bedrock]
+audience: [Operations leads, AI and ML engineers, CTOs and heads of technology, "Risk, compliance and legal"]
 ---
 
 # An agent that investigates settlement breaks — and can't act without you

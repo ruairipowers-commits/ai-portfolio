@@ -4,6 +4,7 @@ slug: graph-models-for-payment-fraud
 short: "Graph models for payment fraud"
 categories: [Machine learning, Security, Evaluation]
 tags: [fraud detection, graph neural networks, payments, model risk]
+audience: [Heads of data, AI and ML engineers, "Risk, compliance and legal"]
 section: AI insight
 ---
 

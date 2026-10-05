@@ -4,6 +4,7 @@ slug: applied-ai-data-science
 short: "MIT Applied AI and Data Science (course)"
 categories: [Learning, Machine learning, Evaluation]
 tags: [statistics, regression, classification, decision trees, random forests, deep learning, recommenders, generative ai]
+audience: [Students and career changers, Data scientists]
 ---
 
 # MIT Applied AI and Data Science: what's under the hood

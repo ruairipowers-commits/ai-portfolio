@@ -4,6 +4,7 @@ slug: loan-default-capstone
 short: "Loan default prediction (MIT capstone)"
 categories: [Machine learning, Evaluation, Learning]
 tags: [credit risk, hmeq, decision trees, random forests, recall, explainability, ecoa, google colab]
+audience: [Data scientists, "Risk, compliance and legal", Students and career changers]
 ---
 
 # Capstone: predicting home-loan defaults, and how I'd put the model into production

@@ -4,6 +4,7 @@ slug: private-local-ai
 short: "A private AI workbench at home"
 categories: [Self-hosting, Security, Agents]
 tags: [ollama, rocm, amd, mcp, claude desktop, jupyter, postgres, tailscale, privacy, local models]
+audience: [AI and ML engineers, CTOs and heads of technology, "Risk, compliance and legal"]
 ---
 
 # A private AI workbench on a mini PC: what stays home, and what doesn't
