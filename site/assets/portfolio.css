@@ -114,3 +114,19 @@
 .md-header__button.console-link svg { width: 1.1rem; height: 1.1rem; fill: currentColor; }
 .console-link__label { font-size: .68rem; font-weight: 600; }
 @media (max-width: 44.984375em) { .console-link__label { display: none; } .md-header__button.console-link { border: 0; } }
+
+/* Home: portfolio gallery — one card per project, its measured result first, then the links */
+.md-typeset .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr)); gap: .9rem; margin: 1rem 0 1.6rem; }
+.md-typeset .gallery__card { display: flex; flex-direction: column; padding: .9rem 1rem; border-radius: .4rem;
+  border: 1px solid var(--md-default-fg-color--lightest); background: var(--md-default-bg-color);
+  transition: border-color .15s, box-shadow .15s; }
+.md-typeset .gallery__card:hover { border-color: var(--md-primary-fg-color); box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+.md-typeset .gallery__kind { font-size: .62rem; text-transform: uppercase; letter-spacing: .04em; color: var(--md-default-fg-color--light); }
+.md-typeset .gallery__card h3 { margin: .25rem 0 .35rem; font-size: .9rem; }
+.md-typeset .gallery__problem { margin: 0 0 .55rem; font-size: .74rem; color: var(--md-default-fg-color--light); }
+.md-typeset .gallery__result { margin: 0; font-size: .8rem; font-weight: 700; line-height: 1.35;
+  border-left: 3px solid var(--md-primary-fg-color); padding-left: .55rem; }
+.md-typeset .gallery__basis { margin: .25rem 0 0; padding-left: .55rem; font-size: .66rem; color: var(--md-default-fg-color--light); }
+.md-typeset .gallery__links { margin-top: auto; padding-top: .75rem; display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.md-typeset .gallery__links .md-button { margin: 0; padding: .25rem .8rem; font-size: .7rem; }
+.md-typeset .gallery__more { font-size: .72rem; margin-left: auto; }

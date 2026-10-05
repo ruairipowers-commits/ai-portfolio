@@ -71,3 +71,5 @@ card:   # the row for this project on the home page (or the Personal projects pa
   problem: "Settlement breaks need lookups across 4 systems"
   pattern: "Agent + human approval"
   stack: "LangGraph, MCP (TypeScript), Streamlit, Postgres"
+  result: "36 of 40 exceptions fixed and queued for approval; 4 of 4 traps escalated"      # headline measured result (home-page gallery)
+  result_basis: "40 synthetic exceptions, incl. prompt injection and a bank-detail fraud; 0 unapproved writes"

@@ -60,3 +60,5 @@ card:   # the row for this project on the home page (or the Personal projects pa
   problem: "End-of-day pipeline breaks found late, fixed from tribal knowledge"
   pattern: "RAG + monitor"
   stack: "Airflow, dbt-postgres, pgvector, Streamlit"
+  result: "12 of 12 breaks found, 0 false alarms"      # headline measured result (home-page gallery)
+  result_basis: "10 days of synthetic end-of-day runs; recall and precision 1.00"

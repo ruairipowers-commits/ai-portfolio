@@ -96,3 +96,5 @@ card:
   problem: Visitors can't quickly find what the blog says; the owner can't see what they look for
   pattern: RAG (local model)
   stack: FastAPI, SQLite FTS5, Ollama, MkDocs Material
+  result: "Answers start about 2× sooner: 12–27 s → 6–10 s to first word"      # headline measured result (home-page gallery)
+  result_basis: "after measuring three local models on the server it runs on"

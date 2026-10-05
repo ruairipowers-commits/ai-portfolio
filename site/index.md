@@ -12,6 +12,14 @@ differently, and the controls I now hold every AI workflow to. The second is so 
 project shows how to use AI responsibly and govern it, with the code and the reasoning. The site keeps changing as I
 learn; the [release notes](release-notes/index.md) record each step.
 
+## Portfolio gallery
+
+Every project, what it measured, and where to try it. The industry projects' numbers come from offline runs on
+synthetic data and golden-set evaluations (the demos need no API keys). The Ask button's and the capstone's are
+measured on my own server and on a public loan dataset.
+
+<!-- projects:gallery -->
+
 ## What's here
 
 <div class="grid cards" markdown>

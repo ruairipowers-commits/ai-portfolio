@@ -7,6 +7,11 @@ hide: [navigation]
 
 The big changes to this portfolio, newest first. Each project's repository has the detail in its commit history.
 
+## 5 October 2026
+
+**A portfolio gallery on Home.** Every project now has a card on [Home](../index.md) with its headline
+measured result, how it was measured, and one-click links to the live demo, the code and the write-up.
+
 ## 4 October 2026
 
 **Private AI workbench.** A new [personal project](../personal/posts/private-local-ai.md) on the local AI setup
