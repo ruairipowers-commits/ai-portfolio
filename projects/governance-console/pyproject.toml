@@ -2,6 +2,7 @@
 name = "governance-console"
 version = "0.1.0"
 description = "AI governance console: usage, cost, control coverage and kill switches for every AI workflow"
+license = {text = "Apache-2.0"}
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115,<1",

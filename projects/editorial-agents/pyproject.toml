@@ -3,7 +3,7 @@ name = "editorial-agents"
 version = "0.1.0"
 description = "Editorial agents: a topic scout ranks AI topics by engagement and novelty across market sectors; a writer and an independent editor draft a weekly post; a human merge publishes it"
 requires-python = ">=3.11"
-license = {text = "MIT"}
+license = {text = "Apache-2.0"}
 dependencies = [
   "pyyaml>=6,<7",
   "fastapi>=0.110,<1",

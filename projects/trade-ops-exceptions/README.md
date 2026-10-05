@@ -187,4 +187,4 @@ infra/aws/     Terraform starter (RDS, Secrets Manager, split investigator/appro
 
 ## License
 
-MIT. All firms, trades and accounts are synthetic.
+Apache-2.0, by Ruairi Powers, built with Claude: keep the NOTICE file and credit the project if you reuse it (see [NOTICE](NOTICE)). All firms, trades and accounts are synthetic.

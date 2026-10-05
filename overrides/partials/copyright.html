@@ -1,5 +1,5 @@
-{#- Footer: the links that left the top menu (release notes), plus the usual ones. `| url` makes each link
-    relative to the current page, so it works at any depth and under any site URL. -#}
+{#- Footer: the links that left the top menu (release notes), the credit and licences, and the usual links.
+    `| url` makes each link relative to the current page, so it works at any depth and under any site URL. -#}
 <div class="md-copyright">
   <div class="md-copyright__highlight site-footer">
     <a href="{{ 'release-notes/' | url }}">Release notes</a> ·
@@ -7,6 +7,12 @@
     <a href="{{ 'about/' | url }}">About</a> ·
     <a href="{{ 'assets/Ruairi-Powers-Resume.pdf' | url }}">Resume</a> ·
     <a href="https://www.linkedin.com/in/ruairi-powers">LinkedIn</a>
+  </div>
+  <div class="site-footer site-footer__credit">
+    © 2026 Ruairi Powers, built with Claude ·
+    writing <a href="https://creativecommons.org/licenses/by/4.0/" rel="license">CC BY 4.0</a> ·
+    code <a href="https://github.com/{{ config.extra.github_owner or 'ruairipowers-commits' }}/ai-portfolio/blob/main/LICENSE" rel="license">Apache 2.0</a> ·
+    <a href="{{ 'about/#using-this-work' | url }}">reuse with credit</a>
   </div>
   Made with
   <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">Material for MkDocs</a>

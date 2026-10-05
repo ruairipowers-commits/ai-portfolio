@@ -2,6 +2,7 @@
 name = "site-assistant"
 version = "0.1.0"
 description = "Search and chat over the portfolio blog (local model via Ollama), with logged searches, page views and a daily engagement email"
+license = {text = "Apache-2.0"}
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.110,<1",

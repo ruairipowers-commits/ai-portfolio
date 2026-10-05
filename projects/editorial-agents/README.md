@@ -48,3 +48,7 @@ Everything is in `config/settings.yaml` (queue size, weights, schedule, sources,
 used (no public API; its terms forbid scraping).
 
 Docs: [architecture](docs/architecture.md) · [governance mapping](docs/governance.md) · [AWS path](docs/aws-native.md)
+
+## License
+
+Apache-2.0, by Ruairi Powers, built with Claude: keep the NOTICE file and credit the project if you reuse it (see [NOTICE](NOTICE)).

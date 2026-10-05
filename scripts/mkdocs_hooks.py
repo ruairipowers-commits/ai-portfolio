@@ -523,6 +523,7 @@ def on_config(config):
     config.extra["assistant_url"] = os.getenv("PORTFOLIO_ASSISTANT_URL", url).rstrip("/")
     # the header's shield icon → the live governance console demo (only when the demos are deployed)
     config.extra["console_url"] = demo_url("governance-console", _cfg) if _cfg["demos_url"] else ""
+    config.extra["github_owner"] = _cfg["github_owner"]          # the footer's licence link
     return config
 
 

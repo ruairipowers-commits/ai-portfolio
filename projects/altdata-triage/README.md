@@ -154,4 +154,4 @@ infra/aws/     Terraform starter for the AWS-native path
 
 ## License
 
-MIT. All vendor names and data are synthetic.
+Apache-2.0, by Ruairi Powers, built with Claude: keep the NOTICE file and credit the project if you reuse it (see [NOTICE](NOTICE)). All vendor names and data are synthetic.

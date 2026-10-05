@@ -173,4 +173,4 @@ Every heartbeat, knowledge-base index and eval is reported to the portfolio's [g
 
 ## License
 
-MIT. The fund, securities, people, clients and incidents are fictional.
+Apache-2.0, by Ruairi Powers, built with Claude: keep the NOTICE file and credit the project if you reuse it (see [NOTICE](NOTICE)). The fund, securities, people, clients and incidents are fictional.

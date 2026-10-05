@@ -42,7 +42,7 @@ def front_matter(slug: str, spec: dict, cfg: dict) -> str:
         "sdk": "docker",
         "app_port": 7860,
         "pinned": False,
-        "license": "mit",
+        "license": "apache-2.0",
         "short_description": demo.get("short_description", spec["title"])[:60],
     }
     return "---\n" + yaml.safe_dump(meta, sort_keys=False, allow_unicode=True) + "---\n\n"

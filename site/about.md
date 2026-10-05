@@ -38,7 +38,7 @@ inside a framework I set up so the result would be free, open, reusable and able
 | Goal | How the framework delivers it |
 |---|---|
 | **Free to run** | The site is on GitHub Pages. The live demos run on my own mini PC behind a Cloudflare Tunnel. The [Ask](personal/posts/site-assistant.md) assistant uses a local open model. No paid hosting and no per-question API bills. |
-| **Open source** | Everything is in a public GitHub repo, and each project is MIT-licensed. |
+| **Open source, with credit** | Everything is in a public GitHub repo. The code is Apache-2.0 and the writing is CC BY 4.0: anyone can reuse it, as long as they credit it. See [Using this work](#using-this-work). |
 | **Usable by others** | Every project runs offline in about five minutes with a mock model and no API keys. Every demo gives each visitor a private copy of the data. The [capstone](classes/posts/loan-default-capstone.md) notebook opens in Colab. |
 | **Repeatable** | Each project starts as a short spec. A reusable skill turns the spec into a repo, tests, a demo, a governance mapping and a write-up, following a style guide and an instructions file the AI reads every time. |
 | **CI/CD** | GitHub Actions runs the tests, evals and governance checks on every change and publishes the site. My server deploys a commit only after its checks pass. |
@@ -75,6 +75,21 @@ The tools are listed on [Technologies](tech/index.md).
 
 What should I try next? [Suggest a project](projects/suggestions.md), or upvote the ideas others have shared. The
 top ten arrive in my email every day.
+
+## Using this work
+
+This site and its projects are open so others can learn from them, and they're my own work: I set the direction,
+wrote the standard and specs, and reviewed everything, with Claude as my AI coding assistant. You're welcome to
+reuse any of it, including commercially, as long as you credit it.
+
+| What | Licence | What you need to do |
+|---|---|---|
+| Code (every project, the site's scripts) | [Apache 2.0](https://github.com/{{GITHUB_OWNER}}/ai-portfolio/blob/main/LICENSE) | Keep the copyright and the [NOTICE](https://github.com/{{GITHUB_OWNER}}/ai-portfolio/blob/main/NOTICE) file with any copy or derivative |
+| Writing, the governance standard, the style guide | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | Credit the source, link the licence, and say if you changed it |
+
+Credit it as: *Based on Ruairi Powers' AI Workflow Portfolio (github.com/{{GITHUB_OWNER}}/ai-portfolio), built with
+Claude.* GitHub's *Cite this repository* button gives the same in APA and BibTeX. My resume, name and likeness
+aren't licensed for reuse.
 
 ## Skills and evidence
 

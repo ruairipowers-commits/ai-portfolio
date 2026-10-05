@@ -2,6 +2,7 @@
 name = "eod-heartbeat"
 version = "0.1.0"
 description = "Fund end-of-day pipeline monitor: breaks detected in dbt-postgres, explained from runbooks via pgvector RAG"
+license = {text = "Apache-2.0"}
 requires-python = ">=3.11"
 dependencies = [
   "psycopg[binary]>=3.2,<4",

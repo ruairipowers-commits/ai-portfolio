@@ -9,6 +9,11 @@ The big changes to this portfolio, newest first. Each project's repository has t
 
 ## 5 October 2026
 
+**Open, with credit.** The code is now under the Apache 2.0 licence and the writing under CC BY 4.0, so anyone can
+reuse it as long as they credit it: *Based on Ruairi Powers' AI Workflow Portfolio, built with Claude.* Every
+project carries a NOTICE file with that line, GitHub's *Cite this repository* button gives a citation, and
+[About](../about.md#using-this-work) explains what's needed.
+
 **Ask, made for hiring managers.** The [3-minute tour](../tour.md) now opens with an *Ask the portfolio* box.
 *Search* and *Ask* are separate buttons: Search lists the pages that match, Ask writes a cited answer. The panel can
 be expanded to sit beside the page, so you can click through the sources without losing the answer, and your
