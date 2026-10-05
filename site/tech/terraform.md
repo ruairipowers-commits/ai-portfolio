@@ -46,6 +46,7 @@ be destroyed in one step.
 
 - [Alt-data vendor triage](../blog/posts/altdata-triage.md) ships a Terraform starter for S3, Glue, Athena, Bedrock
   and ECS Fargate.
+
 - [EOD heartbeat](../blog/posts/eod-heartbeat.md) has Terraform for MWAA, RDS, SNS and S3 Object Lock.
 - See the [AWS page](aws.md) for what each of those services does.
 

@@ -42,6 +42,7 @@ sensitive output.
 
 - The live demos run in [Docker](docker.md) containers on a home server behind [Caddy](caddy.md); Cloudflare Tunnel
   carries public traffic to Caddy without opening ports on the home network.
+
 - That includes demos such as [Research Q&A](../blog/posts/research-qa-rag.md) and
   [EOD heartbeat](../blog/posts/eod-heartbeat.md).
 

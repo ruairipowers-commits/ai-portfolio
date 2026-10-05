@@ -28,6 +28,7 @@ MIT Professional Education ·
 - **Lectures.** Each topic had pre-reading, then a live two-hour lecture from MIT faculty.
 - **Weekend mentor sessions.** A practitioner worked a full case study in a notebook, with an industry
   perspective.
+
 - **Time.** 12–18 hours a week was the stated commitment, and that was accurate.
 - **Grading.** Projects 60%, quizzes 30%, attendance 10%, with 60% needed to pass.
 
@@ -53,24 +54,29 @@ The models, in the order they built on each other:
 
 - **Statistics first.** Distributions, sampling, and tests for whether a difference is real. Everything after this
   is an estimate, and statistics tells you how much to trust it.
+
 - **Unsupervised learning** finds structure without labels. PCA compresses features into the directions that
   matter. Clustering groups similar records; my notes say to pick the elbow and stop, because each extra cluster is
   more to interpret.
+
 - **Regression and classification** learn from labelled examples. The week's real lesson was evaluation:
-  - bias against variance;
-  - cross-validation to choose a model, then bootstrapping to put a confidence interval on it;
-  - and which error costs more, which decides whether you optimise precision or recall.
+    - bias against variance;
+    - cross-validation to choose a model, then bootstrapping to put a confidence interval on it;
+    - and which error costs more, which decides whether you optimise precision or recall.
 - **Decision trees** split on the question that most reduces uncertainty, which makes them readable rules.
   **Random forests** average many trees to cut overfitting. **Boosting** builds trees that each fix the last one's
   errors.
+
 - **Time series** need stationarity before forecasting. AR/ARIMA models turn out to be least squares on the
   series' own past.
+
 - **Neural networks** stack weighted sums and nonlinearities, trained by gradient descent:
-  - **CNNs** share small filters across an image;
-  - **transfer learning** reuses a model trained on millions of images;
-  - **transformers** use attention to weigh every token against every other.
+    - **CNNs** share small filters across an image;
+    - **transfer learning** reuses a model trained on millions of images;
+    - **transformers** use attention to weigh every token against every other.
 - **Recommenders** fill in a sparse user × item matrix. Matrix factorisation by alternating least squares is a
   linear regression on each pass.
+
 - **Generative AI** is next-token probability at scale. That explains both what it's good at and why it
   hallucinates. The course treated prompting as an iterative, versioned process, and RAG as the fix when the model
   doesn't know your data.
@@ -101,39 +107,44 @@ explain them. Knowing when *not* to use an LLM is part of the job.
 - **Evaluation before release.** Every project here ships a golden set and an eval gate in CI, and the
   [site assistant](../../personal/posts/site-assistant.md) reports retrieval hit-rate. Those are the week 4 habits:
   a held-out test set, and a metric chosen for the error that matters.
+
 - **Retrieval.** The [research Q&A project](../../blog/posts/research-qa-rag.md) and the site assistant are both
   retrieval-augmented. The generative AI weeks covered the same design, with chunking, embeddings, a vector store
   and answers only from the retrieved text.
+
 - **Numbers from code, words from the model.** The portfolio's rule that code and SQL compute every number, and the
   model only explains, is the course's distinction between statistical estimates and generated text.
+
 - **Staged rollout.** My capstone ends with running the model in parallel with the manual process before trusting
   it. That became the backbone of my [agentic AI course](applied-agentic-ai.md).
 
 ## The work I completed
 
 - **Weekly case studies**, a notebook or more for every session. Examples:
-  - the Game of Thrones and Enron networks;
-  - a drug-trafficking network over eleven wiretap phases;
-  - country clustering on socio-economic data;
-  - hospital length-of-stay and employee-attrition prediction;
-  - Bitcoin, CPI and crude-oil forecasting;
-  - audio digit recognition and CIFAR-10 image classification;
-  - movie and Yelp recommenders.
+    - the Game of Thrones and Enron networks;
+    - a drug-trafficking network over eleven wiretap phases;
+    - country clustering on socio-economic data;
+    - hospital length-of-stay and employee-attrition prediction;
+    - Bitcoin, CPI and crude-oil forecasting;
+    - audio digit recognition and CIFAR-10 image classification;
+    - movie and Yelp recommenders.
 - **FoodHub** (February), the first graded project: exploratory analysis of a food-delivery order dataset.
 - **Elective project: an Amazon product recommender** (March). I designed a hybrid:
-  - popularity ranking for new users, who have no history;
-  - SVD matrix factorisation for users with enough ratings;
-  - item-to-item similarity alongside.
+    - popularity ranking for new users, who have no history;
+    - SVD matrix factorisation for users with enough ratings;
+    - item-to-item similarity alongside.
 
   I ruled out user-to-user k-NN because on that many ratings it was too memory- and compute-heavy without heavy
   pruning.
+
 - **Generative AI case studies** (April):
-  - a case study generating a bakery's whole marketing campaign in code: a poster from Stable Diffusion XL, an
+    - a case study generating a bakery's whole marketing campaign in code: a poster from Stable Diffusion XL, an
     8-second video, and a voice-over;
-  - business applications with Gemini: classifying hotel reviews with few-shot prompts, rewriting clinical visit
+    - business applications with Gemini: classifying hotel reviews with few-shot prompts, rewriting clinical visit
     notes for patients, and a RAG assistant over an HR manual.
 - **Capstone: [loan default prediction](loan-default-capstone.md)** (May). An explainable credit model and a
   rollout plan, presented to the bank as a business case.
+
 - **Hackathon** (May, after the program). A Great Learning hackathon predicting passenger satisfaction on a bullet
   train from travel and survey data, about 84,000 training rows. I logged 27 experiments: Optuna-tuned gradient
   boosting, pseudo-labelling, and multi-layer AutoGluon stacks. Honest cross-validated accuracy was 0.96–0.97.
@@ -142,8 +153,10 @@ explain them. Knowing when *not* to use an LLM is part of the job.
 
 - **Do the notebooks, not just the lectures.** The understanding comes from changing a parameter and watching the
   confusion matrix move.
+
 - **It's a lot of material.** Fifteen weeks covers ground a university course would spread over a year. Expect the evenings and
   weekends the time estimate says.
+
 - **The faculty sessions are the reason to take it.** The derivations are available elsewhere. MIT faculty
   explaining why a method works, and where it breaks, isn't.
 

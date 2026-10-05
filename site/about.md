@@ -8,6 +8,7 @@ Ruairi Powers — technical product and data engineering leader in financial ser
 - **Neudata** (2024–2025): SVP, product manager
 - **Silver Ridge Advisors** (2026–present): data & analytics director, consulting for financial services,
   technology and private equity clients
+
 - BS Computer Science, Rensselaer Polytechnic Institute · Series 3
 - MIT Professional Education (2026): [*Applied AI and Data Science*](classes/posts/applied-ai-data-science.md) (16 CEUs);
   [*Applied Agentic AI for Organizational Transformation*](classes/posts/applied-agentic-ai.md) (7 CEUs) — see [Classes](classes/index.md)
@@ -35,13 +36,15 @@ inside a framework I set up so the result would be free, open, reusable and able
 
 - **Claude Code did the engineering.** It planned, wrote the code, ran the tests, built and checked the site,
   recorded and narrated the demo video, and fixed what failed.
+
 - **Subagents handled side work in parallel**, such as researching course material and drafting technology pages.
   I set the direction, approved the specs and reviewed the results.
+
 - **The projects themselves are agentic and governed:**
-  - a [LangGraph agent](blog/posts/trade-ops-exceptions.md) behind an MCP server, where humans approve every write;
-  - retrieval with citations in [research Q&A](blog/posts/research-qa-rag.md) and [EOD heartbeat](blog/posts/eod-heartbeat.md);
-  - a [governance console](blog/posts/governance-console.md) with telemetry, incidents and a kill switch;
-  - this site's own local-model assistant.
+    - a [LangGraph agent](blog/posts/trade-ops-exceptions.md) behind an MCP server, where humans approve every write;
+    - retrieval with citations in [research Q&A](blog/posts/research-qa-rag.md) and [EOD heartbeat](blog/posts/eod-heartbeat.md);
+    - a [governance console](blog/posts/governance-console.md) with telemetry, incidents and a kill switch;
+    - this site's own local-model assistant.
 
 **Industry practice, built in.**
 

@@ -39,10 +39,13 @@ For each vendor folder (a panel CSV and a questionnaire), the pipeline:
 1. Loads it into DuckDB and builds a **scorecard in dbt**: history in years, share of tickers that map
    to the security master, coverage of the fund's core universe, null and gap rates, days since last
    delivery, and a transparent 0–100 rule score. Fourteen dbt tests must pass.
+
 2. Sends the model **only the 16 scorecard fields** plus the vendor's free-text notes — sanitized,
    PII-redacted and fenced off as untrusted.
+
 3. Validates the model's JSON memo against a schema, **checks every number it cites** against the scorecard,
    and applies policy rules the model can't override.
+
 4. Writes a memo per vendor and waits for a named human to record a decision.
 
 On the five synthetic vendors in the repo:
@@ -149,9 +152,12 @@ Moving to Bedrock is the same eval-then-promote path as any model migration.
 
 - The default "model" is a **deterministic heuristic mock** so the repo runs free and CI is stable.
   Swap in Claude, GPT or Bedrock with one alias change to see real behaviour.
+
 - Regex screens catch common injection and PII patterns, not all of them; production would add a
   classifier and a named-entity PII detector.
+
 - Score weights are judgment calls. Next step: fit them to historical buy/pass decisions.
 - AWS path: ingestion from S3 via Athena and audit logging to S3 are the next increments; the
   Terraform hasn't been applied to a live account yet.
+
 - Five golden cases is a start; every reviewer override is a candidate for the sixth.

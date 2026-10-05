@@ -42,6 +42,7 @@ key, and to treat real-model runs as an opt-in configured through Space secrets.
 - The projects can be deployed to Hugging Face Spaces as an alternative to the home server.
 - That covers the Streamlit apps for projects such as [Alt-data vendor triage](../blog/posts/altdata-triage.md) and
   [Trade-ops exception agent](../blog/posts/trade-ops-exceptions.md).
+
 - The primary demos run in [Docker](docker.md) on a home server; Spaces is the fallback.
 
 ## Pros and cons

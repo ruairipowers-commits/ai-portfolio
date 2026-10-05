@@ -44,6 +44,7 @@ predictable HTML and Markdown.
 
 - This blog is built with Material for MkDocs and published to GitHub Pages by
   [GitHub Actions](github-actions.md).
+
 - Every project post, for example [Governance](../blog/posts/governance.md) and
   [Research Q&A](../blog/posts/research-qa-rag.md), is a Markdown file in the site's blog folder.
 

@@ -37,13 +37,17 @@ that can run code when it's loaded.
 
 - **Subscribe** with an email, a public handle and the tracks you want. Double opt-in, magic-link sign-in, one-click
   unsubscribe, delete your account and scores at any time.
+
 - **At 07:00** subscribers of that day's track get the puzzle. Accept it, answer, and each submission says at once
   whether you solved it and how many of your six attempts are left.
+
 - **Scoring** rewards fewer attempts: 100, 70, 49, 34, 24, 17 points, nothing if unsolved, added up across puzzles.
   The leaderboard shows handle, puzzles accepted, attempted and solved, and the total; ties go to fewer attempts,
   then the earlier solve.
+
 - **At 23:59** submissions close; a few minutes later the answer, a worked solution and (for code puzzles) the
   reference code are published. Until then the server holds no plain copy of the answer.
+
 - **Puzzle packs:** a one-off set of new, verified puzzles as a questions PDF and a separate answer-key PDF.
 - **Everything is configuration** — tracks, puzzle kinds, the weekday rotation, difficulty, attempts, scoring,
   the data allow-list — so anyone can run their own version.
@@ -145,12 +149,16 @@ Terraform starter (not applied to a live account) cover the rest.
 
 - **Measure real models.** Everything above ran on the mock pair. Next is a week of drafts from the local models on
   the EVO-X1 (a 14B generator, a different solver), counting first-round passes and what the verifier catches.
+
 - **The mock solver reads the machine-readable clues**, not the wording, so it can't catch a statement that
   disagrees with its spec. Only a real solver model covers that case.
+
 - **The word list is small.** Cipher and anagram checks prove uniqueness within it; an obscure second word outside
   it isn't caught.
+
 - **Difficulty is the generator's guess.** `puzzle stats` compares solve rates with the target per level; feeding
   that back into the generator isn't built.
+
 - **Not deployed yet.** It's packaged for the demos host at `/daily-puzzle/`; real email needs the Resend key and
   the answer-key secrets set first.
 

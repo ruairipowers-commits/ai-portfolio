@@ -64,10 +64,13 @@ I added two constraints of my own:
 - **The best signal was a blank field.** 21% of applications have no debt-to-income ratio. Those applicants
   defaulted **62%** of the time; applicants who gave one defaulted 8.6% of the time. My first recommendation was a
   form change, not a model: make the field required.
+
 - **Past behaviour beats current wealth.** Delinquent credit lines, derogatory reports and a short credit history
   separate the two groups. Property value barely does: its correlation with default is −0.03.
+
 - **Defaulters borrow less.** The average defaulted loan is smaller ($16.9K against $19.0K), and both loan size and
   mortgage owed differ significantly between the groups (t-tests, p < 0.001).
+
 - **Home-improvement loans default more than debt consolidation** (22.2% against 18.9%), the opposite of what I'd
   have guessed.
 
@@ -75,6 +78,7 @@ Before modelling I had to clean the data:
 
 - Capped extreme values with the 1.5 × IQR rule. I left the delinquency counts alone, because there the extreme
   value *is* the signal.
+
 - Filled the missing categories with the most common value.
 - Treated a missing delinquency or derogatory count as zero.
 - Filled the skewed money fields with the median.
@@ -97,6 +101,7 @@ The deck adds two experiments from after this notebook:
 
 - A **gradient-boosting** model that handles missing values natively. It caught 79% of defaults with better overall
   precision, but every decision needs SHAP or LIME to explain it.
+
 - A **random forest trained on complete applications only** (3,364 rows). It's precise enough to work as a
   fast-lane approval for applicants who fill in every field.
 
@@ -138,8 +143,10 @@ This is the part of the deck I'd defend hardest in a real bank, and the bridge t
 - **Run in parallel first.** Score every application alongside the manual process for about six months, or a
   target number of applications. Investigate every disagreement. Switch over only once the model is demonstrably
   no worse.
+
 - **Monitor and control change.** Track accuracy over time. Put change control on the application form, the
   model's inputs and the model itself.
+
 - **Fairness audits** on a schedule, and a written reason for every rejection under the ECOA.
 
 The deck also names the risks:
@@ -157,10 +164,13 @@ The deck also names the risks:
 - **Report one consistent metric.** My notebook's summary table mixes macro-averaged scores with the default-class
   scores, and one logistic-regression row was scored on unscaled features. The default-class numbers in the table
   above come from the classification reports, which are correct.
+
 - **Treat missingness as a feature** instead of imputing it away. A blank debt-to-income ratio was the strongest
   single signal in the data.
+
 - **Pick the decision threshold from the cost of each error.** A threshold set from $ lost per missed default
   against $ forgone per wrongly rejected good loan beats a default 0.5 cut-off with class weights.
+
 - **Run a fairness check before recommending anything.** HMEQ has no protected attributes, so a real deployment
   would need proxy analysis and adverse-action reason codes from the start.
 

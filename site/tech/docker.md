@@ -45,6 +45,7 @@ For evaluation work, an image tag is a precise record of which code produced whi
 
 - The live demos run in Docker containers on a home server behind [Caddy](caddy.md) and a
   [Cloudflare Tunnel](cloudflare-tunnel.md).
+
 - The same projects can instead be deployed to [Hugging Face Spaces](hugging-face-spaces.md).
 - On AWS, [Trade-ops exception agent](../blog/posts/trade-ops-exceptions.md) and
   [Alt-data vendor triage](../blog/posts/altdata-triage.md) target ECS Fargate, which runs container images.

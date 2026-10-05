@@ -26,9 +26,11 @@ MIT Professional Education ·
 
 - **Format.** Eight modules, one a week: videos and case studies, weekly office hours with a learning facilitator,
   and two live faculty webinars.
+
 - **Time.** About 70 hours in all.
 - **Assignments.** Each module ended in one. They were either quantitative, such as costing an API, or about
   applying the ideas to your own organisation.
+
 - **Certificate.** It needed six of the first seven assignments plus the capstone, which was 30% of the grade.
 - **No lab.** You build with your own API accounts. About $5 of credit covers the course.
 
@@ -76,6 +78,7 @@ second, more formal version.
 - **Recommendations only.** The doctor decides and talks to the patient.
 - **Thresholds set by consequence.** A missed escalation is far costlier than a false alarm, so the thresholds are
   conservative.
+
 - **Every override logged** and reviewed by quality control.
 - **A full audit trail for each encounter:** inputs, recommendation, action taken and outcome.
 - **Subgroup testing** by age, sex and language.
@@ -86,6 +89,7 @@ an EU telehealth pilot.
 
 - **Regulation across jurisdictions:** HIPAA, FDA software-as-a-medical-device rules with a change-control plan,
   ONC transparency rules, GDPR and the EU AI Act's high-risk tier.
+
 - **Explainability.** Every score shows its top contributing factors.
 - **Fairness testing** by race, sex, age and insurance, with a retraining trigger when the gaps exceed a threshold.
 - **Drift monitoring** against outcomes.
@@ -100,8 +104,10 @@ Every plan I wrote follows the same shape:
 1. **Sandbox** on de-identified or historical data.
 2. **Shadow mode:** the model runs alongside people, 60–90 days in the hospital plan, logging what it would have
    done without influencing anything.
+
 3. **Phased rollout** one unit or one group of doctors at a time, against a control group, measured on the outcome
    that matters (time to treatment, missed escalations) and on the burden it adds (false alerts).
+
 4. **Expand**, with monitoring, scheduled revalidation and rollback thresholds agreed in advance.
 
 For my own firm, the plan put three prerequisites ahead of any more agent autonomy:
@@ -138,6 +144,7 @@ instructions file that persist between sessions.
 
 - **Strong:** we knew what our AI workflows could reach, and we'd deliberately chosen on-demand workflows over
   autonomous agents.
+
 - **Weak:** no formal training, no central monitoring, and no recovery plan beyond version control.
 - **Recommended:** training, central logging with a kill switch, and an incident playbook.
 
@@ -165,20 +172,26 @@ development, marketing and content compete with billable work for the same hours
 - **Cost.** The cheapest model by default, a stronger one only when needed, and a local model as the fallback.
   Common questions are answered from a cached FAQ. Every call has a token ceiling. There's a hard monthly cap of
   $100 with an alert at $50, against projected usage of a few dollars a month for the chatbot.
+
 - **Authority.** The chatbot can schedule and answer FAQs, but it can't quote prices, send contracts or make
   commitments. It says it's an AI.
+
 - **Data.** It never asks for regulated personal data. Client-confidential and prior-employer information never
   goes into a model, and an agent checks published content for it.
+
 - **Proof before promotion.** No service is marketed until a case study backs it, and the content agents flag any
   promotion that lacks one.
+
 - **Human review** of everything external, at least through the first two phases.
 
 **How it scales, Crawl / Walk / Run:**
 
 1. **Crawl, months 1–2.** Rebuild the site. The chatbot goes live, but I read every transcript. AI drafts posts,
    and I edit and post them by hand.
+
 2. **Walk, months 3–4.** The first roundtable feeds the content agent. The publisher agent takes over posting
    approved content. Every link is tagged so engagement can be traced to its source. Review moves to a weekly batch.
+
 3. **Run, month 5 on.** The orchestration agent runs the loop end to end and flags strong leads to me directly. I
    stay the closer on every deal.
 
@@ -193,13 +206,15 @@ The course gave names to the controls I'd already built into this portfolio, and
 - **A kill switch for every workflow.** The [governance console](../../blog/posts/governance-console.md) can switch
   any workflow off. Serious incidents switch it off automatically, and someone has to record the root cause and the
   fix before it comes back on. That's the respond-and-recover step my NIST survey found missing at my own firm.
+
 - **Central monitoring.** Every workflow, including the [site assistant](../../personal/posts/site-assistant.md),
   reports to that one console. That closes the detect gap the survey found.
+
 - **The standard's controls** carry the same ideas:
-  - human approval for consequential actions (HITL-02), and reviewer overrides fed back into evals (HITL-03),
+    - human approval for consequential actions (HITL-02), and reviewer overrides fed back into evals (HITL-03),
     which is the override-logging loop from the governance plans;
-  - hard budgets (COST-01) and cost attribution (COST-02), the module 1 lesson;
-  - eval-gated changes (MODEL-02): no model or prompt is promoted until it's no worse than the current one. That's
+    - hard budgets (COST-01) and cost attribution (COST-02), the module 1 lesson;
+    - eval-gated changes (MODEL-02): no model or prompt is promoted until it's no worse than the current one. That's
     the shadow-mode idea, in CI.
 
 The [governance standard](../../blog/posts/governance.md) lists every control.
@@ -208,10 +223,13 @@ The [governance standard](../../blog/posts/governance.md) lists every control.
 
 - **Start with workflows, not autonomous agents.** On-demand AI workflows with a human trigger are easy to govern.
   Earn autonomy one use case at a time.
+
 - **Governance is how you scale.** A shadow period, a rollback threshold and a named owner are what let you say yes
   to the next use case.
+
 - **Measure trust, not just accuracy.** An override rate tells you whether people believe the model, and adoption
   fails there more often than on accuracy.
+
 - **Regulated industries already know how to do this.** Healthcare's change-control plans and model cards map
   closely to what financial firms need for model risk.
 

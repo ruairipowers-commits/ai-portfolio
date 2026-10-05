@@ -28,6 +28,7 @@ and obeys its kill switch. Use any demo, then find yourself in the console with 
 - A write-up: business problem, functional and non-functional requirements, architecture diagrams and the *why*
 - A browser app (Streamlit): a default input, a Run button and the results, plus a "try to break it" input,
   hosted as a live demo where every visitor gets a private copy of the data
+
 - A public repo that runs offline with a mock model (no API keys) and switches to Claude, OpenAI or Bedrock by config
 - A control-by-control governance mapping, with configuration and the options I didn't build
 - An AWS-native path: Terraform starter and a local-vs-AWS comparison

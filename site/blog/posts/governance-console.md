@@ -47,12 +47,15 @@ The console turns that into:
   against the previous period; **daily AI spend by workflow** with **cumulative spend**; runs and throughput per day;
   every workflow's state, risk tier, owner, budget use, escalation and error rates and control coverage; the safety
   signals (injections caught, budget stops, entitlement filtering, human overrides); live activity.
+
 - **A page per workflow** — the same charts, who ran it, spend by model, the kill switch, and all 30 controls with the
   project's own mapping, **live evidence** from events and **attestations**.
+
 - **Controls** — the workflows × controls matrix, read from each project's `docs/governance.md`.
 - **Models** — every registered model per workflow: aliases in use, approved, priced, deprecation dates, usage.
 - **Events & people** and **Audit & alerts** — who did what, kill-switch history, spend anomalies, and workflows that
   send AI usage but aren't registered.
+
 - **Incidents** and **Settings** — governance issues escalated per workflow: an incident, an automatic switch-off
   when it's serious enough, and an email with a link straight to the details.
 
@@ -191,10 +194,13 @@ See [docs/aws-native.md](https://github.com/{{GITHUB_OWNER}}/governance-console/
 
 - **SSO, not a shared admin token.** A governance role in the identity provider, and a two-person rule for re-enabling
   a high-risk workflow.
+
 - **Evidence is what workflows report.** A workflow that never sends events is only visible through the catalog; the
   answer in production is to route model traffic through a gateway that reports on its behalf.
+
 - **OpenTelemetry.** The event contract maps onto the GenAI semantic conventions; exporting spans would put the same
   data in whatever observability stack the firm already runs.
+
 - **Calendar budgets** — trailing-30-day is easier to read mid-month but isn't how finance thinks.
 - **Tickets, not just email** — PagerDuty and ServiceNow channels from the designed payloads, closed automatically
   when the incident is resolved.

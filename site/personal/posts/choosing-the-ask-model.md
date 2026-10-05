@@ -22,8 +22,10 @@ The assistant answered from the blog with `llama3.1:8b`, running on the CPU of a
 
 - **It felt slow.** Just loading the model and reading the prompt took close to half a minute, which is too long
   for someone deciding whether to keep reading.
+
 - **It undersold me.** Asked "would Ruairi be a good fit for…", it rarely mentioned my MIT coursework or the newest
   projects. It couldn't: it only saw the site's pages, not the GitHub docs or my resume.
+
 - **It handled gaps badly.** When asked about a skill the site doesn't show, I want an honest answer that thanks the
   asker and treats the gap as something to learn. Mostly I got a flat "no".
 
@@ -55,6 +57,7 @@ answer to a file so I can judge them side by side.
 
 - `qwen3.5:9b` misspelt my name, described an optional AWS design as how the kill switch works today, and counted
   "Pydantic is written in Rust" as Rust experience.
+
 - Only `llama3.1:8b` used the growth wording for the gap.
 
 Small models follow what they read last. So questions about me now end with a five-line checklist:
@@ -98,6 +101,7 @@ Ruairi's plate to review" goes onto a learning list.
   tokens/s on the CPU) dominates, and with this model the cache seems to help little. Ollama's Vulkan backend can
   put that reading on the Radeon iGPU, and the setup guide shows how. Re-running the bench will show whether it
   helps.
+
 - **Score the answers automatically.** Today I judge them by reading. Checks for the name's spelling, a citation per
   claim and the growth wording would turn the bench into an eval gate, like the retrieval golden set already is.
 

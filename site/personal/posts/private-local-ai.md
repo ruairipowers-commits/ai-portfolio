@@ -27,6 +27,7 @@ Hosted assistants have good privacy terms. But terms are a promise, not a contro
 investment firms where "where does this data go?" had to have a precise answer before anything shipped.
 
 I also wanted to understand the trade-offs myself rather than read about them:
+
 - what a consumer-grade machine can run;
 - what it costs in effort;
 - where a cloud model is still worth it.
@@ -36,12 +37,14 @@ I also wanted to understand the trade-offs myself rather than read about them:
 1. **A fully local mode.** Model, data and results all on my hardware, with nothing leaving the house.
 2. **A hybrid mode** for when I want a frontier model's planning. Claude directs and my machine does the heavy work.
    The files it produces stay home.
+
 3. **One rule I can explain in a sentence for each mode:** what crosses the network, and to whom.
 4. **Rebuildable from a script,** and backed up to my own NAS.
 
 ## The machine
 
 A GMKtec EVO-X1:
+
 - AMD Ryzen AI 9 HX 370 with Radeon 890M integrated graphics;
 - 64 GB of RAM and a 1 TB SSD;
 - headless Ubuntu Server.
@@ -86,6 +89,7 @@ flowchart LR
 ```
 
 **Fully local.** I open Jupyter on the Mac through an SSH tunnel and work against Postgres and Ollama on the EVO.
+
 - **What crosses the network:** nothing beyond my house.
 - **Who sees the data:** me.
 
@@ -102,6 +106,7 @@ local model.
 | **Hybrid** | My instructions to Claude, and the tool results Claude reads (status, file names, any text a tool returns) | The models, the rendering work and the files produced |
 
 This mode is not "complete privacy", and I don't describe it that way. What it gives me is:
+
 - frontier-model planning;
 - local compute, so no per-image or per-minute fees;
 - files that stay on my disk unless I deliberately fetch one.
@@ -119,8 +124,10 @@ This was the fiddliest part.
 - **ROCm and the 890M.** ROCm doesn't officially support this chip yet. The Ollama ROCm image runs once it's told to
   treat the chip as a supported one (`HSA_OVERRIDE_GFX_VERSION=11.0.0`) and the container gets the GPU devices
   (`/dev/kfd`, `/dev/dri`) plus the host's video and render groups.
+
 - **Hangs.** Long generations could freeze the graphics driver. A kernel flag, `amdgpu.gpu_recovery=1`, lets the
   driver reset itself instead of taking the machine down.
+
 - **Visibility.** A small `ai-gpu` shell function shows GPU load, memory in use and temperature once a second, so I
   can see whether a model is on the GPU or quietly running on the CPU.
 
@@ -138,8 +145,10 @@ machine taught me three things:
 1. **Docker ports ignore the firewall.** A container published on `0.0.0.0` is reachable from the whole home network
    even with ufw on, because Docker writes its own rules underneath. The rule I'm moving everything to: private
    services listen on `127.0.0.1` only, and I reach them through SSH or Tailscale.
+
 2. **Tools that act on the machine need a fence.** An MCP server that can render, write files and call models is
    powerful. Anything on the Wi-Fi shouldn't be able to reach it. It's now firewalled to the devices I use.
+
 3. **Secrets belong in an untracked `.env`, never in a compose file.** One file holds the configuration and stays
    out of git. Example values like the database password get replaced, not reused.
 
@@ -151,6 +160,7 @@ NFS, keeping seven days. Nothing goes to a cloud drive.
 - **Start with loopback-only ports.** It's easy to publish everything on all interfaces "for now" and forget.
 - **Measure before choosing models.** I picked these models by reputation. For the public Ask button I benchmarked
   on the box itself and changed my mind, and these deserve the same.
+
 - **Separate the experiments from the things I rely on.** One compose file is simple, but a crashing notebook
   shouldn't restart the database.
 
@@ -158,6 +168,7 @@ NFS, keeping seven days. Nothing goes to a cloud drive.
 
 - **Benchmark the local models on the GPU** (first-word latency and tokens per second), the way I did for the Ask
   button, and publish the numbers.
+
 - **Point OpenClaw at local models only,** so the agent joins the fully local path.
 - **Finish applying the network rules above** to every private service, and re-run the self-assessment.
 

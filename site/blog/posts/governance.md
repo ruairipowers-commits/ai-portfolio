@@ -29,11 +29,14 @@ Four principles shape it:
 
 1. **Proportional.** A research summarizer and an agent that can email a counterparty are not
    the same risk. Tier the use case first (HITL-01); the tier decides how much of the rest applies.
+
 2. **Deterministic around the probabilistic.** Numbers come from SQL. Business and compliance
    rules run *after* the model and can't be talked out of their answer. The model drafts, explains
    and classifies inside a fence.
+
 3. **Everything is measured.** If you can't show accuracy, cost per task and escalation rate on a
    fixed test set, you can't safely change the model — and you *will* have to change the model.
+
 4. **Portable by default.** Provider-agnostic code, aliases instead of model IDs, and a local mode
    that runs with no keys. Lock-in is a governance risk too.
 
@@ -86,8 +89,10 @@ Applications; the three I design against first:
   confirms, web pages, even internal wikis — is untrusted. Delimit it, scan it, escape anything
   that could close your delimiters, and make sure the *consequence* of a successful injection is
   bounded: an injected instruction should at worst produce a bad draft that a rule escalates.
+
 - **Excessive agency (SEC-03).** Tools are read-only unless there's a reason. Write tools sit behind
   an approval step. In AWS, the task role can invoke only the approved model ARNs.
+
 - **Insecure output handling (SEC-04).** Model output is parsed against a schema and treated as data.
   If parsing fails, the fallback is "escalate to a human", never "best guess".
 
@@ -103,9 +108,11 @@ controls are boring on purpose:
 - **Hard budgets (COST-01)** — a pre-flight check before every call: prompt within the token cap,
   worst-case cost within the remaining run budget, and a refusal to run any model without
   registered pricing. Budget errors are never retried.
+
 - **Attribution (COST-02)** — tokens and dollars per call, tagged by use case, model and prod vs eval.
 - **Levers before scale (COST-03)** — smaller model for easy steps, trimmed context, prompt caching
   for static system prompts, batch APIs for overnight work.
+
 - **A monthly number someone owns (COST-04)**, with an alert before the invoice, not after.
 
 ### Migrating to new models
@@ -116,11 +123,14 @@ The pattern I use:
 
 1. Code references **aliases** (`triage-primary`), never model IDs (MODEL-01). The registry holds
    provider, ID, pricing, approval and deprecation date.
+
 2. Point a `candidate` alias at the new model and run the **eval gate** against the baseline
    (MODEL-02): same golden set, thresholds on accuracy, format validity, citation accuracy,
    escalation recall and cost — and no regression versus the current model.
+
 3. Promotion is a command that refuses unless there's a passing eval **on the current prompt hash**
    (MODEL-04). Changing the prompt invalidates the eval.
+
 4. The old model stays as fallback for a cycle (MODEL-05); `models-check` warns inside the
    deprecation window (MODEL-03).
 
@@ -171,6 +181,7 @@ If I were starting at a firm tomorrow:
 
 1. **Week 1** — inventory every AI use (including the ones on personal accounts), tier them, and
    write the one-page cards.
+
 2. **Week 2** — stand up the model registry, provider approvals and a shared cost log.
 3. **Week 3** — a golden set and eval gate for the top two medium/high-tier use cases.
 4. **Week 4** — injection testing and a human-approval step for anything that acts.
