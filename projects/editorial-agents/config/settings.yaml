@@ -1,0 +1,73 @@
+# Editorial agents: every setting is a key here (or an environment override noted beside it).
+workflow:
+  name: Editorial agents
+  owner: Ruairi Powers
+  purpose: >
+    Keep a ranked, varied queue of AI topics for the blog; draft a weekly post from the top pick with an independent
+    editor; publish only on the owner's merge; tell subscribers when a post goes live.
+risk_tier: medium            # HITL-01: publishes AI-drafted content under the owner's name; emails real people
+cost:                        # COST-01: the scout's local model is $0/token; caps still bound runaway loops
+  max_model_calls_per_run: 150
+  per_run_usd: 0.50
+  monthly_usd: 5.00
+
+queue:
+  size: 10                   # EDITORIAL_QUEUE_SIZE — topics always available
+  max_age_days: 21           # candidates older than this drop out
+  max_similarity: 0.35       # NFR-3: TF-IDF cosine above this vs. a published post or another queue topic = too similar
+  weights: {engagement: 0.5, novelty: 0.35, sector_breadth: 0.15}
+  mmr_lambda: 0.7            # diversity re-rank: 1.0 = score only, lower = more variety
+
+schedule:                    # times in America/New_York; the service's own scheduler runs these
+  timezone: America/New_York
+  scout: "05:40"             # daily refill and re-rank
+  digest_weekday: mon        # EDITORIAL_DIGEST_DAY — the ranked list emailed to the owner
+  digest_time: "07:10"
+  github_sync_minutes: 30    # mark topics drafted / published from the blog repo's pull requests (public API)
+  writer: "weekly, Thursday 06:00"   # informational: the writer runs as a scheduled Claude task, not here
+
+links:
+  ttl_days: 14               # pick / dismiss links in the email expire
+
+sources:                     # official APIs and RSS only: no scraping, no LinkedIn (terms forbid it)
+  huggingface_papers: {enabled: true, url: "https://huggingface.co/api/daily_papers", limit: 40}
+  huggingface_trending: {enabled: true, url: "https://huggingface.co/api/models?sort=trendingScore&limit=30"}
+  arxiv: {enabled: true, categories: [cs.AI, cs.LG, cs.CL, q-fin.CP], limit: 40}
+  hacker_news: {enabled: true, queries: [LLM, "AI agent", "machine learning", "generative AI"], min_points: 40}
+  reddit: {enabled: true, subreddits: [MachineLearning, LocalLLaMA, artificial, datascience, quant], limit: 15}
+  rss: {enabled: true, feeds: config/feeds.yaml}
+  user_agent: "editorial-agents/0.1 (+https://github.com/ruairipowers-commits/ai-portfolio)"
+  timeout_s: 20
+
+classify:
+  model_alias: classifier    # config/models.yaml
+  prompt: prompts/classify.v1.md
+
+# The 11 GICS sectors. The keywords are the offline (mock) classifier's only knowledge and a sanity check on the
+# model's tags: a sector the model names must be one of these.
+sectors:
+  Information Technology: [software, developer, code, chip, gpu, semiconductor, cloud, devops, cybersecurity, security, api]
+  Health Care: [medical, clinical, health, drug, protein, biology, patient, hospital, genomic, radiology]
+  Financials: [finance, financial, bank, trading, credit, fraud, risk, insurance, portfolio, market, quant, loan]
+  Consumer Discretionary: [retail, ecommerce, shopping, recommendation, travel, automotive, gaming, fashion]
+  Communication Services: [media, video, music, advertising, social, search, news, streaming, chat, translation]
+  Industrials: [manufacturing, logistics, supply chain, robot, robotics, aerospace, defense, construction, maintenance]
+  Consumer Staples: [food, grocery, beverage, agriculture, household, demand forecasting]
+  Energy: [energy, oil, gas, grid, power, battery, solar, wind, utilities demand]
+  Utilities: [utility, utilities, electricity, water, grid operator]
+  Real Estate: [real estate, property, building, mortgage, housing, construction permits]
+  Materials: [materials, chemistry, chemical, mining, steel, molecule, catalyst]
+
+review:                      # the deterministic half of the editor (the editor agent adds judged criteria)
+  min_words: 900
+  max_words: 1900
+  min_sources: 2
+  max_verbatim_run_words: 25 # longest run of words copied from any one source
+  max_quoted_words: 60       # total words inside quotation marks
+  max_similarity_to_published: 0.45
+  banned_phrases: [revolutionize, revolutionise, unlock, seamless, cutting-edge, "in today's fast-paced world",
+                   game-changer, delve]
+  client_framing: ["client work", "for a client", "for clients", "my clients", "client's data", "client data",
+                   "client engagement", "on behalf of a client"]
+  required_front_matter: [date, slug, short, categories, tags, section]
+  disclosure: "Drafted with AI agents"   # posts must say so (HITL-04); the owner can reword it

@@ -1,0 +1,45 @@
+# Emails Ruairi when a draft post's pull request is opened (by the weekly writer task) with the label `draft-post`:
+# the intro, the editor's scorecard, and links to review & approve (merge), read the draft, or improve it with Claude.
+# Merging is the only way a draft is published. Secrets: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM,
+# ALERT_EMAIL (the same ones the uptime check uses).
+name: draft-post
+on:
+  pull_request:
+    types: [opened, labeled]
+permissions: {contents: read}
+jobs:
+  email:
+    # once per PR: when it's opened already labelled, or when the label is added later; never for forks
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      ((github.event.action == 'opened' && contains(github.event.pull_request.labels.*.name, 'draft-post')) ||
+       (github.event.action == 'labeled' && github.event.label.name == 'draft-post'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with: {ref: "${{ github.event.pull_request.head.sha }}", fetch-depth: 0}
+      - name: find the draft post in this pull request
+        id: post
+        env: {BASE_REF: "${{ github.event.pull_request.base.ref }}"}
+        run: |
+          f=$(git diff --name-only --diff-filter=A "origin/$BASE_REF...HEAD" \
+              | grep -E '^site/[a-z]+/posts/[^/]+\.md$' | head -1)
+          echo "path=$f" >> "$GITHUB_OUTPUT"
+          test -n "$f" || { echo "no new post file in this PR"; exit 1; }
+      - name: email the draft for review
+        env:
+          POST_PATH: ${{ steps.post.outputs.path }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_HEAD: ${{ github.event.pull_request.head.ref }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          REPO: ${{ github.repository }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
+        run: python3 scripts/draft_email.py "$POST_PATH"

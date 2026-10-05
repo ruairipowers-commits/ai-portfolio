@@ -1,0 +1,26 @@
+# MODEL-01 Model registry. Code only references ALIASES.
+# The scout's classifier tags sectors, writes a one-line summary and rates interest. The writer and editor are not
+# here: they run as a scheduled Claude task on the owner's plan (see .claude/skills/weekly-post/SKILL.md).
+# To migrate the classifier: point `classifier-candidate` at the new model, run `editorial eval --alias
+# classifier-candidate`, and if the gate passes, point `classifier` at it.
+aliases:
+  classifier: mock-classifier          # EDITORIAL_CLASSIFIER_MODEL overrides, e.g. local-gemma on the EVO-X1
+  classifier-fallback: mock-classifier
+  classifier-candidate: mock-classifier
+
+models:
+  mock-classifier:         # deterministic offline classifier: sector keywords + source signals, no keys
+    provider: mock
+    model_id: mock-classifier-v1
+    input_per_mtok: 0.0
+    output_per_mtok: 0.0
+    deprecation_date: null
+    approved: true
+
+  local-gemma:             # local open model through Ollama on the demo host ($0 per token)
+    provider: ollama
+    model_id: gemma4:e4b   # OLLAMA_MODEL overrides
+    input_per_mtok: 0.0
+    output_per_mtok: 0.0
+    deprecation_date: null
+    approved: true

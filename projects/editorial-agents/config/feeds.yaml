@@ -1,0 +1,12 @@
+# RSS / Atom feeds the scout reads (DATA-04: public feeds, links and short summaries only; nothing republished).
+# A feed that fails is skipped and reported in the digest's source-health line, so a dead URL is visible, not silent.
+feeds:
+  - {name: Hugging Face blog, url: "https://huggingface.co/blog/feed.xml"}
+  - {name: Google AI blog, url: "https://blog.google/technology/ai/rss/"}
+  - {name: OpenAI news, url: "https://openai.com/news/rss.xml"}
+  - {name: AWS Machine Learning blog, url: "https://aws.amazon.com/blogs/machine-learning/feed/"}
+  - {name: MIT News — AI, url: "https://news.mit.edu/rss/topic/artificial-intelligence2"}
+  - {name: MIT Technology Review — AI, url: "https://www.technologyreview.com/topic/artificial-intelligence/feed"}
+  - {name: TechCrunch — AI, url: "https://techcrunch.com/category/artificial-intelligence/feed/"}
+  - {name: VentureBeat — AI, url: "https://venturebeat.com/category/ai/feed/"}
+  - {name: The Verge — AI, url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"}

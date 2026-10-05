@@ -1,6 +1,6 @@
 slug: editorial-agents
 title: "Editorial agents: a topic scout, a writer and an editor keep the blog varied, and a human approves every post"
-status: planned                  # planned | spec-approved | built | published
+status: built                    # planned | spec-approved | built | published
 domain: the portfolio itself (the blog's editorial pipeline and its readers)
 use_case: >
   A scout agent reads open AI sources and keeps a queue of the most promising, most novel topics, scored for every
@@ -26,7 +26,7 @@ risk_rationale: >
   people's addresses (consent, unsubscribe, privacy). No money, advice or personal data beyond email. Mitigated by a
   human merge on every post, an independent editor with a written rubric, cited sources, and double opt-in.
 
-config:                          # config/editorial.yaml — every setting below is a key; defaults shown
+config:                          # config/settings.yaml — every setting below is a key; defaults shown
   queue_size: 10                 # topics always available
   scout_schedule: daily 05:40    # refill and re-rank the queue
   digest_schedule: weekly Mon    # the ranked list emailed to Ruairi
@@ -118,6 +118,42 @@ open_questions:
   - "Reddit needs a free API app (client id/secret) in the host's .env; without it the scout skips Reddit."
   - "Scheduled Claude task: confirm it can open PRs on this repo from a scheduled run before relying on it."
 
+demo:
+  title: Editorial agents
+  emoji: 📰
+  short_description: A scout ranks AI topics by engagement and novelty; the owner picks; an editor reviews every draft
+  server: fastapi
+  memory: 1g
+  egress: true                     # reads the sources, the site's corpus and GitHub's public API; sends email
+  needs:
+  - ollama
+  volume: /app/warehouse
+  env:
+  - EDITORIAL_LINK_SECRET
+  - EDITORIAL_EMAIL
+  - EDITORIAL_PUBLIC_URL
+  - EDITORIAL_REPO
+  - EDITORIAL_QUEUE_SIZE
+  - EDITORIAL_DIGEST_DAY
+  - EDITORIAL_CLASSIFIER_MODEL
+  - REDDIT_CLIENT_ID
+  - REDDIT_CLIENT_SECRET
+  - DIGEST_EMAIL
+  - GOVERNANCE_ALERT_EMAIL
+  - SMTP_HOST
+  - SMTP_PORT
+  - SMTP_USER
+  - SMTP_PASSWORD
+  - SMTP_FROM
+
 links:
   repo: ""
   blog: ""
+
+card:
+  name: Editorial agents
+  problem: Finding fresh, varied topics takes hours, and AI-written posts need a real editor and a human yes
+  pattern: Multi-agent (scout, writer, independent editor) + human merge
+  stack: Python, FastAPI, Ollama, Claude (scheduled), GitHub Actions
+  result: "1 of 1 injection escalated; 4 of 4 planted draft faults caught; a varied queue of 10"   # home-page gallery
+  result_basis: "offline run on recorded source fixtures with the mock classifier; live runs start after deploy"

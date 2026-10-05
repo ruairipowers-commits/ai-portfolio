@@ -49,6 +49,7 @@ extra_javascript:
   - assets/suggest.js
   - assets/likes.js
   - assets/carousel.js
+  - assets/subscribe.js
 
 hooks:
   - scripts/mkdocs_hooks.py

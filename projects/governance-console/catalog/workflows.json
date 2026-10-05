@@ -1514,7 +1514,7 @@
     "DATA-03": {
      "status": "implemented",
      "mark": "✅",
-     "how": "IP addresses and cookies are never stored. The visitor key is a hash of a daily-rotating salt, IP and browser. Searches, questions and answers are kept as typed because the owner asked to see them. Suggestion-box name and contact are optional, only emailed to the owner, and deleted with the rest of the activity. The console receives only lengths and hashes.",
+     "how": "Blog subscriptions store only an email address, after double opt-in; unconfirmed addresses are deleted after 7 days, unsubscribing deletes the row, and addresses never appear in logs, links or telemetry (counts only). IP addresses and cookies are never stored. The visitor key is a hash of a daily-rotating salt, IP and browser. Searches, questions and answers are kept as typed because the owner asked to see them. Suggestion-box name and contact are optional, only emailed to the owner, and deleted with the rest of the activity. The console receives only lengths and hashes.",
      "configure": "`privacy.*`, `ASSISTANT_SALT`",
      "options": "Redact emails/phone numbers typed into questions; opt-out banner"
     },
@@ -1728,6 +1728,273 @@
      "kind": "chat",
      "approved": true,
      "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    }
+   ]
+  },
+  {
+   "slug": "editorial-agents",
+   "title": "Editorial agents: a topic scout, a writer and an editor keep the blog varied, and a human approves every post",
+   "name": "Editorial agents",
+   "emoji": "📰",
+   "status": "built",
+   "built": true,
+   "pattern": "multi-agent",
+   "domain": "the portfolio itself (the blog's editorial pipeline and its readers)",
+   "risk_tier": "medium",
+   "risk_rationale": "It publishes AI-written content under Ruairi's name (reputation, accuracy, plagiarism) and stores and emails real people's addresses (consent, unsubscribe, privacy). No money, advice or personal data beyond email. Mitigated by a human merge on every post, an independent editor with a written rubric, cited sources, and double opt-in.\n",
+   "users": "Ruairi (author and editor-in-chief); blog readers",
+   "deep_dive": [
+    "HITL-02",
+    "SEC-02",
+    "EVAL-02",
+    "DATA-03",
+    "DATA-04"
+   ],
+   "stack": {
+    "language": "python",
+    "data": "sqlite (topics, picks, subscribers) on the demo host",
+    "orchestration": "scout on a systemd timer on the EVO-X1; writer + editor as a weekly scheduled Claude task; draft email by a GitHub Action on the pull request",
+    "llm_access": "scout: registry adapter, local Ollama by default (classification, sector tags, one-line summaries) plus local embeddings for novelty; writer and editor: Claude via the scheduled task (Ruairi's plan, no API key on the host)\n",
+    "retrieval": "embeddings of every published post (the site's assistant/corpus.json) for novelty",
+    "ui": "no Streamlit app: the \"UI\" is two emails (topic list; draft for review), signed one-click links for picking and dismissing topics, a public read-only queue page, and a subscribe form on the site. Visible in the governance console like every workflow.\n",
+    "aws_native": "EventBridge schedules, Lambda for scout, Bedrock for models, SES for email, DynamoDB for the queue"
+   },
+   "controls": {
+    "DATA-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Every source is declared in one place (official APIs and named RSS feeds). Each topic keeps its source, link, date and signals; each post's PR names its topic id, and the scout links topic → PR → published post.",
+     "configure": "`sources.*`, `config/feeds.yaml`",
+     "options": "Archive each fetched response for audit"
+    },
+    "DATA-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Candidates are de-duplicated (canonical URL, near-identical titles), expired after 21 days, and screened for injection before any model call. A dead source is reported in the email, not silently skipped.",
+     "configure": "`queue.max_age_days`",
+     "options": "Per-source freshness alerts"
+    },
+    "DATA-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "The scout reads public titles and summaries only. Subscribers: email address only, double opt-in, unconfirmed deleted after 7 days, unsubscribe deletes the row; addresses never in logs, links or telemetry.",
+     "configure": "`subscriptions.*` (site assistant)",
+     "options": "—"
+    },
+    "DATA-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Official APIs and public feeds within their terms (rate-limited, identified user agent); LinkedIn excluded (no API, terms forbid scraping). Posts link to sources and summarise in their own words: the editor checklist fails any run of more than 25 words copied from a source, or more than 60 quoted words.",
+     "configure": "`review.max_verbatim_run_words`, `review.max_quoted_words`",
+     "options": "Licence check per feed"
+    },
+    "DATA-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Novelty is measured against the live site's published-post list (`assistant/corpus.json`), regenerated on every site build, so deleted posts drop out.",
+     "configure": "`EDITORIAL_CORPUS`",
+     "options": "Embedding index instead of TF-IDF"
+    },
+    "SEC-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "The link-signing secret, SMTP and Reddit credentials come from the environment; the live image refuses to start without the signing secret. No model API key on the host (the writer runs on the owner's Claude plan).",
+     "configure": "`.env` on the host",
+     "options": "Secret manager"
+    },
+    "SEC-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Every fetched title and summary is untrusted: a pattern screen escalates instruction-like text before classification (golden case g1), the classifier sees candidates only inside delimiters with a \"data, not instructions\" rule, and the writer and editor prompts say the same of topics and sources.",
+     "configure": "`guard.PATTERNS`",
+     "options": "A classifier model on fetched text"
+    },
+    "SEC-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "The scout only reads. The owner's email links can only pick, unpick or dismiss a topic, signed, expiring and single-use, applied by a POST from a confirmation page (mail scanners follow GETs). The writer can push a branch and open a PR, never merge.",
+     "configure": "`links.ttl_days`",
+     "options": "—"
+    },
+    "SEC-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "The classifier's JSON is schema-validated (sectors must be real GICS sectors, interest 1–5, a known kind); anything invalid falls back to the deterministic classifier and is flagged. All page output is HTML-escaped.",
+     "configure": "`llm.validate`",
+     "options": "—"
+    },
+    "SEC-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "The scout's model is local (Ollama on the owner's server) or the offline mock; only approved models in the registry can run. The writer and editor run on the owner's Claude plan.",
+     "configure": "`config/models.yaml`",
+     "options": "—"
+    },
+    "SEC-06": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Four version-bounded dependencies; CI checks the image has every library the code imports, and the repo's security scan audits dependencies.",
+     "configure": "`pyproject.toml`",
+     "options": "Lockfile with hashes"
+    },
+    "COST-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "A per-run cap on classifier calls stops the run (and flags it) instead of looping; tested. The local model is $0 per token.",
+     "configure": "`cost.max_model_calls_per_run`",
+     "options": "Spend cap for a paid model"
+    },
+    "COST-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Each scout run reports model, calls, latency and counts to the governance console.",
+     "configure": "telemetry",
+     "options": "—"
+    },
+    "COST-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Each topic is classified once and cached; ranking and novelty are code, not model calls; search sources are free APIs.",
+     "configure": "—",
+     "options": "Batch classification"
+    },
+    "COST-04": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Budget stops and fallbacks are flagged to the console; the weekly email shows how many sources were read.",
+     "configure": "console escalation rules",
+     "options": "Monthly cost report"
+    },
+    "MODEL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Code asks for the `classifier` alias; the registry maps it to a model, with a fallback and a candidate alias.",
+     "configure": "`config/models.yaml`, `EDITORIAL_CLASSIFIER_MODEL`",
+     "options": "—"
+    },
+    "MODEL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`editorial eval --alias classifier-candidate` runs the golden set; a model is only promoted if the gate passes. Writer and editor prompt changes go through a PR like any code.",
+     "configure": "`evals/golden_set.yaml`",
+     "options": "Judge-model regression on golden drafts"
+    },
+    "MODEL-03": {
+     "status": "not_applicable",
+     "mark": "⚪",
+     "how": "Local open-weight models aren't retired by a provider; the writer uses whatever Claude model the owner's plan provides.",
+     "configure": "—",
+     "options": "Track the Ollama library for newer versions"
+    },
+    "MODEL-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Prompts are versioned files (`classify.v1`, `writer.v1`, `editor.v1`); the classifier's prompt hash is stored with every topic it tagged.",
+     "configure": "`prompts/`",
+     "options": "—"
+    },
+    "MODEL-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Invalid output or a model outage falls back to the deterministic classifier (flagged); a dead source is skipped and reported; the scheduler survives errors.",
+     "configure": "`classifier-fallback`",
+     "options": "—"
+    },
+    "EVAL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Scout cases on recorded source fixtures (an injection attempt, a near-copy of a published post) and editor cases: drafts with one planted fault each (copied text, client framing, hype words without sources, a near-duplicate) plus a clean draft.",
+     "configure": "`evals/`",
+     "options": "More golden drafts from real editor findings"
+    },
+    "EVAL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Must-catch recall 1.0 on planted faults; the clean draft passes; queue full and no two topics above the similarity limit. The editor agent scores five judged criteria and a PR without ≥ 4 on each is labelled `needs-work`.",
+     "configure": "`review.*`, `queue.max_similarity`",
+     "options": "—"
+    },
+    "EVAL-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`pytest` (including the eval gate) runs on every push; the site build checks the governance mapping.",
+     "configure": "`.github/workflows/ci.yml`",
+     "options": "Live-source smoke test on a schedule"
+    },
+    "OBS-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Every scout, email, sync and re-rank is a row in `runs`; every owner action in `actions`; counts and flags go to the console.",
+     "configure": "—",
+     "options": "—"
+    },
+    "OBS-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Every post cites its sources, and the topic id ties the PR to the topic and its original link. The editor's scorecard is kept in the PR.",
+     "configure": "—",
+     "options": "—"
+    },
+    "OBS-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Topics and runs are kept in SQLite on the host, in the nightly backup; PRs and their scorecards are kept in GitHub.",
+     "configure": "—",
+     "options": "Retention policy for old topics"
+    },
+    "HITL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Medium, with rationale (above and in the spec).",
+     "configure": "`risk_tier`",
+     "options": "—"
+    },
+    "HITL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Topics are picked by the owner (signed links, recorded); nothing publishes without the owner merging the PR; the host has no write access to the repo.",
+     "configure": "—",
+     "options": "—"
+    },
+    "HITL-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Dismissed and withheld topics are recorded; editor findings and the owner's edits on a PR are the source of new golden drafts.",
+     "configure": "`evals/drafts/`",
+     "options": "Automatic golden-draft capture"
+    },
+    "HITL-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "README use-case card; every post says it was drafted with AI agents and approved by the owner (a checklist item).",
+     "configure": "`review.disclosure`",
+     "options": "—"
+    }
+   },
+   "models": [
+    {
+     "name": "mock-classifier",
+     "provider": "mock",
+     "model_id": "mock-classifier-v1",
+     "kind": "chat",
+     "approved": true,
+     "priced": true,
+     "deprecation_date": null,
+     "aliases": [
+      "classifier",
+      "classifier-fallback",
+      "classifier-candidate"
+     ]
+    },
+    {
+     "name": "local-gemma",
+     "provider": "ollama",
+     "model_id": "gemma4:e4b",
+     "kind": "chat",
+     "approved": true,
+     "priced": true,
      "deprecation_date": null,
      "aliases": []
     }

@@ -160,3 +160,18 @@
 .md-typeset .post-slide__title { margin: .2rem 0 .25rem; font-size: .76rem; line-height: 1.3; }
 .md-typeset .post-slide__intro { margin: 0; font-size: .66rem; color: var(--md-default-fg-color--light);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* "Get new posts by email" (site/assets/subscribe.js) */
+.md-typeset .subscribe { margin: 1.2rem 0; padding: .8rem 1rem; border-radius: .4rem; background: var(--md-code-bg-color); }
+.md-typeset .subscribe[hidden] { display: none; }
+.md-typeset .subscribe__q { margin: 0 0 .5rem; font-size: .76rem; }
+.md-typeset .subscribe__form { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: 0; }
+.md-typeset .subscribe__form[hidden] { display: none; }
+.md-typeset .subscribe__label { position: absolute; left: -9999px; }
+.md-typeset .subscribe__hp { position: absolute; left: -9999px; width: 1px; height: 1px; }
+.md-typeset .subscribe__form input[type=email] { flex: 1 1 14rem; min-width: 0; font: inherit; font-size: .78rem;
+  padding: .45rem .6rem; border-radius: .2rem; border: 1px solid var(--md-default-fg-color--lighter);
+  background: var(--md-default-bg-color); color: var(--md-default-fg-color); }
+.md-typeset .subscribe__form .md-button { margin: 0; padding: .4rem 1rem; font-size: .74rem; }
+.md-typeset .subscribe__msg { margin: .4rem 0 0; font-size: .74rem; color: var(--md-default-fg-color--light); }
+.md-typeset .subscribe__msg:empty { display: none; }

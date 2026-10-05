@@ -40,6 +40,11 @@ suggestions:                       # Projects → Suggest a project (listed in t
   new_days: 7                      # "new" badge on the Suggestions page
   top_n: 10                        # in the daily email
 
+subscriptions:                     # new posts by email (double opt-in; subscribers.py)
+  per_hour: 3                      # sign-up attempts per visitor
+  max_posts_per_run: 2             # at most this many new posts announced per hourly refresh
+  pending_days: 7                  # unconfirmed addresses are deleted after this
+
 likes:                             # thumbs up on posts (one per visitor per post per day)
   per_hour: 60
 
