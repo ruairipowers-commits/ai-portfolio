@@ -9,6 +9,10 @@ The big changes to this portfolio, newest first. Each project's repository has t
 
 ## 5 October 2026
 
+**Carousels on Home.** The portfolio gallery now scrolls through the projects by itself, with page dots and
+arrows, and a compact **Latest posts** carousel sits under it. Both pause while you hover or use them, and stay
+still for anyone who has reduced motion turned on.
+
 **Two governance posts.** [Is our AI behaving?](../blog/posts/questions-for-your-ai-team.md) is a plain-language
 guide for leaders on what to ask their tech team, and what evidence to expect, using a credit model, a customer
 assistant and a feedback-analysis AI. [How I govern the AI on this site](../blog/posts/how-i-govern-this-site.md)

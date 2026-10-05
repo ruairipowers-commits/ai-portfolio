@@ -179,7 +179,25 @@ def _gallery(page_url: str) -> str:
                 + (f'<p class="gallery__result">{e(r["result"])}</p>' if r.get("result") else "")
                 + (f'<p class="gallery__basis">{e(r["result_basis"])}</p>' if r.get("result_basis") else "")
                 + f'<div class="gallery__links">{"".join(links)}</div></article>')
-    return '<div class="gallery">' + "".join(cards) + "</div>"
+    return ('<div class="carousel gallery" data-carousel data-interval="7000" aria-roledescription="carousel" '
+            'aria-label="Portfolio gallery"><div class="carousel__track">' + "".join(cards) + "</div></div>")
+
+
+def _posts_carousel(page_url: str, limit: int = 8) -> str:
+    """The newest posts as a compact carousel: section, date, title and a two-line intro."""
+    import datetime as dt
+    from html import escape as e
+    up = "../" * page_url.strip("/").count("/") + ("../" if page_url.strip("/") else "")
+    items = []
+    for p in all_posts()[:limit]:
+        d = dt.date.fromisoformat(p["date"]) if p["date"] else None
+        items.append(
+            f'<article class="post-slide"><p class="post-slide__meta">{e(p["section"])} · '
+            f'<time datetime="{p["date"]}">{d.strftime("%-d %b %Y") if d else ""}</time></p>'
+            f'<h3 class="post-slide__title"><a href="{up}{p["url"]}">{e(p["title"])}</a></h3>'
+            f'<p class="post-slide__intro">{e(p["excerpt"])}</p></article>')
+    return ('<div class="carousel posts-carousel" data-carousel data-interval="9000" aria-roledescription="carousel" '
+            'aria-label="Latest posts"><div class="carousel__track">' + "".join(items) + "</div></div>")
 
 
 # ---------------------------------------------------------------- all posts, filterable (blog index)
@@ -348,6 +366,8 @@ def on_page_markdown(markdown, page, config, files):
         tag = f"<!-- projects:{tier} -->"
         if tag in markdown:
             markdown = markdown.replace(tag, _table(tier, page.file.src_uri))
+    if "<!-- posts:carousel -->" in markdown:
+        markdown = markdown.replace("<!-- posts:carousel -->", _posts_carousel(page.url))
     if "<!-- projects:gallery -->" in markdown:
         markdown = markdown.replace("<!-- projects:gallery -->", _gallery(page.url))
     if "<!-- build:stats -->" in markdown:

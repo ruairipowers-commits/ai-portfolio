@@ -115,8 +115,26 @@
 .console-link__label { font-size: .68rem; font-weight: 600; }
 @media (max-width: 44.984375em) { .console-link__label { display: none; } .md-header__button.console-link { border: 0; } }
 
+/* Carousels (site/assets/carousel.js): a scroll-snap row; the script adds dots, arrows and auto-advance */
+.md-typeset .carousel { margin: .8rem 0 1.4rem; }
+.md-typeset .carousel__track { display: flex; gap: .9rem; overflow-x: auto; scroll-snap-type: x mandatory;
+  scroll-behavior: smooth; scrollbar-width: none; padding: .2rem .1rem .4rem; }
+.md-typeset .carousel__track::-webkit-scrollbar { display: none; }
+.md-typeset .carousel__track > * { scroll-snap-align: start; flex: 0 0 calc((100% - .9rem) / 2); min-width: 0; }
+@media (max-width: 44.984375em) { .md-typeset .carousel__track > * { flex-basis: 100%; } }
+@media (min-width: 76.25em) { .md-typeset .carousel__track > * { flex-basis: calc((100% - 1.8rem) / 3); } }
+.md-typeset .carousel__controls { display: flex; align-items: center; justify-content: center; gap: .5rem; margin-top: .35rem; }
+.md-typeset .carousel__controls[hidden] { display: none; }
+.md-typeset .carousel__dots { display: flex; gap: .35rem; }
+.md-typeset .carousel__dot { width: .55rem; height: .55rem; padding: 0; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--md-default-fg-color--lighter); }
+.md-typeset .carousel__dot[aria-current="true"] { background: var(--md-primary-fg-color); width: 1.2rem; border-radius: .3rem; }
+.md-typeset .carousel__arrow { border: 0; background: none; cursor: pointer; font-size: 1.1rem; line-height: 1; padding: .1rem .4rem;
+  color: var(--md-default-fg-color--light); }
+.md-typeset .carousel__arrow:hover { color: var(--md-primary-fg-color); }
+.md-typeset .carousel button:focus-visible { outline: 2px solid var(--md-accent-fg-color); outline-offset: 2px; }
+
 /* Home: portfolio gallery — one card per project, its measured result first, then the links */
-.md-typeset .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr)); gap: .9rem; margin: 1rem 0 1.6rem; }
 .md-typeset .gallery__card { display: flex; flex-direction: column; padding: .9rem 1rem; border-radius: .4rem;
   border: 1px solid var(--md-default-fg-color--lightest); background: var(--md-default-bg-color);
   transition: border-color .15s, box-shadow .15s; }
@@ -130,3 +148,15 @@
 .md-typeset .gallery__links { margin-top: auto; padding-top: .75rem; display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
 .md-typeset .gallery__links .md-button { margin: 0; padding: .25rem .8rem; font-size: .7rem; }
 .md-typeset .gallery__more { font-size: .72rem; margin-left: auto; }
+
+/* Home: latest posts carousel — compact: four across on wide screens, two lines of intro */
+.md-typeset .posts-carousel .carousel__track > * { flex-basis: calc((100% - 2.7rem) / 4); }
+@media (max-width: 76.234375em) { .md-typeset .posts-carousel .carousel__track > * { flex-basis: calc((100% - .9rem) / 2); } }
+@media (max-width: 44.984375em) { .md-typeset .posts-carousel .carousel__track > * { flex-basis: 85%; } }
+.md-typeset .post-slide { padding: .6rem .75rem; border-radius: .35rem; border: 1px solid var(--md-default-fg-color--lightest);
+  background: var(--md-default-bg-color); }
+.md-typeset .post-slide__meta { margin: 0; font-size: .6rem; text-transform: uppercase; letter-spacing: .03em;
+  color: var(--md-default-fg-color--light); }
+.md-typeset .post-slide__title { margin: .2rem 0 .25rem; font-size: .76rem; line-height: 1.3; }
+.md-typeset .post-slide__intro { margin: 0; font-size: .66rem; color: var(--md-default-fg-color--light);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

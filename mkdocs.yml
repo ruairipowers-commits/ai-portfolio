@@ -48,6 +48,7 @@ extra_javascript:
   - assets/blog-filter.js
   - assets/suggest.js
   - assets/likes.js
+  - assets/carousel.js
 
 hooks:
   - scripts/mkdocs_hooks.py
