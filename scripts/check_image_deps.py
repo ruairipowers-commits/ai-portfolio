@@ -56,6 +56,10 @@ def required_imports(project: Path) -> dict[str, list[str]]:
         if not skip and isinstance(node, (ast.Import, ast.ImportFrom)):
             names = [a.name for a in node.names] if isinstance(node, ast.Import) else (
                 [node.module] if node.module and not node.level else [])
+            # libraries a library needs only at request time: FastAPI's Form()/File() import python-multipart lazily
+            if isinstance(node, ast.ImportFrom) and node.module == "fastapi" and \
+                    {a.name for a in node.names} & {"Form", "File", "UploadFile"}:
+                found.setdefault("python_multipart", []).append(path)
             for name in names:
                 top = name.split(".")[0]
                 if top not in own and top not in sys.stdlib_module_names:
