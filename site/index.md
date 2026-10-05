@@ -26,6 +26,8 @@ measured on my own server and on a public loan dataset.
 
 [All posts, with filters →](blog/index.md)
 
+<!-- subscribe -->
+
 ## What's here
 
 <div class="grid cards" markdown>

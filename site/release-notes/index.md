@@ -9,6 +9,11 @@ The big changes to this portfolio, newest first. Each project's repository has t
 
 ## 5 October 2026
 
+**Editorial agents and email subscriptions.** A [scout agent](../personal/posts/editorial-agents.md) now keeps ten
+ranked, varied AI topics ready; I pick from a weekly email. Each week a writer agent drafts a post from my top pick,
+a separate editor agent reviews it twice, and nothing publishes until I merge it. You can now **subscribe** at the
+end of any post: one email per new post, after you confirm, with one-click unsubscribe.
+
 **Carousels on Home.** The portfolio gallery now scrolls through the projects by itself, with page dots and
 arrows, and a compact **Latest posts** carousel sits under it. Both pause while you hover or use them, and stay
 still for anyone who has reduced motion turned on.

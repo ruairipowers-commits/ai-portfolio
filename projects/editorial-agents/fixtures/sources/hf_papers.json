@@ -1,0 +1,62 @@
+[
+ {
+  "paper": {
+   "id": "2510.01234",
+   "title": "Agentic Retrieval for Regulatory Filings: Multi-Hop Question Answering over 10-K Reports",
+   "summary": "We present an agent that plans multi-hop retrieval over financial filings and regulatory documents, improving answer accuracy for credit risk and compliance questions while citing every source passage.",
+   "upvotes": 142
+  },
+  "numComments": 18,
+  "publishedAt": "2026-10-03T09:00:00Z"
+ },
+ {
+  "paper": {
+   "id": "2510.02211",
+   "title": "Small Language Models for Predictive Maintenance on Factory Floors",
+   "summary": "A 3B-parameter model fine-tuned on maintenance logs and sensor summaries predicts equipment failures in manufacturing and logistics fleets, running on edge hardware without cloud access.",
+   "upvotes": 88
+  },
+  "numComments": 7,
+  "publishedAt": "2026-10-02T09:00:00Z"
+ },
+ {
+  "paper": {
+   "id": "2510.03007",
+   "title": "Protein Language Models Meet Clinical Trial Design",
+   "summary": "We use protein and clinical text embeddings to shortlist drug candidates and patient cohorts, cutting the search space for clinical trials in health care.",
+   "upvotes": 64
+  },
+  "numComments": 5,
+  "publishedAt": "2026-10-01T09:00:00Z"
+ },
+ {
+  "paper": {
+   "id": "2510.04410",
+   "title": "Grid-Aware Forecasting with Foundation Models for Renewable Energy",
+   "summary": "A time-series foundation model forecasts solar and wind output for power grid operators and utilities, with calibrated uncertainty for energy trading.",
+   "upvotes": 51
+  },
+  "numComments": 3,
+  "publishedAt": "2026-09-30T09:00:00Z"
+ },
+ {
+  "paper": {
+   "id": "2510.05555",
+   "title": "Evaluating LLM Judges: When Automated Evaluation Disagrees with Experts",
+   "summary": "We measure how often LLM-as-judge evaluation disagrees with domain experts across finance, medical and legal tasks, and propose a calibration protocol.",
+   "upvotes": 120
+  },
+  "numComments": 22,
+  "publishedAt": "2026-10-04T09:00:00Z"
+ },
+ {
+  "paper": {
+   "id": "2510.06060",
+   "title": "Materials Discovery with Generative Models and Autonomous Labs",
+   "summary": "Generative chemistry models propose catalyst and battery materials that robotic labs synthesise and test, closing the loop between molecule design and experiment.",
+   "upvotes": 47
+  },
+  "numComments": 2,
+  "publishedAt": "2026-09-29T09:00:00Z"
+ }
+]

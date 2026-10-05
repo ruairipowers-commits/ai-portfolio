@@ -1,0 +1,16 @@
+# Live service image (self-host on the EVO-X1 behind Caddy at /editorial-agents/).
+#   docker build -f Dockerfile.space -t editorial-agents . && docker run -p 7860:7860 -e EDITORIAL_LINK_SECRET=… editorial-agents
+# One process: the public topic queue, the owner's pick / dismiss confirmations, and the scheduler (daily scout,
+# weekly topic email, GitHub sync). The classifier is the offline mock unless EDITORIAL_CLASSIFIER_MODEL=local-gemma
+# (Ollama on the compose network). Email goes through the host's SMTP settings; without them it's written to disk.
+FROM python:3.11-slim
+RUN useradd -m -u 1000 user && install -d -o user -g user /app
+ENV HOME=/home/user PATH=/home/user/.local/bin:$PATH PYTHONUNBUFFERED=1
+WORKDIR /app
+COPY --chown=user . .
+USER user
+RUN pip install --no-cache-dir --user -e . && mkdir -p warehouse
+# The link-signing secret is required in the service: no development default (SEC-01)
+ENV PORTFOLIO_DEMO=1 HOST=0.0.0.0 PORT=7860 EDITORIAL_SCHEDULER=1 EDITORIAL_REQUIRE_SECRETS=1
+EXPOSE 7860
+CMD ["editorial", "serve"]

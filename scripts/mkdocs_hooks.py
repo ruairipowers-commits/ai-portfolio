@@ -232,7 +232,7 @@ def all_posts() -> list[dict]:
             slug = meta.get("slug", f.stem)
             out.append({"title": title, "date": str(meta.get("date", "")), "slug": slug,
                         "topics": meta.get("categories") or [], "tags": meta.get("tags") or [],
-                        "section": "AI governance" if slug in _GOVERNANCE_SLUGS else section,
+                        "section": meta.get("section") or ("AI governance" if slug in _GOVERNANCE_SLUGS else section),
                         "url": f"{prefix}/{slug}/", "excerpt": _strip_md(intro)})
     return sorted(sorted(out, key=lambda p: p["title"]), key=lambda p: p["date"], reverse=True)   # newest first
 
@@ -246,7 +246,7 @@ def _posts_index(page_uri: str) -> str:
     e = _html.escape
     posts = all_posts()
     topics = sorted({t for p in posts for t in p["topics"]}, key=str.lower)
-    sections = [s for s in ("Industry project", "AI governance", "Personal project", "Class")
+    sections = [s for s in ("Industry project", "AI governance", "AI insight", "Personal project", "Class")
                 if any(p["section"] == s for p in posts)]
     months = sorted({p["date"][:7] for p in posts if p["date"]}, reverse=True)
     month_name = lambda ym: dt.date(int(ym[:4]), int(ym[5:7]), 1).strftime("%B %Y")  # noqa: E731
@@ -292,6 +292,15 @@ LIKE_BOX = ('\n\n<div class="post-like" data-like><span class="post-like__q">Was
             '<form class="post-like__why" data-like-why hidden><label for="like-why">What was missing? (optional, '
             'never published)</label><textarea id="like-why" maxlength="500" rows="2"></textarea>'
             '<button type="submit" class="md-button">Send</button></form></div>\n')
+
+
+SUBSCRIBE_BOX = ('\n\n<div class="subscribe" data-subscribe><p class="subscribe__q"><b>Get new posts by email.</b> '
+                 'One email per post, with a short intro and a link. Confirm first; unsubscribe in one click.</p>'
+                 '<form class="subscribe__form"><label class="subscribe__label" for="subscribe-email">Email address</label>'
+                 '<input id="subscribe-email" type="email" required maxlength="254" placeholder="you@example.com" '
+                 'autocomplete="email"><input name="website" class="subscribe__hp" tabindex="-1" autocomplete="off" '
+                 'aria-hidden="true"><button type="submit" class="md-button md-button--primary">Subscribe</button></form>'
+                 '<p class="subscribe__msg" data-subscribe-msg role="status"></p></div>\n')
 
 
 def _post_topics(markdown: str, page) -> str:
@@ -359,13 +368,15 @@ def _lint_lists(markdown: str, src: str) -> None:
 def on_page_markdown(markdown, page, config, files):
     _lint_lists(markdown, page.file.src_uri)
     if re.match(r"(blog|personal|classes)/posts/", page.file.src_uri):
-        markdown = _post_topics(markdown, page) + LIKE_BOX
+        markdown = _post_topics(markdown, page) + LIKE_BOX + SUBSCRIBE_BOX
     if "<!-- posts:all -->" in markdown:
         markdown = markdown.replace("<!-- posts:all -->", _posts_index(page.file.src_uri))
     for tier in ("featured", "platform", "personal"):
         tag = f"<!-- projects:{tier} -->"
         if tag in markdown:
             markdown = markdown.replace(tag, _table(tier, page.file.src_uri))
+    if "<!-- subscribe -->" in markdown:
+        markdown = markdown.replace("<!-- subscribe -->", SUBSCRIBE_BOX)
     if "<!-- posts:carousel -->" in markdown:
         markdown = markdown.replace("<!-- posts:carousel -->", _posts_carousel(page.url))
     if "<!-- projects:gallery -->" in markdown:

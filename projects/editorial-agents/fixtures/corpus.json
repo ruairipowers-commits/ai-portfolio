@@ -1,0 +1,178 @@
+{
+ "pages": {
+  "blog/how-i-govern-this-site/": {
+   "title": "How I govern the AI on this site, step by step",
+   "short": "How I govern the AI on this site",
+   "date": "2026-10-05",
+   "kind": "Industry project",
+   "topics": [
+    "AI governance",
+    "Security",
+    "Operations",
+    "Evaluation"
+   ]
+  },
+  "blog/questions-for-your-ai-team/": {
+   "title": "Is our AI behaving? A leader's guide to questioning your tech team",
+   "short": "Questions to ask your AI team",
+   "date": "2026-10-05",
+   "kind": "Industry project",
+   "topics": [
+    "AI governance",
+    "Evaluation",
+    "Human in the loop",
+    "Machine learning"
+   ]
+  },
+  "personal/daily-puzzle/": {
+   "title": "A daily puzzle that two models have to agree on before anyone sees it",
+   "short": "Daily puzzle agents",
+   "date": "2026-10-04",
+   "kind": "Personal project",
+   "topics": [
+    "Agents",
+    "Evaluation",
+    "Security",
+    "Human in the loop"
+   ]
+  },
+  "personal/private-local-ai/": {
+   "title": "A private AI workbench on a mini PC: what stays home, and what doesn't",
+   "short": "A private AI workbench at home",
+   "date": "2026-10-04",
+   "kind": "Personal project",
+   "topics": [
+    "Self-hosting",
+    "Security",
+    "Agents"
+   ]
+  },
+  "personal/choosing-the-ask-model/": {
+   "title": "Picking the model behind the Ask button: measure on the box it runs on",
+   "short": "Choosing the Ask button's model",
+   "date": "2026-10-03",
+   "kind": "Personal project",
+   "topics": [
+    "Evaluation",
+    "Self-hosting",
+    "RAG & retrieval"
+   ]
+  },
+  "personal/site-assistant/": {
+   "title": "An assistant for this blog, running on my own hardware",
+   "short": "Site assistant (Ask button)",
+   "date": "2026-10-03",
+   "kind": "Personal project",
+   "topics": [
+    "RAG & retrieval",
+    "Self-hosting",
+    "AI governance"
+   ]
+  },
+  "blog/eod-heartbeat/": {
+   "title": "The 7 p.m. NAV break, explained from your own runbooks",
+   "short": "EOD heartbeat",
+   "date": "2026-10-02",
+   "kind": "Industry project",
+   "topics": [
+    "Operations",
+    "RAG & retrieval",
+    "Data quality"
+   ]
+  },
+  "blog/governance-console/": {
+   "title": "One console for every AI workflow: usage, spend, controls and an off switch",
+   "short": "AI governance console",
+   "date": "2026-10-02",
+   "kind": "AI governance",
+   "topics": [
+    "AI governance",
+    "Cost & FinOps",
+    "Security",
+    "Operations"
+   ]
+  },
+  "blog/research-qa-rag/": {
+   "title": "Research answers with page-level citations \u2014 and a refusal when the evidence isn't there",
+   "short": "Research Q&A (RAG)",
+   "date": "2026-10-02",
+   "kind": "Industry project",
+   "topics": [
+    "RAG & retrieval",
+    "Research",
+    "Security",
+    "Evaluation"
+   ]
+  },
+  "blog/altdata-triage/": {
+   "title": "Triaging alt-data vendors in minutes, not days \u2014 with the LLM on a short leash",
+   "short": "Alt-data vendor triage",
+   "date": "2026-09-30",
+   "kind": "Industry project",
+   "topics": [
+    "Data quality",
+    "Evaluation",
+    "Security",
+    "Research"
+   ]
+  },
+  "blog/governance/": {
+   "title": "How I govern AI workflows at a small investment firm",
+   "short": "AI governance standard",
+   "date": "2026-09-30",
+   "kind": "AI governance",
+   "topics": [
+    "AI governance",
+    "Security",
+    "Cost & FinOps",
+    "Evaluation",
+    "Human in the loop"
+   ]
+  },
+  "blog/trade-ops-exceptions/": {
+   "title": "An agent that investigates settlement breaks \u2014 and can't act without you",
+   "short": "Trade-ops exception agent",
+   "date": "2026-09-30",
+   "kind": "Industry project",
+   "topics": [
+    "Agents",
+    "Operations",
+    "Human in the loop",
+    "Security"
+   ]
+  },
+  "classes/applied-agentic-ai/": {
+   "title": "MIT Applied Agentic AI: bringing agents into an organisation without losing control",
+   "short": "MIT Applied Agentic AI for Organizational Transformation (course)",
+   "date": "2026-09-01",
+   "kind": "Class",
+   "topics": [
+    "Learning",
+    "Agents",
+    "AI governance"
+   ]
+  },
+  "classes/applied-ai-data-science/": {
+   "title": "MIT Applied AI and Data Science: what's under the hood",
+   "short": "MIT Applied AI and Data Science (course)",
+   "date": "2026-05-10",
+   "kind": "Class",
+   "topics": [
+    "Learning",
+    "Machine learning",
+    "Evaluation"
+   ]
+  },
+  "classes/loan-default-capstone/": {
+   "title": "Capstone: predicting home-loan defaults, and how I'd put the model into production",
+   "short": "Loan default prediction (MIT capstone)",
+   "date": "2026-05-10",
+   "kind": "Class",
+   "topics": [
+    "Machine learning",
+    "Evaluation",
+    "Learning"
+   ]
+  }
+ }
+}

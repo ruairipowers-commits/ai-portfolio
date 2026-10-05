@@ -1,0 +1,23 @@
+[
+ {
+  "id": "acme-labs/retail-demand-7b",
+  "pipeline_tag": "time-series-forecasting",
+  "likes": 412,
+  "trendingScore": 88.5,
+  "createdAt": "2026-10-02T12:00:00Z"
+ },
+ {
+  "id": "openvoice/whisper-tiny-multilingual-v4",
+  "pipeline_tag": "automatic-speech-recognition",
+  "likes": 970,
+  "trendingScore": 140.2,
+  "createdAt": "2026-09-30T12:00:00Z"
+ },
+ {
+  "id": "geo-ai/property-valuation-tabular",
+  "pipeline_tag": "tabular-regression",
+  "likes": 133,
+  "trendingScore": 31.0,
+  "createdAt": "2026-10-01T12:00:00Z"
+ }
+]

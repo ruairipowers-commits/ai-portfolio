@@ -45,6 +45,11 @@ create table if not exists suggestions (
 );
 create table if not exists suggestion_votes (sid integer not null, visitor text not null, day text not null,
   ts text not null, primary key (sid, visitor, day));
+create table if not exists subscribers (
+  id integer primary key, email text not null unique, status text not null default 'pending',
+  confirm_hash text, created_at text not null, confirmed_at text
+);
+create table if not exists announced (path text primary key, ts text not null, recipients integer default 0);
 create table if not exists digests (
   ts text not null, day text not null, recipients text, subject text, status text, error text, body_html text
 );

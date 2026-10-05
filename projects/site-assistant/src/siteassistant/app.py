@@ -8,6 +8,8 @@ Public (called from the blog, CORS-limited to the site's origin):
   GET  /api/suggestions         published suggestions with votes;  POST /api/suggestions/{id}/vote  one per day
   POST /api/like {path}         thumbs up on a post;  GET /api/likes?paths=a,b  counts
   POST /api/unhelpful {path, note?}  thumbs down, with an optional "what was missing" (never published)
+  POST /api/subscribe {email}   new posts by email: double opt-in (subscribers.py); GET /subscribe/confirm?t=…
+  GET|POST /unsubscribe?t=…     one click (RFC 8058), deletes the address
   GET  /widget.js, /widget.css  the Ask button and panel the blog loads
   GET  /                        a standalone "Ask the portfolio" page
 Owner (ASSISTANT_ADMIN_TOKEN, or GOVERNANCE_ADMIN_TOKEN):
@@ -35,7 +37,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import digest, index, llm, telemetry
+from . import digest, index, llm, subscribers, telemetry
 from .digest import kickoff_links
 from .store import Store
 
@@ -94,6 +96,11 @@ class LikeIn(BaseModel):
 class UnhelpfulIn(BaseModel):
     path: str = Field(min_length=1, max_length=300)
     note: str = Field("", max_length=500)
+
+
+class SubscribeIn(BaseModel):
+    email: str = Field("", max_length=254)
+    website: str = Field("", max_length=200)          # honeypot: people leave it empty, bots fill it in
 
 
 class StatusIn(BaseModel):
@@ -173,6 +180,12 @@ def _refresher() -> None:
             llm.warm_up(SETTINGS, [card] if card else [])     # load the model and cache the prompt prefix
             warmed = key
         S.store.purge(SETTINGS["privacy"]["retention_days"])
+        try:                                     # announce posts that went live since the last refresh
+            subscribers.notify(S.store, S.store.get_kv("pages", {}) or {}, site_url(),
+                               SETTINGS["subscriptions"]["max_posts_per_run"])
+            subscribers.purge_pending(S.store, SETTINGS["subscriptions"]["pending_days"])
+        except Exception as e:  # noqa: BLE001
+            print(f"subscriber emails failed: {type(e).__name__}: {e}")
         time.sleep(60 * (SETTINGS["index"]["refresh_minutes"] if warmed else 5))   # retry sooner while the model downloads
 
 
@@ -190,6 +203,7 @@ def _migrate_old_suggestions(store: Store) -> None:
 
 def create_app(store: Store | None = None, background: bool = True) -> FastAPI:
     S.store = store or Store()
+    subscribers.init(S.store)
     _migrate_old_suggestions(S.store)
     app = FastAPI(title="Site assistant", docs_url="/api/docs", redoc_url=None)
     if BASE:
@@ -354,6 +368,46 @@ def _routes(app: FastAPI) -> None:
         counts = S.store.like_counts(keys) if keys else {}
         return {"likes": {k: counts.get(k, 0) for k in keys}}
 
+    # ------------------------------------------------------------ subscriptions (double opt-in)
+    @app.post("/api/subscribe", status_code=202)
+    def api_subscribe(body: SubscribeIn, request: Request):
+        who = visitor(request)
+        limit("subscribe", who, SETTINGS["subscriptions"]["per_hour"])
+        S.store.log("subscribe", who)                    # the address is never logged
+        if body.website:
+            return {"ok": True, "message": "Check your inbox to confirm."}
+        if subscribers.subscribe(S.store, body.email) == "invalid":
+            raise HTTPException(422, "That doesn't look like an email address.")
+        return {"ok": True, "message": "Check your inbox for a confirmation link. Nothing is sent until you confirm."}
+
+    def _page(title: str, msg: str) -> HTMLResponse:
+        site = site_url()
+        return HTMLResponse(f"<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'>"
+                            f"<title>{title}</title><body style='font:16px/1.5 system-ui;max-width:560px;margin:3rem "
+                            f"auto;padding:0 16px'><h1 style='font-weight:500'>{title}</h1><p>{msg}</p>"
+                            f"<p><a href='{site}/'>Back to the blog</a></p></body>")
+
+    @app.get("/subscribe/confirm", response_class=HTMLResponse)
+    def subscribe_confirm(t: str = ""):
+        if subscribers.confirm(S.store, t):
+            return _page("You're subscribed", "You'll get an email when a new post is published, with a one-click "
+                         "unsubscribe link in every message.")
+        return _page("Link not valid", "This confirmation link has expired or was already used.")
+
+    @app.get("/unsubscribe", response_class=HTMLResponse)
+    def unsubscribe_page(t: str = ""):
+        # a GET only shows a button: mail scanners follow links, and must not unsubscribe people
+        from html import escape
+        from urllib.parse import quote
+        return _page("Unsubscribe?", f"<form method=post action='{BASE}/unsubscribe?t={escape(quote(t))}'><button style='padding:"
+                     f".5rem 1rem'>Unsubscribe and delete my address</button></form>")
+
+    @app.post("/unsubscribe", response_class=HTMLResponse)
+    def unsubscribe(t: str = ""):
+        if subscribers.unsubscribe(S.store, t):
+            return _page("Unsubscribed", "Your address has been deleted. You won't get any more emails.")
+        return _page("Link not valid", "This unsubscribe link isn't valid.")
+
     # ------------------------------------------------------------ owner: content moderation (the console calls these)
     @app.get("/admin/content")
     def admin_content(request: Request):
@@ -373,6 +427,7 @@ def _routes(app: FastAPI) -> None:
                       for p in paths], key=lambda r: (r["likes"] - r["unhelpful"], r["likes"]), reverse=True)
         notes = [{**n, "title": title(n["path"])} for n in S.store.unhelpful_notes(None, 30)]
         return {"top_articles": top, "unhelpful_notes": notes, "suggestions": S.store.suggestions(None, 500),
+                "subscribers": subscribers.counts(S.store),
                 "kickoff": {str(r["id"]): kickoff_links(r) for r in S.store.suggestions(None, 500)}}
 
     @app.post("/admin/suggestions/{sid}")

@@ -1,0 +1,27 @@
+{
+ "data": {
+  "children": [
+   {
+    "data": {
+     "title": "[D] Local LLMs for document redaction in legal and finance",
+     "permalink": "/r/MachineLearning/comments/abc/local_llms_redaction/",
+     "selftext": "Running a local model to redact personal data before documents leave the firm.",
+     "score": 412,
+     "num_comments": 77,
+     "created_utc": 1759500000,
+     "subreddit": "MachineLearning"
+    }
+   },
+   {
+    "data": {
+     "title": "Announcements",
+     "permalink": "/r/MachineLearning/comments/x/",
+     "stickied": true,
+     "score": 1,
+     "num_comments": 0,
+     "created_utc": 1759500000
+    }
+   }
+  ]
+ }
+}
