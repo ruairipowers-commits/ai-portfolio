@@ -32,6 +32,15 @@ cost:
   usd_per_1k_tokens: 0.0           # local model on our own hardware: no per-token charge
   daily_budget_tokens: 2000000     # stop answering (search still works) past this many tokens a day
 
+role_match:                        # the 3-minute tour: paste a role, get a cited fit read to download
+  per_hour: 4                      # per visitor
+  per_day_total: 60
+  max_chars: 8000                  # of the pasted role
+  top_k: 12                        # excerpts: the profile card, the resume, then the best two for each requirement
+  max_tokens: 900                  # length of the read
+  num_ctx: 12288                   # room for the card, 12 excerpts, a long job ad and the read (Ollama context)
+  notify_owner: true               # email the owner (DIGEST_EMAIL) the role, any contact left, and the read
+
 suggestions:                       # Projects → Suggest a project (listed in the daily email)
   per_hour: 5                      # new suggestions per visitor
   per_day_total: 100

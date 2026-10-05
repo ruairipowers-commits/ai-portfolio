@@ -375,13 +375,20 @@ LIKE_BOX = ('\n\n<div class="post-like" data-like><span class="post-like__q">Was
             '<button type="submit" class="md-button">Send</button></form></div>\n')
 
 
-SUBSCRIBE_BOX = ('\n\n<div class="subscribe" data-subscribe><p class="subscribe__q"><b>Get new posts by email.</b> '
-                 'One email per post, with a short intro and a link. Confirm first; unsubscribe in one click.</p>'
-                 '<form class="subscribe__form"><label class="subscribe__label" for="subscribe-email">Email address</label>'
-                 '<input id="subscribe-email" type="email" required maxlength="254" placeholder="you@example.com" '
-                 'autocomplete="email"><input name="website" class="subscribe__hp" tabindex="-1" autocomplete="off" '
-                 'aria-hidden="true"><button type="submit" class="md-button md-button--primary">Subscribe</button></form>'
-                 '<p class="subscribe__msg" data-subscribe-msg role="status"></p></div>\n')
+def _subscribe_box() -> str:
+    """"Get new posts by email": every post, or only posts for the roles the reader picks (portfolio.yaml audiences)."""
+    roles = "".join(f'<label class="subscribe__role"><input type="checkbox" name="roles" value="{_html.escape(r)}"> '
+                    f'{_html.escape(r)}</label>' for r in audiences())
+    return ('\n\n<div class="subscribe" data-subscribe><p class="subscribe__q"><b>Get new posts by email.</b> '
+            'One email per post, with a short intro and a link. Confirm first; unsubscribe in one click.</p>'
+            '<form class="subscribe__form"><label class="subscribe__label" for="subscribe-email">Email address</label>'
+            '<input id="subscribe-email" type="email" required maxlength="254" placeholder="you@example.com" '
+            'autocomplete="email"><input name="website" class="subscribe__hp" tabindex="-1" autocomplete="off" '
+            'aria-hidden="true"><button type="submit" class="md-button md-button--primary">Subscribe</button>'
+            '<details class="subscribe__roles"><summary>Only posts for my role (optional)</summary>'
+            f'<div class="subscribe__rolelist">{roles}</div><p class="subscribe__hint">Leave them all unticked to get '
+            'every post. Every email has a link to change this.</p></details></form>'
+            '<p class="subscribe__msg" data-subscribe-msg role="status"></p></div>\n')
 
 
 def _post_topics(markdown: str, page) -> str:
@@ -464,7 +471,7 @@ def on_page_markdown(markdown, page, config, files):
     _lint_lists(markdown, page.file.src_uri)
     if re.match(r"(blog|personal|classes)/posts/", page.file.src_uri):
         _lint_audience(page.meta, page.file.src_uri)
-        markdown = _glance(_post_topics(markdown, page), page) + LIKE_BOX + SUBSCRIBE_BOX
+        markdown = _glance(_post_topics(markdown, page), page) + LIKE_BOX + _subscribe_box()
     if "<!-- posts:all -->" in markdown:
         markdown = markdown.replace("<!-- posts:all -->", _posts_index(page.file.src_uri))
     for tier in ("featured", "platform", "personal"):
@@ -472,7 +479,7 @@ def on_page_markdown(markdown, page, config, files):
         if tag in markdown:
             markdown = markdown.replace(tag, _table(tier, page.file.src_uri))
     if "<!-- subscribe -->" in markdown:
-        markdown = markdown.replace("<!-- subscribe -->", SUBSCRIBE_BOX)
+        markdown = markdown.replace("<!-- subscribe -->", _subscribe_box())
     if "<!-- tour:projects -->" in markdown:
         markdown = markdown.replace("<!-- tour:projects -->", _tour_projects(page.url))
     if "<!-- home:side -->" in markdown:

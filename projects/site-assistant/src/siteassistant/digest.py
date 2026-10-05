@@ -2,7 +2,8 @@
 
 Sources (each optional — a missing token is reported in the email, never an error):
   blog       page views, unique visitors, top pages and referrers   this service's /api/track log
-  searches   site searches, assistant searches and questions         this service's log (text as typed)
+  searches   searches (the Search button and the header search box), questions (the Ask button) and role matches
+             — each counted once, under what the visitor actually used   this service's log (text as typed)
   about you  questions about Ruairi, with the answer and any gap it    this service's log
              put "on his plate to review"; project suggestions from
              the About page's suggestion box
@@ -40,14 +41,17 @@ def yesterday(tz: str) -> str:
 
 # ---------------------------------------------------------------- collectors
 def collect_site(store: Store, day: str, top_n: int) -> None:
-    rows = store.query("select kind, visitor, page, query, results, status, referrer from activity where day = ?", (day,))
+    rows = store.query("select ts, kind, visitor, page, query, results, status, referrer from activity where day = ? "
+                       "order by ts", (day,))
     pv = [r for r in rows if r["kind"] == "pageview"]
     store.put_metric(day, "blog", "page_views", len(pv))
     store.put_metric(day, "blog", "visitors", len({r["visitor"] for r in pv}))
     store.put_metric(day, "blog", "top_pages", None, Counter(r["page"] for r in pv).most_common(top_n))
     store.put_metric(day, "blog", "referrers", None,
                      Counter(r["referrer"] for r in pv if r["referrer"]).most_common(top_n))
-    srch = [r for r in rows if r["kind"] in ("search", "site-search")]
+    # A search is what someone typed into a search box; an ask is a question to the Ask button. The pages listed
+    # under an answer are logged as 'lookup' and never counted as a search, so nothing appears twice.
+    srch = searches(rows)
     asks = [r for r in rows if r["kind"] == "ask"]
     store.put_metric(day, "searches", "searches", len(srch))
     store.put_metric(day, "searches", "questions", len(asks))
@@ -55,8 +59,34 @@ def collect_site(store: Store, day: str, top_n: int) -> None:
                      Counter(r["query"].strip().lower() for r in srch if r["query"].strip()).most_common(top_n))
     store.put_metric(day, "searches", "no_results", None,
                      sorted({r["query"] for r in srch if r["status"] == "no_results"})[:top_n])
-    store.put_metric(day, "searches", "questions_asked", None, [r["query"] for r in asks][:top_n])
+    # questions about Ruairi have their own section (with answers), so they're not repeated here
+    store.put_metric(day, "searches", "questions_asked", None,
+                     list(dict.fromkeys(r["query"] for r in asks if not is_about_person(r["query"] or "")))[:top_n])
+    collect_roles(store, day)
     collect_about_you(store, day)
+
+
+def searches(rows: list[dict]) -> list[dict]:
+    """Searches, once each. The header search box reports as you pause typing, so "gover" then "governance console"
+    from the same visitor is one search: an earlier query that a later one from the same visitor extends is dropped."""
+    srch = [r for r in rows if r["kind"] in ("search", "site-search")]
+    out = []
+    for i, r in enumerate(srch):
+        q = (r["query"] or "").strip().lower()
+        later = [x for x in srch[i + 1:] if x["visitor"] == r["visitor"]]
+        if any((x["query"] or "").strip().lower().startswith(q) for x in later):
+            continue
+        out.append(r)
+    return out
+
+
+def collect_roles(store: Store, day: str, limit: int = 20) -> None:
+    """Roles visitors matched against the site: the role, how to reach them (if they left it) and the read they got."""
+    reads = store.role_reads(day, limit)
+    store.put_metric(day, "roles", "matches", len(reads))
+    store.put_metric(day, "roles", "reads", None, [
+        {"id": r["id"], "role": r["role"], "contact": r["contact"] or "", "status": r["status"] or "",
+         "summary": " ".join((r["read"] or "").split())[:500]} for r in reads])
 
 
 GAP_PHRASE = "plate to review"
@@ -228,7 +258,7 @@ def collect(store: Store, settings: dict, day: str) -> None:
 # ---------------------------------------------------------------- the email
 HEADLINES = [("blog", "page_views", "Blog page views"), ("blog", "visitors", "Blog visitors"),
              ("searches", "searches", "Searches"), ("searches", "questions", "Questions to the assistant"),
-             ("about", "questions", "Questions about you"), ("about", "suggestions", "New project suggestions"),
+             ("roles", "matches", "Role matches"), ("about", "questions", "Questions about you"), ("about", "suggestions", "New project suggestions"),
              ("likes", "thumbs_up", "Thumbs up on posts"), ("likes", "thumbs_down", "Thumbs down on posts"),
              ("demos", "visits", "Demo visits"), ("demos", "runs", "Demo runs"),
              ("cloudflare", "page_views", "Cloudflare page views"), ("cloudflare", "visitors", "Cloudflare visitors"),
@@ -298,16 +328,25 @@ def render(store: Store, day: str, settings: dict) -> dict:
         t = f"\n{title}:\n" + "\n".join(f"  - {fmt_text(i)}" for i in items) if items else ""
         return h, t
 
-    sections = [lst_text("Asks about you", det("about", "asks"), ask_fmt, ask_text),
+    def role_fmt(x):
+        who = f" <span style='color:#166534'>· contact: {escape(x['contact'])}</span>" if x.get("contact") else ""
+        return (f"<b>{escape(x['role'])}</b>{who}<br><span style='color:#5f6b76;font-size:13px'>"
+                f"{escape(x.get('summary', ''))}</span>")
+
+    def role_text(x):
+        return f"{x['role']}{' — contact: ' + x['contact'] if x.get('contact') else ''}\n      → {x.get('summary', '')[:300]}"
+
+    sections = [lst_text("Role matches (full text on /stats)", det("roles", "reads"), role_fmt, role_text),
+                lst_text("Asks about you", det("about", "asks"), ask_fmt, ask_text),
                 lst("On your plate to review (gaps the assistant told visitors you'd look into)", det("about", "gaps")),
                 lst_text("Top suggested projects (new ones marked)", det("about", "top_suggestions"), sugg_fmt, sugg_text),
                 lst("Thumbs up yesterday", det("likes", "by_post"), pair),
                 lst("Most liked posts (all time)", det("likes", "all_time"), pair),
                 lst("Not useful yesterday", det("likes", "down_by_post"), pair),
                 lst("What readers said was missing", det("likes", "down_notes")),lst("Top pages", det("blog", "top_pages"), pair), lst("Where readers came from", det("blog", "referrers"), pair),
-                lst("Top searches", det("searches", "top_queries"), pair),
+                lst("Top searches (Search button and the search box)", det("searches", "top_queries"), pair),
                 lst("Searches with no results (content gaps)", det("searches", "no_results")),
-                lst("Questions asked", det("searches", "questions_asked")),
+                lst("Other questions to Ask", det("searches", "questions_asked")),
                 lst("Demo runs by app", det("demos", "runs_by_workflow"), pair),
                 lst("GitHub by repo", [f"{r['repo']}: {r['views']} views, {r['clones']} clones, {r['stars']} stars"
                                        for r in det("github", "repos") or []])]
@@ -318,7 +357,8 @@ def render(store: Store, day: str, settings: dict) -> dict:
                  escape("; ".join(notes)) + "</p>") if notes else ""
     subject = f"Portfolio engagement for {datetime.fromisoformat(day):%a %d %b}: " + \
         f"{val('blog', 'page_views') or 0:,.0f} blog views · {val('demos', 'runs') or 0:,.0f} demo runs · " + \
-        f"{(val('searches', 'searches') or 0) + (val('searches', 'questions') or 0):,.0f} searches & questions"
+        f"{val('searches', 'searches') or 0:,.0f} searches · {val('searches', 'questions') or 0:,.0f} asks" + \
+        (f" · {val('roles', 'matches'):,.0f} role matches" if val("roles", "matches") else "")
     html = f"""<!doctype html><html><body style="margin:0;background:#f3f5f7;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1f2933">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px"><tr><td align="center">
 <table role="presentation" width="620" cellpadding="0" cellspacing="0" style="max-width:620px;background:#fff;border-radius:8px;border:1px solid #dde3e8">
@@ -356,6 +396,31 @@ def send(to: list[str], subject: str, text: str, html: str) -> None:
                 s.starttls(context=ctx)
             s.login(user, pw)
             s.send_message(msg)
+
+
+def role_match_alert(store: Store, rid: int, site: str) -> str:
+    """Email the owner as soon as someone matches a role: the role, their contact (if given), what they pasted and
+    the read they downloaded. Returns the send status; without SMTP it does nothing (the daily email still lists it)."""
+    r = (store.query("select * from role_reads where id = ?", (rid,)) or [None])[0]
+    to = recipients()
+    if not r or not to or not (os.getenv("SMTP_HOST") and os.getenv("SMTP_USER") and os.getenv("SMTP_PASSWORD")):
+        return "not sent"
+    who = f"Contact: {r['contact']}" if r["contact"] else "No contact left."
+    subject = f"Role match: {r['role']}" + (f" ({r['contact']})" if r["contact"] else "")
+    text = (f"Someone matched a role against your site ({site}).\n\nRole: {r['role']}\n{who}\n\n"
+            f"--- What they pasted ---\n{r['description']}\n\n--- The read they got ({r['status']}, {r['model']}) ---\n"
+            f"{r['read'] or ''}\n")
+    html = (f"<div style='font:14px/1.5 sans-serif;max-width:680px'><h2 style='font-weight:600'>Role match: "
+            f"{escape(r['role'])}</h2><p>{escape(who)}</p><h3>The read they got</h3>"
+            f"<div style='white-space:pre-wrap;background:#f3f5f7;padding:10px;border-radius:6px'>{escape(r['read'] or '')}"
+            f"</div><h3>What they pasted</h3><div style='white-space:pre-wrap;color:#444'>{escape(r['description'])}</div>"
+            f"<p style='color:#777;font-size:12px'>Status {escape(r['status'] or '')} · model {escape(r['model'] or '')}"
+            f" · saved as role read #{r['id']}</p></div>")
+    try:
+        send(to, subject, text, html)
+        return "sent"
+    except Exception as e:  # noqa: BLE001
+        return f"failed: {type(e).__name__}"
 
 
 def run(store: Store, settings: dict, day: str | None = None, send_email: bool = True, **kw) -> dict:
@@ -412,8 +477,14 @@ def stats_page(store: Store, settings: dict, base: str, token: str) -> str:
         rows.append(f"<tr><td>{d}</td><td>{c['pageview']}</td><td>{v}</td><td>{c['site-search'] + c['search']}</td>"
                     f"<td>{c['ask']}</td></tr>")
     recent = store.query("select ts, kind, query, results, status, page from activity where kind in "
-                         "('search', 'site-search', 'ask') order by ts desc limit 60")
+                         "('search', 'site-search', 'ask', 'role-match') order by ts desc limit 60")
     digests = store.query("select ts, day, recipients, subject, status, error from digests order by ts desc limit 14")
+    reads = store.role_reads(None, 30)
+    read_rows = "".join(
+        f"<tr><td>{r['ts'][5:16].replace('T', ' ')}</td><td><b>{escape(r['role'])}</b><br>{escape(r['contact'] or '')}</td>"
+        f"<td><details><summary>The read ({escape(r['status'] or '')})</summary><pre style='white-space:pre-wrap'>"
+        f"{escape(r['read'] or '')}</pre></details><details><summary>What they pasted</summary><pre "
+        f"style='white-space:pre-wrap'>{escape(r['description'])}</pre></details></td></tr>" for r in reads)
     tq = escape(token)
     return f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Site assistant · activity</title><style>body{{font:14px/1.45 system-ui,sans-serif;margin:0 auto;max-width:1000px;padding:20px 16px;color:#1f2933}}
@@ -423,6 +494,7 @@ th{{color:#5f6b76;font-weight:600}}h1{{font-size:21px}}h2{{font-size:16px;margin
 <p>Index: {store.passage_count()} passages from the blog · last refresh {escape(str((store.last_index() or {}).get('ts', '—')))}</p>
 <form method="post" action="{base}/digest/send?token={tq}"><button>Send yesterday's engagement email now</button></form>
 <h2>Last 14 days</h2><table><tr><th>Day (UTC)</th><th>Page views</th><th>Visitors</th><th>Searches</th><th>Questions</th></tr>{''.join(rows)}</table>
+<h2>Role matches</h2><table><tr><th>Time (UTC)</th><th>Role · contact</th><th>Read and role text</th></tr>{read_rows}</table>
 <h2>Recent searches and questions</h2><table><tr><th>Time (UTC)</th><th>Kind</th><th>Query</th><th>Results</th><th>Status</th><th>Page</th></tr>
 {''.join(f"<tr><td>{r['ts'][5:16].replace('T', ' ')}</td><td>{r['kind']}</td><td>{escape(r['query'] or '')}</td><td>{r['results']}</td><td>{escape(r['status'] or '')}</td><td>{escape(r['page'] or '')}</td></tr>" for r in recent)}</table>
 <h2>Engagement emails</h2><table><tr><th>Sent (UTC)</th><th>For</th><th>To</th><th>Subject</th><th>Status</th></tr>

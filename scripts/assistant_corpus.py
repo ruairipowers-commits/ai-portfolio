@@ -211,7 +211,9 @@ def build(site_url: str, github_owner: str, repo: str = "ai-portfolio", today: s
             # editorial scout's novelty check (what's already published)
             "pages": {p["path"]: {**{k: p[k] for k in ("title", "short", "date", "kind", "topics", "audience")},
                                   "intro": p["summary"][:600]} for p in all_posts},
-            "docs": docs}
+            "docs": docs,
+            # who posts are for (portfolio.yaml `audiences`, in order): the roles readers can subscribe to
+            "audiences": list((yaml.safe_load((ROOT / "portfolio.yaml").read_text()) or {}).get("audiences") or [])}
 
 
 def write(site_dir: str, site_url: str, github_owner: str, repo: str = "ai-portfolio") -> Path:

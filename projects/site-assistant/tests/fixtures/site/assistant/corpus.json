@@ -10,6 +10,10 @@
    "kind": "AI governance",
    "topics": [
     "AI governance"
+   ],
+   "audience": [
+    "AI and ML engineers",
+    "Risk, compliance and legal"
    ]
   }
  },
@@ -26,5 +30,11 @@
    "section": "",
    "text": "RUAIRI POWERS TECHNOLOGY LEAD INVESTMENT DATA AND AI SYSTEMS 25 years building and running investment technology. Technical skills: Kubernetes, CircleCI, Snowflake, Databricks."
   }
+ ],
+ "audiences": [
+  "Executives and boards",
+  "Hiring managers",
+  "AI and ML engineers",
+  "Risk, compliance and legal"
  ]
 }

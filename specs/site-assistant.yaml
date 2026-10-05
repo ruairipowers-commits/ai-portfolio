@@ -88,6 +88,8 @@ demo:
   - GITHUB_REPOS
   - ASSISTANT_ADMIN_TOKEN
   - ASSISTANT_SALT
+  - SUBSCRIBE_SECRET
+  - ASSISTANT_PUBLIC_URL
 links:
   repo: ''
   blog: personal/site-assistant

@@ -5,6 +5,10 @@ from pathlib import Path
 from siteassistant import subscribers
 
 
+def st(store) -> dict:
+    return {k: v for k, v in subscribers.counts(store).items() if k != "by_role"}
+
+
 def outbox(tmp_path) -> list:
     d = Path(tmp_path) / "outbox"
     return [message_from_bytes(p.read_bytes(), policy=policy.default) for p in sorted(d.glob("*.eml"))] if d.exists() else []
@@ -18,12 +22,12 @@ def _link(msg, marker: str) -> str:
 def test_double_opt_in_and_unsubscribe_deletes(client, store, tmp_path):
     r = client.post("/api/subscribe", json={"email": "Reader@Example.com"})
     assert r.status_code == 202 and "confirm" in r.json()["message"].lower()
-    assert subscribers.counts(store) == {"pending": 1}
+    assert st(store) == {"pending": 1}
     mails = outbox(tmp_path)
     assert len(mails) == 1 and mails[0]["Subject"] == "Confirm your subscription"
     token = _link(mails[0], "Confirm: ").split("t=")[1]
     assert "subscribed" in client.get(f"/subscribe/confirm?t={token}").text
-    assert subscribers.counts(store) == {"confirmed": 1}
+    assert st(store) == {"confirmed": 1}
     assert "not valid" in client.get(f"/subscribe/confirm?t={token}").text          # single use
     # same response for an already-subscribed address: no enumeration, and no second email
     assert client.post("/api/subscribe", json={"email": "reader@example.com"}).json() == r.json()
@@ -31,7 +35,7 @@ def test_double_opt_in_and_unsubscribe_deletes(client, store, tmp_path):
     sid = store.query("select id from subscribers")[0]["id"]
     tok = subscribers.unsubscribe_token(sid)
     page = client.get(f"/unsubscribe?t={tok}")
-    assert "<form method=post" in page.text and subscribers.counts(store) == {"confirmed": 1}   # GET changes nothing
+    assert "<form method=post" in page.text and st(store) == {"confirmed": 1}   # GET changes nothing
     assert "deleted" in client.post(f"/unsubscribe?t={tok}").text
     assert store.query("select * from subscribers") == []                           # deleted, not flagged
     assert "not valid" in client.post(f"/unsubscribe?t={sid}.forged").text
@@ -40,7 +44,7 @@ def test_double_opt_in_and_unsubscribe_deletes(client, store, tmp_path):
 def test_invalid_honeypot_and_rate_limit(client, store, tmp_path):
     assert client.post("/api/subscribe", json={"email": "not-an-email"}).status_code == 422
     assert client.post("/api/subscribe", json={"email": "bot@example.com", "website": "spam"}).status_code == 202
-    assert subscribers.counts(store) == {} and outbox(tmp_path) == []                # bots get nothing stored
+    assert st(store) == {} and outbox(tmp_path) == []                # bots get nothing stored
     codes = [client.post("/api/subscribe", json={"email": f"p{i}@example.com"}).status_code for i in range(5)]
     assert 429 in codes
 

@@ -64,11 +64,11 @@ as its own container, and the assistant pulls the model the first time it starts
 
 | | |
 |---|---|
-| **Intended use** | Help blog visitors find and understand what's published; give the owner a daily view of engagement. |
-| **Not for** | Statements about Ruairi beyond what's published; advice of any kind; private data. |
+| **Intended use** | Help blog visitors find and understand what's published (Search lists pages, Ask answers with citations), give hiring managers a cited fit read for a role they paste, and give the owner a daily view of engagement. |
+| **Not for** | Statements about Ruairi beyond what's published; scoring or ranking him; advice of any kind; private data. |
 | **Risk tier** | Low — public content, no actions. Kill switch in the governance console. |
 | **Owner** | Ruairi Powers |
-| **Known limits** | A small local model can phrase things clumsily or miss nuance. Answers are only as current as the blog. Retrieval is keyword-based (BM25), so unusual wording can miss a page. GitHub keeps only 14 days of traffic, so the daily email stores each day as it comes. |
+| **Known limits** | A small local model can phrase things clumsily or miss nuance; a fit read is a summary of published evidence, not an assessment, and without the model it only quotes passages. Answers are only as current as the blog. Retrieval is keyword-based (BM25), so unusual wording can miss a page. GitHub keeps only 14 days of traffic, so the daily email stores each day as it comes. |
 
 ## Architecture
 

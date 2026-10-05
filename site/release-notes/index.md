@@ -9,6 +9,12 @@ The big changes to this portfolio, newest first. Each project's repository has t
 
 ## 5 October 2026
 
+**Ask, made for hiring managers.** The [3-minute tour](../tour.md) now opens with an *Ask the portfolio* box.
+*Search* and *Ask* are separate buttons: Search lists the pages that match, Ask writes a cited answer. The panel can
+be expanded to sit beside the page, so you can click through the sources without losing the answer, and your
+history follows you around the site. Paste a job description under *Match me to a role* to download a cited fit
+read. You can also subscribe to posts for your role only.
+
 **Clearer ways in.** Home now says who I am above the headline and offers three ways in: a
 [3-minute tour](../tour.md) for hiring managers and recruiters, the governance standard and projects for learners, and
 the blog and Ask for everyone else. My background moved up, directly under those choices. The top menu is down to five

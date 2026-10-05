@@ -94,6 +94,7 @@ def refresh(store: Store, source: str, site_url: str, min_words: int = 8, corpus
         store.set_kv("profile", {"text": corpus.get("profile", ""), "url": corpus.get("profile_url", ""),
                                  "generated": corpus.get("generated", "")})
         store.set_kv("pages", corpus.get("pages", {}))
+        store.set_kv("audiences", corpus.get("audiences", []))
     except Exception as e:  # noqa: BLE001
         print(f"assistant corpus not loaded from {csrc}: {type(e).__name__}: {e}")
     return store.replace_passages(rows, source)
@@ -108,7 +109,9 @@ def fts_query(q: str) -> str:
 OFFSITE_WEIGHT = 0.7   # repo docs and the resume rank a little below the site's own pages for the same match
 
 
-def search(store: Store, q: str, limit: int = 8, site_url: str = "") -> list[dict]:
+def search(store: Store, q: str, limit: int = 8, site_url: str = "", site_first: bool = False) -> list[dict]:
+    """Best passages for q. With site_url, repo docs and the resume rank a little lower; with site_first (the Search
+    button: a list of pages to read), every page on the site comes before anything from GitHub."""
     fq = fts_query(q)
     if not fq:
         return []
@@ -123,6 +126,8 @@ def search(store: Store, q: str, limit: int = 8, site_url: str = "") -> list[dic
             if not r["url"].startswith(site_url.rstrip("/") + "/"):
                 r["score"] *= OFFSITE_WEIGHT
         rows.sort(key=lambda r: r["score"])
+        if site_first:
+            rows.sort(key=lambda r: not r["url"].startswith(site_url.rstrip("/") + "/"))   # stable: keeps bm25 order
     seen, out = set(), []
     for r in rows:   # at most two passages per page, so one long post doesn't fill the list
         page = r["url"].split("#")[0]
@@ -186,3 +191,65 @@ def context_for(store: Store, question: str, site_url: str, top_k: int) -> list[
         resume = [r for r in search(store, q + " resume experience", 20, site_url) if "resume" in r["url"].lower()][:1]
         hits = resume + [h for h in hits if h["pid"] not in {r["pid"] for r in resume}]
     return ([card] if card else []) + with_dates(store, hits[:top_k], site_url)
+
+
+# Job-ad boilerplate that says nothing about the work, so it shouldn't steer the search for evidence.
+ROLE_NOISE = set("about benefits company competitive culture equal employer environment opportunity opportunities "
+                 "salary team teams join looking candidate candidates ideal including include strong excellent ability "
+                 "abilities work working years year plus preferred required requirements responsibilities "
+                 "qualifications role position job apply applicants must will would should also within across using "
+                 "other new".split())
+
+
+def role_keywords(role: str, description: str, n: int = 24) -> str:
+    """The role's distinctive words, most frequent first, title words always included: a long job ad becomes a
+    search query that FTS can rank (a raw 8,000-character ad would be truncated to its first few words)."""
+    from collections import Counter
+    words = [w for w in re.findall(r"[a-z0-9][a-z0-9+#.-]*[a-z0-9+#]|[a-z0-9]", description.lower())
+             if w not in STOP and w not in ROLE_NOISE and len(w) > 2 and not w.isdigit()]
+    title = [w for w in re.findall(r"[a-z0-9]+", role.lower()) if w not in STOP and len(w) > 1]
+    top = [w for w, _ in Counter(words).most_common(n)]
+    return " ".join(dict.fromkeys(title + top))
+
+
+LISTINGS = ("", "tour/", "blog/", "personal/", "classes/", "release-notes/")
+
+
+def _listing(url: str, site_url: str) -> bool:
+    """Pages that only list or summarise other pages: evidence should cite the work itself, not a summary of it."""
+    base = site_url.rstrip("/") + "/"
+    return url.startswith(base) and url.split("#")[0][len(base):] in LISTINGS
+
+
+BULLET = re.compile(r"^\s*([-*•·▪◦]|\d+[.)])\s+")
+
+
+def requirements(description: str, limit: int = 8) -> list[str]:
+    """The role's own requirement lines: its bullets when it has them, else its sentences."""
+    raw = description.splitlines()
+    bullets = [BULLET.sub("", ln).strip() for ln in raw if BULLET.match(ln)]
+    lines = [b for b in bullets if 3 <= len(b.split()) <= 40]
+    if len(lines) < 2:
+        text = " ".join(BULLET.sub("", ln).strip() for ln in raw)
+        lines = [x.strip() for x in re.split(r"(?<=[.!?;])\s+", text) if 4 <= len(x.split()) <= 40 and not x.endswith(":")]
+    return list(dict.fromkeys(lines))[:limit]
+
+
+def role_context(store: Store, role: str, description: str, site_url: str, top_k: int) -> list[dict]:
+    """Evidence for a role: the profile card, the resume's best passage, then the best match for EACH requirement
+    (so every requirement gets looked for, not just the ad's most frequent words), then the best overall matches."""
+    q = role_keywords(role, description)
+    card = profile_passage(store, site_url)
+    ok = lambda h: not _listing(h["url"], site_url) and not (card and h["url"] == card["url"])     # noqa: E731
+    resume = [r for r in search(store, q + " resume experience", 30, site_url) if "resume" in r["url"].lower()][:1]
+    picked = list(resume)
+    for req in requirements(description):
+        for h in [h for h in search(store, req, 6, site_url) if ok(h)][:2]:
+            picked.append(h)
+    picked += [h for h in search(store, q, top_k + 8, site_url) if ok(h)]
+    seen, out = set(), []
+    for h in picked:
+        if h["pid"] not in seen:
+            seen.add(h["pid"])
+            out.append(h)
+    return ([card] if card else []) + with_dates(store, out[:top_k], site_url)
