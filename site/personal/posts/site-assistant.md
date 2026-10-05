@@ -4,6 +4,7 @@ slug: site-assistant
 short: "Site assistant (Ask button)"
 categories: [RAG & retrieval, Self-hosting, AI governance]
 tags: [ollama, fastapi, sqlite fts5, local model, citations, analytics, kill switch]
+audience: [AI and ML engineers, Product managers]
 ---
 
 # An assistant for this blog, running on my own hardware

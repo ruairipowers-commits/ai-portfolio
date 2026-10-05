@@ -4,6 +4,7 @@ slug: questions-for-your-ai-team
 short: "Questions to ask your AI team"
 categories: [AI governance, Evaluation, Human in the loop, Machine learning, Security]
 tags: [ai governance, model risk, model monitoring, drift, retraining, genai, executive guide, sr 11-7, gdpr, pii, eu ai act, privacy]
+audience: [Executives and boards, "Risk, compliance and legal", Heads of data, Product managers]
 ---
 
 # Is our AI behaving? A leader's guide to questioning your tech team

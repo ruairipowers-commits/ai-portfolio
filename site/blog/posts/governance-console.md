@@ -4,6 +4,7 @@ slug: governance-console
 short: "AI governance console"
 categories: [AI governance, Cost & FinOps, Security, Operations]
 tags: [ai governance, telemetry, finops, kill switch, attestation, fastapi, shadow ai]
+audience: [CTOs and heads of technology, "Risk, compliance and legal", AI and ML engineers, Executives and boards]
 ---
 
 # One console for every AI workflow: usage, spend, controls and an off switch

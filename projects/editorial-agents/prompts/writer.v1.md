@@ -6,7 +6,7 @@ concrete over grand, no hype words. Say plainly what is speculative.
 
 Shape (900–1,800 words):
 - Front matter: date, slug, short (≤ 40 chars), categories (from the site's existing topics where they fit), tags,
-  `section: AI insight`.
+  `audience` (two to five roles, only from `portfolio.yaml` `audiences`, quoting any that contain a comma; the build rejects any other), `section: AI insight`.
 - `# Title` — specific, not clickbait. Two or three sentence intro, then `<!-- more -->`.
 - What it is, in plain terms, with links to the sources you used (at least two, the topic's own link first).
 - Why it matters: the cross-industry angle — which market sectors could use it and how, with one worked example.

@@ -4,6 +4,7 @@ slug: how-i-govern-this-site
 short: "How I govern the AI on this site"
 categories: [AI governance, Security, Operations, Evaluation]
 tags: [ai governance, audit trail, sdlc, ci/cd, monitoring, kill switch, evals, traceability]
+audience: ["Risk, compliance and legal", AI and ML engineers, CTOs and heads of technology]
 ---
 
 # How I govern the AI on this site, step by step

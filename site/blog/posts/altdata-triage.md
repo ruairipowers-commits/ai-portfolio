@@ -4,6 +4,7 @@ slug: altdata-triage
 short: "Alt-data vendor triage"
 categories: [Data quality, Evaluation, Security, Research]
 tags: [dbt, duckdb, python, pydantic, bedrock, evals, prompt injection]
+audience: [Heads of data, Data engineers, AI and ML engineers, "Risk, compliance and legal"]
 ---
 
 # Triaging alt-data vendors in minutes, not days — with the LLM on a short leash

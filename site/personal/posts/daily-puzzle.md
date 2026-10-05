@@ -4,6 +4,7 @@ slug: daily-puzzle
 short: "Daily puzzle agents"
 categories: [Agents, Evaluation, Security, Human in the loop]
 tags: [multi-agent, sandbox, safetensors, hugging face, fastapi, htmx, apscheduler, weasyprint, scoring]
+audience: [AI and ML engineers, Product managers, Students and career changers]
 ---
 
 # A daily puzzle that two models have to agree on before anyone sees it

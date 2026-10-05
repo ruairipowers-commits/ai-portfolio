@@ -4,6 +4,7 @@ slug: editorial-agents
 short: "Editorial agents"
 categories: [Agents, Human in the loop, Evaluation, Security]
 tags: [multi-agent, editor agent, novelty, mmr, prompt injection, double opt-in, claude, ollama, github actions]
+audience: [AI and ML engineers, Product managers, "Risk, compliance and legal"]
 ---
 
 # Agents that find topics and draft posts, and why none of them can publish

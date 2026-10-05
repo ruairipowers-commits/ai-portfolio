@@ -4,6 +4,7 @@ slug: governance
 short: "AI governance standard"
 categories: [AI governance, Security, Cost & FinOps, Evaluation, Human in the loop]
 tags: [ai governance, model risk, llm security, finops, evals]
+audience: [Executives and boards, "Risk, compliance and legal", CTOs and heads of technology, Heads of data]
 pin: true
 ---
 

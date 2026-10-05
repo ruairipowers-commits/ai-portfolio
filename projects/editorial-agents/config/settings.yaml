@@ -69,5 +69,5 @@ review:                      # the deterministic half of the editor (the editor 
                    game-changer, delve]
   client_framing: ["client work", "for a client", "for clients", "my clients", "client's data", "client data",
                    "client engagement", "on behalf of a client"]
-  required_front_matter: [date, slug, short, categories, tags, section]
+  required_front_matter: [date, slug, short, categories, tags, audience, section]
   disclosure: "Drafted with AI agents"   # posts must say so (HITL-04); the owner can reword it

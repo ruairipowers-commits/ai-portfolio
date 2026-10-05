@@ -80,3 +80,19 @@ personal_projects:
 #    post: classes/posts/x.md            # optional: a write-up anywhere under site/
 #    try_url: https://…                    # optional: a live demo link, labelled try_label
 #    stack: Python, SQLite, Telegram API
+
+# Who each post is for. Every post lists one or more of these in its front matter (`audience: [...]`); the post
+# shows them under its title and the blog filters by them. The build fails on a missing or unknown audience, so
+# add a role here before using it in a post. Order is the order of the filter.
+audiences:
+  - Executives and boards
+  - CTOs and heads of technology
+  - Heads of data
+  - Risk, compliance and legal
+  - Hiring managers
+  - Product managers
+  - AI and ML engineers
+  - Data engineers
+  - Data scientists
+  - Operations leads
+  - Students and career changers

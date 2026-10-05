@@ -4,6 +4,7 @@ slug: eod-heartbeat
 short: "EOD heartbeat"
 categories: [Operations, RAG & retrieval, Data quality]
 tags: [airflow, dbt, postgres, pgvector, runbooks, alerting, degraded mode, retention]
+audience: [Operations leads, Data engineers, AI and ML engineers, CTOs and heads of technology]
 ---
 
 # The 7 p.m. NAV break, explained from your own runbooks

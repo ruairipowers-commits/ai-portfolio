@@ -4,6 +4,7 @@ slug: applied-agentic-ai
 short: "MIT Applied Agentic AI for Organizational Transformation (course)"
 categories: [Learning, Agents, AI governance]
 tags: [agentic ai, crawl walk run, nist ai rmf, nist csf, hipaa, eu ai act, shadow mode, risk register, vibe coding, kpis]
+audience: [Students and career changers, AI and ML engineers, Product managers, Executives and boards]
 ---
 
 # MIT Applied Agentic AI: bringing agents into an organisation without losing control

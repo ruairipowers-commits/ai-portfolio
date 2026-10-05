@@ -9,6 +9,11 @@ The big changes to this portfolio, newest first. Each project's repository has t
 
 ## 5 October 2026
 
+**Building an AI team, and posts by audience.** A new post, [Building a modern AI team](../blog/posts/building-an-ai-team.md),
+covers the roles, who's accountable for what, how to interview with structured questions and work samples, and the
+pitfalls. Every post now says who it's for (executives, hiring managers, engineers and more) under its title, and the
+[Blog](../blog/index.md) filters by audience.
+
 **Editorial agents and email subscriptions.** A [scout agent](../personal/posts/editorial-agents.md) now keeps ten
 ranked, varied AI topics ready; I pick from a weekly email. Each week a writer agent drafts a post from my top pick,
 a separate editor agent reviews it twice, and nothing publishes until I merge it. You can now **subscribe** at the

@@ -63,6 +63,7 @@ def posts() -> list[dict]:
                         "date": str(meta.get("date", "")),
                         "kind": meta.get("section") or ("AI governance" if slug in GOVERNANCE else kind),
                         "topics": meta.get("categories") or [], "keywords": meta.get("tags") or [],
+                        "audience": meta.get("audience") or [],
                         "summary": plain(intro),
                         "stack": next((ln for ln in body.splitlines() if ln.startswith("**Stack:**")), "")})
     return sorted(out, key=lambda p: p["date"], reverse=True)
@@ -208,7 +209,7 @@ def build(site_url: str, github_owner: str, repo: str = "ai-portfolio", today: s
             "profile_url": f"{site_url.rstrip('/')}/about/#skills-and-evidence",
             # page list: the assistant's citations, its new-post emails to subscribers (intro + link), and the
             # editorial scout's novelty check (what's already published)
-            "pages": {p["path"]: {**{k: p[k] for k in ("title", "short", "date", "kind", "topics")},
+            "pages": {p["path"]: {**{k: p[k] for k in ("title", "short", "date", "kind", "topics", "audience")},
                                   "intro": p["summary"][:600]} for p in all_posts},
             "docs": docs}
 

@@ -4,6 +4,7 @@ slug: research-qa-rag
 short: "Research Q&A (RAG)"
 categories: [RAG & retrieval, Research, Security, Evaluation]
 tags: [hybrid search, sqlite-vec, fts5, fastapi, entitlements, prompt injection, evals, bedrock knowledge bases]
+audience: [AI and ML engineers, Heads of data, "Risk, compliance and legal", Product managers]
 ---
 
 # Research answers with page-level citations — and a refusal when the evidence isn't there
