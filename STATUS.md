@@ -6,10 +6,10 @@ What's in flight, so a new chat can pick up without the old one's history. Newes
 ## 0. Daily puzzle (new personal project, built 4 October 2026)
 
 `projects/daily-puzzle` + `site/personal/posts/daily-puzzle.md`. Built and verified offline (112 tests, `puzzle all`,
-eval gate, player site and operator app checked in a browser). Committed locally only — waiting for Ruairi's
-go-ahead to push and deploy.
+eval gate, player site and operator app checked in a browser). Pushed 5 October (`4dab046`); CI and the site
+deploy passed, and the post is listed under Personal projects. The demo container isn't running yet:
 
-- [ ] **Push** (Ruairi's approval) — then the demos workflow picks up `Dockerfile.space` (`/daily-puzzle/`, 4g).
+- [ ] **Demo host:** `git pull && ./update.sh` on the EVO-X1 builds `Dockerfile.space` (`/daily-puzzle/`, 4g).
 - [ ] **Deploy secrets** in the demo host's `.env` before it starts (the image refuses dev defaults):
       `PUZZLE_KEY_SECRET`, `PUZZLE_SALT`, `PUZZLE_ADMIN_TOKEN` (`openssl rand -hex 32`), `RESEND_API_KEY`,
       `MAIL_FROM`, `PUZZLE_OPERATOR_EMAIL`, `PUZZLE_PUBLIC_URL`.
