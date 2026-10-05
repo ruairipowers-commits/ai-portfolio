@@ -9,6 +9,14 @@ The big changes to this portfolio, newest first. Each project's repository has t
 
 ## 5 October 2026
 
+**Clearer ways in.** Home now says who I am above the headline and offers three ways in: a
+[3-minute tour](../tour.md) for hiring managers and recruiters, the governance standard and projects for learners, and
+the blog and Ask for everyone else. My background moved up, directly under those choices. The top menu is down to five
+tabs (Start here, Projects, Governance, Learn, About); Blog, Classes and Technologies sit under Learn, and these
+release notes moved to the footer. Every page kept its address. Each project write-up now opens with an
+*At a glance* box: problem, approach, measured result, stack and links. The governance standard is now titled
+"How I govern AI workflows **for** a small investment firm", since it's a standard, not a description of an employer.
+
 **Building an AI team, and posts by audience.** A new post, [Building a modern AI team](../blog/posts/building-an-ai-team.md),
 covers the roles, who's accountable for what, how to interview with structured questions and work samples, and the
 pitfalls. Every post now says who it's for (executives, hiring managers, engineers and more) under its title, and the

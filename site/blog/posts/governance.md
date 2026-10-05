@@ -8,7 +8,7 @@ audience: [Executives and boards, "Risk, compliance and legal", CTOs and heads o
 pin: true
 ---
 
-# How I govern AI workflows at a small investment firm
+# How I govern AI workflows for a small investment firm
 
 A small fund doesn't need an AI ethics committee and a 60-page policy. It needs about thirty
 concrete controls, written as code and config, that make every AI workflow cheap to audit,
