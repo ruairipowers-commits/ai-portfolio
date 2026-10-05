@@ -362,18 +362,28 @@ _log = _logging.getLogger("mkdocs.plugins.portfolio")
 _LIST = re.compile(r"^(\s*)([-*]|\d+\.)\s")
 
 
+def _in_list_before(lines: list[str], j: int) -> bool:
+    """Is line j an indented continuation of a list item (walking back over indented, non-blank lines)?"""
+    while j >= 0 and lines[j].strip() and lines[j].startswith(" ") and not _LIST.match(lines[j]):
+        j -= 1
+    return j >= 0 and bool(_LIST.match(lines[j]))
+
+
 def _lint_lists(markdown: str, src: str) -> None:
     """Python-Markdown needs a blank line before a list and 4 spaces to nest one. Without them a list renders as one
     paragraph with literal dashes. Warn (the site builds with --strict, so a warning fails the build)."""
-    lines, code = markdown.split("\n"), False
+    lines, code, in_list = markdown.split("\n"), False, False
     for i, line in enumerate(lines):
         if line.strip().startswith("```"):
             code = not code
         m = _LIST.match(line)
+        prev = lines[i - 1] if i else ""
+        # an indented line straight after a list item continues that item (lazy continuation), so the list goes on
+        in_list = bool(m) or (in_list and prev.strip() != "" and line.startswith(" "))
         if code or not m or i == 0:
             continue
-        prev = lines[i - 1]
-        if not m.group(1) and prev.strip() and not _LIST.match(prev) and not prev.startswith(("    ", "|", "#", "!!!", "<", "---")):
+        cont = prev.startswith(" ") and prev.strip() and i > 1 and (_LIST.match(prev) or _in_list_before(lines, i - 1))
+        if not m.group(1) and prev.strip() and not cont and not _LIST.match(prev) and not prev.startswith(("    ", "|", "#", "!!!", "<", "---")):
             _log.warning(f"{src}:{i + 1}: list needs a blank line before it (it would render as run-on text)")
         elif m.group(1) and len(m.group(1)) in (2, 3):
             _log.warning(f"{src}:{i + 1}: nested list item needs a 4-space indent")

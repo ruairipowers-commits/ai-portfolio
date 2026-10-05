@@ -1,6 +1,6 @@
 warehouse/
 output/
-drafts/
+/drafts/
 __pycache__/
 *.egg-info/
 .env
