@@ -70,3 +70,5 @@ card:   # the row for this project on the home page (or the Personal projects pa
   problem: "Analysts re-read filings to answer questions"
   pattern: "RAG"
   stack: "FastAPI, hybrid search (FTS5 + sqlite-vec), entitlements"
+  result: "21 of 21 golden questions right, including every refusal"      # headline measured result (home-page gallery)
+  result_basis: "answer, refusal and citation accuracy 1.00; p95 13 ms offline"

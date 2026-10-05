@@ -63,3 +63,5 @@ card:   # the row for this project on the home page (or the Personal projects pa
   problem: "Analysts spend days profiling vendor samples"
   pattern: "Workflow"
   stack: "dbt, DuckDB, Streamlit, Bedrock"
+  result: "Rules caught the vendor the score ranked 2nd: a PII and licence breach"      # headline measured result (home-page gallery)
+  result_basis: "5 synthetic vendors; a prompt injection in a questionnaire was escalated, not scored"

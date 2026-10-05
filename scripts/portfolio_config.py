@@ -105,14 +105,18 @@ def tiers(c: dict | None = None) -> dict:
         out[tier].append({"slug": slug, "name": card.get("name", spec.get("title", slug)), "problem": card.get("problem", ""),
                           "pattern": card.get("pattern", spec.get("pattern", "")), "stack": card.get("stack", ""),
                           "post": post_path(slug, "personal" if tier == "personal" else "featured"),
-                          "demo": (ROOT / "projects" / slug / "Dockerfile.space").exists(), "external": False})
+                          "demo": (ROOT / "projects" / slug / "Dockerfile.space").exists(), "external": False,
+                          "result": card.get("result", ""), "result_basis": card.get("result_basis", ""),
+                          "source": source_url(slug, c)})
     for p in personal_cfg:
         if isinstance(p, dict):
             out["personal"].append({"slug": p.get("slug", ""), "name": p["title"], "problem": p.get("summary", ""),
                                     "pattern": p.get("pattern", ""), "stack": p.get("stack", ""), "url": p.get("url", ""),
                                     "post": p.get("post") or (post_path(p["slug"], "personal") if p.get("slug") else None),
                                     "try_url": p.get("try_url", ""), "try_label": p.get("try_label", "Try it"),
-                                    "demo": False, "external": True})
+                                    "demo": False, "external": True,
+                                    "result": p.get("result", ""), "result_basis": p.get("result_basis", ""),
+                                    "source": p.get("url", "")})
     return out
 
 

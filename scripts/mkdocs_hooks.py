@@ -1,5 +1,5 @@
 """MkDocs hook: substitute portfolio placeholders ({{SITE_URL}}, {{GITHUB_OWNER}}, {{HF_OWNER}}), build the
-project tables from portfolio.yaml (<!-- projects:featured -->, <!-- projects:platform -->, <!-- projects:personal -->),
+project tables and the home-page gallery (<!-- projects:gallery -->) from portfolio.yaml (<!-- projects:featured -->, <!-- projects:platform -->, <!-- projects:personal -->),
 build the technology index (<!-- tech:index -->) from site/tech/*.md front matter, and link every technology named
 in a post's **Stack:** line or a project table's stack column to its page under site/tech/.
 
@@ -145,6 +145,43 @@ def _table(tier: str, page_uri: str) -> str:
     return "\n".join(out)
 
 
+# ---------------------------------------------------------------- home-page gallery: every project, its measured result, links
+_KIND = {"featured": "Industry project", "platform": "Platform", "personal": "Personal project"}
+
+
+def _post_url(post: str) -> str:
+    """'blog/posts/x.md' -> 'blog/x/' (posts use post_url_format "{slug}")."""
+    folder, _, name = post.partition("/posts/")
+    return f"{folder}/{name[:-3]}/"
+
+
+def _gallery(page_url: str) -> str:
+    from html import escape as e
+    up = "../" * page_url.strip("/").count("/") + ("../" if page_url.strip("/") else "")
+    cards = []
+    for tier in ("featured", "platform", "personal"):
+        for r in tiers(_cfg)[tier]:
+            post = up + _post_url(r["post"]) if r.get("post") else ""
+            links = []
+            if r["demo"] and _cfg["demos_url"]:
+                links.append(f'<a class="md-button md-button--primary" href="{e(demo_url(r["slug"], _cfg))}">▶ Live demo</a>')
+            elif r.get("try_url"):
+                links.append(f'<a class="md-button md-button--primary" href="{e(r["try_url"])}">▶ {e(r["try_label"])}</a>')
+            if r.get("source"):
+                links.append(f'<a class="md-button" href="{e(r["source"])}">Code</a>')
+            if post:
+                links.append(f'<a class="gallery__more" href="{e(post)}">Write-up →</a>')
+            title = f'<a href="{e(post)}">{e(r["name"])}</a>' if post else e(r["name"])
+            cards.append(
+                f'<article class="gallery__card"><div class="gallery__kind">{_KIND[tier]}'
+                + (f' · {e(r["pattern"])}' if r["pattern"] and r["pattern"] != _KIND[tier] else "") + '</div>'
+                f'<h3>{title}</h3><p class="gallery__problem">{e(r["problem"])}</p>'
+                + (f'<p class="gallery__result">{e(r["result"])}</p>' if r.get("result") else "")
+                + (f'<p class="gallery__basis">{e(r["result_basis"])}</p>' if r.get("result_basis") else "")
+                + f'<div class="gallery__links">{"".join(links)}</div></article>')
+    return '<div class="gallery">' + "".join(cards) + "</div>"
+
+
 # ---------------------------------------------------------------- all posts, filterable (blog index)
 import html as _html  # noqa: E402
 
@@ -286,6 +323,8 @@ def on_page_markdown(markdown, page, config, files):
         tag = f"<!-- projects:{tier} -->"
         if tag in markdown:
             markdown = markdown.replace(tag, _table(tier, page.file.src_uri))
+    if "<!-- projects:gallery -->" in markdown:
+        markdown = markdown.replace("<!-- projects:gallery -->", _gallery(page.url))
     if "<!-- build:stats -->" in markdown:
         markdown = markdown.replace("<!-- build:stats -->", _build_stats())
     if "<!-- evidence -->" in markdown:

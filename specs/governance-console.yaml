@@ -64,3 +64,5 @@ card:   # the row for this project on the home page (or the Personal projects pa
   problem: "Nobody can say what AI runs, who uses it, what it costs, or how to stop it"
   pattern: "Platform"
   stack: "FastAPI, Chart.js, Postgres, kill switch, escalation"
+  result: "A switched-off workflow refuses its next run within 15 s"      # headline measured result (home-page gallery)
+  result_basis: "90 days of history across every workflow in 20–90 ms per page (~7,000 events)"

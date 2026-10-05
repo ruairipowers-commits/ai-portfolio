@@ -62,11 +62,15 @@ personal_projects:
     post: classes/posts/loan-default-capstone.md
     try_url: https://colab.research.google.com/github/{{GITHUB_OWNER}}/ai-portfolio/blob/main/coursework/loan-default-prediction/loan_default_prediction.ipynb
     try_label: Open in Colab (read-only)
+    result: "Defaults caught: 61% → 81%"
+    result_basis: "logistic-regression baseline → tuned, explainable decision tree; 1,192 held-out loans"
   - title: Private AI workbench (EVO-X1)
     summary: Local models, notebooks and creative tools on a mini PC, with a clear line between what stays home and what reaches the cloud
     pattern: Self-hosted local models + MCP tools
     stack: Ollama, Docker, Jupyter, PostgreSQL, MCP, Tailscale
     post: personal/posts/private-local-ai.md
+    result: "Fully local mode: nothing leaves the house"
+    result_basis: "and a written line for exactly what the hybrid mode sends to the cloud"
 #  - eod-heartbeat                       # a project from the list above
 #  - title: Kitchen inventory bot         # or one that lives elsewhere
 #    summary: Telegram bot that tracks what's in the freezer
