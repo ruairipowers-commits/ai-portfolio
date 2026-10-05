@@ -1,7 +1,22 @@
 # Status — open items
 
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
-(or delete them) as they're done. Last updated 4 October 2026.
+(or delete them) as they're done. Last updated 5 October 2026.
+
+## 0a. Editorial agents + subscriptions (built 5 October 2026)
+
+Pushed in `08e7707`, `6696723`, `86b9553`, `234a024`; CI green. The weekly scheduled task "Weekly blog post draft"
+runs Thursdays 05:55 ET in the cloud and follows `.claude/skills/weekly-post`; its prompt holds the queue URL (never
+commit it). A test run was fired on 5 October.
+
+- [ ] **Demo host `.env`:** `EDITORIAL_LINK_SECRET` (`openssl rand -hex 32`), `EDITORIAL_EMAIL`,
+      `EDITORIAL_PUBLIC_URL`, `SUBSCRIBE_SECRET`; optional `REDDIT_CLIENT_ID`/`REDDIT_CLIENT_SECRET`,
+      `EDITORIAL_CLASSIFIER_MODEL=local-gemma`. Then `git pull && ./update.sh`.
+- [ ] **GitHub:** labels `draft-post` and `needs-work`; the SMTP secrets for `draft-post.yml`.
+- [ ] **First live scout run:** check the queue page and the Monday email, then update the post's measured table
+      with live numbers (it only quotes the offline run).
+- [ ] Check the test run of the weekly task: either a `draft-post` PR "(test run)" or a clean stop because the
+      queue wasn't reachable yet. Close the test PR if it isn't worth keeping.
 
 ## 0. Daily puzzle (new personal project, built 4 October 2026)
 
