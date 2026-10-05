@@ -20,6 +20,12 @@ measured on my own server and on a public loan dataset.
 
 <!-- projects:gallery -->
 
+## Latest posts
+
+<!-- posts:carousel -->
+
+[All posts, with filters →](blog/index.md)
+
 ## What's here
 
 <div class="grid cards" markdown>
@@ -53,7 +59,7 @@ measured on my own server and on a public loan dataset.
 
 </div>
 
-## Where I'm coming from
+## My Background
 
 I've spent 25 years building and running investment technology.
 
