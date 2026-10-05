@@ -173,4 +173,4 @@ Every question, ingest and eval is reported to the portfolio's [governance conso
 
 ## License
 
-MIT. All companies, people, numbers and research are fictional.
+Apache-2.0, by Ruairi Powers, built with Claude: keep the NOTICE file and credit the project if you reuse it (see [NOTICE](NOTICE)). All companies, people, numbers and research are fictional.

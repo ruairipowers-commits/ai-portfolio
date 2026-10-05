@@ -42,7 +42,8 @@ Follow `factory/templates/blog-post.md` exactly — sections are what readers sc
   code path (not only by disabling buttons).
 - Every project has: README (template), `docs/architecture.md`, `docs/governance.md` (maps EVERY
   control ID), `docs/aws-native.md`, `infra/aws/` Terraform starter, `config/settings.yaml`,
-  `config/models.yaml`, `prompts/`, `evals/golden_set.yaml`, tests, CI workflow, LICENSE.
+  `config/models.yaml`, `prompts/`, `evals/golden_set.yaml`, tests, CI workflow, LICENSE (Apache-2.0, copied from
+  the repo root) and NOTICE (the credit line: Ruairi Powers, built with Claude).
 - At least one adversarial golden case (injection/abuse) and one compliance case.
 - Numbers are computed by code/SQL; the LLM explains, drafts, or decides within policy.
 - Use `{{SITE_URL}}` for links back to the site; publish script substitutes it.

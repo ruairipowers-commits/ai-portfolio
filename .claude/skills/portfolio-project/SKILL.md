@@ -44,7 +44,7 @@ post"), skip to the matching step below.
 Mirror the reference layout:
 
 ```
-README.md  LICENSE  pyproject.toml (or package.json)  Makefile  Dockerfile  .env.example  .gitignore
+README.md  LICENSE  NOTICE  pyproject.toml (or package.json)  Makefile  Dockerfile  .env.example  .gitignore
 config/settings.yaml   config/models.yaml        # same keys as reference; add domain keys
 prompts/<name>.v1.md
 src/<package>/  (workflow/agent, guardrails, llm registry adapter, evals, store/audit, cli)

@@ -11,7 +11,7 @@ github_owner: REPLACE-GITHUB-USER
 # Hugging Face user/org that hosts the live demos (Spaces). Env PORTFOLIO_HF_OWNER (CI: repo variable
 # HF_OWNER) wins; if unset, assumed to match the GitHub owner.
 hf_owner: REPLACE-HF-USER
-license: MIT
+license: Apache-2.0      # code; site content is CC BY 4.0 (LICENSE-CONTENT)
 default_domain: investment management (hedge fund / asset manager operations and research)
 
 defaults:

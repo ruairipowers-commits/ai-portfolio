@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: >-
+  If you use or adapt this work, please credit it as: Based on Ruairi Powers' AI Workflow Portfolio,
+  built with Claude (Anthropic) as AI coding assistant. Code is Apache-2.0 (keep the NOTICE file);
+  writing and the governance standard are CC BY 4.0.
+title: "AI Workflow Portfolio: governed AI workflows for investment firms"
+type: software
+authors:
+  - given-names: Ruairi
+    family-names: Powers
+repository-code: "https://github.com/ruairipowers-commits/ai-portfolio"
+license: Apache-2.0
+date-released: "2026-09-30"
+keywords: [ai governance, agents, retrieval-augmented generation, evaluation, investment management, claude]

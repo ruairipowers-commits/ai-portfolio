@@ -2,6 +2,7 @@
 name = "tradeops-exceptions"
 version = "0.1.0"
 description = "Tool-calling agent (LangGraph + MCP) that investigates settlement breaks and waits for human approval"
+license = {text = "Apache-2.0"}
 requires-python = ">=3.11"
 dependencies = [
   "langgraph>=1.0,<2",

@@ -248,3 +248,5 @@
   margin: .5rem 0 .2rem; }
 .md-typeset .subscribe__role { display: flex; gap: .35rem; align-items: baseline; }
 .md-typeset .subscribe__hint { margin: .3rem 0 0; color: var(--md-default-fg-color--light); }
+
+.site-footer__credit { margin: .2rem 0; }

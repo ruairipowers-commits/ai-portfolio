@@ -111,4 +111,4 @@ docs/              architecture.md · governance.md · aws-native.md
 infra/aws/         Terraform starter (KMS split for the answer key, Fargate sandbox network, scheduler, budget)
 ```
 
-MIT licence. Puzzles, players and data in the demo are synthetic.
+Apache-2.0, by Ruairi Powers, built with Claude: keep the NOTICE file and credit the project if you reuse it (see [NOTICE](NOTICE)). Puzzles, players and data in the demo are synthetic.

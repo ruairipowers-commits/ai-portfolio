@@ -73,3 +73,7 @@ as its own container, and the assistant pulls the model the first time it starts
 ## Architecture
 
 See [docs/architecture.md](docs/architecture.md).
+
+## License
+
+Apache-2.0, by Ruairi Powers, built with Claude: keep the NOTICE file and credit the project if you reuse it (see [NOTICE](NOTICE)).

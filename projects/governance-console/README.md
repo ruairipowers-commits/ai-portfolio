@@ -199,5 +199,5 @@ the portfolio's deploy scripts do this. On Hugging Face, sign in as admin on the
 
 ## License
 
-MIT. All people, events and costs in the simulated history are invented. Chart.js is MIT-licensed
+Apache-2.0, by Ruairi Powers, built with Claude: keep the NOTICE file and credit the project if you reuse it (see [NOTICE](NOTICE)). All people, events and costs in the simulated history are invented. Chart.js is MIT-licensed
 (`src/govconsole/static/vendor/chart.js.LICENSE.md`).

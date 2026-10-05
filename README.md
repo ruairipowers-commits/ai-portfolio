@@ -96,3 +96,15 @@ in it automatically from `portfolio.yaml`, their spec and their `docs/governance
 | trade-ops-exceptions | built — live demo via Spaces |
 | research-qa-rag | built — live demo via Spaces |
 | governance-console | built — governs the four above; live demo via Spaces |
+## License and credit
+
+Copyright 2026 Ruairi Powers. Conceived, specified, directed and reviewed by Ruairi Powers, with Claude (Anthropic)
+as AI coding assistant.
+
+- **Code** (projects, scripts, workflows): [Apache License 2.0](LICENSE). Keep the copyright and the [NOTICE](NOTICE)
+  file with any copy or derivative.
+- **Writing** (`site/`, `governance/`, `factory/`): [CC BY 4.0](LICENSE-CONTENT). Credit the source and link the
+  licence.
+
+Credit it as: *Based on Ruairi Powers' AI Workflow Portfolio (https://github.com/ruairipowers-commits/ai-portfolio),
+built with Claude.* GitHub's **Cite this repository** button reads [CITATION.cff](CITATION.cff).
