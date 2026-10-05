@@ -15,8 +15,11 @@ commit it). A test run was fired on 5 October.
 - [ ] **GitHub:** labels `draft-post` and `needs-work`; the SMTP secrets for `draft-post.yml`.
 - [ ] **First live scout run:** check the queue page and the Monday email, then update the post's measured table
       with live numbers (it only quotes the offline run).
-- [ ] Check the test run of the weekly task: either a `draft-post` PR "(test run)" or a clean stop because the
-      queue wasn't reachable yet. Close the test PR if it isn't worth keeping.
+- [ ] The 5 October test run of the weekly task finished in about 5 minutes without opening a PR, most likely a
+      clean stop because the queue isn't served yet. Re-run it (or wait for Thursday) once the demo host is updated
+      and its queue page loads.
+- [ ] **Resume and LinkedIn:** point them at the 3-minute tour (`<site>/tour/`). Its three projects are
+      `portfolio.yaml` `tour`; the audiences the blog filters by are `portfolio.yaml` `audiences`.
 
 ## 0. Daily puzzle (new personal project, built 4 October 2026)
 
