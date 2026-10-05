@@ -1,0 +1,10 @@
+name: intensifiers
+description: "Words that add emphasis and little else"
+entries:
+  - {text: basically,  category: intensifier, rule: always}
+  - {text: literally,  category: intensifier, rule: always}
+  - {text: actually,   category: intensifier, rule: context}
+  - {text: totally,    category: intensifier, rule: always}
+  - {text: really,     category: intensifier, rule: always, weight: 0.5}
+  - {text: very,       category: intensifier, rule: always, weight: 0.5}
+  - {text: super,      category: intensifier, rule: always}

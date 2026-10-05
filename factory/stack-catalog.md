@@ -50,3 +50,4 @@ and for no two projects to have identical stacks.
 | research-qa-rag | RAG | PDF/HTML parsing (PyMuPDF) | FastAPI | hybrid: SQLite FTS5 + sqlite-vec, RRF | Streamlit + API | Bedrock KB, OpenSearch Serverless |
 | governance-console | platform (no model) | event store (SQLite / Postgres) | FastAPI | — | server-rendered HTML + Chart.js | App Runner, Aurora, AppConfig, Firehose → S3 |
 | daily-puzzle | multi-agent (generator + blind solver) | SQLite / Postgres (SQLAlchemy) | APScheduler in FastAPI | — | FastAPI + HTMX player site, Streamlit operator, sandboxed code runs, WeasyPrint PDFs | EventBridge Scheduler, Lambda, Fargate sandbox, KMS, SES |
+| speaking-coach | workflow (rules first, model for unclear cases + rewrites) | none by default; opt-in SQLite history | plain Python pipeline | — | Streamlit; .docx/.srt/.vtt ingest; reversible pseudonymization; rewrite guard | Lambda, S3 lifecycle, Bedrock, Comprehend PII, DynamoDB TTL |

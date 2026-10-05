@@ -1,0 +1,16 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:04.000
+<v Speaker>[[So]], [[um]], good morning everyone and thank you for coming.
+
+00:00:04.000 --> 00:00:08.000
+<v Speaker>I want to talk about, [[uh]], how small teams ship reliable data.
+
+00:00:09.500 --> 00:00:13.000
+<v Speaker>It's [[kind of]] a story about three mistakes we made.
+
+00:00:13.000 --> 00:00:17.000
+<v Speaker>The first one, [[you know]], was trusting a single nightly job.
+
+00:00:18.500 --> 00:00:22.000
+<v Speaker>[[So]] let me show you what that looked like in practice.

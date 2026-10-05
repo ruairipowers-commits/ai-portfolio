@@ -1,0 +1,10 @@
+name: hedges
+description: "Words that soften a point until it says less"
+entries:
+  - {text: kind of,     category: hedging phrase, rule: context}
+  - {text: sort of,     category: hedging phrase, rule: context}
+  - {text: I guess,     category: hedging phrase, rule: always}
+  - {text: I think maybe, category: hedging phrase, rule: always}
+  - {text: a little bit, category: hedging phrase, rule: always}
+  - {text: probably,    category: hedging phrase, rule: always, weight: 0.5}
+  - {text: just,        category: hedging phrase, rule: context, weight: 0.5}

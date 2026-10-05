@@ -1,0 +1,18 @@
+# Hosted demo image (self-host at <demos>/speaking-coach/, or a Hugging Face Space). Local equivalent:
+#   docker build -f Dockerfile.space -t speaking-coach . && docker run -p 7860:7860 speaking-coach
+# Text only (no audio). Mock model only: no API keys are needed or read. Each visitor gets a private sandbox for
+# their run log and eval output; transcripts are processed in memory and never written. History is off.
+FROM python:3.11-slim
+RUN useradd -m -u 1000 user && install -d -o user -g user /app
+ENV HOME=/home/user PATH=/home/user/.local/bin:$PATH PYTHONUNBUFFERED=1
+WORKDIR /app
+COPY --chown=user . .
+USER user
+RUN pip install --no-cache-dir --user -e ".[ui]"
+# Samples and a baseline run (telemetry off at build time).
+RUN python scripts/generate_sample_data.py && GOVERNANCE_TELEMETRY=off coach all && rm -rf logs output
+ENV PORTFOLIO_DEMO=1
+EXPOSE 7860
+# Under /speaking-coach/ the host sets STREAMLIT_SERVER_BASE_URL_PATH, which Streamlit reads itself.
+CMD ["streamlit", "run", "src/speakingcoach/ui.py", "--server.port=7860", "--server.address=0.0.0.0", \
+     "--server.headless=true", "--server.enableXsrfProtection=false", "--server.enableCORS=false"]
