@@ -14,17 +14,14 @@ ranked, varied AI topics ready; I pick from a weekly email. Each week a writer a
 a separate editor agent reviews it twice, and nothing publishes until I merge it. You can now **subscribe** at the
 end of any post: one email per new post, after you confirm, with one-click unsubscribe.
 
-**Carousels on Home.** The portfolio gallery now scrolls through the projects by itself, with page dots and
-arrows, and a compact **Latest posts** carousel sits under it. Both pause while you hover or use them, and stay
-still for anyone who has reduced motion turned on.
+**Home's side panel.** Projects and the three newest posts now sit in the right-hand panel under the contents, one at a time, scrolling by themselves with page dots (below the intro on phones). Posts and tiles show how many people found each post useful. *Deepening the academic side* moved to [About](../about.md).
 
 **Two governance posts.** [Is our AI behaving?](../blog/posts/questions-for-your-ai-team.md) is a plain-language
 guide for leaders on what to ask their tech team, and what evidence to expect, using a credit model, a customer
-assistant and a feedback-analysis AI. [How I govern the AI on this site](../blog/posts/how-i-govern-this-site.md)
+assistant and a feedback-analysis AI, with a section on personal data, GDPR and regulation. [How I govern the AI on this site](../blog/posts/how-i-govern-this-site.md)
 walks through this site's own governance step by step, with a link to the code, test or run behind each step.
 
-**A portfolio gallery on Home.** Every project now has a card on [Home](../index.md) with its headline
-measured result, how it was measured, and one-click links to the live demo, the code and the write-up.
+**A project gallery.** Every project has a card with its definition and one-click links to the live demo, the code and the write-up.
 
 ## 4 October 2026
 

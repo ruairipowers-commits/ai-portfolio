@@ -45,18 +45,26 @@
         });
       }
     }
-    // the blog list: a count on each card
+    // upvote counts wherever a post is shown: blog-list cards ([data-path] + data-key), each post's header and the
+    // Home tiles ([data-likes-key]). One request per page; a count shows once a post has at least one upvote.
     var cards = document.querySelectorAll(".post-card[data-path]");
-    if (base && cards.length && !document.body.dataset.likesLoaded) {
-      document.body.dataset.likesLoaded = "1";
-      var paths = Array.prototype.map.call(cards, function (c) { return c.dataset.path; });
-      fetch(base + "/api/likes?paths=" + encodeURIComponent(paths.join(","))).then(function (r) { return r.json(); }).then(function (d) {
-        var v = (d && d.likes) || {};
-        cards.forEach(function (c) {
-          var k = c.dataset.key, n = v[k] || 0, el = c.querySelector("[data-card-likes]");
-          if (el && n) { el.textContent = "👍 " + n; el.hidden = false; }
-        });
-      }).catch(function () {});
+    var badges = document.querySelectorAll("[data-likes-key]");
+    if (base && (cards.length || badges.length) && document.body.dataset.likesLoaded !== location.pathname) {
+      document.body.dataset.likesLoaded = location.pathname;
+      var keys = Array.prototype.map.call(cards, function (c) { return c.dataset.key; })
+        .concat(Array.prototype.map.call(badges, function (b) { return b.dataset.likesKey; }));
+      fetch(base + "/api/likes?paths=" + encodeURIComponent(keys.filter(function (k, i) { return keys.indexOf(k) === i; }).join(",")))
+        .then(function (r) { return r.json(); }).then(function (d) {
+          var v = (d && d.likes) || {};
+          cards.forEach(function (c) {
+            var n = v[c.dataset.key] || 0, el = c.querySelector("[data-card-likes]");
+            if (el && n) { el.textContent = "👍 " + n; el.hidden = false; }
+          });
+          badges.forEach(function (b) {
+            var n = v[b.dataset.likesKey] || 0;
+            if (n) { b.textContent = "👍 " + n; b.title = n + (n === 1 ? " person" : " people") + " found this useful"; b.hidden = false; }
+          });
+        }).catch(function () {});
     }
   }
   if (window.document$ && window.document$.subscribe) window.document$.subscribe(setup);

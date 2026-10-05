@@ -155,7 +155,7 @@ def _post_url(post: str) -> str:
     return f"{folder}/{name[:-3]}/"
 
 
-def _gallery(page_url: str) -> str:
+def _gallery(page_url: str, compact: bool = False) -> str:
     from html import escape as e
     up = "../" * page_url.strip("/").count("/") + ("../" if page_url.strip("/") else "")
     cards = []
@@ -171,16 +171,19 @@ def _gallery(page_url: str) -> str:
                 links.append(f'<a class="md-button" href="{e(r["source"])}">Code</a>')
             if post:
                 links.append(f'<a class="gallery__more" href="{e(post)}">Write-up →</a>')
+                if compact:
+                    links.append(f'<span class="post-likes" data-likes-key="{e(_post_url(r["post"]))}" hidden></span>')
             title = f'<a href="{e(post)}">{e(r["name"])}</a>' if post else e(r["name"])
             cards.append(
                 f'<article class="gallery__card"><div class="gallery__kind">{_KIND[tier]}'
                 + (f' · {e(r["pattern"])}' if r["pattern"] and r["pattern"] != _KIND[tier] else "") + '</div>'
                 f'<h3>{title}</h3><p class="gallery__problem">{e(r["problem"])}</p>'
-                + (f'<p class="gallery__result">{e(r["result"])}</p>' if r.get("result") else "")
-                + (f'<p class="gallery__basis">{e(r["result_basis"])}</p>' if r.get("result_basis") else "")
+                + (f'<p class="gallery__result">{e(r["result"])}</p>' if r.get("result") and not compact else "")
+                + (f'<p class="gallery__basis">{e(r["result_basis"])}</p>' if r.get("result_basis") and not compact else "")
                 + f'<div class="gallery__links">{"".join(links)}</div></article>')
-    return ('<div class="carousel gallery" data-carousel data-interval="7000" aria-roledescription="carousel" '
-            'aria-label="Portfolio gallery"><div class="carousel__track">' + "".join(cards) + "</div></div>")
+    return (f'<div class="carousel gallery{" gallery--compact" if compact else ""}" data-carousel data-interval="7000" '
+            'aria-roledescription="carousel" aria-label="Projects"><div class="carousel__track">' + "".join(cards)
+            + "</div></div>")
 
 
 def _posts_carousel(page_url: str, limit: int = 8) -> str:
@@ -195,9 +198,21 @@ def _posts_carousel(page_url: str, limit: int = 8) -> str:
             f'<article class="post-slide"><p class="post-slide__meta">{e(p["section"])} · '
             f'<time datetime="{p["date"]}">{d.strftime("%-d %b %Y") if d else ""}</time></p>'
             f'<h3 class="post-slide__title"><a href="{up}{p["url"]}">{e(p["title"])}</a></h3>'
-            f'<p class="post-slide__intro">{e(p["excerpt"])}</p></article>')
+            f'<p class="post-slide__intro">{e(p["excerpt"])}</p>'
+            f'<span class="post-likes" data-likes-key="{e(p["url"])}" hidden></span></article>')
     return ('<div class="carousel posts-carousel" data-carousel data-interval="9000" aria-roledescription="carousel" '
             'aria-label="Latest posts"><div class="carousel__track">' + "".join(items) + "</div></div>")
+
+
+def _home_side(page_url: str) -> str:
+    """Home's side panel: one project at a time and the three newest posts. Rendered inline (below the intro on
+    phones); site/assets/home-side.js moves it under the table of contents on wide screens."""
+    up = "../" * page_url.strip("/").count("/") + ("../" if page_url.strip("/") else "")
+    auto = lambda html: html.replace("data-carousel ", "data-carousel data-autoheight ", 1)   # noqa: E731
+    return ('<aside class="home-side" data-home-side aria-label="Projects and latest posts">'
+            '<p class="home-side__title">Projects</p>' + auto(_gallery(page_url, compact=True))
+            + '<p class="home-side__title">Latest posts</p>' + auto(_posts_carousel(page_url, limit=3))
+            + f'<p class="home-side__all"><a href="{up}blog/">All posts →</a></p></aside>')
 
 
 # ---------------------------------------------------------------- all posts, filterable (blog index)
@@ -304,13 +319,12 @@ SUBSCRIBE_BOX = ('\n\n<div class="subscribe" data-subscribe><p class="subscribe_
 
 
 def _post_topics(markdown: str, page) -> str:
-    """Under a post's title: its topics, each linking to the blog page filtered to that topic."""
+    """Under a post's title: its topics (each linking to the blog filtered to it) and its upvote count."""
     from urllib.parse import quote
     topics = page.meta.get("categories") or []
-    if not topics:
-        return markdown
     links = " ".join(f'<a class="post-topic" href="../../blog/?topic={quote(t)}">{_html.escape(t)}</a>' for t in topics)
-    line = f'<p class="post-card__topics post-topics">{links}</p>'
+    likes = f'<span class="post-likes" data-likes-key="{_html.escape(page.url)}" hidden></span>'
+    line = f'<p class="post-card__topics post-topics">{links} {likes}</p>'
     return re.sub(r"(?m)^(# .+)$", lambda m: m.group(1) + "\n\n" + line, markdown, count=1)
 
 
@@ -377,6 +391,8 @@ def on_page_markdown(markdown, page, config, files):
             markdown = markdown.replace(tag, _table(tier, page.file.src_uri))
     if "<!-- subscribe -->" in markdown:
         markdown = markdown.replace("<!-- subscribe -->", SUBSCRIBE_BOX)
+    if "<!-- home:side -->" in markdown:
+        markdown = markdown.replace("<!-- home:side -->", _home_side(page.url))
     if "<!-- posts:carousel -->" in markdown:
         markdown = markdown.replace("<!-- posts:carousel -->", _posts_carousel(page.url))
     if "<!-- projects:gallery -->" in markdown:

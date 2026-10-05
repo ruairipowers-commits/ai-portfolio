@@ -15,6 +15,19 @@ Ruairi Powers — technical product and data engineering leader in financial ser
 
 Contact: [LinkedIn](https://www.linkedin.com/in/ruairi-powers) · [Resume (PDF)](assets/Ruairi-Powers-Resume.pdf) · [GitHub](https://github.com/{{GITHUB_OWNER}})
 
+## Deepening the academic side
+
+Alongside the practical work, I took two MIT Professional Education courses in 2026 to ground it.
+
+- **[Applied AI and Data Science](classes/posts/applied-ai-data-science.md)** taught how the models work:
+  statistics, regression and classification, trees and forests, deep learning, recommenders and generative AI. My
+  capstone was an explainable [loan-default model](classes/posts/loan-default-capstone.md) that you can run in Colab.
+
+- **[Applied Agentic AI for Organizational Transformation](classes/posts/applied-agentic-ai.md)** taught how to bring
+  agents into an organisation and scale them responsibly: frameworks, governance plans and staged rollout.
+
+The [Classes](classes/index.md) page shows how the two fit together.
+
 ## How I built this site with AI
 
 I built this whole site, and every project on it, by working with AI: Claude Code as an agentic engineering partner,

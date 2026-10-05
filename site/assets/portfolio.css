@@ -175,3 +175,31 @@
 .md-typeset .subscribe__form .md-button { margin: 0; padding: .4rem 1rem; font-size: .74rem; }
 .md-typeset .subscribe__msg { margin: .4rem 0 0; font-size: .74rem; color: var(--md-default-fg-color--light); }
 .md-typeset .subscribe__msg:empty { display: none; }
+
+/* Home side panel (projects + latest posts): inline below the intro on narrow screens, in the right-hand panel under
+   the table of contents on wide ones (site/assets/home-side.js). One tile at a time. */
+.md-typeset .home-side, .home-side { margin: 0 0 1.2rem; }
+.home-side__title { margin: .9rem 0 .2rem; font-size: .64rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--md-default-fg-color--light); }
+.home-side .carousel { margin: .2rem 0 .4rem; }
+.home-side .carousel__track > * { flex-basis: 100% !important; }
+.home-side .gallery--compact .gallery__card { padding: .6rem .7rem; }
+.home-side .gallery--compact .gallery__kind { font-size: .55rem; }
+.home-side .gallery--compact h3 { font-size: .74rem; margin: .15rem 0 .25rem; }
+.home-side .gallery--compact .gallery__problem { font-size: .66rem; margin-bottom: .2rem; }
+.home-side .gallery--compact .gallery__links { padding-top: .45rem; gap: .3rem; }
+.home-side .gallery--compact .gallery__links .md-button { padding: .15rem .55rem; font-size: .62rem; }
+.home-side .gallery--compact .gallery__more { font-size: .64rem; margin-left: 0; }
+.home-side .post-slide { padding: .5rem .65rem; }
+.home-side .post-slide__title { font-size: .7rem; }
+.home-side .post-slide__intro { font-size: .62rem; }
+.home-side__all { margin: .2rem 0 0; font-size: .66rem; }
+.home-side--panel { padding: 0 .6rem 0 .4rem; }
+.home-side--panel .home-side__title { margin-top: 1.1rem; }
+.home-side .carousel__track { align-items: flex-start; transition: height .25s; }   /* each tile its own height */
+.home-side--panel .gallery__card:hover { box-shadow: none; }
+.home-side--panel .carousel__dot { width: .4rem; height: .4rem; }
+.home-side--panel .carousel__dot[aria-current="true"] { width: .9rem; }
+.home-side--panel .post-slide__intro { -webkit-line-clamp: 3; }
+.post-likes { font-size: .64rem; color: var(--md-default-fg-color--light); white-space: nowrap; }
+.post-likes[hidden] { display: none; }
