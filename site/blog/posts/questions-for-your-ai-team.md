@@ -2,8 +2,8 @@
 date: 2026-10-05
 slug: questions-for-your-ai-team
 short: "Questions to ask your AI team"
-categories: [AI governance, Evaluation, Human in the loop, Machine learning]
-tags: [ai governance, model risk, model monitoring, drift, retraining, genai, executive guide, sr 11-7]
+categories: [AI governance, Evaluation, Human in the loop, Machine learning, Security]
+tags: [ai governance, model risk, model monitoring, drift, retraining, genai, executive guide, sr 11-7, gdpr, pii, eu ai act, privacy]
 ---
 
 # Is our AI behaving? A leader's guide to questioning your tech team
@@ -193,7 +193,53 @@ steer a roadmap.
 - **Who decided?** The AI should inform a product decision, not make it. Ask for the decision record: what was
   decided, by whom, and what evidence they looked at.
 
-## Step 6: Is the team managing AI use properly?
+## Step 6: Personal data, privacy and regulation
+
+AI systems are hungry for data, and much of it is about people: applicants, customers, employees. That's where the
+legal exposure sits, and it's where a leader most needs evidence rather than reassurance. I'm not a lawyer, and the
+rules differ by country and change often, so treat this as the questions to ask, then check the answers with your
+legal and compliance team.
+
+**Start with one question per system: "What personal data goes in, and where does it go?"** That covers the data
+the model was trained on, the data it sees each time it runs, what's logged, and anything sent to a vendor.
+
+| Question | Evidence to ask for | Red flag |
+|---|---|---|
+| What personal data does each AI system use, and why does it need it? | A data map per system: fields used, purpose, where it's stored, who can see it | "It uses the customer record" (all of it) |
+| What's our legal basis for using it this way? Under GDPR, every use of personal data needs one | The documented basis per purpose, signed off by privacy or legal | "Customers agreed to our terms" |
+| Did we assess the risk before launch? GDPR requires a data protection impact assessment (DPIA) for high-risk processing, which automated credit decisions are | The DPIA, its date and who approved it | No DPIA, or one written after go-live |
+| Does any decision about a person rest on the model alone? GDPR gives people the right not to be subject to solely automated decisions with legal or similarly significant effects, and to a human review | Where a human reviews, and how a customer asks for one | "The model decides; staff just click approve" |
+| Can we honour access and deletion requests? | The process, and how a request reaches training data, logs and the vendor | "We can't remove someone from the model" with no plan (retraining without them is a plan) |
+| Where does the data travel? | Vendors and regions; the data processing agreement; the transfer safeguards if data leaves the EU or UK | Nobody knows which region the AI vendor uses |
+| Does the vendor keep or train on our data? | The contract clause, and the setting switched on | "We use the enterprise version", with nothing in writing |
+| How long do we keep prompts, transcripts and logs? | A retention period per log, applied automatically | Logs kept forever "in case" |
+
+**And the rules that apply to the use, not just the data.** Which ones depend on your industry and your markets.
+Some examples:
+
+- **Lending:** in the US, fair lending law requires the principal reasons for a decline, and fairness testing across
+  protected groups. Credit reporting rules apply to the data used.
+- **The EU AI Act** treats AI used to assess people's creditworthiness as **high-risk**, with obligations on risk
+  management, data quality, documentation, human oversight and logging. It also requires telling people when
+  they're talking to an AI. Its obligations are phasing in, so ask your counsel which already apply to you.
+- **Financial services generally:** books-and-records rules may cover AI outputs and customer conversations, and
+  regulators expect model risk management for models that drive decisions.
+- **US state privacy laws** (California's among them) add notice, opt-out and access rights, and some states now
+  regulate automated decision-making specifically.
+
+**Applied to the three examples:**
+
+- **The credit model** carries the most: personal financial data, decisions with legal effect, explanation rights,
+  fairness, and in the EU, high-risk status. Ask for the DPIA, the human-review step and the adverse-action
+  explanations.
+- **The customer assistant** collects whatever customers type, including account numbers and health or family
+  details they volunteer. Ask what's masked before the vendor sees it, how long transcripts are kept, and whether
+  customers are told it's an AI.
+- **The feedback analysis** looks harmless, but reviews and tickets are full of names, emails and complaints about
+  identifiable staff. Ask whether personal details are stripped before the AI reads them, and whether the original
+  purpose of collecting that feedback covers this use.
+
+## Step 7: Is the team managing AI use properly?
 
 Finally, step back from individual systems. Ask for these policies, and for **evidence each one has been used
 recently**:
@@ -207,13 +253,14 @@ recently**:
 | Monitoring and retraining | What's watched, how often, and the triggers | Last month's report and what was done about it |
 | Vendor management | Due diligence on AI vendors and their data terms | The review of the main AI vendor |
 | Incident response | What happens when AI misbehaves | The last AI incident and its write-up |
+| Privacy and data protection | Personal data in AI: legal basis, impact assessments, rights requests, vendors and transfers | The DPIA for the riskiest system, and the last access or deletion request handled |
 | Records retention | How long logs and decisions are kept | Being able to retrieve a decision from six months ago |
 
 The question that tests all of them at once: **"Walk me through the last time something went wrong."** A team in
 control can tell you what happened, how they noticed, what they did, and what they changed afterwards. A team that
 says "nothing has ever gone wrong" either isn't looking or isn't telling you.
 
-## Step 7: Put it on a rhythm
+## Step 8: Put it on a rhythm
 
 | How often | What you see | Time it takes you |
 |---|---|---|
@@ -231,6 +278,9 @@ says "nothing has ever gone wrong" either isn't looking or isn't telling you.
 - Nobody has read the AI vendor's data terms
 - No off switch, or one that needs an engineer and a deployment
 - No AI incident ever recorded
+- No one can say what personal data an AI system uses, or where it goes
+- A decision about a person made by the model alone, with no human review on request
+- No impact assessment (DPIA) for a high-risk use of personal data
 
 ## Where this comes from
 

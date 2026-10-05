@@ -12,19 +12,7 @@ differently, and the controls I now hold every AI workflow to. The second is so 
 project shows how to use AI responsibly and govern it, with the code and the reasoning. The site keeps changing as I
 learn; the [release notes](release-notes/index.md) record each step.
 
-## Portfolio gallery
-
-Every project, what it measured, and where to try it. The industry projects' numbers come from offline runs on
-synthetic data and golden-set evaluations (the demos need no API keys). The Ask button's and the capstone's are
-measured on my own server and on a public loan dataset.
-
-<!-- projects:gallery -->
-
-## Latest posts
-
-<!-- posts:carousel -->
-
-[All posts, with filters →](blog/index.md)
+<!-- home:side -->
 
 <!-- subscribe -->
 
@@ -111,19 +99,6 @@ the code. How I directed it is as much the point as what it built:
 Directing AI well turned out to need the skills I already had: product management to say what good looks like, data
 engineering to know where it breaks, and QA to insist on proof. That is the most useful thing this project has
 taught me.
-
-## Deepening the academic side
-
-Alongside the practical work, I took two MIT Professional Education courses in 2026 to ground it.
-
-- **[Applied AI and Data Science](classes/posts/applied-ai-data-science.md)** taught how the models work:
-  statistics, regression and classification, trees and forests, deep learning, recommenders and generative AI. My
-  capstone was an explainable [loan-default model](classes/posts/loan-default-capstone.md) that you can run in Colab.
-
-- **[Applied Agentic AI for Organizational Transformation](classes/posts/applied-agentic-ai.md)** taught how to bring
-  agents into an organisation and scale them responsibly: frameworks, governance plans and staged rollout.
-
-The [Classes](classes/index.md) page shows how the two fit together.
 
 ---
 

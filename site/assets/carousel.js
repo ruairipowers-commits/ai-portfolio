@@ -1,6 +1,6 @@
 // Carousels on the home page (the portfolio gallery and the latest posts).
 // Markup (rendered by scripts/mkdocs_hooks.py):
-//   <div class="carousel" data-carousel data-interval="7000" aria-roledescription="carousel" aria-label="...">
+//   <div class="carousel" data-carousel data-interval="7000" [data-autoheight] aria-roledescription="carousel" aria-label="...">
 //     <div class="carousel__track"> ...items... </div>
 //   </div>
 // Without JavaScript the track is a horizontally scrollable row with scroll-snap. This adds page dots, previous /
@@ -26,12 +26,28 @@
 
     var paused = false, hovering = false, focused = false, timer = null;
 
-    function pages() { return Math.max(1, Math.round(track.scrollWidth / track.clientWidth)); }
-    function current() { return Math.min(pages() - 1, Math.round(track.scrollLeft / track.clientWidth)); }
+    // pages by tile position, not scroll width: the gaps between tiles must not add a phantom page
+    function items() { return track.children; }
+    function perPage() {
+      var first = items()[0];
+      if (!first) return 1;
+      var gap = parseFloat(getComputedStyle(track).columnGap) || 0;
+      return Math.max(1, Math.floor((track.clientWidth + gap + 1) / (first.offsetWidth + gap)));
+    }
+    function pages() { return Math.max(1, Math.ceil(items().length / perPage())); }
+    function current() {
+      var per = perPage(), left = track.scrollLeft, best = 0, bestD = Infinity;
+      for (var p = 0; p < pages(); p++) {
+        var it = items()[p * per], d = it ? Math.abs(it.offsetLeft - items()[0].offsetLeft - left) : Infinity;
+        if (d < bestD) { bestD = d; best = p; }
+      }
+      return best;
+    }
     function go(i) {
       var n = pages();
       i = (i + n) % n;
-      track.scrollTo({ left: i * track.clientWidth, behavior: reduced ? "auto" : "smooth" });
+      var it = items()[i * perPage()];
+      track.scrollTo({ left: it ? it.offsetLeft - items()[0].offsetLeft : 0, behavior: reduced ? "auto" : "smooth" });
     }
     function drawDots() {
       var n = pages();
@@ -49,6 +65,10 @@
         d.setAttribute("aria-current", i === c ? "true" : "false");
       });
       controls.hidden = n < 2;
+      if (root.hasAttribute("data-autoheight")) {          // fit the tile on show: no gap under a short one
+        var it = items()[c * perPage()];
+        if (it) track.style.height = it.offsetHeight + 4 + "px";
+      }
     }
     function tick() { if (!paused && !hovering && !focused && !document.hidden) go(current() + 1); }
     function startAuto() { if (!reduced && !timer && interval > 0) timer = setInterval(tick, interval); }

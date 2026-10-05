@@ -48,6 +48,7 @@ extra_javascript:
   - assets/blog-filter.js
   - assets/suggest.js
   - assets/likes.js
+  - assets/home-side.js
   - assets/carousel.js
   - assets/subscribe.js
 
