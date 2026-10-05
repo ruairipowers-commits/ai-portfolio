@@ -90,3 +90,7 @@ is the honest number for the rules, and the mock is not a real model. Live numbe
 ## Architecture
 
 See [docs/architecture.md](docs/architecture.md) and [docs/aws-native.md](docs/aws-native.md).
+
+## License
+
+Apache-2.0, by Ruairi Powers, built with Claude: keep the NOTICE file and credit the project if you reuse it (see [NOTICE](NOTICE)).
