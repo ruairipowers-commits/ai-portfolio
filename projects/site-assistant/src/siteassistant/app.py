@@ -1,19 +1,23 @@
 """FastAPI service: search and chat over the blog, plus the visit/search log behind the daily engagement email.
 
 Public (called from the blog, CORS-limited to the site's origin):
-  GET  /api/search?q=…          ranked passages with snippets and links (logged)
+  GET  /api/search?q=…&via=…    ranked passages with snippets and links; logged as a search unless via=ask (the
+                                pages shown beside an answer are part of that ask, not a separate search)
   POST /api/chat                {question, history, page} → NDJSON stream: sources, text deltas, done (logged)
+  POST /api/rolematch           {role, description, contact?} → NDJSON stream like chat: a cited fit read. The role
+                                text and the read are saved for the owner (role_reads) and listed in the daily email
   POST /api/track               {kind: pageview | site-search, path, title, referrer, q} (sendBeacon; logged)
   POST /api/suggest             {idea, name?, contact?} → a project suggestion (pending until approved; daily email)
   GET  /api/suggestions         published suggestions with votes;  POST /api/suggestions/{id}/vote  one per day
   POST /api/like {path}         thumbs up on a post;  GET /api/likes?paths=a,b  counts
   POST /api/unhelpful {path, note?}  thumbs down, with an optional "what was missing" (never published)
-  POST /api/subscribe {email}   new posts by email: double opt-in (subscribers.py); GET /subscribe/confirm?t=…
+  POST /api/subscribe {email, roles?}  new posts by email, optionally only posts for some roles: double opt-in
+                                (subscribers.py); GET /subscribe/confirm?t=…; GET|POST /subscribe/roles?t=… change roles
   GET|POST /unsubscribe?t=…     one click (RFC 8058), deletes the address
   GET  /widget.js, /widget.css  the Ask button and panel the blog loads
   GET  /                        a standalone "Ask the portfolio" page
 Owner (ASSISTANT_ADMIN_TOKEN, or GOVERNANCE_ADMIN_TOKEN):
-  GET  /stats?token=…           the last 14 days, top searches and questions, digest history
+  GET  /stats?token=…           the last 14 days, top searches and questions, role matches, digest history
   POST /digest/send?token=…     build and email the engagement summary now
   GET  /admin/content           top-rated posts and every suggestion (the governance console's Content tab)
   POST /admin/suggestions/{id}  {status: pending | published | hidden | done, actor}
@@ -100,7 +104,16 @@ class UnhelpfulIn(BaseModel):
 
 class SubscribeIn(BaseModel):
     email: str = Field("", max_length=254)
+    roles: list[str] = Field(default_factory=list, max_length=20)    # empty: every post
     website: str = Field("", max_length=200)          # honeypot: people leave it empty, bots fill it in
+
+
+class RoleIn(BaseModel):
+    role: str = Field(min_length=2, max_length=120)
+    description: str = Field(min_length=40, max_length=8000)
+    contact: str = Field("", max_length=160)          # optional: how Ruairi can reply; only ever emailed to him
+    page: str = Field("", max_length=300)
+    website: str = Field("", max_length=200)          # honeypot
 
 
 class StatusIn(BaseModel):
@@ -229,16 +242,17 @@ def _routes(app: FastAPI) -> None:
                 "enabled": telemetry.status().enabled}
 
     @app.get("/api/search")
-    def api_search(request: Request, q: str = "", page: str = ""):
+    def api_search(request: Request, q: str = "", page: str = "", via: str = "search"):
         q = q.strip()[: SETTINGS["search"]["max_query_chars"]]
         if len(q) < 2:
             return {"query": q, "results": []}
         who = visitor(request)
-        limit("search", who, SETTINGS["limits"]["searches_per_hour"])
+        lookup = via == "ask"          # the pages listed under an answer: the ask is logged, this isn't a search
+        limit("lookup" if lookup else "search", who, SETTINGS["limits"]["searches_per_hour"])
         t0 = time.perf_counter()
-        rows = index.search(S.store, q, SETTINGS["search"]["max_results"])
-        S.store.log("search", who, page_path(page), q, len(rows), "ok" if rows else "no_results",
-                    latency_ms=llm.time_ms(t0))
+        rows = index.search(S.store, q, SETTINGS["search"]["max_results"], site_url(), site_first=not lookup)
+        S.store.log("lookup" if lookup else "search", who, page_path(page), q, len(rows),
+                    "ok" if rows else "no_results", latency_ms=llm.time_ms(t0))
         telemetry.emit("search", actor=f"visitor-{who[:8]}", actor_type="visitor", records_in=S.store.passage_count(),
                        records_out=len(rows), latency_ms=llm.time_ms(t0), status="ok" if rows else "no_results",
                        detail={"query_chars": len(q), "query_sha": telemetry.sha(q)})
@@ -294,6 +308,69 @@ def _routes(app: FastAPI) -> None:
                                    "answer_chars": len("".join(text))})
             yield json.dumps({"type": "done", "model": meta.get("model", ""), "status": status, "ms": ms}) + "\n"
         return StreamingResponse(stream(), media_type="application/x-ndjson")
+
+    @app.post("/api/rolematch")
+    def api_rolematch(body: RoleIn, request: Request):
+        """A hiring manager pastes a role; they get a cited fit read to download, and the owner gets a copy."""
+        who = visitor(request)
+        rm = SETTINGS.get("role_match", {})
+        role, desc = " ".join(body.role.split())[:120], body.description.strip()[: rm.get("max_chars", 8000)]
+        if body.website.strip():                       # a bot: accept quietly, keep nothing
+            raise HTTPException(422, "Please try again.")
+        st = telemetry.status()
+        if not st.enabled:
+            S.store.log("role-match", who, page_path(body.page), role, 0, "blocked")
+            raise HTTPException(503, f"The assistant is switched off by governance: {st.reason or 'no reason given'}.")
+        limit("role-match", who, rm.get("per_hour", 4))
+        if S.store.count_since("role-match", None, 24 * 60) >= rm.get("per_day_total", 60) or \
+                S.store.tokens_today() >= SETTINGS["cost"]["daily_budget_tokens"]:
+            S.store.log("role-match", who, page_path(body.page), role, 0, "budget")
+            raise HTTPException(429, "Role matching has reached its daily allowance. Please try again tomorrow, or "
+                                     "use Ask.")
+        flags = ["injection_suspected"] if llm.INJECTION.search(role + "\n" + desc) else []
+        passages = index.role_context(S.store, role, desc, site_url(), rm.get("top_k", 8))
+        sources = [{"n": i, "title": p["page_title"], "section": p["section"], "url": p["url"]}
+                   for i, p in enumerate(passages, 1)]
+        key = secrets.token_urlsafe(18)       # lets this browser fetch its read again if the visitor navigates away
+        rid = S.store.add_role_read(who, page_path(body.page), role, desc, " ".join(body.contact.split()), key, sources)
+
+        def stream():
+            t0 = time.perf_counter()
+            yield json.dumps({"type": "sources", "id": rid, "key": key, "sources": sources}) + "\n"
+            meta, text = {}, []
+            for piece in llm.role_read(role, desc, passages, SETTINGS):
+                if isinstance(piece, dict):
+                    meta = piece
+                else:
+                    text.append(piece)
+                    yield json.dumps({"type": "delta", "text": piece}) + "\n"
+            ms, status, read = llm.time_ms(t0), meta.get("status", "ok"), "".join(text)
+            tin, tout = meta.get("input_tokens", 0), meta.get("output_tokens", 0)
+            S.store.finish_role_read(rid, read, meta.get("model", ""), status, tin, tout, ms, flags)
+            S.store.log("role-match", who, page_path(body.page), role, len(passages), status, meta.get("model", ""),
+                        tin, tout, ms, flags=flags)
+            telemetry.emit("role_match", actor=f"visitor-{who[:8]}", actor_type="visitor", model=meta.get("model", ""),
+                           input_tokens=tin, output_tokens=tout, latency_ms=ms, records_in=len(passages), records_out=1,
+                           status=status, flags=flags, detail={"role_sha": telemetry.sha(role), "chars": len(desc),
+                                                               "has_contact": bool(body.contact.strip())})
+            if rm.get("notify_owner", True):
+                try:
+                    digest.role_match_alert(S.store, rid, site_url())
+                except Exception as e:  # noqa: BLE001 — the visitor already has their read
+                    print(f"role-match alert failed: {type(e).__name__}")
+            yield json.dumps({"type": "done", "id": rid, "model": meta.get("model", ""), "status": status,
+                              "ms": ms}) + "\n"
+        return StreamingResponse(stream(), media_type="application/x-ndjson")
+
+    @app.get("/api/rolematch/{rid}")
+    def api_rolematch_get(rid: int, key: str = ""):
+        """The visitor's own read again (they left the page mid-answer): needs the key their browser was given."""
+        row = (S.store.query("select role, read, status, access_key, sources from role_reads where id = ?", (rid,))
+               or [None])[0]
+        if not row or not key or not hmac.compare_digest(row["access_key"] or "", key):
+            raise HTTPException(404, "not found")
+        return {"id": rid, "role": row["role"], "read": row["read"] or "", "status": row["status"],
+                "sources": json.loads(row["sources"] or "[]")}
 
     @app.post("/api/suggest", status_code=201)
     def api_suggest(body: SuggestIn, request: Request):
@@ -376,7 +453,7 @@ def _routes(app: FastAPI) -> None:
         S.store.log("subscribe", who)                    # the address is never logged
         if body.website:
             return {"ok": True, "message": "Check your inbox to confirm."}
-        if subscribers.subscribe(S.store, body.email) == "invalid":
+        if subscribers.subscribe(S.store, body.email, body.roles) == "invalid":
             raise HTTPException(422, "That doesn't look like an email address.")
         return {"ok": True, "message": "Check your inbox for a confirmation link. Nothing is sent until you confirm."}
 
@@ -389,10 +466,37 @@ def _routes(app: FastAPI) -> None:
 
     @app.get("/subscribe/confirm", response_class=HTMLResponse)
     def subscribe_confirm(t: str = ""):
-        if subscribers.confirm(S.store, t):
-            return _page("You're subscribed", "You'll get an email when a new post is published, with a one-click "
-                         "unsubscribe link in every message.")
+        roles = subscribers.confirm(S.store, t)
+        if roles is not None:
+            which = "a new post is published" if not roles else "a new post for " + ", ".join(roles) + " is published"
+            return _page("You're subscribed", f"You'll get an email when {which}. Every message has a link to change "
+                         "this and a one-click unsubscribe.")
         return _page("Link not valid", "This confirmation link has expired or was already used.")
+
+    @app.get("/subscribe/roles", response_class=HTMLResponse)
+    def roles_page(t: str = ""):
+        """Change which posts a subscriber gets. The link carries the same signed token as unsubscribe."""
+        from html import escape
+        from urllib.parse import quote
+        cur = subscribers.roles_for(S.store, t)
+        if cur is None:
+            return _page("Link not valid", "This link isn't valid. Use the link in your most recent email.")
+        boxes = "".join(f"<label style='display:block;margin:4px 0'><input type=checkbox name=roles value='{escape(r)}'"
+                        f"{' checked' if r in cur else ''}> {escape(r)}</label>" for r in subscribers.known_roles(S.store))
+        return _page("Which posts would you like?",
+                     f"<form method=post action='{BASE}/subscribe/roles?t={escape(quote(t))}'>"
+                     f"<p>Tick the roles you'd like posts for. Leave them all unticked to get every post.</p>{boxes}"
+                     f"<p><button style='padding:.5rem 1rem'>Save</button></p></form>")
+
+    @app.post("/subscribe/roles", response_class=HTMLResponse)
+    async def roles_save(request: Request, t: str = ""):
+        from urllib.parse import parse_qs
+        form = parse_qs((await request.body()).decode("utf-8", "replace")[:4000])
+        if not subscribers.set_roles(S.store, t, form.get("roles", [])):
+            return _page("Link not valid", "This link isn't valid. Use the link in your most recent email.")
+        chosen = subscribers.roles_for(S.store, t) or []
+        return _page("Saved", "You'll get " + ("every new post." if not chosen else
+                                               "posts for: " + ", ".join(chosen) + "."))
 
     @app.get("/unsubscribe", response_class=HTMLResponse)
     def unsubscribe_page(t: str = ""):

@@ -9,10 +9,38 @@ Pushed in `08e7707`, `6696723`, `86b9553`, `234a024`; CI green. The weekly sched
 runs Thursdays 05:55 ET in the cloud and follows `.claude/skills/weekly-post`; its prompt holds the queue URL (never
 commit it). A test run was fired on 5 October.
 
-- [ ] **Demo host `.env`:** `EDITORIAL_LINK_SECRET` (`openssl rand -hex 32`), `EDITORIAL_EMAIL`,
-      `EDITORIAL_PUBLIC_URL`, `SUBSCRIBE_SECRET`; optional `REDDIT_CLIENT_ID`/`REDDIT_CLIENT_SECRET`,
-      `EDITORIAL_CLASSIFIER_MODEL=local-gemma`. Then `git pull && ./update.sh`.
-- [ ] **GitHub:** labels `draft-post` and `needs-work`; the SMTP secrets for `draft-post.yml`.
+- [ ] **Demo host `.env`** (Ruairi, over SSH on the EVO-X1; replace the two `<…>` values):
+
+      ```bash
+      cd ~/ai-portfolio/deploy/selfhost && cp .env .env.bak.$(date +%F)
+      setenv() { sed -i "/^$1=/d" .env; printf '%s=%s\n' "$1" "$2" >> .env; }
+      for k in EDITORIAL_LINK_SECRET SUBSCRIBE_SECRET; do grep -q "^$k=." .env || setenv $k "$(openssl rand -hex 32)"; done
+      setenv EDITORIAL_EMAIL '<your email>'
+      setenv EDITORIAL_PUBLIC_URL 'https://demos.<your-domain>/editorial-agents'
+      setenv ASSISTANT_PUBLIC_URL 'https://demos.<your-domain>/site-assistant'
+      setenv EDITORIAL_CLASSIFIER_MODEL local-gemma        # optional: classify with the local model
+      chmod 600 .env && grep -E '^(EDITORIAL|SUBSCRIBE|ASSISTANT_PUBLIC)' .env | sed 's/=.\{6\}.*/=<set>/'
+      git -C ~/ai-portfolio pull && ./update.sh --force
+      curl -s https://demos.<your-domain>/editorial-agents/api/health; echo
+      curl -s https://demos.<your-domain>/editorial-agents/queue.md | head -20
+      ```
+
+      Optional Reddit source: create a "script" app at https://www.reddit.com/prefs/apps, then
+      `setenv REDDIT_CLIENT_ID …; setenv REDDIT_CLIENT_SECRET …` and `./update.sh --force`.
+- [ ] **GitHub** (Ruairi, on the Mac; `brew install gh && gh auth login` once):
+
+      ```bash
+      R=ruairipowers-commits/ai-portfolio
+      gh label create draft-post --color 1d76db --description "AI-drafted post: merge to publish" -R $R
+      gh label create needs-work --color d93f0b --description "Draft failed a check or scored below 4" -R $R
+      gh secret set SMTP_HOST -b smtp.resend.com -R $R
+      gh secret set SMTP_PORT -b 587 -R $R
+      gh secret set SMTP_USER -b resend -R $R
+      gh secret set SMTP_PASSWORD -R $R              # paste the Resend API key at the prompt (not echoed)
+      gh secret set SMTP_FROM -b '<sender on your Resend-verified domain>' -R $R
+      gh secret set ALERT_EMAIL -b '<your email>' -R $R
+      gh label list -R $R | grep -E 'draft-post|needs-work' && gh secret list -R $R
+      ```
 - [ ] **First live scout run:** check the queue page and the Monday email, then update the post's measured table
       with live numbers (it only quotes the offline run).
 - [ ] The 5 October test run of the weekly task finished in about 5 minutes without opening a PR, most likely a

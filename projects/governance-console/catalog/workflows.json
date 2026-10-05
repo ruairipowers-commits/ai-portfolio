@@ -1514,7 +1514,7 @@
     "DATA-03": {
      "status": "implemented",
      "mark": "✅",
-     "how": "Blog subscriptions store only an email address, after double opt-in; unconfirmed addresses are deleted after 7 days, unsubscribing deletes the row, and addresses never appear in logs, links or telemetry (counts only). IP addresses and cookies are never stored. The visitor key is a hash of a daily-rotating salt, IP and browser. Searches, questions and answers are kept as typed because the owner asked to see them. Suggestion-box name and contact are optional, only emailed to the owner, and deleted with the rest of the activity. The console receives only lengths and hashes.",
+     "how": "Blog subscriptions store only an email address, after double opt-in; unconfirmed addresses are deleted after 7 days, unsubscribing deletes the row, and addresses never appear in logs, links or telemetry (counts only). IP addresses and cookies are never stored. The visitor key is a hash of a daily-rotating salt, IP and browser. Searches, questions and answers are kept as typed because the owner asked to see them. Suggestion-box name and contact are optional, only emailed to the owner, and deleted with the rest of the activity. Role matches keep the role text the visitor pasted, the read they got and an optional contact, because the visitor is told so on the form; they're emailed only to the owner, shown on the owner's `/stats` page and deleted after `retention_days`. A visitor can fetch their own read again only with the private key their browser was given. Subscribers can pick roles; only the role names are stored with the address. The console receives only lengths and hashes.",
      "configure": "`privacy.*`, `ASSISTANT_SALT`",
      "options": "Redact emails/phone numbers typed into questions; opt-out banner"
     },
@@ -1542,7 +1542,7 @@
     "SEC-02": {
      "status": "implemented",
      "mark": "✅",
-     "how": "Excerpts are wrapped as delimited data, and the system prompt says to ignore instructions inside them. Questions with injection patterns are flagged (`injection_suspected`) and reported. The model has no tools, so it can only write text. Visitor suggestions placed into the owner's Claude kickoff prompt are fenced and labelled as an idea, not instructions. The golden set includes an injection case.",
+     "how": "Excerpts are wrapped as delimited data, and the system prompt says to ignore instructions inside them. Questions and pasted roles with injection patterns are flagged (`injection_suspected`) and reported; the role text goes to the model inside `<role>` tags, after the excerpts, labelled as data (`prompts/rolematch.md`). The model has no tools, so it can only write text. Visitor suggestions placed into the owner's Claude kickoff prompt are fenced and labelled as an idea, not instructions. The golden set includes an injection case.",
      "configure": "`prompts/answer.md`, `llm.INJECTION`",
      "options": "An LLM classifier (Llama Guard) on questions and answers"
     },
@@ -1577,7 +1577,7 @@
     "COST-01": {
      "status": "implemented",
      "mark": "✅",
-     "how": "Per-visitor limits (searches and questions per hour), a daily cap on questions and a daily token budget. Past them, answering stops and search keeps working.",
+     "how": "Per-visitor limits (searches, questions and role matches per hour), daily caps on questions and role matches, and a daily token budget shared by both. Past them, answering stops and search keeps working.",
      "configure": "`limits.*`, `cost.daily_budget_tokens`",
      "options": "Per-country or ASN limits at Cloudflare"
     },
@@ -1626,14 +1626,14 @@
     "MODEL-04": {
      "status": "implemented",
      "mark": "✅",
-     "how": "The prompt is a file in git (`prompts/answer.md`), so every change is a reviewed commit.",
+     "how": "The prompts are files in git (`prompts/answer.md`, `prompts/rolematch.md`), so every change is a reviewed commit.",
      "configure": "`prompts/`",
      "options": "Log the prompt hash per answer"
     },
     "MODEL-05": {
      "status": "implemented",
      "mark": "✅",
-     "how": "If the model is missing, still downloading or fails mid-answer, the service quotes the best passages instead (status `fallback`). Search doesn't depend on the model.",
+     "how": "If the model is missing, still downloading or fails mid-answer, the service quotes the best passages instead (status `fallback`). A role match falls back to quoting the best evidence for each requirement, or saying the site doesn't show it. Search doesn't depend on the model.",
      "configure": "—",
      "options": "A second, smaller local model"
     },
@@ -1661,7 +1661,7 @@
     "OBS-01": {
      "status": "implemented",
      "mark": "✅",
-     "how": "`activity` holds every page view, search and question, with model, tokens, latency and status. The console gets one event per search and question.",
+     "how": "`activity` holds every page view, search, question and role match, with model, tokens, latency and status; `role_reads` keeps each role match in full. A Search and an Ask are logged as what the visitor clicked: the pages listed under an answer are a `lookup`, never a second search. The console gets one event per search and question.",
      "configure": "`privacy.retention_days`",
      "options": "—"
     },
@@ -1696,7 +1696,7 @@
     "HITL-03": {
      "status": "partial",
      "mark": "🟡",
-     "how": "The daily email lists searches with no results, the questions asked, every question about the owner with its answer, gaps the assistant said are \"on Ruairi's plate to review\", and suggestion-box ideas. These become new posts, projects or golden cases.",
+     "how": "The daily email lists searches with no results, the questions asked, every role match (with any contact left), every question about the owner with its answer, gaps the assistant said are \"on Ruairi's plate to review\", and suggestion-box ideas. These become new posts, projects or golden cases.",
      "configure": "`digest.top_n`",
      "options": "👍/👎 on each answer"
     },

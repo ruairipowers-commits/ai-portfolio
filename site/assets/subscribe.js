@@ -1,4 +1,4 @@
-// "Get new posts by email" boxes (end of every post, and on Home). Posts the address to the site assistant, which
+// "Get new posts by email" boxes (end of every post, and on Home), optionally only for the roles ticked. Posts the address to the site assistant, which
 // sends ONE confirmation email; nothing else is sent until the reader confirms (double opt-in). Every post email has a
 // one-click unsubscribe that deletes the address. Hidden when the assistant isn't configured for this build.
 (function () {
@@ -16,7 +16,8 @@
         if (!email) return;
         btn.disabled = true;
         fetch(base + "/api/subscribe", { method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email, website: form.querySelector("[name=website]").value }) })
+          body: JSON.stringify({ email: email, website: form.querySelector("[name=website]").value,
+            roles: Array.prototype.map.call(form.querySelectorAll("input[name=roles]:checked"), function (c) { return c.value; }) }) })
           .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
           .then(function (x) {
             msg.textContent = x.ok ? x.d.message : (x.d.detail || "Something went wrong — please try again later.");

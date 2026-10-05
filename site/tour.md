@@ -12,6 +12,23 @@ measured before they're trusted, governed in code, and explainable to the people
 **[Resume (PDF)](assets/Ruairi-Powers-Resume.pdf)** · [LinkedIn](https://www.linkedin.com/in/ruairi-powers) ·
 [GitHub](https://github.com/{{GITHUB_OWNER}}) · [About me](about.md)
 
+## Ask the portfolio
+
+I built this assistant for hiring managers. Ask whether I fit your role, or what I've done with agents, data or
+governance, and it answers from everything on this site, my resume and the project code, citing the page behind
+each claim. **Search** lists the pages that match; **Ask** writes an answer. Expand the panel to keep the answers
+beside the page while you click through the sources; your history stays as you move around the site.
+
+Hiring for a specific role? Paste the job description under *Match me to a role* and download a fit read: where the
+evidence matches, what the site doesn't show yet, and what to ask me.
+
+<div data-sa-inline markdown>
+
+The assistant runs on my own server and isn't reachable right now. The search box at the top of the page still
+works, and my [resume](assets/Ruairi-Powers-Resume.pdf) has my contact details.
+
+</div>
+
 ## Three projects
 
 Each one runs offline with one command, has a live demo, and is mapped to the same

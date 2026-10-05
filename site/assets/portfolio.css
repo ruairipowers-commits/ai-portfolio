@@ -240,3 +240,11 @@
 
 /* Footer links (release notes left the top menu) */
 .site-footer a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Subscribe: optional roles (posts' audiences) */
+.md-typeset .subscribe__roles { flex-basis: 100%; font-size: .72rem; }
+.md-typeset .subscribe__roles summary { cursor: pointer; color: var(--md-typeset-a-color); }
+.md-typeset .subscribe__rolelist { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: .15rem .8rem;
+  margin: .5rem 0 .2rem; }
+.md-typeset .subscribe__role { display: flex; gap: .35rem; align-items: baseline; }
+.md-typeset .subscribe__hint { margin: .3rem 0 0; color: var(--md-default-fg-color--light); }

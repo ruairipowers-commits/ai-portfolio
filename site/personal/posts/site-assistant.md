@@ -39,11 +39,23 @@ answer is written prose with numbered citations.*
   even with my name misspelt. The answer has to be balanced: roles and projects with citations, then what the
   blog doesn't show, then a pointer to the About page. It shouldn't oversell me, and the prompt says so.
 
-- **Logging.** Every search, including the blog's built-in search box, every question and every page view.
+- **Search and Ask are separate.** *Search* lists the matching pages, site pages first. *Ask* writes the answer.
+  The panel can be expanded so it sits beside the page: click a citation, read that page, click the next, and the
+  answer stays put. The history follows you around the site for three days (in your browser only), with a *Clear*
+  button. On a phone, following a link closes the panel and a *Back to your answers* button brings it back.
+
+- **Match a role.** The [3-minute tour](../../tour.md) has a box where a hiring manager pastes a job description and
+  gets a *fit read* to download: where the evidence matches, with citations, what the site doesn't show yet, and
+  questions worth asking me. The role and the read are saved and emailed to me, with a contact if they leave one.
+  The form says so before they submit. If the model is down, the read quotes the best evidence for each
+  requirement instead of summarising it.
+
+- **Logging.** Every search, including the blog's built-in search box, every question, role match and page view.
+  Each is logged as what the visitor clicked: the pages listed under an answer aren't counted as a second search.
   Questions are kept as typed so I can see what people want to know. IP addresses and cookies are not stored.
 
 - **A daily email at 7 a.m.** with yesterday's blog views and referrers, top searches, searches that found
-  nothing, questions asked, demo runs from the governance console, Cloudflare traffic, and GitHub views, clones,
+  nothing, questions asked, role matches, demo runs from the governance console, Cloudflare traffic, and GitHub views, clones,
   stars and forks, each against a 7-day average.
 
 ## Governed like the rest

@@ -5,6 +5,8 @@
                   never an IP address; `visitor` is a salted hash that changes every day
   daily_metrics   one value per day, source and metric (blog, searches, demos, Cloudflare, GitHub)
   digests         every engagement email: when, to whom, status
+  role_reads      each role a visitor matched against the site (the role text they pasted, the fit read it got,
+                  an optional contact), kept for the owner like searches and questions
 """
 from __future__ import annotations
 
@@ -47,7 +49,12 @@ create table if not exists suggestion_votes (sid integer not null, visitor text 
   ts text not null, primary key (sid, visitor, day));
 create table if not exists subscribers (
   id integer primary key, email text not null unique, status text not null default 'pending',
-  confirm_hash text, created_at text not null, confirmed_at text
+  confirm_hash text, created_at text not null, confirmed_at text, roles text
+);
+create table if not exists role_reads (
+  id integer primary key, ts text not null, day text not null, visitor text, page text, role text not null,
+  description text not null, contact text, read text, model text, status text, input_tokens integer default 0,
+  output_tokens integer default 0, latency_ms integer default 0, flags text, access_key text, sources text
 );
 create table if not exists announced (path text primary key, ts text not null, recipients integer default 0);
 create table if not exists digests (
@@ -74,6 +81,8 @@ class Store:
             cols = {r[1] for r in c.execute("pragma table_info(activity)")}
             if "answer" not in cols:              # older databases: answers weren't kept before
                 c.execute("alter table activity add column answer text")
+            if "roles" not in {r[1] for r in c.execute("pragma table_info(subscribers)")}:
+                c.execute("alter table subscribers add column roles text")   # JSON list; empty = every post
 
     def _conn(self) -> sqlite3.Connection:
         c = sqlite3.connect(self.path, timeout=30)
@@ -222,6 +231,27 @@ class Store:
         cutoff = (datetime.now(timezone.utc) - timedelta(days=retention_days)).date().isoformat()
         self.execute("delete from activity where day < ?", (cutoff,))
         self.execute("update suggestions set contact = '' where day < ?", (cutoff,))   # keep the idea, drop contact
+        self.execute("delete from role_reads where day < ?", (cutoff,))
+
+    # -------------------------------------------------------------- role matches
+    def add_role_read(self, visitor: str, page: str, role: str, description: str, contact: str, access_key: str,
+                      sources: list[dict]) -> int:
+        ts = now_iso()
+        with self._lock, self._conn() as c:
+            cur = c.execute("insert into role_reads (ts, day, visitor, page, role, description, contact, status, "
+                            "access_key, sources) values (?,?,?,?,?,?,?, 'started', ?, ?)",
+                            (ts, ts[:10], visitor, page, role, description, contact, access_key, json.dumps(sources)))
+            return int(cur.lastrowid)
+
+    def finish_role_read(self, rid: int, read: str, model: str, status: str, tin: int, tout: int, ms: int,
+                         flags: list[str]) -> None:
+        self.execute("update role_reads set read = ?, model = ?, status = ?, input_tokens = ?, output_tokens = ?, "
+                     "latency_ms = ?, flags = ? where id = ?", (read, model, status, tin, tout, ms, json.dumps(flags), rid))
+
+    def role_reads(self, day: str | None = None, limit: int = 50) -> list[dict]:
+        if day:
+            return self.query("select * from role_reads where day = ? order by id desc limit ?", (day, limit))
+        return self.query("select * from role_reads order by id desc limit ?", (limit,))
 
     # -------------------------------------------------------------- daily metrics + digests
     def put_metric(self, day: str, source: str, metric: str, value: float | None, detail=None) -> None:
