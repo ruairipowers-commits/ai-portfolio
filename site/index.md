@@ -59,8 +59,10 @@ I've spent 25 years building and running investment technology.
 
 - **Bridgewater.** Twenty years: transaction-cost analytics and market data, then architecture for a dual back
   office that independently cleared every transaction each day, then leading trading QA.
+
 - **Two Sigma.** A data catalog and lineage product for researchers and the engineers who keep production pipelines
   running.
+
 - **Neudata.** Leading a team of thirteen through a zero-to-one SaaS launch.
 - **Silver Ridge Advisors.** Now: data and analytics director at a consulting firm, leading strategic assessments
   and modernization for clients, from a retailer's inventory platform to a charity's fundraising and financial
@@ -75,6 +77,7 @@ right, measuring the model honestly, and governing it so people can trust it.
 
 - **I sit between the business and the engineering.** I can write the requirements, review the architecture and
   test the result.
+
 - **A habit of measuring before trusting.** Golden sets, eval gates, staged rollouts.
 - **Fluency in financial data.** Market data, trading, settlement and alternative data.
 - **Hands-on technical depth** in Python and SQL, data platforms and cloud, now extended into retrieval, agents and
@@ -87,10 +90,13 @@ the code. How I directed it is as much the point as what it built:
 
 - **Standards first.** I wrote the [governance standard](blog/posts/governance.md), a style guide and a short
   instructions file before any project. Every project must map every control, and CI fails if one is missing.
+
 - **A spec for each project.** Each starts as a short spec of the use case, data and success criteria. Claude drafts
   it, I approve it, and a reusable skill turns it into a repo, tests, a demo and a write-up.
+
 - **Rules that keep it honest.** Everything runs offline with a mock model. Numbers come from code, never from the
   model. Nothing is claimed that wasn't run, and my own edits always win over generated ones.
+
 - **The same discipline in delivery.** Tests and evals gate every change, and only commits that pass CI deploy to
   the [live demos](projects/index.md) on my own server.
 
@@ -105,6 +111,7 @@ Alongside the practical work, I took two MIT Professional Education courses in 2
 - **[Applied AI and Data Science](classes/posts/applied-ai-data-science.md)** taught how the models work:
   statistics, regression and classification, trees and forests, deep learning, recommenders and generative AI. My
   capstone was an explainable [loan-default model](classes/posts/loan-default-capstone.md) that you can run in Colab.
+
 - **[Applied Agentic AI for Organizational Transformation](classes/posts/applied-agentic-ai.md)** taught how to bring
   agents into an organisation and scale them responsibly: frameworks, governance plans and staged rollout.
 

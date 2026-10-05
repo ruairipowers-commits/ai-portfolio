@@ -37,8 +37,10 @@ For each question:
 
 1. **Filter first.** Only chunks the analyst is entitled to, from documents whose licence allows AI processing, are
    candidates. The filter sits in the SQL of both retrievers, so restricted text is never scored, fused or sent.
+
 2. **Retrieve hybrid.** BM25 keyword search (SQLite FTS5) and vector search (sqlite-vec), fused with reciprocal rank
    fusion.
+
 3. **Draft** an answer with a model chosen by alias, inside a per-question budget.
 4. **Verify in code.** Every citation must quote a retrieved excerpt word for word, and the answer's numbers and words
    must be supported by those quotes. Anything else becomes a refusal with the reason.
@@ -172,6 +174,7 @@ account. See [docs/aws-native.md](https://github.com/{{GITHUB_OWNER}}/research-q
 
 - **Real model numbers.** Run the gate with Claude or Bedrock. The mock is extractive, so faithfulness is 1.0 by
   construction; a generative model will paraphrase and the support check will earn its keep.
+
 - **Real embeddings and a reranker.** The offline embeddings are feature hashing — lexical, not semantic.
 - **Entitlements from SSO groups**, not a YAML file; refusal analytics by entitlement for the research licensing team.
 - **Tables.** Financial statements live in tables; page-level text extraction is the weakest part of any filings RAG.

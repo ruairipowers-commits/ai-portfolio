@@ -8,6 +8,7 @@ In 2026 I took two courses with MIT Professional Education, one after the other.
 
 1. **How AI works.** The first taught me what machine learning is and how its models work, from regression to
    transformers.
+
 2. **How to use it responsibly.** The second taught me how to bring AI into an organisation and scale it without
    losing control: frameworks, governance and implementation plans.
 

@@ -189,7 +189,7 @@ _SITE = Path(__file__).resolve().parents[1] / "site"
 # blog folder → (section label, URL prefix); posts use post_url_format "{slug}"
 _POST_DIRS = {"blog": ("Industry project", "blog"), "personal": ("Personal project", "personal"),
               "classes": ("Class", "classes")}
-_GOVERNANCE_SLUGS = {"governance", "governance-console"}
+_GOVERNANCE_SLUGS = {"governance", "governance-console", "questions-for-your-ai-team", "how-i-govern-this-site"}
 
 
 def _strip_md(text: str) -> str:
@@ -314,7 +314,32 @@ def _build_stats() -> str:
     return " · ".join(parts) + "."
 
 
+
+# ---------------------------------------------------------------- Markdown lint: lists that would render as run-on text
+import logging as _logging  # noqa: E402
+_log = _logging.getLogger("mkdocs.plugins.portfolio")
+_LIST = re.compile(r"^(\s*)([-*]|\d+\.)\s")
+
+
+def _lint_lists(markdown: str, src: str) -> None:
+    """Python-Markdown needs a blank line before a list and 4 spaces to nest one. Without them a list renders as one
+    paragraph with literal dashes. Warn (the site builds with --strict, so a warning fails the build)."""
+    lines, code = markdown.split("\n"), False
+    for i, line in enumerate(lines):
+        if line.strip().startswith("```"):
+            code = not code
+        m = _LIST.match(line)
+        if code or not m or i == 0:
+            continue
+        prev = lines[i - 1]
+        if not m.group(1) and prev.strip() and not _LIST.match(prev) and not prev.startswith(("    ", "|", "#", "!!!", "<", "---")):
+            _log.warning(f"{src}:{i + 1}: list needs a blank line before it (it would render as run-on text)")
+        elif m.group(1) and len(m.group(1)) in (2, 3):
+            _log.warning(f"{src}:{i + 1}: nested list item needs a 4-space indent")
+
+
 def on_page_markdown(markdown, page, config, files):
+    _lint_lists(markdown, page.file.src_uri)
     if re.match(r"(blog|personal|classes)/posts/", page.file.src_uri):
         markdown = _post_topics(markdown, page) + LIKE_BOX
     if "<!-- posts:all -->" in markdown:

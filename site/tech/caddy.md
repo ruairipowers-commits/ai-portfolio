@@ -43,6 +43,7 @@ Streamlit and similar apps use WebSockets; Caddy's `reverse_proxy` handles them 
 
 - The live demos run in [Docker](docker.md) containers on a home server; Caddy routes requests to each one, and a
   [Cloudflare Tunnel](cloudflare-tunnel.md) carries traffic from the internet to Caddy.
+
 - Demos include [Alt-data vendor triage](../blog/posts/altdata-triage.md) and the
   [governance console](../blog/posts/governance-console.md).
 

@@ -9,6 +9,11 @@ The big changes to this portfolio, newest first. Each project's repository has t
 
 ## 5 October 2026
 
+**Two governance posts.** [Is our AI behaving?](../blog/posts/questions-for-your-ai-team.md) is a plain-language
+guide for leaders on what to ask their tech team, and what evidence to expect, using a credit model, a customer
+assistant and a feedback-analysis AI. [How I govern the AI on this site](../blog/posts/how-i-govern-this-site.md)
+walks through this site's own governance step by step, with a link to the code, test or run behind each step.
+
 **A portfolio gallery on Home.** Every project now has a card on [Home](../index.md) with its headline
 measured result, how it was measured, and one-click links to the live demo, the code and the write-up.
 
@@ -25,11 +30,14 @@ picks it up from the same pages.
 ## 3 October 2026
 
 **Safer, watched, backed up.** The demo machine runs code from a public repo, so now:
+
 - **Deploy guard.** A root-owned guard refuses any deploy that could take over the machine (privileged containers,
   the Docker socket, host mounts, missing CPU and memory limits). Every container drops its Linux capabilities, and
   the demo apps have no route to the internet. The demos force HTTPS and send HSTS and the standard security headers.
+
 - **Host tab.** The governance console shows the server's load and history, and emails alerts and a weekly health
   and security report.
+
 - **Backups.** The databases are backed up nightly, integrity-checked, with `.env` encrypted.
 - **Updates.** A daily check lists OS, image and model updates with the exact commands to run.
 - **Security self-assessment.** It runs on every commit in CI and weekly on the machine, alongside a 30-minute uptime
@@ -40,11 +48,14 @@ that's private and goes into the daily email. The site header has a shield butto
 console.
 
 **Thumbs up, upvotes and a Content tab.**
+
 - **Posts:** every post ends with "Was this useful?" and a thumbs up. The blog list shows the counts.
 - **Suggestions:** project suggestions have their own page under Projects. Visitors upvote ideas, and new ones
   appear once I've approved them.
+
 - **Daily email:** thumbs up by post, and the top ten suggestions with new ones marked. Each suggestion has links
   that start it in Claude as an industry or personal project.
+
 - **Governance console:** a new **Content** tab shows the top-rated articles. It's also where I publish, hide or
   close suggestions.
 
@@ -55,14 +66,18 @@ newest post is always first.
 server, the default is now `gemma4:e4b`. It's more than twice as fast as the runner-up and more accurate.
 
 **A smarter Ask button.**
+
 - **Every answer starts from a profile card** that the site builds from the posts on each publish: background, MIT
   coursework, evidence by topic, the technologies each project uses, and the newest work first. A new project shows
   up in answers as soon as it's published.
+
 - **It reads more of what's public:** project READMEs and docs on GitHub, the governance controls, the capstone
   notebook's commentary and my resume.
+
 - **Questions about me get cited evidence.** When I don't have something a visitor asks about, the answer says so
   honestly and turns it into a chance to grow. It's now on my plate to review, and the daily email lists those
   questions.
+
 - **Faster:** the model stays loaded, the fixed start of every prompt is cached, and reasoning is switched off. A
   benchmark command compares models on the server, and the setup guide covers using the iGPU through Vulkan.
 
@@ -92,11 +107,14 @@ project you can run. The notebook opens read-only in Google Colab and reruns end
 the presentation deck, and the project is listed under Personal projects.
 
 **Ask the portfolio.** Every page now has an **Ask** button.
+
 - It searches the whole blog and answers questions with a local open model, citing the sections it used. That
   includes questions about my background and whether I'd fit a role.
+
 - Searches, questions and page views are logged, without IP addresses or cookies.
 - A daily email summarises engagement: blog views, searches, demo runs, Cloudflare traffic and GitHub views,
   clones and stars.
+
 - It's governed like the other workflows: the console can switch it off.
 - The [write-up](../personal/posts/site-assistant.md) is the first entry on the Personal projects page.
 
@@ -115,20 +133,25 @@ ones get their own [Personal projects](../personal/index.md) page and blog. Whic
 `portfolio.yaml`.
 
 **Governance escalation.** The [governance console](../blog/posts/governance-console.md) now acts on what it sees.
+
 - When a workflow reports a governance issue, the console opens an incident. Examples are an AI-proposed step
   outside the runbook, restricted content reaching someone, a bank-detail change request, an injection, a failed
   eval or data gate, a budget or spend anomaly, or an unregistered AI tool.
+
 - Serious issues switch the workflow off automatically.
 - It emails the workflow's escalation list with the details and a link straight to the incident. There, someone
   records the root cause, the fix and where it's documented, then switches the workflow back on.
+
 - The recipients and the severity levels for emails and switch-offs are set per workflow on a Settings page.
 - PagerDuty and ServiceNow ticketing is designed, with payloads shown on each incident, but not built yet.
 - There's a walkthrough video in the post.
 
 **Live demos on my own hardware.**
+
 - Every demo runs at `demos.agentls.com/<app>` on a small home server, behind a Cloudflare Tunnel, at no cost.
 - The server deploys each change automatically once its tests pass on GitHub. It keeps serving the last good
   version if a build fails, and comes back on its own after a reboot.
+
 - The deployment target is one setting: self-hosted, Hugging Face Spaces, Cloudflare Containers or Google Cloud Run.
 - Every project's tests run on every push.
 
@@ -141,8 +164,10 @@ switch the workflows enforce. Every project reports to it through the same small
 appear automatically, and unregistered ones are flagged as shadow AI.
 
 **Two new projects.**
+
 - [Research Q&A](../blog/posts/research-qa-rag.md): cited answers over filings and broker research, with
   entitlement filtering inside retrieval and a refusal when the evidence isn't there.
+
 - [EOD heartbeat](../blog/posts/eod-heartbeat.md): finds end-of-day breaks with SQL and explains them from the
   firm's own runbooks.
 
@@ -150,16 +175,20 @@ appear automatically, and unregistered ones are flagged as shadow AI.
 
 **A browser app for every project.** Each project got a Streamlit app built the same way: a default input, a Run
 button and the results, plus a *Try to break it* panel.
+
 - **Trade-ops app:** a data explorer, a row-driven exception queue and a single-trade walkthrough where you play
   each role.
+
 - **Alt-data app:** view, edit, download and reset each vendor's sample data.
 
 ## 30 September 2026
 
 **The portfolio factory.**
+
 - [The governance standard](../blog/posts/governance.md): 30 controls that every project maps itself against.
 - A spec-driven template for new projects: a runnable repo, an offline mock model, a governance mapping, an
   AWS path and a write-up.
+
 - The first project: [Alt-data vendor triage](../blog/posts/altdata-triage.md).
 - Personal details are resolved at build time rather than committed.
 

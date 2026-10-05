@@ -102,6 +102,7 @@ The piece I'd walk an interviewer through is the write path. There are two indep
 1. **The model never has the write tool.** The MCP server decides which tools exist from its launch scope.
    The investigating agent talks to a `scope=read` process whose database handle is opened read-only. If a
    model (or an injection) names `record_resolution`, the tools node refuses it and flags the run.
+
 2. **The write tool checks a signed approval.** When an analyst approves, the graph mints an HMAC token over
    the exact content being written: exception, category, fix, email, approver, expiry. Only then does it start a
    `scope=write` server that holds the key. Change one character of the fix after approval and the server refuses.
@@ -162,6 +163,7 @@ tools; I kept a container so the laptop and cloud run identical code.
 
 - The default model is a **deterministic scripted investigator**, so the demo and CI are free and reproducible.
   One alias change runs Claude, GPT or Bedrock through the same graph and gate.
+
 - The break rules (T+1, "fills are the truth") are deliberately simple; real desks add markets, instruction types and netting.
 - Screening is pattern-based; production would add a classifier and SSO-backed approver identity.
 - Next: four-eyes approval for SSI and high-value breaks, Step Functions for the approval wait in AWS,

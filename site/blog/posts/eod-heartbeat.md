@@ -39,10 +39,12 @@ An Airflow DAG ticks every five minutes from 17:00 to 21:00 ET. Each heartbeat:
 2. **Builds dbt** on Postgres with 28 tests as a gate. One `breaks` model covers file SLAs, positions vs the prime
    broker, P&L that doesn't explain, stale prices, price and FX outliers and duplicate trades. Detection is SQL —
    the model never decides whether a break exists.
+
 3. **Retrieves** the runbook sections and past incidents for each break from pgvector, filtered by break type.
 4. **Explains** each break — likely cause and next step — with a model chosen by alias, inside a per-run budget.
 5. **Checks** the explanation in code: it must cite a retrieved runbook section, the step must come from that
    runbook, unsafe steps are blocked, and critical breaks always go to a person.
+
 6. **Alerts** once per break and asks the on-call engineer for a 👍/👎.
 
 Ten synthetic business days carry the classic failures: a late price file, a stock split the prime broker applied but
@@ -153,8 +155,10 @@ pieces with least-privilege roles and a budget alert; it has not been applied to
 - **NAV-relative thresholds.** Today they are absolute; a $50k break means different things for different funds.
 - **Runbook quality bounds explanation quality.** The weekly review of 👎 explanations is as much a runbook process as
   an AI one.
+
 - **Deny-lists are not proofs.** The unsafe-action patterns catch the obvious cases; the real safety is that the model
   has no way to act.
+
 - Every heartbeat is reported to the [governance console](governance-console.md), which can switch the workflow off;
   the DAG task then fails visibly with the reason.
 
