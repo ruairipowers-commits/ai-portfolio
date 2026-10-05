@@ -32,6 +32,12 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from portfolio_config import CONSOLE, links, resolve, space_host  # noqa: E402
 
 
+def _access(slug: str) -> str:
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from portfolio_config import access
+    return access(slug)
+
+
 def front_matter(slug: str, spec: dict, cfg: dict) -> str:
     demo = spec.get("demo", {})
     meta = {
@@ -42,7 +48,7 @@ def front_matter(slug: str, spec: dict, cfg: dict) -> str:
         "sdk": "docker",
         "app_port": 7860,
         "pinned": False,
-        "license": "apache-2.0",
+        "license": "apache-2.0" if _access(slug) == "open" else "other",
         "short_description": demo.get("short_description", spec["title"])[:60],
     }
     return "---\n" + yaml.safe_dump(meta, sort_keys=False, allow_unicode=True) + "---\n\n"

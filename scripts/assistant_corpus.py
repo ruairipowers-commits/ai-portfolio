@@ -48,11 +48,28 @@ def plain(md: str) -> str:
     return " ".join(md.split())
 
 
+def _hidden() -> set[str]:
+    import sys
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from portfolio_config import hidden_posts
+    return hidden_posts()
+
+
+def _level(slug: str) -> str:
+    import sys
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from portfolio_config import access, resolve
+    c = resolve()
+    return access(slug, c) if slug in c["projects"] else "open"
+
+
 def posts() -> list[dict]:
     """Every post on the site, newest first."""
     out = []
     for folder, kind in POST_DIRS.items():
         for f in sorted((SITE / folder / "posts").glob("*.md")):
+            if f"{folder}/posts/{f.name}" in _hidden():
+                continue                                # portfolio.yaml access: hidden
             meta, body = _front(f.read_text())
             slug = meta.get("slug", f.stem)
             title = next((ln[2:].strip() for ln in body.splitlines() if ln.startswith("# ")), slug)
@@ -159,6 +176,8 @@ def repo_docs(github_base: str) -> list[dict]:
     """README and docs/ of every project, the controls, coursework: [{url, title, section, text}] per section."""
     files = []
     for proj in sorted(p for p in (ROOT / "projects").iterdir() if p.is_dir()):
+        if _level(proj.name) in ("private", "hidden"):
+            continue                                    # portfolio.yaml access: its code and docs stay out of answers
         files += [proj / "README.md"] + sorted((proj / "docs").glob("*.md"))
     files += [ROOT / "governance" / "controls.md"] + sorted((ROOT / "coursework").glob("*/README.md"))
     out = []

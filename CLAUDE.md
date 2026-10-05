@@ -9,6 +9,7 @@ and one runnable public repo per project. To create or update a project, follow
 | What | File | Who edits |
 |---|---|---|
 | Author, URLs, project order | `portfolio.yaml` | Ruairi |
+| Who can see and reuse each project (open → hidden) | `portfolio.yaml` `access` → `scripts/apply_access.py` | Ruairi |
 | Governance controls (IDs) | `governance/controls.md` | Ruairi — the governance post and every project check read it |
 | Voice, structure, repo conventions | `factory/style-guide.md` | Ruairi |
 | Default tools + diversity | `factory/stack-catalog.md` | both |

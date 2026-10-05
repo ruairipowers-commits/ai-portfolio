@@ -122,4 +122,3 @@ before/after scan results:
       against slide 11 of the orientation deck ("MPE Agentic AI Orientation English - 2026-2"); it needs the deck.
 - [ ] **GitHub settings** (Ruairi): a ruleset on `main` (no force push or deletion, CI required), secret scanning
       with push protection, and Dependabot alerts.
-- [ ] Optional, offered and not requested: a `hidden` list in `portfolio.yaml` to hide a project from the site.

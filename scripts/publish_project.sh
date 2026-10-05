@@ -10,6 +10,11 @@ SRC="$ROOT/projects/$SLUG"; OUT="$ROOT/dist/$SLUG"
 [ -d "$SRC" ] || { echo "no project $SRC"; exit 1; }
 
 python3 "$ROOT/scripts/check_governance.py" "$SLUG"
+ACCESS=$(python3 "$ROOT/scripts/portfolio_config.py" access "$SLUG")
+if [[ "$ACCESS" == "private" || "$ACCESS" == "hidden" ]]; then
+  echo "$SLUG is '$ACCESS' in portfolio.yaml access: not packaging it as a public repo."; exit 1
+fi
+python3 "$ROOT/scripts/apply_access.py" --check >/dev/null || { echo "Run: python scripts/apply_access.py"; exit 1; }
 
 read -r SITE OWNER HF DEMOS < <(python3 "$ROOT/scripts/portfolio_config.py")
 [ "$DEMOS" = "-" ] && DEMOS="#demos-not-configured"
