@@ -1,0 +1,20 @@
+Site content: Creative Commons Attribution 4.0 International (CC BY 4.0)
+
+Copyright 2026 Ruairi Powers.
+
+Everything under site/ (the blog posts, pages and their text), governance/ (the AI governance
+standard) and factory/ (the style guide and templates) is licensed under the Creative Commons
+Attribution 4.0 International License. To view a copy, visit
+https://creativecommons.org/licenses/by/4.0/legalcode
+
+You may share and adapt it, for any purpose, as long as you give appropriate credit, link to the
+license and say if you changed it. Credit it as:
+
+  "<title>" by Ruairi Powers, from the AI Workflow Portfolio
+  (https://github.com/ruairipowers-commits/ai-portfolio), built with Claude. CC BY 4.0.
+
+Excluded: the resume (site/assets/Ruairi-Powers-Resume.pdf) and the author's name and likeness,
+which are not licensed for reuse. Third-party names and trademarks belong to their owners.
+
+Code anywhere in the repository (including code blocks in posts) is under the Apache License 2.0
+(see LICENSE and NOTICE).

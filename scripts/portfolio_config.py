@@ -9,6 +9,8 @@ import os
 import subprocess
 from pathlib import Path
 
+import sys
+
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -88,6 +90,36 @@ def links(slug: str, c: dict | None = None) -> dict:
             "console_url": demo_url(CONSOLE, c)}
 
 
+ACCESS_LEVELS = ("open", "all-rights-reserved", "private", "hidden")
+
+
+def access(slug: str | None = None, c: dict | None = None) -> str:
+    """A project's access level (portfolio.yaml `access`), or the repo's own when slug is None."""
+    a = (c or resolve()).get("access") or {}
+    if slug is None:
+        level = a.get("repo", "open")
+        if level not in ("open", "all-rights-reserved"):
+            raise SystemExit(f"access.repo must be open or all-rights-reserved, not {level!r}")
+        return level
+    level = (a.get("projects") or {}).get(slug, a.get("default", "open"))
+    if level not in ACCESS_LEVELS:
+        raise SystemExit(f"access for {slug} is {level!r}; use one of {', '.join(ACCESS_LEVELS)}")
+    return level
+
+
+def check_access(c: dict | None = None) -> None:
+    c = c or resolve()
+    a = c.get("access") or {}
+    known = set(c["projects"]) | {p.get("slug") for p in (c.get("personal_projects") or []) if isinstance(p, dict)}
+    unknown = set(a.get("projects") or {}) - known
+    if unknown:
+        raise SystemExit(f"access.projects lists {sorted(unknown)}, which aren't in projects: or personal_projects:")
+    access(None, c)
+    for slug in known:
+        if slug:
+            access(slug, c)
+
+
 def tiers(c: dict | None = None) -> dict:
     """featured / platform / personal project rows for the site, from portfolio.yaml and each spec's `card`.
     A slug in `personal_projects` is personal; other projects are featured (platform specs listed separately)."""
@@ -97,8 +129,12 @@ def tiers(c: dict | None = None) -> dict:
     unknown = personal_slugs - set(c["projects"])
     if unknown:
         raise SystemExit(f"personal_projects lists {sorted(unknown)}, which aren't in projects:")
+    check_access(c)
     out = {"featured": [], "platform": [], "personal": []}
     for slug in c["projects"]:
+        level = access(slug, c)
+        if level == "hidden":
+            continue
         spec = yaml.safe_load((ROOT / "specs" / f"{slug}.yaml").read_text())
         card = spec.get("card") or {}
         tier = "personal" if slug in personal_slugs else ("platform" if spec.get("kind") == "platform" else "featured")
@@ -107,16 +143,35 @@ def tiers(c: dict | None = None) -> dict:
                           "post": post_path(slug, "personal" if tier == "personal" else "featured"),
                           "demo": (ROOT / "projects" / slug / "Dockerfile.space").exists(), "external": False,
                           "result": card.get("result", ""), "result_basis": card.get("result_basis", ""),
-                          "source": source_url(slug, c)})
+                          "access": level, "source": "" if level == "private" else source_url(slug, c)})
     for p in personal_cfg:
-        if isinstance(p, dict):
+        level = access(p["slug"], c) if isinstance(p, dict) and p.get("slug") else (
+            p.get("access", "open") if isinstance(p, dict) else "open")
+        if isinstance(p, dict) and level != "hidden":
+            private = level == "private"
             out["personal"].append({"slug": p.get("slug", ""), "name": p["title"], "problem": p.get("summary", ""),
-                                    "pattern": p.get("pattern", ""), "stack": p.get("stack", ""), "url": p.get("url", ""),
+                                    "pattern": p.get("pattern", ""), "stack": p.get("stack", ""),
+                                    "url": "" if private else p.get("url", ""),
                                     "post": p.get("post") or (post_path(p["slug"], "personal") if p.get("slug") else None),
                                     "try_url": p.get("try_url", ""), "try_label": p.get("try_label", "Try it"),
-                                    "demo": False, "external": True,
+                                    "demo": False, "external": True, "access": level,
                                     "result": p.get("result", ""), "result_basis": p.get("result_basis", ""),
-                                    "source": p.get("url", "")})
+                                    "source": "" if private else p.get("url", "")})
+    return out
+
+
+def hidden_posts(c: dict | None = None) -> set[str]:
+    """Write-ups of hidden projects (paths under site/): left out of the build and every listing."""
+    c = c or resolve()
+    out = set()
+    for slug in c["projects"]:
+        if access(slug, c) == "hidden":
+            out |= {f"blog/posts/{slug}.md", f"personal/posts/{slug}.md"}
+    for p in c.get("personal_projects") or []:
+        if isinstance(p, dict) and p.get("slug") and access(p["slug"], c) == "hidden":
+            out |= {p.get("post") or f"personal/posts/{p['slug']}.md"}
+        elif isinstance(p, dict) and p.get("access") == "hidden" and p.get("post"):
+            out.add(p["post"])
     return out
 
 
@@ -142,4 +197,7 @@ def space_host(owner: str, slug: str) -> str:
 
 if __name__ == "__main__":
     c = resolve()
-    print(c["site_url"], c["github_owner"], c["hf_owner"], c["demos_url"] or "-")
+    if sys.argv[1:2] == ["access"]:               # publish_project.sh: the level for one project
+        print(access(sys.argv[2], c))
+    else:
+        print(c["site_url"], c["github_owner"], c["hf_owner"], c["demos_url"] or "-")

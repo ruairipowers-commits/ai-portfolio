@@ -81,7 +81,10 @@ def build_from_portfolio(root: Path) -> dict:
     portfolio = yaml.safe_load((root / "portfolio.yaml").read_text())
     controls = parse_controls((root / "governance" / "controls.md").read_text())
     workflows = []
+    acc = portfolio.get("access") or {}
     for slug in portfolio.get("projects", []):
+        if (acc.get("projects") or {}).get(slug, acc.get("default", "open")) == "hidden":
+            continue                     # portfolio.yaml access: hidden projects stay out of the public console
         spec_path = root / "specs" / f"{slug}.yaml"
         spec = yaml.safe_load(spec_path.read_text()) if spec_path.exists() else {}
         if spec.get("kind") == "platform":

@@ -34,7 +34,11 @@ DEFAULT_MEMORY = {"trade-ops-exceptions": "3g", "eod-heartbeat": "3g"}
 # ---------------------------------------------------------------- registry
 def apps() -> list[dict]:
     order = yaml.safe_load((ROOT / "portfolio.yaml").read_text()).get("projects", [])
-    found = [p.name for p in (ROOT / "projects").iterdir() if (p / "Dockerfile.space").exists()]
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from portfolio_config import access, resolve
+    c = resolve()
+    found = [p.name for p in (ROOT / "projects").iterdir() if (p / "Dockerfile.space").exists()
+             and not (p.name in c["projects"] and access(p.name, c) == "hidden")]   # portfolio.yaml access
     out = []
     for slug in [s for s in order if s in found] + sorted(s for s in found if s not in order):
         spec_p = ROOT / "specs" / f"{slug}.yaml"

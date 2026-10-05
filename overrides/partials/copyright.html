@@ -9,10 +9,15 @@
     <a href="https://www.linkedin.com/in/ruairi-powers">LinkedIn</a>
   </div>
   <div class="site-footer site-footer__credit">
+    {% if config.extra.repo_access == "all-rights-reserved" %}
+    © 2026 Ruairi Powers, built with Claude · all rights reserved ·
+    <a href="{{ 'about/#using-this-work' | url }}">ask before reusing</a>
+    {% else %}
     © 2026 Ruairi Powers, built with Claude ·
     writing <a href="https://creativecommons.org/licenses/by/4.0/" rel="license">CC BY 4.0</a> ·
     code <a href="https://github.com/{{ config.extra.github_owner or 'ruairipowers-commits' }}/ai-portfolio/blob/main/LICENSE" rel="license">Apache 2.0</a> ·
     <a href="{{ 'about/#using-this-work' | url }}">reuse with credit</a>
+    {% endif %}
   </div>
   Made with
   <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">Material for MkDocs</a>

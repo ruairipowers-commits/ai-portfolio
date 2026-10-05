@@ -19,6 +19,7 @@ jobs:
       - run: python scripts/sync_telemetry_client.py --check   # every workflow ships the same telemetry client
       - run: python scripts/build_catalog.py --check           # the console's bundled catalog lists every project
       - run: python scripts/set_tier.py --check                # featured / personal posts are where portfolio.yaml says
+      - run: python scripts/apply_access.py --check            # licence files match portfolio.yaml access
       - run: python scripts/demos.py render selfhost --out /tmp/demos && python scripts/demos.py render cloudflare --out /tmp/cf
         env: {PORTFOLIO_DEMOS_URL: "https://demos.example.com"}
       - run: mkdocs build --strict

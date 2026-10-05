@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import posixpath  # noqa: E402
 
-from portfolio_config import demo_url, resolve, tiers  # noqa: E402
+from portfolio_config import access, demo_url, hidden_posts, resolve, tiers  # noqa: E402
 import assistant_corpus  # noqa: E402
 
 _cfg = resolve()
@@ -173,6 +173,10 @@ def _links(r: dict, up: str, compact: bool = False) -> list[str]:
     return links
 
 
+_ACCESS_LABEL = {"all-rights-reserved": "Source available · all rights reserved",
+                 "private": "Code private"}
+
+
 def _card(r: dict, tier: str, up: str, compact: bool = False) -> str:
     from html import escape as e
     post = up + _post_url(r["post"]) if r.get("post") else ""
@@ -182,7 +186,9 @@ def _card(r: dict, tier: str, up: str, compact: bool = False) -> str:
             f'<h3>{title}</h3><p class="gallery__problem">{e(r["problem"])}</p>'
             + (f'<p class="gallery__result">{e(r["result"])}</p>' if r.get("result") and not compact else "")
             + (f'<p class="gallery__basis">{e(r["result_basis"])}</p>' if r.get("result_basis") and not compact else "")
-            + f'<div class="gallery__links">{"".join(_links(r, up, compact))}</div></article>')
+            + f'<div class="gallery__links">{"".join(_links(r, up, compact))}</div>'
+            + (f'<p class="gallery__access">{_ACCESS_LABEL[r["access"]]}</p>' if r.get("access") in _ACCESS_LABEL else "")
+            + '</article>')
 
 
 def _up(page_url: str) -> str:
@@ -224,6 +230,9 @@ def _glance(markdown: str, page) -> str:
                                                          if r.get("result_basis") else "")))
     if r.get("stack"):
         rows.append(("Stack", e(r["stack"])))
+    rows.append(("Licence", {"open": "Apache 2.0: reuse with credit", "all-rights-reserved":
+                             "Source available, all rights reserved: ask before reusing",
+                             "private": "Code private"}.get(r.get("access", "open"), "")))
     body = "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in rows if v)
     links = [x for x in _links(r, up) if "gallery__more" not in x]
     box = (f'<aside class="glance" aria-label="At a glance"><p class="glance__title">At a glance · {_KIND[tier]}</p>'
@@ -297,6 +306,8 @@ def all_posts() -> list[dict]:
     out = []
     for folder, (section, prefix) in _POST_DIRS.items():
         for f in sorted((_SITE / folder / "posts").glob("*.md")):
+            if f"{folder}/posts/{f.name}" in hidden_posts(_cfg):
+                continue
             text = f.read_text()
             m = re.match(r"^---\n(.*?)\n---\n", text, re.S)
             meta = yaml.safe_load(m.group(1)) if m else {}
@@ -497,6 +508,21 @@ def on_page_markdown(markdown, page, config, files):
     # a post's **Stack:** line names its technologies: link each to its page
     markdown = re.sub(r"(?m)^(\*\*Stack:\*\*)(.*)$",
                       lambda m: m.group(1) + link_tech(m.group(2), page.file.src_uri), markdown)
+    return _unlink_private(markdown)
+
+
+def _unlink_private(markdown: str) -> str:
+    """portfolio.yaml access: private → links to that project's code (in this repo, or its own published repo)
+    become plain text on every page, so the site never points at it."""
+    private = [s for s in _cfg["projects"] if access(s, _cfg) == "private"]
+    if not private:
+        return markdown
+    owner = re.escape(_cfg["github_owner"])
+    for slug in private:
+        code = (rf"https://github\.com/(?:{owner}|\{{\{{GITHUB_OWNER\}}\}})/(?:ai-portfolio/(?:tree|blob)/[^/\s)]+/"
+                rf"projects/{re.escape(slug)}|{re.escape(slug)})(?:[/#][^\s)]*)?")
+        markdown = re.sub(rf"\[([^\]]+)\]\({code}\)", r"\1", markdown)                  # [text](url) → text
+        markdown = re.sub(rf"<a [^>]*href=[\"']{code}[\"'][^>]*>(.*?)</a>", r"\1", markdown)  # <a href=url>text</a>
     return markdown
 
 
@@ -516,6 +542,16 @@ def on_nav(nav, config, files):
     return nav
 
 
+def on_files(files, config):
+    """portfolio.yaml access: hidden → the project's write-up isn't built (links to it from other pages will show
+    up as strict-build warnings, so nothing points at a page that isn't there)."""
+    gone = hidden_posts(_cfg)
+    for f in list(files):
+        if f.src_uri in gone:
+            files.remove(f)
+    return files
+
+
 def on_config(config):
     """The site assistant's URL for the Ask button (overrides/main.html): its live demo URL, when the demos are
     deployed. Unset (local preview without DEMOS_URL) → no button, and no page-view or search logging."""
@@ -524,6 +560,7 @@ def on_config(config):
     # the header's shield icon → the live governance console demo (only when the demos are deployed)
     config.extra["console_url"] = demo_url("governance-console", _cfg) if _cfg["demos_url"] else ""
     config.extra["github_owner"] = _cfg["github_owner"]          # the footer's licence link
+    config.extra["repo_access"] = access(None, _cfg)
     return config
 
 

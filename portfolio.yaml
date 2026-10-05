@@ -105,3 +105,18 @@ tour:
   - trade-ops-exceptions
   - research-qa-rag
   - governance-console
+
+# Who may see and reuse each project, and the repo itself. Change a level, then run
+#   python scripts/apply_access.py        # rewrites LICENSE / NOTICE / pyproject licence / README licence line
+# CI fails if the files don't match this (scripts/apply_access.py --check).
+#   open                 Apache-2.0 + NOTICE: anyone may reuse it with credit (the default)
+#   all-rights-reserved  code stays visible on GitHub, but no reuse without written permission
+#   private              all-rights-reserved, plus no code links on the site, kept out of the Ask assistant's
+#                        corpus, and publish_project.sh refuses to make it a public repo. Its code is still in this
+#                        public repo: to keep it secret, move it to a private repo (and note git history keeps it)
+#   hidden               private, plus off the site entirely (listings, gallery, tour, its post) and no live demo
+# A level only applies from the commit that sets it: copies taken earlier keep the licence they came with.
+access:
+  repo: open              # the repo as a whole: open (code Apache-2.0, writing CC BY 4.0) or all-rights-reserved
+  default: open           # every project not listed below
+  projects: {}            # e.g.  daily-puzzle: all-rights-reserved

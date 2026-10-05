@@ -108,3 +108,10 @@ as AI coding assistant.
 
 Credit it as: *Based on Ruairi Powers' AI Workflow Portfolio (https://github.com/ruairipowers-commits/ai-portfolio),
 built with Claude.* GitHub's **Cite this repository** button reads [CITATION.cff](CITATION.cff).
+
+**Restricting a project, or the repo.** `access:` in [portfolio.yaml](portfolio.yaml) sets each project to `open`,
+`all-rights-reserved`, `private` (no code links on the site, kept out of the Ask assistant, never published as a
+repo) or `hidden` (off the site and the demos too); `access.repo` does the same for the repo as a whole. Then run
+`python scripts/apply_access.py` to rewrite the licence files; CI fails if they don't match. A level applies from
+that commit on: earlier copies keep the licence they came with, and code in this public repo stays readable (move
+it to a private repo to keep it secret).

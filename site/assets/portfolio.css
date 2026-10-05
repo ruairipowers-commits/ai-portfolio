@@ -250,3 +250,5 @@
 .md-typeset .subscribe__hint { margin: .3rem 0 0; color: var(--md-default-fg-color--light); }
 
 .site-footer__credit { margin: .2rem 0; }
+
+.md-typeset .gallery__access { margin: .4rem 0 0; font-size: .64rem; color: var(--md-default-fg-color--light); }
