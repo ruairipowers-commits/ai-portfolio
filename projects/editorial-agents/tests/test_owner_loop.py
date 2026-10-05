@@ -62,3 +62,14 @@ def test_github_sync_marks_drafted_published_dismissed(scouted):
     changed = github_sync.sync(store, get=lambda url, **kw: json.dumps(prs))
     assert changed == {q[0]["id"]: "drafted", q[1]["id"]: "published", q[2]["id"]: "dismissed"}
     assert store.topic(q[3]["id"])["status"] == "queued"            # no label: not ours
+
+
+def test_health_says_why_the_queue_is_empty_and_accepts_head(tmp_path):
+    from editorial.store import Store
+    store = Store(str(tmp_path / "e.sqlite"))
+    c = TestClient(create_app(store, background=False))
+    assert c.get("/api/health").json()["last_scout"] is None
+    store.run("scout", "skipped", {"reason": "editorial-agents is switched off by governance: testing"})
+    h = c.get("/api/health").json()
+    assert h["queue"] == 0 and h["last_scout_status"] == "skipped" and "switched off" in h["last_scout_problem"]
+    assert c.head("/queue.md").status_code == 200 and c.head("/api/health").status_code == 200
