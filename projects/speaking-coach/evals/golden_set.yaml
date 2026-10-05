@@ -1,0 +1,122 @@
+# EVAL-01 Golden set. Transcripts in evals/transcripts/ mark every TRUE filler with [[double brackets]] (for a
+# repeated word, the repeat: "the [[the]]"). Any configured word that is NOT marked is normal English and must not
+# be counted. The eval strips the brackets, runs the full pipeline and compares spans.
+# All transcripts are fictional, written for this project.
+
+detection:
+  - id: d01-interview
+    file: interview-answer.txt
+    presets: [starter]
+    why: "Ruairi's list on a nervous answer: openers, closers, 'like' as verb vs filler, 'kind of' noun vs hedge, repeats through filler"
+  - id: d02-team-update-one-speaker
+    file: team-update.txt
+    presets: [starter]
+    speaker: Sam Ortiz
+    why: "meeting export with three people; only Sam's turns count"
+  - id: d03-conference-timed
+    file: conference-opening.vtt
+    presets: [starter]
+    expect: {words: 54, wpm: 147.3, pauses: 2}
+    why: "captions give pace and pauses; 'looked like' is a comparison"
+  - id: d04-podcast-all
+    file: podcast-segment.vtt
+    presets: [starter]
+    why: "two voices, analysed together"
+  - id: d05-custom-phrases
+    file: pitch.txt
+    presets: []
+    custom_words: |
+      to be honest | crutch phrase | 2
+      at the end of the day | crutch phrase
+      basically
+    expect: {fillers: 5, weighted: 7.0}
+    why: "a speaker's own phrases and weights, no presets"
+  - id: d06-ignore-list
+    file: physics-lecture.txt
+    presets: [intensifiers]
+    ignore: [basically]
+    why: "'basically' is domain usage for this speaker; 'actually' as opener vs emphasis"
+  - id: d07-like-as-verb
+    file: like-as-verb.txt
+    presets: [starter]
+    must_not_flag: true
+    why: "mostly 'like' as a verb or comparison: the main precision test"
+  - id: d08-clean-control
+    file: clean-control.txt
+    presets: [starter]
+    expect: {fillers: 0, grade: A}
+    why: "clean speech gets an A and no rewrites"
+  - id: h01-held-out-standup
+    file: held-out-standup.txt
+    presets: [starter, core-fillers, hedges]
+    held_out: true
+    why: "written after the rules and the mock were finished and not tuned against: the honest number"
+  - id: a01-injection
+    file: injection.txt
+    presets: [starter]
+    adversarial: true
+    expect: {flags: [injection_detected]}
+    why: "an instruction inside the transcript is just speech: counted by code, flagged, score unaffected"
+  - id: p01-pii
+    file: pii.txt
+    presets: [starter]
+    compliance: true
+    never_sent: ["Priya Nair", "Priya", "Marcus Webb", "Marcus", "jordan.lee@example.com", "203-555-0147"]
+    expect: {flags: [pii_pseudonymized]}
+    why: "names, an email and a phone number never reach the model; rewrites still name the people"
+
+scoring:
+  - id: s01-rate-and-grade
+    text: "So, um, we shipped it. Um, it works. It is fast and it is cheap and it is done now."
+    presets: [starter]
+    target: 2.0
+    expect: {words: 20, fillers: 3, rate_per_100: 15.0, grade: F}
+  - id: s02-weights
+    text: "To be honest the plan is good. To be honest it is late."
+    presets: []
+    custom_words: "to be honest | crutch | 2"
+    expect: {words: 13, fillers: 2, weighted: 4.0, rate_per_100: 30.77}
+
+config:
+  - id: c01-regex-and-html-literal
+    custom_words: |
+      um.*
+      <script>
+      so | starter | 1 | opener
+    text: "So the script runs. Um, the script is fine."
+    expect: {warnings_min: 2, fillers: 4}
+    why: "list lines are data: symbols are dropped and the words matched literally ('.*' never matches everything)"
+  - id: c02-common-word-warning
+    custom_words: "the"
+    text: "The plan is the plan."
+    expect: {warnings_contain: "very common word"}
+
+rewrites:            # the guard (code) on candidate rewrites, in placeholder form
+  - id: r01-keeps-facts
+    marked: "⟦So⟧, ⟦um⟧, revenue grew 12% after [NAME_1] joined in March."
+    rewrite: "Revenue grew 12% after [NAME_1] joined in March."
+    expect: PASS
+  - id: r02-drops-number
+    marked: "⟦So⟧, ⟦um⟧, revenue grew 12% after [NAME_1] joined in March."
+    rewrite: "Revenue grew after [NAME_1] joined in March."
+    expect: REJECT
+  - id: r03-drops-name
+    marked: "⟦Uh⟧, [NAME_1] owns the runbook."
+    rewrite: "Someone owns the runbook."
+    expect: REJECT
+  - id: r04-adds-number
+    marked: "We ran it with ⟦like⟧ forty people."
+    rewrite: "We ran it with forty people over 3 weeks."
+    expect: REJECT
+  - id: r05-filler-left-in
+    marked: "It's ⟦kind of⟧ slow, ⟦you know⟧?"
+    rewrite: "It's kind of slow."
+    expect: REJECT
+  - id: r06-too-long
+    marked: "⟦So⟧ we shipped it."
+    rewrite: "We shipped it after a long and careful review with the whole team over many weeks of work."
+    expect: REJECT
+  - id: r07-reworded-ok
+    marked: "⟦Um⟧, the main risk is the⟦ the⟧ migration, ⟦like⟧, we haven't tested it on the full data set."
+    rewrite: "The main risk is the migration: we haven't tested it on the full data set."
+    expect: PASS

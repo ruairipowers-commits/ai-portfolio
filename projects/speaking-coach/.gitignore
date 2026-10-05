@@ -1,0 +1,11 @@
+.env
+output/
+logs/
+warehouse/
+evals/feedback.local.yaml
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.venv/
+infra/aws/.terraform/
+*.tfstate*

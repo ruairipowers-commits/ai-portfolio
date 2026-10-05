@@ -1,0 +1,3 @@
+region              = "us-east-1"
+approved_model_arns = ["arn:aws:bedrock:us-east-1::foundation-model/SET-APPROVED-MODEL-ID"]
+log_retention_days  = 90
