@@ -1,0 +1,22 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:05.000
+<v Host>Welcome back. So, um, today we're talking about data contracts.
+
+00:00:05.500 --> 00:00:11.000
+<v Guest>Thanks for having me. Uh, I think contracts are kind of misunderstood, you know?
+
+00:00:11.500 --> 00:00:16.000
+<v Host>Misunderstood how?
+
+00:00:16.500 --> 00:00:22.000
+<v Guest>People think they're paperwork. Like, a document nobody reads.
+
+00:00:23.500 --> 00:00:29.000
+<v Guest>But a good contract is a test that runs on every change, and it looks like code.
+
+00:00:29.500 --> 00:00:33.000
+<v Host>So how do you start?
+
+00:00:33.500 --> 00:00:39.000
+<v Guest>Um, you start with the one table that breaks most often, I guess.

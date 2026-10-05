@@ -1,0 +1,71 @@
+# MODEL-01 Model registry. Code only ever references ALIASES.
+# Two roles: the disambiguator (is this "like" a filler?) is a small, cheap classification; the coach writes the
+# pattern notes and rewrites and benefits from a stronger model. Neither one changes a count: code does that.
+# To migrate: point coach-candidate at the new model, run
+#   coach eval --alias coach-candidate --baseline coach-disambiguator
+# and, if the gate passes, `coach promote coach-disambiguator <model>`.
+# Pricing is USD per million tokens; a model with null pricing is refused unless cost.allow_unpriced_models=true.
+
+aliases:
+  coach-disambiguator: mock-coach
+  coach-writer: mock-coach
+  coach-fallback: mock-coach
+  coach-candidate: mock-coach
+
+models:
+  mock-coach:              # deterministic offline stand-in for both roles, no keys
+    provider: mock
+    model_id: mock-coach-v1
+    input_per_mtok: 1.00   # simulated, so the cost report has numbers to show
+    output_per_mtok: 5.00
+    deprecation_date: null
+    approved: true
+
+  local-qwen:              # local open model on the EVO-X1 through Ollama ($0 per token)
+    provider: ollama
+    model_id: qwen3:14b    # override with OLLAMA_MODEL
+    input_per_mtok: 0.0
+    output_per_mtok: 0.0
+    deprecation_date: null
+    approved: true
+
+  local-gemma:
+    provider: ollama
+    model_id: gemma4:e4b
+    input_per_mtok: 0.0
+    output_per_mtok: 0.0
+    deprecation_date: null
+    approved: true
+
+  claude-sonnet:
+    provider: anthropic
+    model_id: claude-sonnet-5-5
+    input_per_mtok: null   # fill from anthropic.com/pricing
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true         # SEC-05: only approved models can be resolved
+
+  claude-haiku:
+    provider: anthropic
+    model_id: claude-haiku-4-5-20251001
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true
+
+  openai-default:
+    provider: openai
+    model_id: "SET-CURRENT-OPENAI-MODEL-ID"
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: false        # flip after review of provider terms
+
+  bedrock-claude:
+    provider: bedrock
+    model_id: "SET-BEDROCK-MODEL-OR-INFERENCE-PROFILE-ID"
+    region: us-east-1
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true

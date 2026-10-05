@@ -1,0 +1,16 @@
+name: core-fillers
+description: "Sounds and words that fill silence"
+repetition: true
+entries:
+  - {text: um,  category: filler sound, rule: always}
+  - {text: uh,  category: filler sound, rule: always}
+  - {text: er,  category: filler sound, rule: always}
+  - {text: ah,  category: filler sound, rule: always}
+  - {text: hmm, category: filler sound, rule: always}
+  - {text: like,     category: filler word, rule: context}
+  - {text: you know, category: filler word, rule: context}
+  - {text: I mean,   category: filler word, rule: context}
+  - {text: right,    category: filler word, rule: context}
+  - {text: well,     category: filler word, rule: opener}
+  - {text: so,       category: sentence starter, rule: opener}
+  - {text: okay so,  category: sentence starter, rule: opener}

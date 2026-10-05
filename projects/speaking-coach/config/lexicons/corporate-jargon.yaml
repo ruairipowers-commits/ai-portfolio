@@ -1,0 +1,11 @@
+name: corporate-jargon
+description: "Phrases that sound like work and say little"
+entries:
+  - {text: circle back,       category: jargon, rule: always}
+  - {text: touch base,        category: jargon, rule: always}
+  - {text: move the needle,   category: jargon, rule: always}
+  - {text: low-hanging fruit, category: jargon, rule: always}
+  - {text: synergy,           category: jargon, rule: always}
+  - {text: leverage,          category: jargon, rule: always, weight: 0.5}
+  - {text: going forward,     category: jargon, rule: always}
+  - {text: deep dive,         category: jargon, rule: always}

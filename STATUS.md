@@ -3,6 +3,21 @@
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
 (or delete them) as they're done. Last updated 5 October 2026.
 
+## 00. Speaking coach (new personal project, built 5 October 2026)
+
+`projects/speaking-coach` + `site/personal/posts/speaking-coach.md`, from Ruairi's own filler word list and
+practice plan (the `starter` preset). Decisions: personal tier, no audio in v1, hosted demo text only. Verified
+offline: 41 tests, `coach all`, eval gate (0.986 / 0.986; held-out 0.857), governance check, app checked in a
+browser (default run, injection break-it, coaching tab), `mkdocs build --strict`. Committed on branch
+`spec/speaking-coach`, **not pushed** — waiting for Ruairi's go-ahead.
+
+- [ ] **Push** the branch (or merge to `main`) once Ruairi approves.
+- [ ] **Demo host:** `git pull && ./update.sh` builds `Dockerfile.space` (`/speaking-coach/`, text only, 1g).
+- [ ] **Real model:** point `coach-disambiguator` at a local model on the EVO-X1, run `coach eval`, and replace the
+      mock numbers in the post's "What I'd do next".
+- [ ] Options documented, not built: audio (faster-whisper, verbatim), a live buzzer (streaming the same rules),
+      spaCy tagging for unclear words.
+
 ## 0a. Editorial agents + subscriptions (built 5 October 2026)
 
 Pushed in `08e7707`, `6696723`, `86b9553`, `234a024`; CI green. The weekly scheduled task "Weekly blog post draft"
