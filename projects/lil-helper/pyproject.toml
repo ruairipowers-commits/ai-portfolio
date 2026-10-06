@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lil-helper"
+version = "0.1.0"
+description = "Lil'Helper: family meal planning, a shopping list split across stores, shared chores and the dog's food"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Ruairi Powers" }]
+requires-python = ">=3.11"
+dependencies = [
+  "pyyaml>=6",
+  "pydantic>=2.6",
+  "ortools>=9.10",
+  "jinja2>=3.1",
+  "httpx>=0.27",
+  "fastapi>=0.110",
+  "uvicorn>=0.29",
+  "python-multipart>=0.0.9",
+  "apscheduler>=3.10,<4",
+  "weasyprint>=61",
+]
+
+[project.optional-dependencies]
+ui = ["streamlit>=1.35", "pandas>=2"]
+dev = ["pytest>=8", "pillow>=10"]
+anthropic = ["anthropic>=0.40"]
+openai = ["openai>=1.40"]
+aws = ["boto3>=1.34"]
+
+[project.scripts]
+helper = "lilhelper.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+lilhelper = ["templates/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

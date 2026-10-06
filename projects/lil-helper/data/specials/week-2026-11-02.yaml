@@ -1,0 +1,195 @@
+week_of: '2026-11-02'
+valid_to: '2026-11-08'
+items:
+- store: whole_foods
+  ingredient: brussels_sprouts
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 2.86
+  regular: 4.09
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: kale
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 2.36
+  regular: 2.78
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: butternut_squash
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 2.81
+  regular: 4.01
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: black_beans
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 1.33
+  regular: 1.57
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: chocolate_chips
+  brand: 365 by Whole Foods
+  pack: 2
+  price: 4.6
+  regular: 6.57
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: bacon
+  brand: 365 by Whole Foods
+  pack: 12
+  price: 4.16
+  regular: 6.94
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: oats
+  brand: 365 by Whole Foods
+  pack: 10
+  price: 2.96
+  regular: 3.7
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: pesto
+  brand: 365 by Whole Foods
+  pack: 12
+  price: 5.59
+  regular: 9.32
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: apples
+  brand: Kirkland Signature
+  pack: 24
+  price: 10.33
+  regular: 13.77
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: butternut_squash
+  brand: Kirkland Signature
+  pack: 1
+  price: 1.76
+  regular: 2.52
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: sweet_potatoes
+  brand: Kirkland Signature
+  pack: 12
+  price: 11.58
+  regular: 13.62
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: frozen_berries
+  brand: Kirkland Signature
+  pack: 16
+  price: 10.79
+  regular: 14.38
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: spinach
+  brand: Kirkland Signature
+  pack: 40
+  price: 8.9
+  regular: 14.83
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: chickpeas
+  brand: Kirkland Signature
+  pack: 4
+  price: 2.96
+  regular: 3.94
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: frozen_dumplings
+  brand: Kirkland Signature
+  pack: 96
+  price: 16.3
+  regular: 23.28
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: cod
+  brand: Kirkland Signature
+  pack: 4
+  price: 22.09
+  regular: 31.55
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: apples
+  brand: Stop & Shop
+  pack: 6
+  price: 3.84
+  regular: 5.49
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: butternut_squash
+  brand: Stop & Shop
+  pack: 1
+  price: 2.78
+  regular: 3.48
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: brussels_sprouts
+  brand: Stop & Shop
+  pack: 1
+  price: 2.58
+  regular: 3.69
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: ground_beef
+  brand: Stop & Shop
+  pack: 1
+  price: 5.82
+  regular: 6.85
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: tofu
+  brand: Stop & Shop
+  pack: 14
+  price: 2.25
+  regular: 2.65
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: ground_turkey
+  brand: Stop & Shop
+  pack: 1
+  price: 4.49
+  regular: 6.42
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: chocolate_chips
+  brand: Stop & Shop
+  pack: 2
+  price: 3.32
+  regular: 5.53
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: almond_butter
+  brand: Stop & Shop
+  pack: 24
+  price: 8.56
+  regular: 11.41
+  source: flyer
+  confirmed_by: demo

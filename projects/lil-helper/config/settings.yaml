@@ -1,0 +1,71 @@
+# Runtime + governance settings. Every key here is referenced in docs/governance.md.
+use_case: lil-helper
+risk_tier: medium         # HITL-01: spends money (via a person), children's data, allergies, pet safety
+
+household_file: config/household.yaml         # falls back to config/household.example.yaml (fictional)
+
+planner:
+  solver_seconds: 8                           # NFR-2: a week solves well inside this
+  weights:                                    # objective, in "dollars": lower is better
+    disliked: 6.0                             # per person who dislikes the meal
+    liked: -3.0                               # per person who likes it
+    in_season: -1.5                           # per in-season ingredient used
+    out_of_season: 1.0
+    on_special: -1.0                          # per ingredient on special this week
+    new_suggestion: 0.5                       # small nudge against untried recipes unless they're better
+    prep_slack: 0.0
+  leftovers_cover_night: true                 # a "leftovers" night is fed by an earlier leftovers-tagged dinner
+
+shopping:
+  pantry_file: warehouse/pantry.yaml          # what's already in the house (updated from purchases and feedback)
+  bulk_leftover_value: 0.5                    # share of a bulk pack's unused part counted as worth having
+  typo_special_ratio: 0.35                    # a special below 35% of the regular price is flagged for a person
+  max_solver_seconds: 5
+
+pets:
+  extras_max_share: 0.10                      # dog extras ≤ 10% of daily calories (common vet guidance)
+  restock_days_ahead: 10                      # buy dog food when the bag would run out within this many days
+
+feedback:
+  portion_learning_rate: 0.3                  # EWMA on "how much was eaten"
+  min_portion: 0.6
+  max_portion: 1.3
+  leftover_weeks_to_shrink: 3                 # lots left 3 weeks running → that recipe's portion shrinks
+
+privacy:                                      # DATA-03
+  share_names_with_model: false               # people become "adult 1", "kid (9)" in anything sent to a model
+  local_only: false                           # true: refuse any model that isn't mock or ollama
+  card_number_pattern: '(?:\d[ -]?){13,19}'   # anything like this in a card field is refused
+
+llm:
+  suggest_alias: helper-suggest               # MODEL-01: new recipe ideas (schema)
+  vision_alias: helper-vision                 # reads a flyer photo/PDF into specials (schema)
+  notes_alias: helper-notes                   # one-line "why" notes on the plan
+  fallback_alias: helper-fallback             # MODEL-05
+  max_output_tokens: 1500
+  retries: 2
+  prompts:                                    # MODEL-04: versioned files, hash logged per call
+    suggest: prompts/suggest.v1.md
+    flyer: prompts/flyer.v1.md
+    notes: prompts/notes.v1.md
+
+cost:                                         # COST-01..04
+  max_usd_per_run: 0.10
+  max_input_tokens_per_call: 12000
+  monthly_alert_usd: 2.00
+  allow_unpriced_models: false
+
+eval:                                         # EVAL-02 thresholds; MODEL-02 gate
+  golden_set: evals/golden_set.yaml
+  must_reject_recall: 1.00                    # allergens and dog-toxic: every one must be caught
+  min_case_pass_rate: 1.00
+  min_flyer_item_accuracy: 0.90
+  max_total_cost_usd: 0.10
+
+email:
+  outbox_dir: output/outbox                   # mock mode writes .eml files here; RESEND_API_KEY sends for real
+  from_env: MAIL_FROM
+
+governance:
+  deprecation_warning_days: 90                # MODEL-03
+  log_retention_days: 365                     # OBS-03: plans, purchases handed off and approvals (household records)

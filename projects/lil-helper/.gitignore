@@ -1,0 +1,14 @@
+.env
+output/
+logs/
+warehouse/
+evals/feedback.local.yaml
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.venv/
+infra/aws/.terraform/
+*.tfstate*
+output/evals/
+warehouse/
+config/household.yaml   # your real household: children's names never go in git

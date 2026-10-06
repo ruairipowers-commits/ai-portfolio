@@ -1,0 +1,20 @@
+<!doctype html><html><body style="margin:0;background:#FFF6E0;font-family:Helvetica,Arial,sans-serif;color:#3A1F14">
+<div style="max-width:620px;margin:0 auto;padding:20px">
+<table role="presentation"><tr><td style="width:52px">{% if links.logo %}<img src="{{ links.logo }}" width="48" height="48" alt="">{% endif %}</td>
+<td><h1 style="margin:0;font-size:22px;color:#C8301E">Lil’<span style="color:#3E9E3A">Helper</span></h1></td></tr></table>
+<p style="font-size:16px">Here’s the week of <b>{{ week_of.strftime('%B %-d') }}</b> for {{ household }}.</p>
+{% if links.approve %}<p><a href="{{ links.approve }}" style="background:#C8301E;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:bold">Review and approve</a></p>{% endif %}
+<h2 style="font-size:17px;color:#3E9E3A;margin-bottom:6px">Dinners</h2>
+<table style="width:100%;border-collapse:collapse;background:#fff;border-radius:8px">
+{% for d in days %}<tr><td style="padding:8px;border-bottom:1px solid #F0E3CC;width:60px;color:#6B4423;vertical-align:top"><b>{{ d.name[:3] }}</b></td>
+<td style="padding:8px;border-bottom:1px solid #F0E3CC">{% if d.meals.get('dinner') %}<b>{{ d.meals.dinner.name }}</b><br><span style="color:#6B4423;font-size:13px">{{ notes.get((d.key, 'dinner'), '') }}</span>{% elif d.special %}<b style="color:#3E9E3A">{{ d.special|title }} night</b>{% endif %}
+{% for j, who in d.jobs %}{% if j == 'Cook' %}<br><span style="font-size:13px">Cook: {{ who }}</span>{% endif %}{% endfor %}</td></tr>{% endfor %}
+</table>
+<h2 style="font-size:17px;color:#3E9E3A;margin-bottom:6px">Shopping</h2>
+{% for o in split.orders %}<p style="margin:4px 0"><b>{{ o.store_name }}</b> — {{ o.mode|replace('_',' ') }}, {{ o.lines|length }} items, ${{ '%.2f'|format(o.total) }}{% if links.get(o.store) %} · <a href="{{ links[o.store] }}">open list</a>{% endif %}</p>{% endfor %}
+<p style="margin:4px 0">Total about <b>${{ '%.2f'|format(split.total) }}</b>, {{ split.minutes }} minutes of your time.</p>
+{% if savings %}<h2 style="font-size:17px;color:#3E9E3A;margin-bottom:6px">Saved this week</h2>
+<p style="margin:4px 0"><b>${{ '%.2f'|format(savings.dollars_saved) }}</b> vs everything from the home store at full price (specials ${{ '%.2f'|format(savings.specials_saved) }}, card and membership credits ${{ '%.2f'|format(savings.credits) }}), and about <b>{{ savings.minutes_saved|round|int }} minutes</b>.</p>{% endif %}
+{% for p in pets %}<p style="margin:10px 0 4px"><b>{{ p.name }}</b>: {% if p.restock %}restocking {% for k, v in p.restock.items() %}{{ v|int }} {{ 'cups of food' if k == 'dog_food' else 'treats' }}{% if not loop.last %} and {% endif %}{% endfor %}. {% endif %}{{ p.extras|length }} plain extras from dinners this week.</p>{% endfor %}
+<p style="font-size:12px;color:#6B4423;margin-top:20px">Lil’Helper never buys anything: every list opens in the store’s own app for you to check out.</p>
+</div></body></html>

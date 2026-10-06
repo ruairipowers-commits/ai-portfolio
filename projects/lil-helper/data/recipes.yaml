@@ -1,0 +1,208 @@
+# Starter recipe book (written for this project). A household adds its own in the app, imports a recipe page
+# (schema.org Recipe) or a Paprika export, or accepts a model's suggestion that passes the checks.
+#   meal       breakfast | lunch | dinner
+#   active     minutes of hands-on work; total = active + unattended (oven, simmer)
+#   ing        ingredient id → amount per serving, in the ingredient's unit
+#   veg        vegetable/fruit servings per portion; protein grams per portion (rough)
+#   tags       vegetarian, kid_friendly, batch (cook ahead on a prep day), leftovers (makes next-day lunch),
+#              fried, processed, sheet_pan, one_pot, slow_cooker
+#   dog        ingredients that can be set aside plain (before seasoning) for the dog; checked against the toxic list
+recipes:
+  # ---------------------------------------------------------------- dinners
+  sheet_pan_chicken_veg:
+    {name: Sheet-pan chicken with carrots and green beans, meal: dinner, active: 15, total: 40, veg: 2, protein: 32,
+     tags: [kid_friendly, sheet_pan], dog: [chicken_breast, carrots, green_beans],
+     ing: {chicken_breast: 0.4, carrots: 0.25, green_beans: 0.2, olive_oil: 1, lemons: 0.25, garlic: 0.1}}
+  roast_chicken_potatoes:
+    {name: Roast chicken with potatoes, meal: dinner, active: 15, total: 90, veg: 1, protein: 35,
+     tags: [kid_friendly, leftovers], dog: [carrots],
+     ing: {whole_chicken: 0.2, potatoes: 0.4, carrots: 0.2, olive_oil: 1, lemons: 0.2, garlic: 0.1}}
+  chicken_tacos:
+    {name: Chicken soft tacos, meal: dinner, active: 20, total: 25, veg: 1, protein: 28, tags: [kid_friendly],
+     ing: {chicken_thighs: 0.3, tortillas: 2, lettuce: 0.15, salsa: 0.15, cheddar: 1, taco_seasoning: 0.5, lemons: 0.1}}
+  black_bean_tacos:
+    {name: Black bean and sweet potato tacos, meal: dinner, active: 20, total: 35, veg: 2, protein: 12,
+     tags: [vegetarian, kid_friendly], dog: [sweet_potatoes],
+     ing: {black_beans: 0.35, sweet_potatoes: 0.3, corn_tortillas: 2, salsa: 0.15, avocado: 0.25, cilantro: 0.1}}
+  turkey_chili:
+    {name: Turkey and bean chili, meal: dinner, active: 20, total: 60, veg: 2, protein: 30,
+     tags: [batch, leftovers, one_pot], dog: [ground_turkey],
+     ing: {ground_turkey: 0.3, black_beans: 0.3, canned_tomatoes: 0.3, onion: 0.2, bell_pepper: 0.25, cheddar: 0.5}}
+  beef_bolognese:
+    {name: Spaghetti bolognese, meal: dinner, active: 20, total: 50, veg: 1, protein: 26,
+     tags: [kid_friendly, batch, leftovers],
+     ing: {ground_beef: 0.25, pasta: 3, canned_tomatoes: 0.3, carrots: 0.1, onion: 0.2, garlic: 0.1, parmesan: 0.3}}
+  turkey_meatballs:
+    {name: Baked turkey meatballs with marinara, meal: dinner, active: 25, total: 45, veg: 1, protein: 28,
+     tags: [kid_friendly, batch],
+     ing: {ground_turkey: 0.3, breadcrumbs: 0.1, eggs: 0.25, marinara: 0.4, pasta: 2.5, parmesan: 0.3, spinach: 1}}
+  salmon_rice_broccoli:
+    {name: Honey-soy salmon with rice and broccoli, meal: dinner, active: 15, total: 30, veg: 1.5, protein: 30,
+     tags: [], dog: [salmon, rice],
+     ing: {salmon: 0.35, rice: 0.3, broccoli: 0.3, soy_sauce: 1, honey: 0.5, ginger: 0.2}}
+  sheet_pan_salmon_asparagus:
+    {name: Sheet-pan salmon with asparagus and potatoes, meal: dinner, active: 10, total: 30, veg: 2, protein: 30,
+     tags: [sheet_pan], dog: [salmon],
+     ing: {salmon: 0.35, asparagus: 0.25, potatoes: 0.25, olive_oil: 1, lemons: 0.25}}
+  fish_tacos:
+    {name: Crispy cod tacos with slaw, meal: dinner, active: 25, total: 30, veg: 1, protein: 25, tags: [fried],
+     ing: {cod: 0.3, tortillas: 2, breadcrumbs: 0.15, eggs: 0.25, lettuce: 0.2, lemons: 0.2, salsa: 0.1}}
+  shrimp_curry:
+    {name: Thai red curry with shrimp, meal: dinner, active: 20, total: 30, veg: 1.5, protein: 24,
+     tags: [one_pot],
+     ing: {shrimp: 0.3, curry_paste: 1, coconut_milk: 0.3, bell_pepper: 0.3, rice: 0.3, basil: 0.1}}
+  chicken_satay:
+    {name: Chicken satay bowls with peanut sauce, meal: dinner, active: 20, total: 35, veg: 1.5, protein: 32,
+     tags: [kid_friendly],
+     ing: {chicken_thighs: 0.35, peanut_butter: 2, soy_sauce: 1, rice: 0.3, cucumber: 0.3, carrots: 0.15, lemons: 0.1}}
+  pesto_pasta_chicken:
+    {name: Pesto pasta with chicken and peas, meal: dinner, active: 15, total: 25, veg: 1, protein: 28,
+     tags: [kid_friendly], dog: [chicken_breast, frozen_peas],
+     ing: {pasta: 3, pesto: 2, chicken_breast: 0.25, frozen_peas: 0.3, parmesan: 0.3}}
+  mac_and_cheese_broccoli:
+    {name: Stovetop mac and cheese with broccoli, meal: dinner, active: 20, total: 25, veg: 1, protein: 16,
+     tags: [vegetarian, kid_friendly], ing: {pasta: 3, cheddar: 2, milk: 0.3, butter: 1, broccoli: 0.3}}
+  veggie_pizza:
+    {name: Homemade veggie pizza night, meal: dinner, active: 25, total: 40, veg: 1.5, protein: 15,
+     tags: [vegetarian, kid_friendly],
+     ing: {pizza_dough: 0.35, marinara: 0.2, mozzarella: 2, mushrooms: 1.5, bell_pepper: 0.25, spinach: 0.5}}
+  pork_apples:
+    {name: Pork tenderloin with roasted apples and sweet potatoes, meal: dinner, active: 15, total: 45, veg: 2,
+     protein: 30, tags: [sheet_pan], dog: [sweet_potatoes, apples],
+     ing: {pork_tenderloin: 0.35, apples: 0.5, sweet_potatoes: 0.3, olive_oil: 1, maple_syrup: 0.5}}
+  butternut_soup:
+    {name: Butternut squash soup with grilled cheese, meal: dinner, active: 20, total: 50, veg: 2, protein: 14,
+     tags: [vegetarian, batch, leftovers], dog: [butternut_squash],
+     ing: {butternut_squash: 0.3, onion: 0.15, chicken_broth: 0.8, bread: 2, cheddar: 1, butter: 1, apples: 0.2}}
+  lentil_soup:
+    {name: Lentil and vegetable soup, meal: dinner, active: 15, total: 50, veg: 2, protein: 16,
+     tags: [vegetarian, batch, leftovers, one_pot],
+     ing: {lentils: 0.3, carrots: 0.2, celery: 0.15, onion: 0.15, canned_tomatoes: 0.2, spinach: 1, bread: 1}}
+  chicken_noodle_soup:
+    {name: Chicken noodle soup, meal: dinner, active: 20, total: 50, veg: 1.5, protein: 24,
+     tags: [kid_friendly, batch, leftovers, one_pot], dog: [chicken_breast, carrots],
+     ing: {chicken_breast: 0.25, pasta: 1.5, carrots: 0.2, celery: 0.15, onion: 0.15, chicken_broth: 1.2}}
+  stir_fry_tofu:
+    {name: Tofu and vegetable stir-fry, meal: dinner, active: 20, total: 25, veg: 2, protein: 18,
+     tags: [vegetarian],
+     ing: {tofu: 5, broccoli: 0.25, bell_pepper: 0.25, carrots: 0.1, soy_sauce: 1, ginger: 0.2, rice: 0.3}}
+  beef_stir_fry:
+    {name: Beef and broccoli, meal: dinner, active: 20, total: 25, veg: 1.5, protein: 28, tags: [],
+     ing: {ground_beef: 0.3, broccoli: 0.35, soy_sauce: 1, ginger: 0.2, garlic: 0.1, rice: 0.3}}
+  burgers_sweet_fries:
+    {name: Turkey burgers with sweet potato fries, meal: dinner, active: 20, total: 40, veg: 1.5, protein: 28,
+     tags: [kid_friendly], dog: [sweet_potatoes],
+     ing: {ground_turkey: 0.3, bread: 2, sweet_potatoes: 0.35, lettuce: 0.1, tomatoes: 0.1, cheddar: 0.5}}
+  chickpea_curry:
+    {name: Chickpea and spinach curry, meal: dinner, active: 15, total: 30, veg: 2, protein: 14,
+     tags: [vegetarian, one_pot, leftovers],
+     ing: {chickpeas: 0.4, coconut_milk: 0.25, spinach: 1.5, canned_tomatoes: 0.2, onion: 0.15, rice: 0.3, ginger: 0.2}}
+  quesadillas:
+    {name: Bean and cheese quesadillas, meal: dinner, active: 15, total: 15, veg: 0.5, protein: 18,
+     tags: [vegetarian, kid_friendly], ing: {tortillas: 2, black_beans: 0.25, cheddar: 1.5, salsa: 0.1, corn: 0.3}}
+  breakfast_for_dinner:
+    {name: "Breakfast for dinner (eggs, toast, fruit)", meal: dinner, active: 15, total: 15, veg: 1, protein: 18,
+     tags: [vegetarian, kid_friendly], dog: [eggs],
+     ing: {eggs: 2, bread: 2, butter: 0.5, strawberries: 0.5, bacon: 1}}
+  pumpkin_chili:
+    {name: Pumpkin black bean chili, meal: dinner, active: 15, total: 45, veg: 2.5, protein: 16,
+     tags: [vegetarian, batch, leftovers, one_pot],
+     ing: {pumpkin_puree: 0.2, black_beans: 0.4, canned_tomatoes: 0.25, onion: 0.15, bell_pepper: 0.2, cheddar: 0.5}}
+  sausage_kale_pasta:
+    {name: "Sausage, kale and white bean pasta", meal: dinner, active: 20, total: 25, veg: 1.5, protein: 24,
+     tags: [], ing: {sausage: 0.2, kale: 0.25, chickpeas: 0.2, pasta: 2.5, parmesan: 0.3, garlic: 0.1}}
+  roasted_veg_quinoa:
+    {name: Roasted vegetable quinoa bowls with feta, meal: dinner, active: 15, total: 35, veg: 2.5, protein: 14,
+     tags: [vegetarian, sheet_pan], dog: [zucchini, sweet_potatoes],
+     ing: {quinoa: 0.3, zucchini: 0.5, sweet_potatoes: 0.2, bell_pepper: 0.25, feta: 1, olive_oil: 1, chickpeas: 0.15}}
+  brussels_chicken_thighs:
+    {name: Crispy chicken thighs with Brussels sprouts and cranberries, meal: dinner, active: 15, total: 40, veg: 2,
+     protein: 30, tags: [sheet_pan],
+     ing: {chicken_thighs: 0.4, brussels_sprouts: 0.3, cranberries: 0.15, olive_oil: 1, maple_syrup: 0.5}}
+  summer_corn_tomato_pasta:
+    {name: Summer corn and tomato pasta, meal: dinner, active: 15, total: 20, veg: 2, protein: 12,
+     tags: [vegetarian, kid_friendly],
+     ing: {pasta: 3, corn: 0.5, cherry_tomatoes: 0.5, basil: 0.15, parmesan: 0.4, olive_oil: 1}}
+  grilled_chicken_zucchini:
+    {name: Grilled lemon chicken with zucchini and corn, meal: dinner, active: 20, total: 30, veg: 2, protein: 32,
+     tags: [kid_friendly], dog: [chicken_breast, zucchini],
+     ing: {chicken_breast: 0.4, zucchini: 0.5, corn: 0.5, lemons: 0.25, olive_oil: 1}}
+  shrimp_tacos:
+    {name: Shrimp tacos with corn salsa, meal: dinner, active: 20, total: 20, veg: 1.5, protein: 22, tags: [],
+     ing: {shrimp: 0.3, corn_tortillas: 2, corn: 0.3, cherry_tomatoes: 0.3, avocado: 0.25, lemons: 0.2}}
+  slow_cooker_chicken_stew:
+    {name: Slow-cooker chicken and sweet potato stew, meal: dinner, active: 15, total: 360, veg: 2, protein: 28,
+     tags: [slow_cooker, batch, leftovers], dog: [chicken_thighs, sweet_potatoes, carrots],
+     ing: {chicken_thighs: 0.3, sweet_potatoes: 0.3, carrots: 0.2, chicken_broth: 0.6, onion: 0.15, kale: 0.15}}
+  dumplings_greens:
+    {name: Frozen dumplings with garlicky greens, meal: dinner, active: 10, total: 15, veg: 1, protein: 14,
+     tags: [processed], ing: {frozen_dumplings: 8, spinach: 2, garlic: 0.1, soy_sauce: 1, sesame_oil: 0.5}}
+  chicken_fajitas:
+    {name: Sheet-pan chicken fajitas, meal: dinner, active: 15, total: 30, veg: 1.5, protein: 30,
+     tags: [kid_friendly, sheet_pan],
+     ing: {chicken_breast: 0.35, bell_pepper: 0.5, onion: 0.2, tortillas: 2, taco_seasoning: 0.5, salsa: 0.1}}
+  mushroom_risotto:
+    {name: Baked mushroom risotto, meal: dinner, active: 15, total: 45, veg: 1.5, protein: 12, tags: [vegetarian],
+     ing: {rice: 0.35, mushrooms: 2, chicken_broth: 1, parmesan: 0.5, butter: 1, spinach: 1}}
+  gf_pasta_meat_sauce:
+    {name: Gluten-free pasta with meat sauce, meal: dinner, active: 20, total: 40, veg: 1, protein: 26,
+     tags: [kid_friendly], ing: {gf_pasta: 3, ground_beef: 0.25, marinara: 0.4, carrots: 0.1, parmesan: 0.3}}
+  cod_potatoes_peas:
+    {name: Lemon cod with smashed potatoes and peas, meal: dinner, active: 15, total: 35, veg: 1.5, protein: 26,
+     tags: [], dog: [cod, frozen_peas], ing: {cod: 0.35, potatoes: 0.35, frozen_peas: 0.3, butter: 1, lemons: 0.25}}
+  # ---------------------------------------------------------------- breakfasts
+  oatmeal_berries:
+    {name: Oatmeal with berries, meal: breakfast, active: 5, total: 10, veg: 1, protein: 8,
+     tags: [vegetarian, kid_friendly], dog: [oats, blueberries],
+     ing: {oats: 0.5, blueberries: 0.4, milk: 0.5, maple_syrup: 0.5}}
+  apple_cinnamon_oats:
+    {name: Apple cinnamon overnight oats, meal: breakfast, active: 5, total: 5, veg: 1, protein: 9,
+     tags: [vegetarian, kid_friendly, batch], dog: [apples, oats], ing: {oats: 0.5, apples: 0.5, yogurt: 0.3, milk: 0.3}}
+  scrambled_eggs_toast:
+    {name: Scrambled eggs and toast, meal: breakfast, active: 10, total: 10, veg: 0, protein: 16,
+     tags: [vegetarian, kid_friendly], dog: [eggs], ing: {eggs: 2, bread: 1, butter: 0.5}}
+  yogurt_parfait:
+    {name: Yogurt parfait with granola, meal: breakfast, active: 5, total: 5, veg: 1, protein: 12,
+     tags: [vegetarian, kid_friendly], ing: {yogurt: 0.75, granola: 0.25, strawberries: 0.4, honey: 0.5}}
+  pumpkin_pancakes:
+    {name: Pumpkin pancakes, meal: breakfast, active: 20, total: 25, veg: 0.5, protein: 9,
+     tags: [vegetarian, kid_friendly], ing: {pancake_mix: 0.5, pumpkin_puree: 0.1, milk: 0.3, maple_syrup: 1}}
+  egg_muffins:
+    {name: Spinach and cheese egg muffins, meal: breakfast, active: 15, total: 35, veg: 0.5, protein: 14,
+     tags: [vegetarian, batch, kid_friendly], ing: {eggs: 2, spinach: 0.5, cheddar: 0.5, bell_pepper: 0.1}}
+  bagels_cream_cheese:
+    {name: Bagels with cream cheese and fruit, meal: breakfast, active: 5, total: 5, veg: 1, protein: 10,
+     tags: [vegetarian, kid_friendly, processed], ing: {bagels: 1, cream_cheese: 1, bananas: 0.5}}
+  smoothie_pb_banana:
+    {name: Peanut butter banana smoothie, meal: breakfast, active: 5, total: 5, veg: 1, protein: 12,
+     tags: [vegetarian, kid_friendly], ing: {bananas: 1, peanut_butter: 1, milk: 0.75, oats: 0.15}}
+  sunbutter_toast_banana:
+    {name: Sunflower butter toast with banana, meal: breakfast, active: 5, total: 5, veg: 1, protein: 8,
+     tags: [vegetarian, kid_friendly], ing: {bread: 1, sunbutter: 1, bananas: 0.5}}
+  # ---------------------------------------------------------------- lunches
+  turkey_sandwich:
+    {name: "Turkey and cheese sandwich, carrot sticks", meal: lunch, active: 5, total: 5, veg: 1, protein: 22,
+     tags: [kid_friendly, processed], dog: [carrots],
+     ing: {bread: 2, turkey_slices: 2.5, cheddar: 0.75, carrots: 0.15, lettuce: 0.05}}
+  sunbutter_jelly:
+    {name: "Sunflower butter and jam sandwich, apple slices", meal: lunch, active: 5, total: 5, veg: 1, protein: 9,
+     tags: [vegetarian, kid_friendly], dog: [apples], ing: {bread: 2, sunbutter: 1.5, jam: 1, apples: 0.5}}
+  pb_jelly:
+    {name: "Peanut butter and jelly, grapes", meal: lunch, active: 5, total: 5, veg: 1, protein: 10,
+     tags: [vegetarian, kid_friendly], ing: {bread: 2, peanut_butter: 1.5, jam: 1, grapes: 0.5}}
+  chicken_salad_wrap:
+    {name: Chicken Caesar wrap, meal: lunch, active: 10, total: 10, veg: 1, protein: 26, tags: [],
+     ing: {tortillas: 1, chicken_breast: 0.2, lettuce: 0.2, parmesan: 0.3, lemons: 0.1}}
+  hummus_veg_box:
+    {name: "Bento box with chickpeas, cucumber and cheese", meal: lunch, active: 10, total: 10, veg: 1.5, protein: 14,
+     tags: [vegetarian, kid_friendly], ing: {chickpeas: 0.25, cucumber: 0.3, cheddar: 1, cherry_tomatoes: 0.3, bread: 1}}
+  quinoa_salad:
+    {name: "Quinoa, chickpea and feta salad", meal: lunch, active: 15, total: 25, veg: 1.5, protein: 14,
+     tags: [vegetarian, batch], ing: {quinoa: 0.25, chickpeas: 0.25, cucumber: 0.25, cherry_tomatoes: 0.3, feta: 1, lemons: 0.15}}
+  egg_salad:
+    {name: Egg salad on whole wheat, meal: lunch, active: 15, total: 20, veg: 0.5, protein: 16,
+     tags: [vegetarian], ing: {eggs: 2, bread: 2, celery: 0.1, lettuce: 0.05}}
+  pasta_salad:
+    {name: Pasta salad with veggies and mozzarella, meal: lunch, active: 15, total: 20, veg: 1, protein: 12,
+     tags: [vegetarian, kid_friendly, batch],
+     ing: {pasta: 2, cherry_tomatoes: 0.3, cucumber: 0.2, mozzarella: 1, olive_oil: 0.5, basil: 0.05}}

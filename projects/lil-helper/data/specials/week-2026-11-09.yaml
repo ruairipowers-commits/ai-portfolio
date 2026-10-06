@@ -1,0 +1,187 @@
+week_of: '2026-11-09'
+valid_to: '2026-11-15'
+items:
+- store: whole_foods
+  ingredient: cranberries
+  brand: 365 by Whole Foods
+  pack: 3
+  price: 3.28
+  regular: 4.68
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: brussels_sprouts
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 3.48
+  regular: 4.09
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: pumpkin
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 2.71
+  regular: 4.51
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: apples
+  brand: 365 by Whole Foods
+  pack: 6
+  price: 3.23
+  regular: 5.39
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: bananas
+  brand: 365 by Whole Foods
+  pack: 6
+  price: 1.18
+  regular: 1.57
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: pesto
+  brand: 365 by Whole Foods
+  pack: 12
+  price: 5.59
+  regular: 9.32
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: carrots
+  brand: 365 by Whole Foods
+  pack: 2
+  price: 2.69
+  regular: 3.36
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: scallions
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 1.02
+  regular: 1.27
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: butternut_squash
+  brand: Kirkland Signature
+  pack: 1
+  price: 1.76
+  regular: 2.52
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: brussels_sprouts
+  brand: Kirkland Signature
+  pack: 4
+  price: 8.5
+  regular: 10.63
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: apples
+  brand: Kirkland Signature
+  pack: 24
+  price: 10.33
+  regular: 13.77
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: lemons
+  brand: Kirkland Signature
+  pack: 16
+  price: 5.39
+  regular: 6.74
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: bacon
+  brand: Kirkland Signature
+  pack: 48
+  price: 15.5
+  regular: 18.23
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: bananas
+  brand: Kirkland Signature
+  pack: 24
+  price: 2.86
+  regular: 4.09
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: flour
+  brand: Kirkland Signature
+  pack: 80
+  price: 11.38
+  regular: 15.17
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: apples
+  brand: Stop & Shop
+  pack: 6
+  price: 4.39
+  regular: 5.49
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: kale
+  brand: Stop & Shop
+  pack: 1
+  price: 1.51
+  regular: 2.51
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: cranberries
+  brand: Stop & Shop
+  pack: 3
+  price: 2.89
+  regular: 4.13
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: bread
+  brand: Stop & Shop
+  pack: 20
+  price: 2.81
+  regular: 4.69
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: taco_seasoning
+  brand: Stop & Shop
+  pack: 4
+  price: 1.79
+  regular: 2.24
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: rice
+  brand: Stop & Shop
+  pack: 8
+  price: 3.27
+  regular: 4.67
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: strawberries
+  brand: Stop & Shop
+  pack: 2
+  price: 2.94
+  regular: 3.67
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: cheddar
+  brand: Stop & Shop
+  pack: 8
+  price: 2.11
+  regular: 3.51
+  source: flyer
+  confirmed_by: demo

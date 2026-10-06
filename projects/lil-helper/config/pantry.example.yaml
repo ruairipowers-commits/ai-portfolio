@@ -1,0 +1,15 @@
+# What's already in the fictional house at the start of the demo (copied to warehouse/pantry.yaml on first run).
+# Lil'Helper adds what you buy, subtracts what the plan uses, and asks after meals how much was eaten.
+items:
+  olive_oil: 40
+  soy_sauce: 20
+  honey: 20
+  flour: 10
+  butter: 12
+  maple_syrup: 10
+  taco_seasoning: 3
+  rice: 4
+  pasta: 16
+  oats: 4
+  dog_food: 30          # cups left in the bag
+  dog_treats: 10

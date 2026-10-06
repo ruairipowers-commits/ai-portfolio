@@ -1,0 +1,75 @@
+# MODEL-01 Model registry. Code only ever references ALIASES.
+# Three small jobs: suggest a couple of new recipes (schema), read a flyer into specials (vision, schema), write
+# one-line notes on the plan. None of them chooses quantities, prices, allergens or the store split: code does.
+# To migrate: point helper-candidate at the new model, run `helper eval --alias helper-candidate`, then
+# `helper promote helper-suggest <model>` if the gate passes.
+# Pricing is USD per million tokens; a model with null pricing is refused unless cost.allow_unpriced_models=true.
+
+aliases:
+  helper-suggest: mock-helper
+  helper-vision: mock-helper
+  helper-notes: mock-helper
+  helper-fallback: mock-helper
+  helper-candidate: mock-helper
+
+models:
+  mock-helper:             # deterministic offline stand-in for all three jobs, no keys
+    provider: mock
+    model_id: mock-helper-v1
+    input_per_mtok: 1.00   # simulated, so the cost report has numbers to show
+    output_per_mtok: 5.00
+    deprecation_date: null
+    approved: true
+
+  local-qwen:              # local open model on the EVO-X1 through Ollama ($0 per token)
+    provider: ollama
+    model_id: qwen3:14b
+    input_per_mtok: 0.0
+    output_per_mtok: 0.0
+    deprecation_date: null
+    approved: true
+
+  local-gemma-vision:      # a local model that reads images (flyers)
+    provider: ollama
+    model_id: gemma4:e4b
+    vision: true
+    input_per_mtok: 0.0
+    output_per_mtok: 0.0
+    deprecation_date: null
+    approved: true
+
+  claude-sonnet:
+    provider: anthropic
+    model_id: claude-sonnet-5-5
+    vision: true
+    input_per_mtok: null   # fill from anthropic.com/pricing
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true
+
+  claude-haiku:
+    provider: anthropic
+    model_id: claude-haiku-4-5-20251001
+    vision: true
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true
+
+  openai-default:
+    provider: openai
+    model_id: "SET-CURRENT-OPENAI-MODEL-ID"
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: false        # flip after review of provider terms
+
+  bedrock-claude:
+    provider: bedrock
+    model_id: "SET-BEDROCK-MODEL-OR-INFERENCE-PROFILE-ID"
+    region: us-east-1
+    vision: true
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true

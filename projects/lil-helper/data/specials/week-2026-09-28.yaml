@@ -1,0 +1,259 @@
+week_of: '2026-09-28'
+valid_to: '2026-10-04'
+items:
+- store: whole_foods
+  ingredient: cucumber
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 0.89
+  regular: 1.05
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: basil
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 2.39
+  regular: 3.18
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: apples
+  brand: 365 by Whole Foods
+  pack: 6
+  price: 4.31
+  regular: 5.39
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: chicken_thighs
+  brand: 365 by Whole Foods
+  pack: 2
+  price: 6.74
+  regular: 9.63
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: oats
+  brand: 365 by Whole Foods
+  pack: 10
+  price: 2.78
+  regular: 3.7
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: spinach
+  brand: 365 by Whole Foods
+  pack: 10
+  price: 4.34
+  regular: 5.43
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: scallions
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 0.89
+  regular: 1.27
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: jam
+  brand: 365 by Whole Foods
+  pack: 24
+  price: 5.59
+  regular: 6.58
+  source: flyer
+  confirmed_by: demo
+- store: trader_joes
+  ingredient: potatoes
+  brand: Trader Joe's
+  pack: 5
+  price: 3.56
+  regular: 4.74
+  source: flyer
+  confirmed_by: demo
+- store: trader_joes
+  ingredient: butternut_squash
+  brand: Trader Joe's
+  pack: 1
+  price: 1.84
+  regular: 3.07
+  source: flyer
+  confirmed_by: demo
+- store: trader_joes
+  ingredient: zucchini
+  brand: Trader Joe's
+  pack: 2
+  price: 1.62
+  regular: 1.9
+  source: flyer
+  confirmed_by: demo
+- store: trader_joes
+  ingredient: pork_tenderloin
+  brand: Trader Joe's
+  pack: 1.5
+  price: 6.0
+  regular: 7.5
+  source: flyer
+  confirmed_by: demo
+- store: trader_joes
+  ingredient: onion
+  brand: Trader Joe's
+  pack: 3
+  price: 1.43
+  regular: 2.04
+  source: flyer
+  confirmed_by: demo
+- store: trader_joes
+  ingredient: peanut_butter
+  brand: Trader Joe's
+  pack: 28
+  price: 2.91
+  regular: 3.64
+  source: flyer
+  confirmed_by: demo
+- store: trader_joes
+  ingredient: corn_tortillas
+  brand: Trader Joe's
+  pack: 30
+  price: 2.54
+  regular: 3.39
+  source: flyer
+  confirmed_by: demo
+- store: trader_joes
+  ingredient: almond_butter
+  brand: Trader Joe's
+  pack: 24
+  price: 8.12
+  regular: 10.15
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: butternut_squash
+  brand: Kirkland Signature
+  pack: 1
+  price: 1.76
+  regular: 2.52
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: pears
+  brand: Kirkland Signature
+  pack: 16
+  price: 6.22
+  regular: 10.37
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: zucchini
+  brand: Kirkland Signature
+  pack: 8
+  price: 4.94
+  regular: 6.18
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: chicken_thighs
+  brand: Kirkland Signature
+  pack: 8
+  price: 18.71
+  regular: 23.39
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: turkey_slices
+  brand: Kirkland Signature
+  pack: 32
+  price: 11.82
+  regular: 16.88
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: cod
+  brand: Kirkland Signature
+  pack: 4
+  price: 22.09
+  regular: 31.55
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: bananas
+  brand: Kirkland Signature
+  pack: 24
+  price: 3.48
+  regular: 4.09
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: pesto
+  brand: Kirkland Signature
+  pack: 48
+  price: 14.32
+  regular: 23.86
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: brussels_sprouts
+  brand: Stop & Shop
+  pack: 1
+  price: 3.14
+  regular: 3.69
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: lettuce
+  brand: Stop & Shop
+  pack: 1
+  price: 1.84
+  regular: 2.16
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: basil
+  brand: Stop & Shop
+  pack: 1
+  price: 2.32
+  regular: 2.9
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: cilantro
+  brand: Stop & Shop
+  pack: 1
+  price: 0.99
+  regular: 1.41
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: avocado
+  brand: Stop & Shop
+  pack: 4
+  price: 3.87
+  regular: 5.53
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: pumpkin_puree
+  brand: Stop & Shop
+  pack: 1
+  price: 1.66
+  regular: 2.21
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: carrots
+  brand: Stop & Shop
+  pack: 2
+  price: 2.3
+  regular: 2.7
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: jam
+  brand: Stop & Shop
+  pack: 24
+  price: 4.82
+  regular: 5.67
+  source: flyer
+  confirmed_by: demo
