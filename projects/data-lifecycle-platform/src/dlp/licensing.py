@@ -156,7 +156,9 @@ def matrix(s: Session, settings: Settings, customer_id: str | None = None) -> li
     for ds in s.exec(select(store.Dataset).order_by(store.Dataset.id)).all():
         row = {"dataset_id": ds.id, "title": ds.title, "licence": ds.licence}
         for u in USES:
-            row[u.split(":")[1]] = assess(s, settings, ds.id, u, customer_id).verdict
+            v = assess(s, settings, ds.id, u, customer_id)
+            not_registered = v.reasons == ["Not registered by this customer"]
+            row[u.split(":")[1]] = (assess(s, settings, ds.id, u).verdict + " · register") if not_registered else v.verdict
         rows.append(row)
     return rows
 

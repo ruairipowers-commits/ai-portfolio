@@ -148,16 +148,17 @@ def map_field(name: str, description: str = "") -> Term | None:
 
 
 # ---------------------------------------------------------------- checks and versioning
-def check() -> list[str]:
+def check(schema_g: Graph | None = None, vocab_g: Graph | None = None) -> list[str]:
     """Layer-boundary checks: the ontology holds meaning only."""
+    sg, vg = schema_g if schema_g is not None else schema(), vocab_g if vocab_g is not None else vocabulary()
     problems = []
-    for s, _, o in schema().triples((None, RDF.type, None)):
+    for s, _, o in sg.triples((None, RDF.type, None)):
         if o not in SCHEMA_TYPES:
             problems.append(f"dlp.ttl declares an instance {curie(s)} of {curie(o)} — instances belong in the graph")
-    for s, _, o in vocabulary().triples((None, RDF.type, None)):
+    for s, _, o in vg.triples((None, RDF.type, None)):
         if o not in VOCAB_TYPES:
             problems.append(f"vocabulary.ttl declares {curie(s)} as {curie(o)} — only vocabulary terms belong here")
-    classes = set(schema().subjects(RDF.type, OWL.Class))
+    classes = set(sg.subjects(RDF.type, OWL.Class))
     for t in VOCAB_TYPES:
         if t not in classes:
             problems.append(f"vocabulary type {curie(t)} is not a class in dlp.ttl")

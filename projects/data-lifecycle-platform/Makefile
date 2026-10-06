@@ -14,6 +14,6 @@ ui: ; dlp ui
 api: ; dlp api
 mcp: ; dlp mcp
 dagster:    ## Dagster UI over the same assets
-	dagster dev -m orchestration.definitions
+	dagster dev -m dlp.orchestration
 cost: ; dlp cost-report
 clean: ; rm -rf warehouse output data/landing semantic/target semantic/logs
