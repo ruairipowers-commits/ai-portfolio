@@ -65,3 +65,15 @@ dlp:SensitivityShape a sh:NodeShape ;
     sh:property [ sh:path dlp:sector ; sh:minCount 1 ; sh:maxCount 1 ; sh:class dlp:Sector ] ;
     sh:property [ sh:path dlp:sensitivity ; sh:minCount 1 ; sh:maxCount 1 ;
                   sh:minInclusive -1.0 ; sh:maxInclusive 1.0 ] .
+
+dlp:DataAssetShape a sh:NodeShape ;
+    sh:targetClass dlp:DataAsset ;
+    sh:property [ sh:path dlp:name ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path dlp:readsFrom ;
+                  sh:or ( [ sh:class dlp:Dataset ] [ sh:class dlp:DataAsset ] ) ;
+                  sh:message "An asset can only read from a catalog dataset or another asset" ] .
+
+dlp:ReportShape a sh:NodeShape ;
+    sh:targetClass dlp:Report ;
+    sh:property [ sh:path dlp:name ; sh:minCount 1 ] ;
+    sh:property [ sh:path dlp:dependsOn ; sh:minCount 1 ; sh:class dlp:Dataset ] .

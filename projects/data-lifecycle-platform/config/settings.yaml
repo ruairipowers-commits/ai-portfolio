@@ -1,0 +1,84 @@
+# Runtime + governance settings. Every key here is referenced in docs/governance.md.
+use_case: data-lifecycle-platform
+workflow:
+  owner: Ruairi Powers
+  purpose: Data marketplace and lifecycle platform with AI cataloguing, search, assessment and monetization
+risk_tier: medium            # HITL-01: advisory; contracts, listings and retirements need a named approver
+as_of_date: "2026-10-05"     # fixed so the demo is reproducible; set to today in real use
+
+paths:
+  catalog_db: warehouse/catalog.sqlite        # operational store (vendors, datasets, customers, contracts…)
+  warehouse_db: warehouse/warehouse.duckdb    # semantic layer target
+  graph_store: warehouse/graph                # Oxigraph on disk
+  landing: data/landing                       # ingested files (fixture or real Hub slices)
+
+layers:                                        # the four layers, each with its own home
+  ontology: ontology/dlp.ttl
+  vocabulary: ontology/vocabulary.ttl
+  shapes: ontology/shapes.ttl
+  semantic_project: semantic
+  context_max_tokens: 4000                     # NFR-4
+
+hub:                                           # the live marketplace and `dlp fetch`
+  options_dataset: gauss314/options-IV-SP500
+  constituents_dataset: jwigginton/index-constituents-sp500
+  slice_symbols: [AAPL, MSFT, AMZN, NVDA, JPM, BAC, GS, XOM, CVX, JNJ, PFE, UNH, KO, PG, WMT, HD, NEE, DUK, AMT, PLD, CAT, BA, GE, T, VZ, DIS]
+  slice_max_rows: 20000
+
+llm:
+  primary_alias: dlp-primary         # MODEL-01: aliases resolve in config/models.yaml
+  fallback_alias: dlp-fallback       # MODEL-05
+  max_output_tokens: 1500
+  retries: 2
+  prompts:                           # MODEL-04: versioned files, hash logged per call
+    extract: prompts/extract.v1.md
+    answer: prompts/answer.v1.md
+    assess: prompts/assess.v1.md
+    search: prompts/search.v1.md
+    monetize: prompts/monetize.v1.md
+
+cost:                                # COST-01..04
+  max_usd_per_run: 0.50
+  max_usd_per_action: 0.05           # NFR-6
+  max_input_tokens_per_call: 8000
+  monthly_alert_usd: 25.00
+  reviewer: Ruairi Powers            # COST-04 named reviewer
+  allow_unpriced_models: false
+
+data:                                # DATA-02/03, SEC-02
+  require_dbt_tests_pass: true
+  require_shacl_conforms: true
+  max_untrusted_chars: 12000
+  redact_pii: true
+  pii_columns: [email, phone, ssn, driver_phone, driver_name, cardholder_name, card_number, home_address]
+
+licensing:                           # DATA-04: rules engine (licensing.py)
+  open_licences: [apache-2.0, mit, cc-by-4.0, odc-by, cc0-1.0, pddl]
+  share_alike: [cc-by-sa-4.0, odbl]
+  non_commercial: [cc-by-nc-4.0, cc-by-nc-sa-4.0]
+  unknown_requires_legal_review: true
+  card_claim_conflict_requires_legal_review: true
+
+contracts:
+  renewal_alert_days: 45            # warn this many days before the notice deadline
+  require_contract_for_paid: true
+
+lifecycle:                          # FR-7 / FR-8
+  retire_if_cost_per_query_above: 150.0
+  overlap_threshold: 0.6
+
+monetize:                           # FR-9
+  min_history_months: 12
+  block_on_pii: true
+
+eval:                               # EVAL-02 thresholds; MODEL-02 gate
+  golden_set: evals/golden_set.yaml
+  min_accuracy: 0.90
+  min_schema_valid_rate: 1.00
+  min_citation_accuracy: 1.00
+  min_must_escalate_recall: 1.00
+  max_total_cost_usd: 0.25
+
+governance:
+  deprecation_warning_days: 90       # MODEL-03
+  log_retention_days: 2555           # OBS-03: ~7 years, books-and-records horizon

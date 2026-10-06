@@ -1,0 +1,601 @@
+ship_date,lane,trailer_type,loads,avg_weight_lbs,avg_rate_usd_per_mile,shipper_segment
+2020-09-01,CHI-COL,dry van,118,19629,3.17,auto parts
+2020-09-01,MEM-ATL,dry van,116,24423,2.84,auto parts
+2020-09-01,ATL-DAL,reefer,115,24489,2.4,retail
+2020-09-04,NAS-IND,dry van,64,27290,2.31,retail
+2020-09-04,MEM-ATL,flatbed,28,22167,3.31,retail
+2020-09-04,DAL-HOU,reefer,45,30448,2.67,food & beverage
+2020-09-07,CHI-DET,flatbed,126,27388,2.43,auto parts
+2020-09-07,CHI-COL,dry van,119,31238,2.75,industrial
+2020-09-07,JAX-ATL,dry van,82,39633,3.16,retail
+2020-09-10,JAX-ATL,dry van,55,31447,2.48,food & beverage
+2020-09-10,NAS-IND,flatbed,119,32714,1.76,industrial
+2020-09-10,ATL-DAL,reefer,79,39320,2.89,industrial
+2020-09-13,CHI-COL,flatbed,69,21140,3.17,industrial
+2020-09-13,CHI-DET,dry van,83,26010,1.98,industrial
+2020-09-13,DAL-HOU,flatbed,107,26038,1.72,food & beverage
+2020-09-16,MEM-ATL,dry van,59,28510,2.24,food & beverage
+2020-09-16,ATL-DAL,dry van,135,40556,2.68,auto parts
+2020-09-16,ATL-CHI,dry van,94,25765,2.85,food & beverage
+2020-09-19,CHI-COL,flatbed,58,30618,1.98,food & beverage
+2020-09-19,MEM-ATL,dry van,41,38737,2.19,auto parts
+2020-09-19,DAL-HOU,dry van,131,25627,2.94,retail
+2020-09-22,ATL-CHI,flatbed,20,27665,2.01,retail
+2020-09-22,NAS-IND,flatbed,89,37382,1.76,industrial
+2020-09-22,MEM-ATL,dry van,124,40631,3.03,food & beverage
+2020-09-25,CHI-DET,reefer,91,28452,2.56,retail
+2020-09-25,DAL-HOU,flatbed,66,37589,2.89,industrial
+2020-09-25,JAX-ATL,dry van,84,24149,1.78,auto parts
+2020-09-28,NAS-IND,reefer,79,29522,2.44,food & beverage
+2020-09-28,ATL-DAL,reefer,128,25004,2.13,food & beverage
+2020-09-28,ATL-CHI,reefer,31,32069,3.19,auto parts
+2020-10-01,ATL-DAL,dry van,131,31088,1.98,retail
+2020-10-01,CHI-DET,dry van,102,32344,2.27,food & beverage
+2020-10-01,DAL-HOU,dry van,82,36136,2.57,food & beverage
+2020-10-04,JAX-ATL,reefer,27,41734,1.94,retail
+2020-10-04,ATL-DAL,reefer,20,19519,1.81,industrial
+2020-10-04,NAS-IND,reefer,118,34350,2.47,retail
+2020-10-07,DAL-HOU,flatbed,59,38093,2.02,industrial
+2020-10-07,ATL-DAL,reefer,111,32200,2.18,auto parts
+2020-10-07,JAX-ATL,dry van,23,31872,3.18,food & beverage
+2020-10-10,NAS-IND,flatbed,46,35849,1.8,retail
+2020-10-10,ATL-CHI,dry van,62,23988,3.04,food & beverage
+2020-10-10,JAX-ATL,dry van,103,33776,3.2,food & beverage
+2020-10-13,ATL-DAL,flatbed,77,38961,3.38,food & beverage
+2020-10-13,CHI-COL,dry van,119,41785,2.85,auto parts
+2020-10-13,DAL-HOU,flatbed,44,39576,3.13,industrial
+2020-10-16,CHI-DET,reefer,68,38458,2.68,retail
+2020-10-16,ATL-DAL,flatbed,134,39451,2.22,retail
+2020-10-16,CHI-COL,reefer,71,24963,3.18,food & beverage
+2020-10-19,JAX-ATL,reefer,22,27669,2.1,industrial
+2020-10-19,NAS-IND,dry van,80,34277,2.12,industrial
+2020-10-19,ATL-DAL,dry van,125,24563,2.29,auto parts
+2020-10-22,DAL-HOU,dry van,125,33880,3.28,retail
+2020-10-22,ATL-CHI,dry van,68,41294,1.9,industrial
+2020-10-22,ATL-DAL,dry van,51,20331,2.82,auto parts
+2020-10-25,CHI-COL,reefer,20,29972,2.68,retail
+2020-10-25,JAX-ATL,dry van,65,26953,2.43,food & beverage
+2020-10-25,CHI-DET,reefer,127,27958,1.99,food & beverage
+2020-10-28,ATL-CHI,reefer,26,22850,2.24,industrial
+2020-10-28,JAX-ATL,dry van,77,34306,2.97,industrial
+2020-10-28,CHI-DET,reefer,60,26711,2.87,auto parts
+2020-10-31,ATL-DAL,flatbed,113,40027,2.72,auto parts
+2020-10-31,MEM-ATL,reefer,83,40808,1.77,retail
+2020-10-31,CHI-COL,flatbed,137,34438,2.34,retail
+2020-11-03,CHI-DET,flatbed,51,21752,3.36,retail
+2020-11-03,ATL-DAL,reefer,89,30039,1.77,industrial
+2020-11-03,NAS-IND,dry van,137,27794,2.95,food & beverage
+2020-11-06,JAX-ATL,reefer,105,28976,2.04,industrial
+2020-11-06,MEM-ATL,reefer,25,26762,1.76,food & beverage
+2020-11-06,ATL-DAL,reefer,138,20688,3.32,food & beverage
+2020-11-09,ATL-CHI,reefer,77,35852,2.67,food & beverage
+2020-11-09,ATL-DAL,flatbed,38,38110,2.97,industrial
+2020-11-09,CHI-COL,dry van,95,27006,3.1,auto parts
+2020-11-12,NAS-IND,reefer,127,29931,2.61,food & beverage
+2020-11-12,CHI-COL,flatbed,62,40477,2.1,auto parts
+2020-11-12,CHI-DET,reefer,31,29858,2.66,industrial
+2020-11-15,NAS-IND,reefer,102,29323,3.21,auto parts
+2020-11-15,CHI-COL,reefer,113,21045,3.05,retail
+2020-11-15,CHI-DET,flatbed,26,40607,2.11,industrial
+2020-11-18,JAX-ATL,reefer,54,21513,2.34,industrial
+2020-11-18,CHI-COL,reefer,32,18434,3.03,auto parts
+2020-11-18,DAL-HOU,reefer,77,27132,2.14,industrial
+2020-11-21,ATL-DAL,reefer,37,41428,2.31,auto parts
+2020-11-21,JAX-ATL,flatbed,69,31195,1.64,industrial
+2020-11-21,DAL-HOU,dry van,88,18050,1.9,industrial
+2020-11-24,ATL-CHI,dry van,81,29913,2.97,retail
+2020-11-24,ATL-DAL,flatbed,75,31975,1.82,industrial
+2020-11-24,JAX-ATL,dry van,89,18762,2.85,auto parts
+2020-11-27,CHI-DET,reefer,133,33369,2.48,industrial
+2020-11-27,NAS-IND,dry van,40,36074,3.37,industrial
+2020-11-27,JAX-ATL,reefer,35,27544,3.22,industrial
+2020-11-30,MEM-ATL,dry van,111,34709,2.63,retail
+2020-11-30,JAX-ATL,dry van,120,35456,2.82,industrial
+2020-11-30,DAL-HOU,reefer,138,23680,2.49,retail
+2020-12-03,JAX-ATL,dry van,107,40992,2.54,retail
+2020-12-03,MEM-ATL,dry van,86,40927,1.67,food & beverage
+2020-12-03,CHI-COL,reefer,43,34375,1.79,auto parts
+2020-12-06,MEM-ATL,reefer,135,21715,1.64,retail
+2020-12-06,JAX-ATL,dry van,89,33433,2.33,industrial
+2020-12-06,CHI-DET,reefer,93,34999,2.1,auto parts
+2020-12-09,JAX-ATL,reefer,84,23660,2.23,retail
+2020-12-09,CHI-COL,dry van,45,37622,2.94,auto parts
+2020-12-09,DAL-HOU,flatbed,122,31237,1.67,food & beverage
+2020-12-12,NAS-IND,dry van,31,26146,3.01,auto parts
+2020-12-12,CHI-COL,reefer,120,39033,2.58,industrial
+2020-12-12,JAX-ATL,dry van,27,22393,2.77,industrial
+2020-12-15,NAS-IND,flatbed,117,24474,1.9,industrial
+2020-12-15,ATL-DAL,reefer,26,26948,2.39,retail
+2020-12-15,MEM-ATL,dry van,101,28722,2.29,auto parts
+2020-12-18,CHI-COL,flatbed,62,38832,1.95,food & beverage
+2020-12-18,MEM-ATL,flatbed,79,19170,2.88,retail
+2020-12-18,ATL-CHI,dry van,70,29590,2.58,auto parts
+2020-12-21,ATL-CHI,flatbed,34,41591,3.24,retail
+2020-12-21,DAL-HOU,flatbed,79,18454,1.83,auto parts
+2020-12-21,CHI-COL,dry van,41,24405,2.4,food & beverage
+2020-12-24,DAL-HOU,flatbed,76,20209,2.69,food & beverage
+2020-12-24,ATL-CHI,reefer,128,39297,2.27,retail
+2020-12-24,ATL-DAL,flatbed,75,38388,1.66,industrial
+2020-12-27,NAS-IND,reefer,71,35441,3.34,food & beverage
+2020-12-27,CHI-DET,dry van,95,30687,1.81,food & beverage
+2020-12-27,ATL-CHI,dry van,73,27653,3.39,auto parts
+2020-12-30,ATL-CHI,flatbed,117,22764,2.65,food & beverage
+2020-12-30,NAS-IND,reefer,87,23961,3.18,retail
+2020-12-30,JAX-ATL,dry van,139,22040,1.66,auto parts
+2021-01-02,ATL-DAL,reefer,61,22474,2.72,auto parts
+2021-01-02,MEM-ATL,dry van,48,30578,2.8,auto parts
+2021-01-02,NAS-IND,dry van,65,36758,2.52,food & beverage
+2021-01-05,JAX-ATL,dry van,53,27110,2.62,food & beverage
+2021-01-05,MEM-ATL,flatbed,39,23327,3.35,industrial
+2021-01-05,NAS-IND,dry van,98,37794,2.97,food & beverage
+2021-01-08,JAX-ATL,dry van,133,18380,3.39,auto parts
+2021-01-08,DAL-HOU,dry van,90,25309,3.1,retail
+2021-01-08,MEM-ATL,dry van,29,35966,1.77,industrial
+2021-01-11,ATL-CHI,dry van,48,23263,2.18,food & beverage
+2021-01-11,DAL-HOU,reefer,59,25342,2.98,auto parts
+2021-01-11,MEM-ATL,flatbed,92,36224,2.91,industrial
+2021-01-14,JAX-ATL,flatbed,60,35237,1.98,auto parts
+2021-01-14,ATL-CHI,flatbed,96,37985,2.89,retail
+2021-01-14,DAL-HOU,flatbed,89,29065,2.86,auto parts
+2021-01-17,ATL-CHI,dry van,118,21715,2.45,auto parts
+2021-01-17,JAX-ATL,flatbed,126,20719,1.71,retail
+2021-01-17,CHI-DET,dry van,74,23132,1.83,industrial
+2021-01-20,ATL-CHI,reefer,31,28567,2.04,retail
+2021-01-20,NAS-IND,reefer,31,36982,3.39,industrial
+2021-01-20,DAL-HOU,flatbed,124,29397,3.28,food & beverage
+2021-01-23,MEM-ATL,reefer,47,27724,1.76,food & beverage
+2021-01-23,CHI-COL,flatbed,130,32802,1.79,food & beverage
+2021-01-23,CHI-DET,reefer,118,27148,1.83,industrial
+2021-01-26,MEM-ATL,dry van,110,35827,3.13,food & beverage
+2021-01-26,DAL-HOU,flatbed,122,35938,2.37,industrial
+2021-01-26,ATL-CHI,dry van,118,41795,2.98,food & beverage
+2021-01-29,CHI-DET,reefer,23,36088,2.5,food & beverage
+2021-01-29,JAX-ATL,reefer,22,25374,2.84,food & beverage
+2021-01-29,ATL-CHI,dry van,38,33548,2.65,industrial
+2021-02-01,ATL-CHI,reefer,98,19209,2.78,auto parts
+2021-02-01,MEM-ATL,reefer,113,37566,1.97,food & beverage
+2021-02-01,NAS-IND,flatbed,46,23883,1.69,industrial
+2021-02-04,DAL-HOU,reefer,139,24544,1.89,auto parts
+2021-02-04,ATL-DAL,reefer,137,41505,2.05,auto parts
+2021-02-04,MEM-ATL,flatbed,49,29203,3.35,retail
+2021-02-07,NAS-IND,reefer,93,28457,2.81,retail
+2021-02-07,MEM-ATL,flatbed,126,23070,2.47,industrial
+2021-02-07,ATL-DAL,dry van,124,41240,2.79,auto parts
+2021-02-10,JAX-ATL,flatbed,95,36150,2.24,auto parts
+2021-02-10,MEM-ATL,flatbed,29,30161,2.42,retail
+2021-02-10,ATL-DAL,dry van,20,21510,2.9,auto parts
+2021-02-13,ATL-CHI,flatbed,45,22633,2.63,retail
+2021-02-13,NAS-IND,dry van,43,20426,2.82,auto parts
+2021-02-13,MEM-ATL,dry van,60,40529,2.5,industrial
+2021-02-16,CHI-DET,flatbed,93,28400,1.95,food & beverage
+2021-02-16,NAS-IND,dry van,28,29750,2.7,food & beverage
+2021-02-16,DAL-HOU,flatbed,131,21750,3.27,food & beverage
+2021-02-19,MEM-ATL,reefer,62,30824,2.66,auto parts
+2021-02-19,ATL-CHI,reefer,103,23515,3.06,food & beverage
+2021-02-19,CHI-DET,reefer,89,28266,2.09,food & beverage
+2021-02-22,CHI-COL,dry van,75,31539,1.91,food & beverage
+2021-02-22,ATL-CHI,reefer,59,37893,2.27,industrial
+2021-02-22,JAX-ATL,reefer,71,38526,2.86,industrial
+2021-02-25,MEM-ATL,dry van,26,28025,2.88,auto parts
+2021-02-25,CHI-COL,reefer,100,20373,2.22,food & beverage
+2021-02-25,JAX-ATL,dry van,75,18131,2.18,industrial
+2021-02-28,ATL-DAL,dry van,100,25186,1.66,industrial
+2021-02-28,MEM-ATL,flatbed,67,20439,2.39,food & beverage
+2021-02-28,ATL-CHI,dry van,84,18725,2.81,retail
+2021-03-03,CHI-DET,dry van,127,41658,2.01,food & beverage
+2021-03-03,ATL-DAL,flatbed,27,19348,1.88,food & beverage
+2021-03-03,NAS-IND,dry van,100,25045,2.9,industrial
+2021-03-06,JAX-ATL,dry van,105,39493,2.39,auto parts
+2021-03-06,CHI-COL,flatbed,76,32217,2.02,auto parts
+2021-03-06,DAL-HOU,dry van,117,27712,2.31,retail
+2021-03-09,DAL-HOU,flatbed,126,24585,3.25,auto parts
+2021-03-09,ATL-DAL,dry van,85,29692,2.61,food & beverage
+2021-03-09,NAS-IND,dry van,70,32301,3.3,industrial
+2021-03-12,DAL-HOU,flatbed,123,19963,3.22,retail
+2021-03-12,ATL-DAL,dry van,74,24129,1.67,food & beverage
+2021-03-12,ATL-CHI,reefer,110,19855,2.24,retail
+2021-03-15,NAS-IND,flatbed,101,18098,2.07,food & beverage
+2021-03-15,CHI-DET,flatbed,36,34681,2.18,food & beverage
+2021-03-15,JAX-ATL,reefer,48,30627,2.01,retail
+2021-03-18,MEM-ATL,dry van,69,33545,2.49,food & beverage
+2021-03-18,ATL-CHI,dry van,115,22621,3.33,retail
+2021-03-18,DAL-HOU,reefer,134,22405,3.4,food & beverage
+2021-03-21,ATL-DAL,dry van,64,34789,3.05,retail
+2021-03-21,JAX-ATL,reefer,73,19850,3.28,retail
+2021-03-21,NAS-IND,flatbed,39,41311,2.46,industrial
+2021-03-24,CHI-DET,flatbed,121,37215,2.63,retail
+2021-03-24,ATL-CHI,flatbed,54,36645,2.06,industrial
+2021-03-24,MEM-ATL,flatbed,31,25739,2.07,auto parts
+2021-03-27,CHI-DET,flatbed,42,40610,2.86,auto parts
+2021-03-27,ATL-DAL,reefer,73,29170,2.53,food & beverage
+2021-03-27,MEM-ATL,dry van,35,24016,3.1,food & beverage
+2021-03-30,ATL-CHI,dry van,84,24518,2.29,industrial
+2021-03-30,ATL-DAL,reefer,98,38792,2.1,industrial
+2021-03-30,CHI-COL,dry van,65,32407,2.16,industrial
+2021-04-02,DAL-HOU,flatbed,85,38937,2.28,auto parts
+2021-04-02,ATL-CHI,dry van,124,32319,2.89,food & beverage
+2021-04-02,NAS-IND,flatbed,89,35280,1.85,auto parts
+2021-04-05,NAS-IND,dry van,118,18753,2.81,food & beverage
+2021-04-05,CHI-COL,flatbed,94,37763,3.17,auto parts
+2021-04-05,ATL-DAL,reefer,104,30006,3.08,retail
+2021-04-08,NAS-IND,dry van,134,24713,3.4,retail
+2021-04-08,CHI-DET,reefer,136,29839,2.72,industrial
+2021-04-08,JAX-ATL,reefer,28,24854,2.07,food & beverage
+2021-04-11,ATL-DAL,dry van,125,32879,2.39,food & beverage
+2021-04-11,ATL-CHI,reefer,122,21362,1.99,retail
+2021-04-11,CHI-COL,reefer,65,23376,2.02,auto parts
+2021-04-14,NAS-IND,reefer,112,41081,3.28,food & beverage
+2021-04-14,CHI-COL,reefer,100,23251,2.23,food & beverage
+2021-04-14,ATL-CHI,flatbed,126,40456,2.99,retail
+2021-04-17,JAX-ATL,reefer,49,28815,3.38,industrial
+2021-04-17,ATL-DAL,flatbed,129,24134,2.36,auto parts
+2021-04-17,DAL-HOU,dry van,63,29842,3.02,industrial
+2021-04-20,CHI-COL,flatbed,131,28866,2.66,industrial
+2021-04-20,DAL-HOU,flatbed,140,26230,2.18,retail
+2021-04-20,ATL-CHI,flatbed,43,24060,3.16,auto parts
+2021-04-23,JAX-ATL,dry van,80,40766,3.05,auto parts
+2021-04-23,DAL-HOU,reefer,103,19187,2.0,industrial
+2021-04-23,ATL-CHI,reefer,59,24529,2.31,auto parts
+2021-04-26,CHI-DET,dry van,38,22472,2.19,auto parts
+2021-04-26,JAX-ATL,reefer,114,29992,2.91,retail
+2021-04-26,MEM-ATL,reefer,70,29359,2.19,food & beverage
+2021-04-29,CHI-COL,flatbed,91,31545,2.56,food & beverage
+2021-04-29,CHI-DET,reefer,46,28255,2.52,food & beverage
+2021-04-29,DAL-HOU,flatbed,128,20649,2.95,auto parts
+2021-05-02,JAX-ATL,flatbed,62,34666,3.1,industrial
+2021-05-02,NAS-IND,flatbed,97,37071,1.72,auto parts
+2021-05-02,MEM-ATL,dry van,93,34443,1.73,auto parts
+2021-05-05,CHI-DET,reefer,25,35568,2.2,auto parts
+2021-05-05,MEM-ATL,reefer,104,39171,2.6,industrial
+2021-05-05,CHI-COL,dry van,120,18863,3.37,retail
+2021-05-08,ATL-DAL,reefer,44,21316,2.18,retail
+2021-05-08,DAL-HOU,flatbed,40,26568,2.2,industrial
+2021-05-08,NAS-IND,flatbed,126,33078,3.32,industrial
+2021-05-11,ATL-CHI,flatbed,65,23017,2.69,food & beverage
+2021-05-11,JAX-ATL,flatbed,70,26948,2.04,retail
+2021-05-11,NAS-IND,reefer,39,34505,2.17,industrial
+2021-05-14,JAX-ATL,flatbed,103,28171,2.51,industrial
+2021-05-14,MEM-ATL,reefer,124,25032,2.76,industrial
+2021-05-14,NAS-IND,flatbed,27,23680,1.93,industrial
+2021-05-17,MEM-ATL,dry van,124,40858,2.23,industrial
+2021-05-17,ATL-DAL,reefer,38,30894,2.4,auto parts
+2021-05-17,NAS-IND,flatbed,68,35612,2.02,industrial
+2021-05-20,CHI-DET,flatbed,122,24955,2.42,auto parts
+2021-05-20,ATL-CHI,flatbed,94,18283,2.28,industrial
+2021-05-20,MEM-ATL,dry van,78,33974,3.19,retail
+2021-05-23,DAL-HOU,reefer,108,38132,1.83,retail
+2021-05-23,CHI-DET,dry van,132,24385,3.07,industrial
+2021-05-23,ATL-CHI,dry van,119,32523,2.81,industrial
+2021-05-26,ATL-DAL,reefer,32,40116,2.41,auto parts
+2021-05-26,MEM-ATL,reefer,66,29909,3.15,retail
+2021-05-26,ATL-CHI,reefer,21,37981,3.32,auto parts
+2021-05-29,NAS-IND,dry van,87,35747,2.18,food & beverage
+2021-05-29,CHI-DET,dry van,138,21103,1.7,retail
+2021-05-29,ATL-CHI,dry van,125,39565,2.97,food & beverage
+2021-06-01,NAS-IND,dry van,49,26495,2.27,food & beverage
+2021-06-01,CHI-COL,reefer,24,27991,1.86,food & beverage
+2021-06-01,JAX-ATL,flatbed,86,30389,2.47,retail
+2021-06-04,CHI-COL,reefer,132,31681,2.68,industrial
+2021-06-04,JAX-ATL,reefer,77,34475,3.06,auto parts
+2021-06-04,DAL-HOU,flatbed,129,20232,3.33,retail
+2021-06-07,ATL-DAL,dry van,30,34421,3.19,industrial
+2021-06-07,JAX-ATL,dry van,83,38526,1.8,food & beverage
+2021-06-07,MEM-ATL,flatbed,122,18057,1.68,retail
+2021-06-10,ATL-CHI,dry van,53,20028,2.22,industrial
+2021-06-10,DAL-HOU,dry van,40,26974,2.97,auto parts
+2021-06-10,CHI-COL,reefer,111,29230,1.63,food & beverage
+2021-06-13,MEM-ATL,dry van,28,30681,1.94,retail
+2021-06-13,CHI-COL,dry van,90,38956,2.35,auto parts
+2021-06-13,NAS-IND,flatbed,25,26088,2.56,retail
+2021-06-16,CHI-COL,dry van,27,23218,2.48,industrial
+2021-06-16,ATL-DAL,dry van,127,33151,3.21,industrial
+2021-06-16,CHI-DET,reefer,64,29173,3.03,food & beverage
+2021-06-19,DAL-HOU,flatbed,89,27012,3.27,industrial
+2021-06-19,CHI-DET,flatbed,68,39350,3.22,industrial
+2021-06-19,CHI-COL,reefer,33,38423,2.67,industrial
+2021-06-22,DAL-HOU,reefer,38,29022,3.22,food & beverage
+2021-06-22,ATL-DAL,flatbed,126,29132,2.7,industrial
+2021-06-22,NAS-IND,dry van,84,20985,2.73,auto parts
+2021-06-25,CHI-COL,flatbed,125,38566,3.31,retail
+2021-06-25,ATL-DAL,dry van,139,38646,2.03,auto parts
+2021-06-25,NAS-IND,reefer,75,25974,2.72,food & beverage
+2021-06-28,CHI-DET,flatbed,107,29439,2.39,food & beverage
+2021-06-28,NAS-IND,flatbed,77,25335,2.66,industrial
+2021-06-28,JAX-ATL,flatbed,49,22155,1.71,auto parts
+2021-07-01,DAL-HOU,dry van,52,23991,3.1,auto parts
+2021-07-01,MEM-ATL,dry van,90,21855,3.37,food & beverage
+2021-07-01,NAS-IND,dry van,105,29098,2.24,food & beverage
+2021-07-04,CHI-COL,flatbed,69,19127,1.89,auto parts
+2021-07-04,ATL-CHI,reefer,96,30271,2.4,industrial
+2021-07-04,NAS-IND,reefer,120,26069,2.07,food & beverage
+2021-07-07,CHI-DET,reefer,121,32116,2.93,industrial
+2021-07-07,JAX-ATL,flatbed,59,31437,1.66,retail
+2021-07-07,CHI-COL,reefer,34,21768,2.83,food & beverage
+2021-07-10,JAX-ATL,reefer,47,38747,2.05,food & beverage
+2021-07-10,ATL-DAL,reefer,133,32904,2.28,auto parts
+2021-07-10,MEM-ATL,reefer,126,33407,2.68,food & beverage
+2021-07-13,JAX-ATL,flatbed,61,24999,3.08,industrial
+2021-07-13,ATL-CHI,dry van,119,30008,3.01,food & beverage
+2021-07-13,NAS-IND,dry van,103,24000,2.64,food & beverage
+2021-07-16,ATL-DAL,dry van,137,34472,2.19,retail
+2021-07-16,ATL-CHI,flatbed,132,22939,3.2,industrial
+2021-07-16,DAL-HOU,flatbed,111,34385,2.93,auto parts
+2021-07-19,MEM-ATL,reefer,91,21832,2.37,retail
+2021-07-19,CHI-DET,flatbed,59,25508,3.27,industrial
+2021-07-19,ATL-CHI,flatbed,85,36598,2.0,industrial
+2021-07-22,JAX-ATL,dry van,131,38674,2.89,food & beverage
+2021-07-22,MEM-ATL,flatbed,95,33069,2.3,food & beverage
+2021-07-22,CHI-COL,dry van,28,36731,1.67,food & beverage
+2021-07-25,DAL-HOU,dry van,45,30615,2.65,auto parts
+2021-07-25,ATL-CHI,dry van,137,40233,2.67,auto parts
+2021-07-25,CHI-DET,reefer,27,31699,2.72,auto parts
+2021-07-28,ATL-CHI,reefer,74,19501,2.26,auto parts
+2021-07-28,ATL-DAL,dry van,124,36361,2.65,industrial
+2021-07-28,MEM-ATL,reefer,83,26719,2.86,industrial
+2021-07-31,DAL-HOU,reefer,86,22160,1.67,food & beverage
+2021-07-31,NAS-IND,flatbed,115,35904,3.0,industrial
+2021-07-31,CHI-COL,flatbed,109,30673,3.07,auto parts
+2021-08-03,JAX-ATL,dry van,68,19591,3.03,industrial
+2021-08-03,MEM-ATL,dry van,55,30875,2.12,food & beverage
+2021-08-03,ATL-CHI,reefer,55,25300,2.3,auto parts
+2021-08-06,CHI-COL,flatbed,88,19786,1.64,retail
+2021-08-06,ATL-CHI,dry van,135,29690,2.6,auto parts
+2021-08-06,ATL-DAL,reefer,128,18601,1.68,retail
+2021-08-09,MEM-ATL,flatbed,69,37121,3.32,food & beverage
+2021-08-09,ATL-CHI,flatbed,128,32176,2.76,industrial
+2021-08-09,JAX-ATL,dry van,75,32109,1.8,auto parts
+2021-08-12,CHI-COL,reefer,59,28325,2.93,auto parts
+2021-08-12,JAX-ATL,dry van,56,34022,2.76,auto parts
+2021-08-12,CHI-DET,reefer,95,36256,2.34,auto parts
+2021-08-15,ATL-CHI,dry van,134,34528,2.65,food & beverage
+2021-08-15,CHI-COL,reefer,101,23336,1.82,food & beverage
+2021-08-15,JAX-ATL,flatbed,117,37778,2.76,food & beverage
+2021-08-18,MEM-ATL,flatbed,119,22768,1.91,retail
+2021-08-18,JAX-ATL,flatbed,120,25339,3.27,food & beverage
+2021-08-18,ATL-CHI,flatbed,64,31653,2.57,food & beverage
+2021-08-21,JAX-ATL,flatbed,117,33578,1.64,auto parts
+2021-08-21,MEM-ATL,flatbed,44,21614,2.29,industrial
+2021-08-21,ATL-DAL,dry van,112,40198,2.04,industrial
+2021-08-24,DAL-HOU,flatbed,66,22133,1.7,retail
+2021-08-24,MEM-ATL,reefer,123,28610,3.2,retail
+2021-08-24,ATL-CHI,dry van,30,21610,2.5,auto parts
+2021-08-27,ATL-CHI,dry van,37,32221,3.14,retail
+2021-08-27,NAS-IND,dry van,132,30706,2.99,industrial
+2021-08-27,ATL-DAL,flatbed,88,21536,2.59,auto parts
+2021-08-30,ATL-CHI,flatbed,49,19693,2.14,industrial
+2021-08-30,JAX-ATL,flatbed,130,30689,1.75,retail
+2021-08-30,CHI-COL,reefer,36,32026,2.14,industrial
+2021-09-02,MEM-ATL,dry van,126,23837,2.0,auto parts
+2021-09-02,ATL-CHI,reefer,47,18756,3.32,food & beverage
+2021-09-02,DAL-HOU,reefer,123,27767,2.66,auto parts
+2021-09-05,CHI-COL,flatbed,92,23042,2.49,retail
+2021-09-05,MEM-ATL,reefer,33,18234,3.29,auto parts
+2021-09-05,CHI-DET,reefer,31,40439,1.65,food & beverage
+2021-09-08,MEM-ATL,dry van,49,33878,2.58,auto parts
+2021-09-08,CHI-COL,flatbed,46,29840,2.54,industrial
+2021-09-08,ATL-CHI,flatbed,30,20661,2.42,retail
+2021-09-11,ATL-DAL,flatbed,35,32194,3.12,auto parts
+2021-09-11,CHI-COL,flatbed,40,19665,2.53,industrial
+2021-09-11,MEM-ATL,reefer,72,41078,1.9,food & beverage
+2021-09-14,JAX-ATL,reefer,63,24498,1.7,retail
+2021-09-14,DAL-HOU,flatbed,136,33460,3.36,food & beverage
+2021-09-14,CHI-COL,dry van,114,24346,1.89,food & beverage
+2021-09-17,ATL-CHI,dry van,56,31798,2.19,retail
+2021-09-17,DAL-HOU,reefer,87,20298,2.84,industrial
+2021-09-17,MEM-ATL,reefer,32,41647,2.68,auto parts
+2021-09-20,CHI-DET,reefer,97,37963,3.12,industrial
+2021-09-20,CHI-COL,flatbed,91,21153,2.3,food & beverage
+2021-09-20,NAS-IND,flatbed,110,24197,1.61,retail
+2021-09-23,MEM-ATL,flatbed,75,40260,2.14,auto parts
+2021-09-23,DAL-HOU,reefer,102,34920,2.25,industrial
+2021-09-23,JAX-ATL,dry van,124,21101,2.86,auto parts
+2021-09-26,ATL-CHI,reefer,100,19160,3.13,food & beverage
+2021-09-26,ATL-DAL,flatbed,91,29869,1.76,auto parts
+2021-09-26,DAL-HOU,flatbed,59,37947,1.87,auto parts
+2021-09-29,JAX-ATL,flatbed,109,21455,2.05,retail
+2021-09-29,DAL-HOU,flatbed,75,31527,1.95,auto parts
+2021-09-29,MEM-ATL,reefer,105,37392,2.82,industrial
+2021-10-02,JAX-ATL,flatbed,52,21635,3.12,retail
+2021-10-02,DAL-HOU,flatbed,98,39247,2.92,industrial
+2021-10-02,CHI-COL,reefer,117,35614,1.77,food & beverage
+2021-10-05,CHI-COL,dry van,39,24963,3.29,retail
+2021-10-05,NAS-IND,reefer,89,29921,2.02,retail
+2021-10-05,MEM-ATL,flatbed,50,41903,2.68,food & beverage
+2021-10-08,MEM-ATL,reefer,126,24462,2.97,retail
+2021-10-08,CHI-COL,flatbed,123,35874,2.44,auto parts
+2021-10-08,ATL-CHI,flatbed,46,22675,2.35,food & beverage
+2021-10-11,NAS-IND,dry van,46,36484,2.47,industrial
+2021-10-11,JAX-ATL,dry van,114,41066,2.01,industrial
+2021-10-11,ATL-CHI,dry van,128,22944,1.95,retail
+2021-10-14,CHI-DET,flatbed,35,36694,2.27,auto parts
+2021-10-14,NAS-IND,flatbed,80,25761,3.26,auto parts
+2021-10-14,DAL-HOU,reefer,134,27588,2.5,food & beverage
+2021-10-17,CHI-DET,flatbed,113,23054,2.2,industrial
+2021-10-17,ATL-CHI,flatbed,129,23391,2.41,retail
+2021-10-17,MEM-ATL,dry van,56,24169,3.02,auto parts
+2021-10-20,CHI-DET,flatbed,129,26238,2.93,retail
+2021-10-20,ATL-DAL,flatbed,79,33597,2.12,retail
+2021-10-20,CHI-COL,flatbed,119,37656,3.22,auto parts
+2021-10-23,DAL-HOU,dry van,73,27340,2.3,food & beverage
+2021-10-23,CHI-DET,dry van,24,34089,2.38,food & beverage
+2021-10-23,MEM-ATL,dry van,117,39747,3.08,retail
+2021-10-26,ATL-DAL,flatbed,105,29815,1.91,food & beverage
+2021-10-26,CHI-DET,reefer,55,39181,2.41,industrial
+2021-10-26,ATL-CHI,dry van,101,19017,3.12,retail
+2021-10-29,JAX-ATL,flatbed,76,35687,2.91,food & beverage
+2021-10-29,ATL-DAL,flatbed,111,21479,2.43,retail
+2021-10-29,CHI-DET,reefer,21,33960,3.06,auto parts
+2021-11-01,CHI-COL,dry van,85,19343,2.19,industrial
+2021-11-01,ATL-DAL,reefer,125,32300,2.16,industrial
+2021-11-01,JAX-ATL,dry van,39,26232,1.63,industrial
+2021-11-04,ATL-CHI,dry van,124,28532,2.15,retail
+2021-11-04,ATL-DAL,flatbed,75,28536,3.29,food & beverage
+2021-11-04,CHI-COL,dry van,42,18772,2.43,industrial
+2021-11-07,CHI-DET,reefer,29,31422,2.03,auto parts
+2021-11-07,ATL-CHI,reefer,105,27701,2.59,food & beverage
+2021-11-07,DAL-HOU,reefer,70,25608,3.19,industrial
+2021-11-10,ATL-CHI,reefer,82,41303,2.29,auto parts
+2021-11-10,NAS-IND,flatbed,87,21078,2.98,retail
+2021-11-10,MEM-ATL,reefer,56,25741,2.34,retail
+2021-11-13,NAS-IND,flatbed,118,25119,1.93,industrial
+2021-11-13,DAL-HOU,reefer,57,37602,3.33,industrial
+2021-11-13,MEM-ATL,flatbed,97,37829,3.03,auto parts
+2021-11-16,ATL-CHI,flatbed,135,25163,1.79,auto parts
+2021-11-16,CHI-DET,dry van,58,25508,3.12,industrial
+2021-11-16,JAX-ATL,dry van,93,24733,1.64,retail
+2021-11-19,CHI-DET,dry van,113,41382,2.77,food & beverage
+2021-11-19,MEM-ATL,flatbed,110,39853,1.66,industrial
+2021-11-19,DAL-HOU,reefer,30,41526,2.23,auto parts
+2021-11-22,ATL-DAL,dry van,140,29230,2.68,industrial
+2021-11-22,NAS-IND,dry van,106,39336,3.24,retail
+2021-11-22,CHI-DET,reefer,135,35333,3.1,retail
+2021-11-25,CHI-DET,flatbed,40,29629,1.82,retail
+2021-11-25,DAL-HOU,reefer,76,28607,1.66,food & beverage
+2021-11-25,ATL-DAL,flatbed,43,34105,1.79,retail
+2021-11-28,JAX-ATL,flatbed,139,30561,1.71,food & beverage
+2021-11-28,CHI-COL,reefer,122,31671,2.11,retail
+2021-11-28,ATL-CHI,flatbed,83,40669,1.75,retail
+2021-12-01,ATL-CHI,dry van,89,23212,2.33,auto parts
+2021-12-01,ATL-DAL,dry van,131,31425,2.48,retail
+2021-12-01,JAX-ATL,dry van,113,18870,2.89,food & beverage
+2021-12-04,CHI-DET,dry van,69,41087,2.34,retail
+2021-12-04,MEM-ATL,flatbed,106,18274,2.66,food & beverage
+2021-12-04,DAL-HOU,dry van,39,40476,2.0,industrial
+2021-12-07,NAS-IND,dry van,55,28460,1.85,industrial
+2021-12-07,JAX-ATL,reefer,26,24189,2.98,auto parts
+2021-12-07,ATL-DAL,reefer,21,37923,1.82,industrial
+2021-12-10,DAL-HOU,dry van,50,24586,2.44,food & beverage
+2021-12-10,NAS-IND,flatbed,63,21923,1.93,food & beverage
+2021-12-10,ATL-DAL,dry van,125,39957,2.75,industrial
+2021-12-13,CHI-DET,reefer,140,35558,1.87,food & beverage
+2021-12-13,DAL-HOU,dry van,75,39764,2.67,industrial
+2021-12-13,NAS-IND,reefer,116,38025,2.25,retail
+2021-12-16,ATL-CHI,dry van,83,35780,2.22,retail
+2021-12-16,CHI-COL,reefer,119,24440,1.9,food & beverage
+2021-12-16,ATL-DAL,dry van,119,31421,2.87,industrial
+2021-12-19,CHI-DET,reefer,43,19258,2.54,industrial
+2021-12-19,ATL-CHI,flatbed,109,39708,2.72,auto parts
+2021-12-19,MEM-ATL,dry van,99,23541,2.85,industrial
+2021-12-22,MEM-ATL,reefer,78,40565,3.02,auto parts
+2021-12-22,CHI-DET,dry van,78,33199,2.44,food & beverage
+2021-12-22,ATL-DAL,reefer,93,26567,2.11,industrial
+2021-12-25,NAS-IND,reefer,115,20113,1.65,industrial
+2021-12-25,ATL-DAL,reefer,47,27390,2.45,food & beverage
+2021-12-25,CHI-DET,flatbed,136,25332,1.74,retail
+2021-12-28,DAL-HOU,flatbed,52,34559,2.61,auto parts
+2021-12-28,MEM-ATL,flatbed,140,29169,3.38,retail
+2021-12-28,ATL-CHI,flatbed,58,25068,2.36,retail
+2021-12-31,CHI-DET,reefer,46,21356,2.55,auto parts
+2021-12-31,ATL-CHI,reefer,58,25626,2.39,food & beverage
+2021-12-31,CHI-COL,dry van,29,38370,3.13,retail
+2022-01-03,ATL-DAL,reefer,93,18291,2.54,auto parts
+2022-01-03,DAL-HOU,dry van,106,20808,2.8,auto parts
+2022-01-03,MEM-ATL,dry van,109,22275,3.15,industrial
+2022-01-06,NAS-IND,reefer,64,18675,1.66,auto parts
+2022-01-06,ATL-DAL,dry van,23,19967,3.11,industrial
+2022-01-06,CHI-DET,flatbed,69,27430,3.34,auto parts
+2022-01-09,ATL-DAL,flatbed,48,22126,2.52,auto parts
+2022-01-09,JAX-ATL,flatbed,113,39812,3.27,food & beverage
+2022-01-09,ATL-CHI,dry van,23,23691,1.75,auto parts
+2022-01-12,ATL-CHI,reefer,40,20317,3.33,industrial
+2022-01-12,NAS-IND,reefer,131,33796,2.98,food & beverage
+2022-01-12,MEM-ATL,flatbed,95,27024,2.01,industrial
+2022-01-15,ATL-DAL,dry van,58,34581,1.84,industrial
+2022-01-15,CHI-COL,flatbed,132,41888,2.08,auto parts
+2022-01-15,JAX-ATL,flatbed,123,38128,2.24,auto parts
+2022-01-18,ATL-CHI,reefer,121,31452,2.08,industrial
+2022-01-18,NAS-IND,reefer,69,41733,3.14,food & beverage
+2022-01-18,JAX-ATL,flatbed,24,31705,1.72,industrial
+2022-01-21,JAX-ATL,dry van,84,22435,2.56,food & beverage
+2022-01-21,MEM-ATL,flatbed,124,28511,3.19,retail
+2022-01-21,NAS-IND,reefer,64,30989,2.35,retail
+2022-01-24,DAL-HOU,reefer,22,41013,3.16,auto parts
+2022-01-24,NAS-IND,flatbed,41,28548,2.77,auto parts
+2022-01-24,JAX-ATL,reefer,76,29977,2.83,auto parts
+2022-01-27,JAX-ATL,flatbed,29,25810,2.24,auto parts
+2022-01-27,NAS-IND,flatbed,47,38902,3.09,auto parts
+2022-01-27,MEM-ATL,flatbed,53,21086,3.12,retail
+2022-01-30,DAL-HOU,dry van,118,19551,2.09,auto parts
+2022-01-30,NAS-IND,reefer,31,35507,3.06,industrial
+2022-01-30,ATL-CHI,dry van,69,34207,2.01,retail
+2022-02-02,NAS-IND,dry van,123,37645,3.06,retail
+2022-02-02,MEM-ATL,dry van,49,27769,2.17,auto parts
+2022-02-02,JAX-ATL,dry van,83,38824,2.84,auto parts
+2022-02-05,DAL-HOU,reefer,90,24585,2.02,retail
+2022-02-05,CHI-DET,reefer,88,27671,3.34,food & beverage
+2022-02-05,ATL-CHI,dry van,77,38881,2.23,auto parts
+2022-02-08,CHI-COL,dry van,118,30304,2.15,food & beverage
+2022-02-08,MEM-ATL,reefer,68,21014,2.23,industrial
+2022-02-08,ATL-CHI,dry van,126,28239,1.98,industrial
+2022-02-11,DAL-HOU,flatbed,127,36205,2.05,industrial
+2022-02-11,CHI-COL,dry van,94,28504,2.25,food & beverage
+2022-02-11,JAX-ATL,dry van,122,39645,3.07,retail
+2022-02-14,CHI-DET,reefer,106,25554,2.13,food & beverage
+2022-02-14,ATL-DAL,dry van,69,25094,2.15,industrial
+2022-02-14,DAL-HOU,dry van,130,39677,2.1,industrial
+2022-02-17,DAL-HOU,reefer,133,38323,1.89,industrial
+2022-02-17,CHI-DET,flatbed,65,31115,2.66,auto parts
+2022-02-17,MEM-ATL,flatbed,47,23070,2.46,auto parts
+2022-02-20,MEM-ATL,reefer,103,30265,2.77,auto parts
+2022-02-20,ATL-DAL,reefer,137,35983,3.03,auto parts
+2022-02-20,ATL-CHI,dry van,118,19213,2.67,retail
+2022-02-23,JAX-ATL,flatbed,63,19799,3.01,retail
+2022-02-23,DAL-HOU,dry van,138,33296,3.2,food & beverage
+2022-02-23,MEM-ATL,dry van,28,27776,2.49,retail
+2022-02-26,MEM-ATL,flatbed,53,29002,2.3,industrial
+2022-02-26,NAS-IND,dry van,50,26743,3.34,auto parts
+2022-02-26,JAX-ATL,flatbed,84,39423,2.54,retail
+2022-03-01,DAL-HOU,reefer,138,20061,2.64,auto parts
+2022-03-01,ATL-DAL,reefer,112,26643,2.65,auto parts
+2022-03-01,JAX-ATL,reefer,27,32485,2.11,retail
+2022-03-04,CHI-COL,reefer,115,28558,2.87,industrial
+2022-03-04,MEM-ATL,dry van,127,40327,3.12,food & beverage
+2022-03-04,JAX-ATL,reefer,86,40484,2.25,industrial
+2022-03-07,CHI-COL,flatbed,48,40086,2.72,industrial
+2022-03-07,ATL-CHI,reefer,21,41097,3.18,food & beverage
+2022-03-07,NAS-IND,flatbed,122,40065,1.89,food & beverage
+2022-03-10,JAX-ATL,reefer,104,25964,1.84,retail
+2022-03-10,ATL-CHI,reefer,100,21358,2.75,industrial
+2022-03-10,CHI-COL,reefer,52,38221,2.11,auto parts
+2022-03-13,MEM-ATL,flatbed,43,18669,2.52,auto parts
+2022-03-13,CHI-DET,reefer,59,19423,2.48,industrial
+2022-03-13,ATL-CHI,reefer,40,19169,3.36,food & beverage
+2022-03-16,MEM-ATL,flatbed,135,35896,3.12,auto parts
+2022-03-16,CHI-COL,reefer,71,26066,2.36,industrial
+2022-03-16,ATL-CHI,reefer,45,41333,2.34,retail
+2022-03-19,CHI-COL,dry van,82,23877,1.9,retail
+2022-03-19,MEM-ATL,flatbed,27,35226,2.41,food & beverage
+2022-03-19,ATL-DAL,reefer,78,23368,2.2,retail
+2022-03-22,ATL-DAL,reefer,83,35478,2.89,industrial
+2022-03-22,JAX-ATL,reefer,102,27500,2.07,food & beverage
+2022-03-22,ATL-CHI,flatbed,138,31382,2.79,industrial
+2022-03-25,ATL-CHI,reefer,117,29377,2.37,auto parts
+2022-03-25,CHI-DET,flatbed,97,19788,1.69,auto parts
+2022-03-25,CHI-COL,reefer,36,35716,1.74,auto parts
+2022-03-28,NAS-IND,dry van,103,23633,2.94,industrial
+2022-03-28,JAX-ATL,flatbed,98,38991,2.6,retail
+2022-03-28,CHI-COL,flatbed,121,30330,2.01,industrial
+2022-03-31,ATL-CHI,dry van,41,20235,3.17,auto parts
+2022-03-31,ATL-DAL,dry van,51,18073,2.22,food & beverage
+2022-03-31,NAS-IND,flatbed,64,30709,3.23,auto parts
+2022-04-03,ATL-DAL,dry van,42,19160,2.36,auto parts
+2022-04-03,MEM-ATL,dry van,113,19730,2.22,industrial
+2022-04-03,CHI-COL,dry van,122,18394,3.08,industrial
+2022-04-06,NAS-IND,reefer,44,32055,2.46,auto parts
+2022-04-06,MEM-ATL,flatbed,103,35748,2.18,auto parts
+2022-04-06,DAL-HOU,dry van,24,31714,2.65,auto parts
+2022-04-09,ATL-CHI,reefer,26,26448,2.23,food & beverage
+2022-04-09,NAS-IND,flatbed,53,36814,3.15,retail
+2022-04-09,DAL-HOU,dry van,131,22195,2.2,food & beverage
+2022-04-12,MEM-ATL,reefer,30,36801,2.53,auto parts
+2022-04-12,CHI-DET,dry van,94,29110,1.65,retail
+2022-04-12,ATL-CHI,dry van,112,31513,2.19,auto parts
+2022-04-15,CHI-DET,flatbed,20,21469,3.3,auto parts
+2022-04-15,CHI-COL,dry van,90,18948,1.82,auto parts
+2022-04-15,NAS-IND,reefer,43,21072,1.88,food & beverage
+2022-04-18,MEM-ATL,flatbed,115,32201,2.43,retail
+2022-04-18,CHI-COL,dry van,57,38409,2.65,retail
+2022-04-18,ATL-DAL,dry van,36,19971,1.93,food & beverage
+2022-04-21,CHI-COL,reefer,51,37411,2.17,food & beverage
+2022-04-21,ATL-DAL,reefer,68,39878,1.83,food & beverage
+2022-04-21,NAS-IND,flatbed,124,23973,2.59,auto parts

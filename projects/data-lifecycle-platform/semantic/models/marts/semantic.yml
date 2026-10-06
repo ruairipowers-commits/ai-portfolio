@@ -1,0 +1,134 @@
+# Semantic models and metrics (MetricFlow). meta.ontology_iri binds each metric to its concept in
+# ontology/vocabulary.ttl; meta.dataset_id says which catalog dataset it is computed from. A test checks both exist.
+semantic_models:
+  - name: option_days
+    model: ref('fct_options_daily')
+    defaults: {agg_time_dimension: obs_date}
+    entities:
+      - {name: option_day, type: primary, expr: option_day_id}
+      - {name: company, type: foreign, expr: symbol}
+    dimensions:
+      - {name: obs_date, type: time, type_params: {time_granularity: day}}
+      - {name: gics_sector, type: categorical}
+      - {name: symbol, type: categorical}
+    measures:
+      - {name: atm_iv_avg, agg: average, expr: atm_iv}
+      - {name: hv_20_avg, agg: average, expr: hv_20}
+      - {name: iv_hv_spread_avg, agg: average, expr: iv_hv_spread}
+      - {name: skew_avg, agg: average, expr: skew_25}
+      - {name: calls_traded_sum, agg: sum, expr: calls_traded}
+      - {name: puts_traded_sum, agg: sum, expr: puts_traded}
+      - {name: vix_avg, agg: average, expr: vix}
+      - {name: option_days_count, agg: count, expr: option_day_id}
+  - name: dataset_usage
+    model: ref('fct_dataset_usage')
+    defaults: {agg_time_dimension: usage_date}
+    entities:
+      - {name: usage_row, type: primary, expr: usage_id}
+      - {name: dataset, type: foreign, expr: dataset_id}
+      - {name: customer, type: foreign, expr: customer_id}
+    dimensions:
+      - {name: usage_date, type: time, type_params: {time_granularity: day}}
+      - {name: customer_id, type: categorical}
+      - {name: team_id, type: categorical}
+      - {name: dataset_id, type: categorical}
+    measures:
+      - {name: queries_sum, agg: sum, expr: queries}
+      - {name: active_users, agg: count_distinct, expr: user_id}
+  - name: dataset_cost
+    model: ref('fct_dataset_cost')
+    defaults: {agg_time_dimension: cost_date}
+    entities:
+      - {name: cost_row, type: primary, expr: cost_id}
+      - {name: dataset, type: foreign, expr: dataset_id}
+      - {name: customer, type: foreign, expr: customer_id}
+    dimensions:
+      - {name: cost_date, type: time, type_params: {time_granularity: day}}
+      - {name: customer_id, type: categorical}
+      - {name: dataset_id, type: categorical}
+    measures:
+      - {name: cost_usd_sum, agg: sum, expr: cost_usd}
+  - name: datasets
+    model: ref('dim_dataset')
+    entities:
+      - {name: dataset, type: primary, expr: dataset_id}
+    dimensions:
+      - {name: title, type: categorical}
+      - {name: category, type: categorical}
+      - {name: licence, type: categorical}
+  - name: companies
+    model: ref('dim_company')
+    entities:
+      - {name: company, type: primary, expr: symbol}
+    dimensions:
+      - {name: gics_sub_industry, type: categorical}
+  - name: customers
+    model: ref('dim_customer')
+    entities:
+      - {name: customer, type: primary, expr: customer_id}
+    dimensions:
+      - {name: customer_name, type: categorical}
+
+metrics:
+  - name: atm_iv
+    label: ATM implied volatility (avg, vol points)
+    type: simple
+    type_params: {measure: atm_iv_avg}
+    meta: {ontology_iri: "https://w3id.org/dlp/vocab/ImpliedVolATM", dataset_id: ds-options-iv, unit: vol points}
+  - name: hv_20
+    label: 20-day historical volatility (avg, vol points)
+    type: simple
+    type_params: {measure: hv_20_avg}
+    meta: {ontology_iri: "https://w3id.org/dlp/vocab/HistoricalVol", dataset_id: ds-options-iv, unit: vol points}
+  - name: iv_hv_spread
+    label: ATM IV minus 20-day HV (avg, vol points)
+    type: simple
+    type_params: {measure: iv_hv_spread_avg}
+    meta: {ontology_iri: "https://w3id.org/dlp/vocab/VolRiskPremium", dataset_id: ds-options-iv, unit: vol points}
+  - name: skew
+    label: Out-of-the-money minus in-the-money IV (avg, vol points)
+    type: simple
+    type_params: {measure: skew_avg}
+    meta: {ontology_iri: "https://w3id.org/dlp/vocab/ImpliedVolSkew", dataset_id: ds-options-iv, unit: vol points}
+  - name: option_volume
+    label: Options contracts traded (calls + puts)
+    type: derived
+    type_params:
+      expr: calls + puts
+      metrics: [{name: calls_traded, alias: calls}, {name: puts_traded, alias: puts}]
+    meta: {ontology_iri: "https://w3id.org/dlp/vocab/OptionVolume", dataset_id: ds-options-iv, unit: contracts}
+  - name: calls_traded
+    label: Call contracts traded
+    type: simple
+    type_params: {measure: calls_traded_sum}
+    meta: {ontology_iri: "https://w3id.org/dlp/vocab/OptionVolume", dataset_id: ds-options-iv, unit: contracts}
+  - name: puts_traded
+    label: Put contracts traded
+    type: simple
+    type_params: {measure: puts_traded_sum}
+    meta: {ontology_iri: "https://w3id.org/dlp/vocab/OptionVolume", dataset_id: ds-options-iv, unit: contracts}
+  - name: put_call_ratio
+    label: Put/call volume ratio
+    type: ratio
+    type_params: {numerator: puts_traded, denominator: calls_traded}
+    meta: {ontology_iri: "https://w3id.org/dlp/vocab/PutCallRatio", dataset_id: ds-options-iv, unit: ratio}
+  - name: vix
+    label: VIX (avg)
+    type: simple
+    type_params: {measure: vix_avg}
+    meta: {ontology_iri: "https://w3id.org/dlp/vocab/MarketVol", dataset_id: ds-options-iv, unit: index points}
+  - name: queries
+    label: Queries
+    type: simple
+    type_params: {measure: queries_sum}
+    meta: {ontology_iri: "https://w3id.org/dlp/vocab/QueryCount", dataset_id: platform, unit: queries}
+  - name: spend_usd
+    label: Contract spend (USD, accrued daily)
+    type: simple
+    type_params: {measure: cost_usd_sum}
+    meta: {ontology_iri: "https://w3id.org/dlp/vocab/Spend", dataset_id: platform, unit: USD}
+  - name: cost_per_query
+    label: Contract spend per query (USD)
+    type: ratio
+    type_params: {numerator: spend_usd, denominator: queries}
+    meta: {ontology_iri: "https://w3id.org/dlp/vocab/CostPerQuery", dataset_id: platform, unit: USD}

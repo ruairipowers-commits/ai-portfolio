@@ -1,0 +1,27 @@
+{
+  "openapi": "3.0.3",
+  "info": {"title": "Northlight Vol API (SYNTHETIC, fictional vendor)", "version": "2.1.0"},
+  "servers": [{"url": "https://api.northlight.example.com/v2"}],
+  "paths": {
+    "/surfaces/{date}": {
+      "get": {
+        "summary": "End-of-day volatility surface points for one trade date",
+        "parameters": [{"name": "date", "in": "path", "required": true, "schema": {"type": "string", "format": "date"}},
+                       {"name": "ticker", "in": "query", "schema": {"type": "string"}}],
+        "responses": {"200": {"description": "Surface points",
+          "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/SurfacePoint"}}}}}}
+      }
+    }
+  },
+  "components": {"schemas": {"SurfacePoint": {"type": "object", "required": ["trade_date", "ticker", "tenor_days", "delta", "implied_vol"],
+    "properties": {
+      "trade_date": {"type": "string", "format": "date", "description": "Trade date (observation date)"},
+      "ticker": {"type": "string", "description": "Exchange ticker symbol"},
+      "isin": {"type": "string", "description": "ISIN of the underlying"},
+      "tenor_days": {"type": "integer", "description": "Days to expiry of the interpolated tenor"},
+      "delta": {"type": "number", "description": "Call delta of the surface point (0.5 = at the money)"},
+      "implied_vol": {"type": "number", "description": "Implied volatility, annualised, decimal"},
+      "atm_iv_30d": {"type": "number", "description": "30-day at-the-money implied volatility"},
+      "realized_vol_20d": {"type": "number", "description": "20-day realised volatility"}
+    }}}}
+}

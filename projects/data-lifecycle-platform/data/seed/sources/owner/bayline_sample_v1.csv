@@ -1,0 +1,601 @@
+ship_date,lane,trailer_type,loads,avg_weight_lbs,avg_rate_usd_per_mile,shipper_segment,driver_name,driver_phone
+2020-09-01,JAX-ATL,flatbed,26,20373,3.08,retail,Lee Tran,+1 404 555 1950
+2020-09-01,ATL-DAL,flatbed,47,19228,1.75,auto parts,Pat Rivera,+1 404 555 4943
+2020-09-01,CHI-COL,dry van,90,31910,1.71,retail,Pat Rivera,+1 404 555 2013
+2020-09-04,NAS-IND,dry van,91,22363,2.12,food & beverage,Dana Brooks,+1 404 555 2929
+2020-09-04,ATL-CHI,flatbed,59,36358,3.07,food & beverage,Pat Rivera,+1 404 555 4078
+2020-09-04,ATL-DAL,reefer,32,35948,2.88,retail,Dana Brooks,+1 404 555 4374
+2020-09-07,CHI-DET,reefer,119,28293,2.44,auto parts,Lee Tran,+1 404 555 5911
+2020-09-07,JAX-ATL,dry van,121,23890,2.86,food & beverage,Pat Rivera,+1 404 555 5919
+2020-09-07,DAL-HOU,flatbed,83,29255,2.91,industrial,Dana Brooks,+1 404 555 2199
+2020-09-10,ATL-DAL,dry van,116,29208,1.87,auto parts,Lee Tran,+1 404 555 1642
+2020-09-10,DAL-HOU,flatbed,29,36287,2.63,industrial,Lee Tran,+1 404 555 6737
+2020-09-10,CHI-COL,flatbed,83,37002,3.03,retail,Pat Rivera,+1 404 555 5422
+2020-09-13,CHI-DET,dry van,27,41958,2.86,auto parts,Lee Tran,+1 404 555 7320
+2020-09-13,JAX-ATL,flatbed,64,18739,3.29,industrial,Pat Rivera,+1 404 555 2918
+2020-09-13,NAS-IND,reefer,27,25150,2.98,food & beverage,Dana Brooks,+1 404 555 5056
+2020-09-16,NAS-IND,dry van,41,32718,2.32,industrial,Pat Rivera,+1 404 555 8053
+2020-09-16,CHI-COL,flatbed,55,41147,2.35,industrial,Dana Brooks,+1 404 555 7233
+2020-09-16,CHI-DET,dry van,39,20719,1.92,food & beverage,Dana Brooks,+1 404 555 4822
+2020-09-19,ATL-CHI,dry van,53,27238,1.61,auto parts,Dana Brooks,+1 404 555 7049
+2020-09-19,CHI-COL,flatbed,92,28440,3.32,retail,Lee Tran,+1 404 555 7428
+2020-09-19,DAL-HOU,reefer,71,30914,1.79,auto parts,Pat Rivera,+1 404 555 4122
+2020-09-22,ATL-DAL,dry van,34,29142,2.68,retail,Pat Rivera,+1 404 555 3478
+2020-09-22,CHI-DET,flatbed,32,29914,2.7,retail,Pat Rivera,+1 404 555 7164
+2020-09-22,CHI-COL,dry van,101,26265,3.32,industrial,Lee Tran,+1 404 555 3012
+2020-09-25,ATL-DAL,reefer,81,33854,2.16,food & beverage,Pat Rivera,+1 404 555 6613
+2020-09-25,NAS-IND,flatbed,53,33683,3.09,food & beverage,Dana Brooks,+1 404 555 1378
+2020-09-25,CHI-COL,dry van,87,29853,1.86,retail,Dana Brooks,+1 404 555 5883
+2020-09-28,ATL-DAL,flatbed,66,23473,2.24,food & beverage,Dana Brooks,+1 404 555 9873
+2020-09-28,JAX-ATL,flatbed,62,38854,2.0,food & beverage,Pat Rivera,+1 404 555 7564
+2020-09-28,MEM-ATL,flatbed,122,25429,1.96,auto parts,Lee Tran,+1 404 555 1474
+2020-10-01,ATL-CHI,reefer,53,24345,2.85,industrial,Lee Tran,+1 404 555 6726
+2020-10-01,NAS-IND,reefer,30,25224,1.78,auto parts,Pat Rivera,+1 404 555 6533
+2020-10-01,MEM-ATL,dry van,81,38449,3.37,retail,Lee Tran,+1 404 555 6636
+2020-10-04,ATL-DAL,dry van,136,30731,3.01,food & beverage,Lee Tran,+1 404 555 3924
+2020-10-04,NAS-IND,reefer,121,38835,2.2,auto parts,Lee Tran,+1 404 555 7576
+2020-10-04,JAX-ATL,flatbed,30,41750,1.89,food & beverage,Pat Rivera,+1 404 555 3476
+2020-10-07,CHI-DET,dry van,98,37525,3.36,industrial,Pat Rivera,+1 404 555 9989
+2020-10-07,NAS-IND,flatbed,36,18701,1.63,retail,Dana Brooks,+1 404 555 3281
+2020-10-07,JAX-ATL,reefer,131,24383,3.09,food & beverage,Pat Rivera,+1 404 555 5126
+2020-10-10,CHI-COL,dry van,117,37216,2.19,auto parts,Pat Rivera,+1 404 555 1997
+2020-10-10,MEM-ATL,flatbed,65,33013,2.79,auto parts,Dana Brooks,+1 404 555 3142
+2020-10-10,DAL-HOU,flatbed,39,35154,2.52,auto parts,Pat Rivera,+1 404 555 1064
+2020-10-13,MEM-ATL,reefer,99,41763,1.82,retail,Lee Tran,+1 404 555 9492
+2020-10-13,ATL-DAL,flatbed,91,33810,3.01,retail,Dana Brooks,+1 404 555 1930
+2020-10-13,NAS-IND,dry van,44,27074,1.68,retail,Dana Brooks,+1 404 555 8408
+2020-10-16,ATL-CHI,reefer,61,38071,3.35,food & beverage,Dana Brooks,+1 404 555 5541
+2020-10-16,NAS-IND,reefer,85,35474,3.05,food & beverage,Dana Brooks,+1 404 555 9572
+2020-10-16,CHI-DET,reefer,138,36334,3.21,food & beverage,Lee Tran,+1 404 555 3246
+2020-10-19,NAS-IND,reefer,60,20377,2.81,auto parts,Pat Rivera,+1 404 555 4484
+2020-10-19,ATL-CHI,flatbed,58,22009,3.21,food & beverage,Dana Brooks,+1 404 555 6999
+2020-10-19,CHI-COL,dry van,52,22497,3.34,food & beverage,Dana Brooks,+1 404 555 2542
+2020-10-22,NAS-IND,flatbed,126,25330,1.89,auto parts,Dana Brooks,+1 404 555 7616
+2020-10-22,CHI-COL,reefer,73,24414,2.24,retail,Dana Brooks,+1 404 555 6995
+2020-10-22,ATL-DAL,dry van,63,36155,2.43,retail,Lee Tran,+1 404 555 6431
+2020-10-25,DAL-HOU,dry van,137,25489,3.35,retail,Pat Rivera,+1 404 555 5351
+2020-10-25,CHI-DET,reefer,25,23949,2.09,food & beverage,Lee Tran,+1 404 555 5237
+2020-10-25,ATL-CHI,reefer,39,35583,3.25,auto parts,Dana Brooks,+1 404 555 6358
+2020-10-28,ATL-DAL,flatbed,43,31936,3.21,industrial,Pat Rivera,+1 404 555 2451
+2020-10-28,MEM-ATL,reefer,30,37928,3.14,retail,Lee Tran,+1 404 555 2993
+2020-10-28,ATL-CHI,reefer,21,29113,3.39,auto parts,Lee Tran,+1 404 555 3117
+2020-10-31,ATL-CHI,dry van,140,21586,3.34,industrial,Pat Rivera,+1 404 555 3967
+2020-10-31,DAL-HOU,dry van,139,28223,2.73,food & beverage,Lee Tran,+1 404 555 8302
+2020-10-31,JAX-ATL,flatbed,106,23829,2.09,retail,Lee Tran,+1 404 555 1605
+2020-11-03,ATL-CHI,flatbed,90,24208,2.53,food & beverage,Lee Tran,+1 404 555 2741
+2020-11-03,CHI-DET,flatbed,124,39302,2.38,auto parts,Dana Brooks,+1 404 555 7440
+2020-11-03,JAX-ATL,flatbed,59,40535,1.99,food & beverage,Lee Tran,+1 404 555 4254
+2020-11-06,MEM-ATL,dry van,127,22253,1.63,industrial,Lee Tran,+1 404 555 3674
+2020-11-06,CHI-COL,dry van,30,39798,3.11,industrial,Dana Brooks,+1 404 555 4968
+2020-11-06,CHI-DET,flatbed,57,19482,2.43,food & beverage,Lee Tran,+1 404 555 8304
+2020-11-09,ATL-CHI,reefer,90,28601,2.04,industrial,Pat Rivera,+1 404 555 6842
+2020-11-09,MEM-ATL,dry van,20,28988,2.29,auto parts,Lee Tran,+1 404 555 9237
+2020-11-09,NAS-IND,flatbed,45,26132,2.51,retail,Pat Rivera,+1 404 555 5328
+2020-11-12,ATL-DAL,flatbed,25,30909,1.64,industrial,Dana Brooks,+1 404 555 4814
+2020-11-12,CHI-DET,dry van,94,35340,3.14,food & beverage,Dana Brooks,+1 404 555 7381
+2020-11-12,CHI-COL,reefer,112,34193,1.87,food & beverage,Pat Rivera,+1 404 555 9404
+2020-11-15,NAS-IND,flatbed,37,35162,2.96,retail,Dana Brooks,+1 404 555 4767
+2020-11-15,JAX-ATL,dry van,23,19371,1.84,industrial,Pat Rivera,+1 404 555 7170
+2020-11-15,CHI-DET,reefer,91,19663,2.73,food & beverage,Lee Tran,+1 404 555 5321
+2020-11-18,ATL-CHI,flatbed,139,34481,3.22,retail,Dana Brooks,+1 404 555 9617
+2020-11-18,CHI-COL,dry van,115,33527,2.05,retail,Lee Tran,+1 404 555 4846
+2020-11-18,CHI-DET,flatbed,116,24724,2.02,auto parts,Lee Tran,+1 404 555 7267
+2020-11-21,ATL-DAL,reefer,118,19531,2.71,food & beverage,Pat Rivera,+1 404 555 3415
+2020-11-21,CHI-COL,reefer,52,39349,2.94,industrial,Dana Brooks,+1 404 555 3186
+2020-11-21,JAX-ATL,dry van,81,19987,2.47,retail,Dana Brooks,+1 404 555 4566
+2020-11-24,CHI-DET,flatbed,56,33226,2.44,retail,Dana Brooks,+1 404 555 4264
+2020-11-24,MEM-ATL,reefer,30,33497,1.63,auto parts,Pat Rivera,+1 404 555 9300
+2020-11-24,JAX-ATL,reefer,54,30676,1.98,food & beverage,Pat Rivera,+1 404 555 2479
+2020-11-27,MEM-ATL,reefer,66,22345,2.69,industrial,Pat Rivera,+1 404 555 6983
+2020-11-27,JAX-ATL,dry van,83,33929,2.31,food & beverage,Pat Rivera,+1 404 555 9055
+2020-11-27,DAL-HOU,flatbed,77,31284,2.14,food & beverage,Lee Tran,+1 404 555 6635
+2020-11-30,NAS-IND,reefer,20,28634,2.95,auto parts,Pat Rivera,+1 404 555 4207
+2020-11-30,MEM-ATL,flatbed,21,27497,2.06,retail,Lee Tran,+1 404 555 7392
+2020-11-30,ATL-CHI,flatbed,29,29819,3.27,industrial,Pat Rivera,+1 404 555 5597
+2020-12-03,ATL-DAL,reefer,101,22879,2.05,industrial,Lee Tran,+1 404 555 9371
+2020-12-03,ATL-CHI,reefer,44,30233,3.01,auto parts,Pat Rivera,+1 404 555 7554
+2020-12-03,JAX-ATL,flatbed,90,24666,2.9,retail,Dana Brooks,+1 404 555 7731
+2020-12-06,CHI-DET,flatbed,131,27378,2.47,food & beverage,Pat Rivera,+1 404 555 8736
+2020-12-06,DAL-HOU,reefer,63,27232,2.14,industrial,Lee Tran,+1 404 555 4910
+2020-12-06,ATL-DAL,reefer,81,36262,2.8,retail,Pat Rivera,+1 404 555 3648
+2020-12-09,ATL-DAL,reefer,90,25209,2.42,industrial,Lee Tran,+1 404 555 8002
+2020-12-09,CHI-DET,dry van,90,24304,2.04,food & beverage,Lee Tran,+1 404 555 2492
+2020-12-09,DAL-HOU,reefer,50,30068,2.07,food & beverage,Pat Rivera,+1 404 555 7763
+2020-12-12,NAS-IND,flatbed,46,30349,2.09,retail,Lee Tran,+1 404 555 5546
+2020-12-12,CHI-COL,flatbed,66,22124,2.84,food & beverage,Pat Rivera,+1 404 555 5440
+2020-12-12,JAX-ATL,dry van,69,31099,2.76,auto parts,Lee Tran,+1 404 555 1357
+2020-12-15,MEM-ATL,flatbed,117,33508,3.34,auto parts,Pat Rivera,+1 404 555 2198
+2020-12-15,ATL-CHI,reefer,139,35296,3.14,auto parts,Pat Rivera,+1 404 555 2786
+2020-12-15,CHI-COL,dry van,39,22982,2.54,retail,Dana Brooks,+1 404 555 8492
+2020-12-18,ATL-DAL,dry van,120,22117,2.02,retail,Dana Brooks,+1 404 555 5977
+2020-12-18,DAL-HOU,dry van,100,26250,2.55,auto parts,Dana Brooks,+1 404 555 2837
+2020-12-18,ATL-CHI,dry van,29,27841,2.54,food & beverage,Lee Tran,+1 404 555 5274
+2020-12-21,CHI-COL,dry van,21,35612,2.14,auto parts,Lee Tran,+1 404 555 6183
+2020-12-21,NAS-IND,flatbed,127,25941,2.46,food & beverage,Dana Brooks,+1 404 555 5047
+2020-12-21,DAL-HOU,dry van,72,41090,2.77,retail,Pat Rivera,+1 404 555 4180
+2020-12-24,CHI-DET,reefer,30,26429,2.01,auto parts,Lee Tran,+1 404 555 4715
+2020-12-24,JAX-ATL,reefer,24,40800,2.21,auto parts,Lee Tran,+1 404 555 7493
+2020-12-24,NAS-IND,dry van,20,27571,2.93,retail,Pat Rivera,+1 404 555 9121
+2020-12-27,CHI-COL,dry van,79,25256,2.08,industrial,Pat Rivera,+1 404 555 9122
+2020-12-27,MEM-ATL,flatbed,43,25317,2.47,retail,Dana Brooks,+1 404 555 3398
+2020-12-27,ATL-DAL,reefer,26,24977,1.64,food & beverage,Lee Tran,+1 404 555 1849
+2020-12-30,ATL-CHI,reefer,134,41331,3.19,retail,Pat Rivera,+1 404 555 3713
+2020-12-30,ATL-DAL,reefer,44,24078,2.77,auto parts,Pat Rivera,+1 404 555 6108
+2020-12-30,CHI-COL,flatbed,112,30406,3.11,industrial,Lee Tran,+1 404 555 3773
+2021-01-02,ATL-DAL,reefer,30,29516,2.36,retail,Dana Brooks,+1 404 555 4398
+2021-01-02,ATL-CHI,reefer,65,28115,3.08,auto parts,Pat Rivera,+1 404 555 1807
+2021-01-02,NAS-IND,flatbed,80,24413,2.27,auto parts,Pat Rivera,+1 404 555 6297
+2021-01-05,JAX-ATL,dry van,100,31461,2.05,auto parts,Pat Rivera,+1 404 555 7153
+2021-01-05,CHI-DET,dry van,79,20050,3.05,retail,Lee Tran,+1 404 555 4193
+2021-01-05,CHI-COL,flatbed,28,37844,2.21,industrial,Lee Tran,+1 404 555 1714
+2021-01-08,DAL-HOU,flatbed,60,27031,2.14,retail,Pat Rivera,+1 404 555 4831
+2021-01-08,JAX-ATL,dry van,80,41447,3.32,auto parts,Lee Tran,+1 404 555 8044
+2021-01-08,NAS-IND,reefer,36,34270,1.93,industrial,Dana Brooks,+1 404 555 3479
+2021-01-11,CHI-COL,reefer,66,37520,1.74,food & beverage,Lee Tran,+1 404 555 3620
+2021-01-11,MEM-ATL,dry van,72,20121,2.77,auto parts,Dana Brooks,+1 404 555 9922
+2021-01-11,NAS-IND,reefer,40,31977,3.19,retail,Lee Tran,+1 404 555 2377
+2021-01-14,CHI-COL,reefer,110,32646,1.91,food & beverage,Lee Tran,+1 404 555 8551
+2021-01-14,ATL-CHI,flatbed,134,40089,2.02,retail,Lee Tran,+1 404 555 5813
+2021-01-14,CHI-DET,reefer,92,26770,2.27,industrial,Pat Rivera,+1 404 555 8199
+2021-01-17,CHI-COL,dry van,39,27219,3.19,food & beverage,Lee Tran,+1 404 555 2061
+2021-01-17,ATL-DAL,reefer,52,26059,2.51,food & beverage,Dana Brooks,+1 404 555 2647
+2021-01-17,NAS-IND,flatbed,79,19213,1.78,auto parts,Pat Rivera,+1 404 555 8344
+2021-01-20,JAX-ATL,dry van,35,19651,1.94,food & beverage,Pat Rivera,+1 404 555 7098
+2021-01-20,ATL-CHI,flatbed,130,23824,2.41,industrial,Dana Brooks,+1 404 555 1103
+2021-01-20,MEM-ATL,dry van,101,37534,2.88,industrial,Pat Rivera,+1 404 555 1613
+2021-01-23,JAX-ATL,dry van,46,26353,1.67,food & beverage,Pat Rivera,+1 404 555 6361
+2021-01-23,MEM-ATL,reefer,106,30183,1.93,industrial,Pat Rivera,+1 404 555 4332
+2021-01-23,ATL-DAL,dry van,121,34240,2.59,retail,Lee Tran,+1 404 555 2661
+2021-01-26,NAS-IND,dry van,101,35498,1.76,food & beverage,Lee Tran,+1 404 555 5442
+2021-01-26,JAX-ATL,reefer,56,39882,2.15,retail,Lee Tran,+1 404 555 6852
+2021-01-26,DAL-HOU,reefer,73,18596,3.16,industrial,Dana Brooks,+1 404 555 4230
+2021-01-29,NAS-IND,dry van,140,18192,2.38,food & beverage,Lee Tran,+1 404 555 2860
+2021-01-29,JAX-ATL,dry van,71,36933,3.19,auto parts,Pat Rivera,+1 404 555 3129
+2021-01-29,CHI-COL,dry van,26,36073,1.86,auto parts,Pat Rivera,+1 404 555 7075
+2021-02-01,MEM-ATL,reefer,40,35077,1.91,retail,Pat Rivera,+1 404 555 7287
+2021-02-01,ATL-DAL,reefer,116,24466,2.14,retail,Lee Tran,+1 404 555 6153
+2021-02-01,CHI-DET,dry van,97,38852,2.3,food & beverage,Dana Brooks,+1 404 555 4638
+2021-02-04,NAS-IND,reefer,43,36527,1.99,auto parts,Dana Brooks,+1 404 555 3563
+2021-02-04,DAL-HOU,reefer,65,22032,1.87,food & beverage,Pat Rivera,+1 404 555 1624
+2021-02-04,ATL-DAL,flatbed,127,28623,1.81,auto parts,Dana Brooks,+1 404 555 6017
+2021-02-07,NAS-IND,dry van,74,30753,2.79,auto parts,Dana Brooks,+1 404 555 8181
+2021-02-07,MEM-ATL,dry van,22,18114,2.71,auto parts,Lee Tran,+1 404 555 4854
+2021-02-07,DAL-HOU,reefer,117,38269,3.0,auto parts,Pat Rivera,+1 404 555 8753
+2021-02-10,NAS-IND,dry van,65,32109,2.26,auto parts,Dana Brooks,+1 404 555 9358
+2021-02-10,ATL-CHI,flatbed,25,19332,2.75,retail,Dana Brooks,+1 404 555 6140
+2021-02-10,CHI-DET,flatbed,85,20620,1.7,auto parts,Dana Brooks,+1 404 555 3231
+2021-02-13,ATL-CHI,flatbed,113,40693,3.07,food & beverage,Pat Rivera,+1 404 555 9058
+2021-02-13,NAS-IND,reefer,123,23410,2.84,food & beverage,Pat Rivera,+1 404 555 6749
+2021-02-13,CHI-DET,flatbed,116,26264,1.89,industrial,Lee Tran,+1 404 555 3352
+2021-02-16,DAL-HOU,dry van,95,26613,2.71,food & beverage,Lee Tran,+1 404 555 7099
+2021-02-16,CHI-DET,dry van,45,23966,2.33,industrial,Dana Brooks,+1 404 555 6371
+2021-02-16,CHI-COL,reefer,41,26661,1.81,retail,Dana Brooks,+1 404 555 6894
+2021-02-19,CHI-DET,flatbed,108,21427,2.05,auto parts,Dana Brooks,+1 404 555 7086
+2021-02-19,DAL-HOU,reefer,68,30089,2.64,industrial,Lee Tran,+1 404 555 2333
+2021-02-19,NAS-IND,reefer,49,23791,2.71,retail,Lee Tran,+1 404 555 9455
+2021-02-22,DAL-HOU,flatbed,138,39748,3.21,retail,Dana Brooks,+1 404 555 1553
+2021-02-22,MEM-ATL,dry van,39,27534,2.71,auto parts,Lee Tran,+1 404 555 9399
+2021-02-22,JAX-ATL,reefer,134,19565,1.84,food & beverage,Dana Brooks,+1 404 555 1746
+2021-02-25,ATL-CHI,flatbed,65,27952,1.79,industrial,Dana Brooks,+1 404 555 4674
+2021-02-25,CHI-DET,reefer,94,27868,2.66,food & beverage,Lee Tran,+1 404 555 8780
+2021-02-25,NAS-IND,dry van,37,18462,3.29,food & beverage,Dana Brooks,+1 404 555 3446
+2021-02-28,CHI-DET,flatbed,38,39806,3.01,auto parts,Lee Tran,+1 404 555 1188
+2021-02-28,ATL-CHI,dry van,102,36426,3.21,auto parts,Dana Brooks,+1 404 555 9480
+2021-02-28,NAS-IND,flatbed,83,26142,1.9,retail,Pat Rivera,+1 404 555 2008
+2021-03-03,ATL-CHI,dry van,40,19912,3.24,retail,Pat Rivera,+1 404 555 4231
+2021-03-03,CHI-COL,dry van,72,24537,2.53,auto parts,Dana Brooks,+1 404 555 3861
+2021-03-03,ATL-DAL,flatbed,59,20089,2.14,retail,Dana Brooks,+1 404 555 8830
+2021-03-06,ATL-CHI,flatbed,136,33245,1.74,auto parts,Pat Rivera,+1 404 555 4701
+2021-03-06,CHI-COL,dry van,53,25611,2.76,retail,Lee Tran,+1 404 555 5313
+2021-03-06,NAS-IND,flatbed,26,26715,2.74,auto parts,Dana Brooks,+1 404 555 9572
+2021-03-09,DAL-HOU,dry van,30,34627,1.63,industrial,Pat Rivera,+1 404 555 4322
+2021-03-09,MEM-ATL,dry van,115,28710,1.95,auto parts,Lee Tran,+1 404 555 4918
+2021-03-09,JAX-ATL,reefer,136,38666,3.26,auto parts,Lee Tran,+1 404 555 9693
+2021-03-12,ATL-CHI,reefer,112,25662,2.63,industrial,Pat Rivera,+1 404 555 7415
+2021-03-12,NAS-IND,flatbed,94,20549,2.62,food & beverage,Pat Rivera,+1 404 555 1539
+2021-03-12,CHI-DET,dry van,34,21495,2.72,food & beverage,Lee Tran,+1 404 555 3323
+2021-03-15,ATL-CHI,dry van,108,39087,2.74,retail,Dana Brooks,+1 404 555 1764
+2021-03-15,CHI-DET,dry van,129,37348,2.97,food & beverage,Dana Brooks,+1 404 555 2080
+2021-03-15,NAS-IND,flatbed,140,30577,1.79,food & beverage,Pat Rivera,+1 404 555 2834
+2021-03-18,ATL-CHI,dry van,125,38694,2.74,auto parts,Pat Rivera,+1 404 555 3173
+2021-03-18,CHI-DET,dry van,121,39178,1.97,industrial,Lee Tran,+1 404 555 7942
+2021-03-18,JAX-ATL,reefer,22,29498,2.06,industrial,Pat Rivera,+1 404 555 7029
+2021-03-21,JAX-ATL,flatbed,80,27425,2.71,retail,Lee Tran,+1 404 555 1511
+2021-03-21,NAS-IND,reefer,86,21221,2.22,retail,Dana Brooks,+1 404 555 4548
+2021-03-21,DAL-HOU,flatbed,130,20978,2.63,industrial,Pat Rivera,+1 404 555 8144
+2021-03-24,ATL-CHI,reefer,117,19768,1.61,auto parts,Pat Rivera,+1 404 555 9052
+2021-03-24,DAL-HOU,flatbed,121,24046,3.34,industrial,Dana Brooks,+1 404 555 5269
+2021-03-24,ATL-DAL,flatbed,140,23206,2.11,food & beverage,Dana Brooks,+1 404 555 4793
+2021-03-27,CHI-DET,flatbed,118,20650,2.48,retail,Dana Brooks,+1 404 555 6351
+2021-03-27,ATL-DAL,reefer,32,31148,3.27,retail,Lee Tran,+1 404 555 1412
+2021-03-27,ATL-CHI,reefer,46,27933,2.07,food & beverage,Lee Tran,+1 404 555 4826
+2021-03-30,CHI-DET,flatbed,116,40584,2.96,retail,Lee Tran,+1 404 555 6352
+2021-03-30,ATL-DAL,flatbed,39,32755,2.79,industrial,Pat Rivera,+1 404 555 8588
+2021-03-30,DAL-HOU,reefer,108,26428,2.64,food & beverage,Lee Tran,+1 404 555 8569
+2021-04-02,CHI-COL,reefer,58,41041,3.09,food & beverage,Dana Brooks,+1 404 555 3555
+2021-04-02,DAL-HOU,dry van,112,28700,2.69,industrial,Pat Rivera,+1 404 555 4870
+2021-04-02,ATL-DAL,reefer,44,26476,3.36,retail,Pat Rivera,+1 404 555 2665
+2021-04-05,CHI-COL,dry van,121,27899,2.92,auto parts,Lee Tran,+1 404 555 4214
+2021-04-05,CHI-DET,dry van,101,21501,2.11,auto parts,Lee Tran,+1 404 555 1555
+2021-04-05,ATL-DAL,dry van,71,32304,2.85,industrial,Lee Tran,+1 404 555 1362
+2021-04-08,MEM-ATL,flatbed,71,18180,2.93,auto parts,Dana Brooks,+1 404 555 7900
+2021-04-08,CHI-DET,dry van,105,41665,2.77,food & beverage,Dana Brooks,+1 404 555 3973
+2021-04-08,DAL-HOU,flatbed,35,32873,2.38,industrial,Dana Brooks,+1 404 555 2603
+2021-04-11,NAS-IND,flatbed,111,38631,1.88,auto parts,Lee Tran,+1 404 555 8457
+2021-04-11,ATL-DAL,dry van,99,31413,2.53,food & beverage,Dana Brooks,+1 404 555 6374
+2021-04-11,CHI-COL,dry van,69,34051,3.23,retail,Pat Rivera,+1 404 555 5116
+2021-04-14,CHI-COL,dry van,86,29410,1.78,auto parts,Dana Brooks,+1 404 555 4358
+2021-04-14,ATL-DAL,flatbed,80,34783,1.63,industrial,Dana Brooks,+1 404 555 6617
+2021-04-14,JAX-ATL,reefer,114,32972,1.98,food & beverage,Lee Tran,+1 404 555 9417
+2021-04-17,ATL-DAL,reefer,101,19855,2.05,auto parts,Lee Tran,+1 404 555 2007
+2021-04-17,JAX-ATL,dry van,29,31716,3.25,industrial,Dana Brooks,+1 404 555 5344
+2021-04-17,DAL-HOU,dry van,48,27944,2.93,food & beverage,Lee Tran,+1 404 555 8571
+2021-04-20,CHI-COL,dry van,123,38784,1.95,food & beverage,Pat Rivera,+1 404 555 6785
+2021-04-20,ATL-DAL,flatbed,101,31542,2.44,industrial,Dana Brooks,+1 404 555 3050
+2021-04-20,NAS-IND,reefer,65,25551,2.08,auto parts,Dana Brooks,+1 404 555 5154
+2021-04-23,NAS-IND,reefer,20,41651,3.04,industrial,Pat Rivera,+1 404 555 5945
+2021-04-23,JAX-ATL,reefer,81,33889,2.37,retail,Dana Brooks,+1 404 555 6938
+2021-04-23,ATL-DAL,dry van,138,27934,3.14,retail,Pat Rivera,+1 404 555 6319
+2021-04-26,MEM-ATL,flatbed,94,18491,2.78,food & beverage,Pat Rivera,+1 404 555 5800
+2021-04-26,DAL-HOU,reefer,97,21326,2.64,food & beverage,Pat Rivera,+1 404 555 8404
+2021-04-26,CHI-DET,reefer,120,23002,1.98,auto parts,Dana Brooks,+1 404 555 3751
+2021-04-29,ATL-DAL,flatbed,127,27733,1.96,food & beverage,Dana Brooks,+1 404 555 2288
+2021-04-29,JAX-ATL,flatbed,127,32371,2.81,retail,Dana Brooks,+1 404 555 2940
+2021-04-29,DAL-HOU,reefer,73,25673,3.09,auto parts,Lee Tran,+1 404 555 1957
+2021-05-02,CHI-DET,flatbed,82,26079,2.5,retail,Pat Rivera,+1 404 555 6254
+2021-05-02,CHI-COL,reefer,109,36434,2.5,industrial,Lee Tran,+1 404 555 7143
+2021-05-02,ATL-DAL,reefer,73,40149,1.74,industrial,Dana Brooks,+1 404 555 1467
+2021-05-05,ATL-CHI,flatbed,114,28828,3.06,retail,Dana Brooks,+1 404 555 8932
+2021-05-05,DAL-HOU,reefer,116,22734,1.66,auto parts,Dana Brooks,+1 404 555 3079
+2021-05-05,CHI-DET,reefer,32,39594,2.26,auto parts,Dana Brooks,+1 404 555 4452
+2021-05-08,DAL-HOU,reefer,52,36154,1.69,industrial,Lee Tran,+1 404 555 6819
+2021-05-08,CHI-COL,reefer,71,28935,2.51,industrial,Dana Brooks,+1 404 555 6649
+2021-05-08,MEM-ATL,dry van,103,34128,3.03,industrial,Pat Rivera,+1 404 555 6195
+2021-05-11,DAL-HOU,flatbed,31,19312,2.32,auto parts,Dana Brooks,+1 404 555 1814
+2021-05-11,ATL-DAL,reefer,58,21555,1.61,food & beverage,Lee Tran,+1 404 555 1985
+2021-05-11,CHI-DET,flatbed,136,35814,2.7,food & beverage,Dana Brooks,+1 404 555 2359
+2021-05-14,CHI-COL,flatbed,78,38489,2.97,retail,Dana Brooks,+1 404 555 3970
+2021-05-14,ATL-CHI,dry van,73,21296,3.25,retail,Lee Tran,+1 404 555 3272
+2021-05-14,JAX-ATL,reefer,91,41269,2.06,industrial,Pat Rivera,+1 404 555 7910
+2021-05-17,ATL-CHI,reefer,92,39029,2.64,retail,Lee Tran,+1 404 555 9554
+2021-05-17,MEM-ATL,dry van,125,21894,2.99,auto parts,Dana Brooks,+1 404 555 7629
+2021-05-17,CHI-DET,reefer,28,18463,2.82,food & beverage,Lee Tran,+1 404 555 7757
+2021-05-20,ATL-DAL,reefer,47,22973,2.73,auto parts,Pat Rivera,+1 404 555 1152
+2021-05-20,ATL-CHI,flatbed,105,21986,3.38,retail,Pat Rivera,+1 404 555 2988
+2021-05-20,JAX-ATL,dry van,80,18582,2.1,food & beverage,Lee Tran,+1 404 555 4070
+2021-05-23,ATL-CHI,flatbed,108,22744,2.91,retail,Lee Tran,+1 404 555 9160
+2021-05-23,MEM-ATL,reefer,105,26324,3.24,retail,Dana Brooks,+1 404 555 1523
+2021-05-23,JAX-ATL,dry van,27,18482,3.19,retail,Lee Tran,+1 404 555 6096
+2021-05-26,DAL-HOU,dry van,130,33936,2.7,industrial,Lee Tran,+1 404 555 8188
+2021-05-26,JAX-ATL,reefer,106,23454,1.86,retail,Lee Tran,+1 404 555 3687
+2021-05-26,CHI-DET,flatbed,122,31695,2.46,auto parts,Lee Tran,+1 404 555 6470
+2021-05-29,DAL-HOU,flatbed,103,41044,3.04,industrial,Dana Brooks,+1 404 555 1253
+2021-05-29,MEM-ATL,dry van,96,28112,2.65,food & beverage,Lee Tran,+1 404 555 7346
+2021-05-29,ATL-CHI,flatbed,68,37719,2.99,food & beverage,Lee Tran,+1 404 555 5641
+2021-06-01,ATL-CHI,reefer,74,23153,2.66,retail,Lee Tran,+1 404 555 3304
+2021-06-01,MEM-ATL,flatbed,38,26973,3.36,auto parts,Lee Tran,+1 404 555 9758
+2021-06-01,NAS-IND,dry van,89,36142,2.47,auto parts,Pat Rivera,+1 404 555 4834
+2021-06-04,DAL-HOU,flatbed,70,33247,2.88,industrial,Dana Brooks,+1 404 555 1153
+2021-06-04,CHI-DET,reefer,78,35713,1.76,industrial,Pat Rivera,+1 404 555 4815
+2021-06-04,ATL-CHI,reefer,94,35073,3.21,industrial,Lee Tran,+1 404 555 9293
+2021-06-07,CHI-COL,dry van,31,23920,3.05,industrial,Lee Tran,+1 404 555 6880
+2021-06-07,ATL-DAL,reefer,119,34948,3.14,food & beverage,Pat Rivera,+1 404 555 9081
+2021-06-07,NAS-IND,reefer,130,21477,2.27,auto parts,Pat Rivera,+1 404 555 3558
+2021-06-10,JAX-ATL,reefer,55,35021,2.69,retail,Pat Rivera,+1 404 555 4352
+2021-06-10,DAL-HOU,flatbed,82,37225,2.62,industrial,Lee Tran,+1 404 555 7978
+2021-06-10,ATL-CHI,dry van,77,37435,3.07,food & beverage,Lee Tran,+1 404 555 1620
+2021-06-13,JAX-ATL,reefer,30,18901,1.69,industrial,Dana Brooks,+1 404 555 8508
+2021-06-13,ATL-DAL,reefer,128,20103,3.15,auto parts,Pat Rivera,+1 404 555 2473
+2021-06-13,NAS-IND,reefer,60,36496,2.02,retail,Dana Brooks,+1 404 555 9298
+2021-06-16,NAS-IND,dry van,67,25704,3.39,food & beverage,Pat Rivera,+1 404 555 1632
+2021-06-16,ATL-DAL,reefer,140,29534,1.71,retail,Pat Rivera,+1 404 555 5225
+2021-06-16,CHI-COL,flatbed,110,39190,2.97,auto parts,Pat Rivera,+1 404 555 2655
+2021-06-19,MEM-ATL,dry van,106,27790,2.66,auto parts,Dana Brooks,+1 404 555 2727
+2021-06-19,CHI-DET,reefer,61,30179,2.06,retail,Lee Tran,+1 404 555 8885
+2021-06-19,ATL-CHI,reefer,41,32463,2.03,food & beverage,Dana Brooks,+1 404 555 1206
+2021-06-22,CHI-DET,dry van,40,25227,1.74,industrial,Dana Brooks,+1 404 555 3289
+2021-06-22,JAX-ATL,reefer,32,30618,3.12,retail,Lee Tran,+1 404 555 6566
+2021-06-22,ATL-DAL,reefer,125,25663,2.46,industrial,Pat Rivera,+1 404 555 6439
+2021-06-25,CHI-COL,dry van,111,32790,2.6,food & beverage,Lee Tran,+1 404 555 3447
+2021-06-25,JAX-ATL,reefer,73,31493,2.04,retail,Lee Tran,+1 404 555 5858
+2021-06-25,ATL-CHI,reefer,122,23498,2.07,retail,Lee Tran,+1 404 555 8474
+2021-06-28,CHI-DET,flatbed,27,38676,3.21,food & beverage,Dana Brooks,+1 404 555 8822
+2021-06-28,ATL-CHI,reefer,35,26447,2.96,industrial,Lee Tran,+1 404 555 5284
+2021-06-28,ATL-DAL,dry van,138,25803,1.78,industrial,Lee Tran,+1 404 555 3657
+2021-07-01,ATL-CHI,reefer,38,38965,1.63,industrial,Dana Brooks,+1 404 555 3296
+2021-07-01,NAS-IND,reefer,20,35255,2.12,industrial,Lee Tran,+1 404 555 1664
+2021-07-01,JAX-ATL,reefer,47,27071,2.63,food & beverage,Pat Rivera,+1 404 555 9546
+2021-07-04,CHI-COL,dry van,96,20597,3.09,auto parts,Lee Tran,+1 404 555 3872
+2021-07-04,JAX-ATL,dry van,37,38068,2.81,food & beverage,Dana Brooks,+1 404 555 6046
+2021-07-04,ATL-DAL,dry van,21,20152,2.85,auto parts,Dana Brooks,+1 404 555 1907
+2021-07-07,JAX-ATL,flatbed,130,34155,1.76,auto parts,Lee Tran,+1 404 555 3183
+2021-07-07,MEM-ATL,flatbed,54,26137,1.93,industrial,Pat Rivera,+1 404 555 3678
+2021-07-07,NAS-IND,flatbed,67,36838,2.67,retail,Lee Tran,+1 404 555 9516
+2021-07-10,CHI-DET,dry van,65,41415,2.04,industrial,Dana Brooks,+1 404 555 7248
+2021-07-10,DAL-HOU,flatbed,116,20005,2.12,retail,Dana Brooks,+1 404 555 9106
+2021-07-10,ATL-CHI,reefer,85,18840,2.55,food & beverage,Pat Rivera,+1 404 555 4990
+2021-07-13,ATL-DAL,dry van,41,21364,2.16,retail,Pat Rivera,+1 404 555 2580
+2021-07-13,CHI-DET,flatbed,114,24392,2.07,auto parts,Dana Brooks,+1 404 555 4905
+2021-07-13,DAL-HOU,flatbed,76,21370,2.23,retail,Dana Brooks,+1 404 555 3932
+2021-07-16,ATL-CHI,reefer,83,37198,2.5,industrial,Pat Rivera,+1 404 555 2999
+2021-07-16,MEM-ATL,dry van,71,22487,2.57,food & beverage,Pat Rivera,+1 404 555 3412
+2021-07-16,CHI-DET,flatbed,93,33140,2.94,food & beverage,Pat Rivera,+1 404 555 7369
+2021-07-19,NAS-IND,flatbed,24,30964,3.35,retail,Lee Tran,+1 404 555 6546
+2021-07-19,DAL-HOU,reefer,50,28979,2.89,industrial,Lee Tran,+1 404 555 1877
+2021-07-19,CHI-DET,reefer,86,22804,3.32,industrial,Pat Rivera,+1 404 555 7916
+2021-07-22,ATL-CHI,flatbed,43,20269,2.18,food & beverage,Dana Brooks,+1 404 555 1341
+2021-07-22,MEM-ATL,dry van,37,31786,3.35,auto parts,Dana Brooks,+1 404 555 1766
+2021-07-22,CHI-DET,dry van,24,39023,2.72,industrial,Dana Brooks,+1 404 555 9884
+2021-07-25,ATL-CHI,reefer,35,35049,1.62,food & beverage,Pat Rivera,+1 404 555 5710
+2021-07-25,DAL-HOU,dry van,59,29388,2.77,retail,Pat Rivera,+1 404 555 9417
+2021-07-25,CHI-DET,reefer,30,33283,2.66,food & beverage,Lee Tran,+1 404 555 3030
+2021-07-28,MEM-ATL,flatbed,56,26982,2.04,retail,Dana Brooks,+1 404 555 9950
+2021-07-28,CHI-DET,reefer,127,32881,2.7,food & beverage,Dana Brooks,+1 404 555 7334
+2021-07-28,CHI-COL,dry van,90,41277,2.26,industrial,Dana Brooks,+1 404 555 8829
+2021-07-31,CHI-DET,dry van,51,28933,2.0,auto parts,Dana Brooks,+1 404 555 7495
+2021-07-31,NAS-IND,dry van,138,29555,1.89,food & beverage,Lee Tran,+1 404 555 6332
+2021-07-31,MEM-ATL,reefer,54,27332,3.18,food & beverage,Lee Tran,+1 404 555 1932
+2021-08-03,ATL-CHI,dry van,97,29403,2.39,retail,Dana Brooks,+1 404 555 7355
+2021-08-03,ATL-DAL,reefer,65,21579,2.54,food & beverage,Lee Tran,+1 404 555 6521
+2021-08-03,DAL-HOU,flatbed,65,22598,2.82,industrial,Dana Brooks,+1 404 555 2557
+2021-08-06,CHI-DET,flatbed,100,41052,1.83,retail,Pat Rivera,+1 404 555 7724
+2021-08-06,MEM-ATL,flatbed,94,21848,2.5,food & beverage,Lee Tran,+1 404 555 5576
+2021-08-06,JAX-ATL,flatbed,97,21638,2.28,auto parts,Dana Brooks,+1 404 555 8502
+2021-08-09,DAL-HOU,reefer,65,30801,2.55,auto parts,Dana Brooks,+1 404 555 6275
+2021-08-09,JAX-ATL,dry van,120,34369,2.29,industrial,Pat Rivera,+1 404 555 9796
+2021-08-09,MEM-ATL,reefer,122,22751,2.38,auto parts,Dana Brooks,+1 404 555 4800
+2021-08-12,ATL-DAL,reefer,127,37925,3.11,industrial,Pat Rivera,+1 404 555 7986
+2021-08-12,NAS-IND,dry van,23,19554,2.06,auto parts,Lee Tran,+1 404 555 9789
+2021-08-12,MEM-ATL,reefer,88,38315,3.4,auto parts,Lee Tran,+1 404 555 8606
+2021-08-15,JAX-ATL,flatbed,64,32846,3.31,retail,Dana Brooks,+1 404 555 4756
+2021-08-15,ATL-CHI,dry van,72,30268,2.5,food & beverage,Pat Rivera,+1 404 555 7901
+2021-08-15,DAL-HOU,reefer,71,32423,2.98,industrial,Dana Brooks,+1 404 555 9685
+2021-08-18,ATL-DAL,reefer,66,20460,3.09,food & beverage,Pat Rivera,+1 404 555 5831
+2021-08-18,CHI-DET,flatbed,63,34674,3.2,auto parts,Dana Brooks,+1 404 555 3562
+2021-08-18,MEM-ATL,flatbed,57,34764,1.97,food & beverage,Lee Tran,+1 404 555 3988
+2021-08-21,ATL-CHI,flatbed,33,29573,2.63,retail,Dana Brooks,+1 404 555 7740
+2021-08-21,JAX-ATL,dry van,120,18091,2.15,retail,Lee Tran,+1 404 555 7513
+2021-08-21,DAL-HOU,dry van,95,18505,2.8,food & beverage,Pat Rivera,+1 404 555 9156
+2021-08-24,DAL-HOU,flatbed,85,22709,2.63,auto parts,Dana Brooks,+1 404 555 2990
+2021-08-24,NAS-IND,dry van,40,34987,2.97,retail,Pat Rivera,+1 404 555 2640
+2021-08-24,JAX-ATL,dry van,41,35121,2.48,auto parts,Dana Brooks,+1 404 555 8055
+2021-08-27,ATL-CHI,flatbed,118,36967,2.18,food & beverage,Lee Tran,+1 404 555 5512
+2021-08-27,JAX-ATL,dry van,24,26736,2.73,retail,Lee Tran,+1 404 555 4140
+2021-08-27,CHI-DET,reefer,99,30637,1.64,food & beverage,Lee Tran,+1 404 555 1719
+2021-08-30,CHI-DET,dry van,51,25303,1.68,food & beverage,Lee Tran,+1 404 555 1100
+2021-08-30,ATL-CHI,reefer,58,31709,2.68,auto parts,Pat Rivera,+1 404 555 4980
+2021-08-30,DAL-HOU,flatbed,69,40115,2.89,food & beverage,Lee Tran,+1 404 555 6065
+2021-09-02,NAS-IND,dry van,121,25975,1.76,food & beverage,Lee Tran,+1 404 555 7209
+2021-09-02,JAX-ATL,dry van,20,27525,2.31,industrial,Pat Rivera,+1 404 555 6488
+2021-09-02,CHI-COL,flatbed,131,30635,2.2,retail,Pat Rivera,+1 404 555 7918
+2021-09-05,JAX-ATL,reefer,44,33303,2.11,food & beverage,Lee Tran,+1 404 555 1572
+2021-09-05,DAL-HOU,reefer,105,18828,2.21,food & beverage,Pat Rivera,+1 404 555 3127
+2021-09-05,ATL-DAL,dry van,45,26836,2.58,food & beverage,Dana Brooks,+1 404 555 8263
+2021-09-08,CHI-DET,dry van,67,29564,1.99,auto parts,Lee Tran,+1 404 555 4408
+2021-09-08,NAS-IND,reefer,80,34542,1.97,auto parts,Dana Brooks,+1 404 555 3145
+2021-09-08,ATL-DAL,flatbed,53,37528,3.22,industrial,Dana Brooks,+1 404 555 5034
+2021-09-11,NAS-IND,dry van,36,22023,2.82,retail,Dana Brooks,+1 404 555 5430
+2021-09-11,DAL-HOU,flatbed,118,30609,1.65,food & beverage,Lee Tran,+1 404 555 1245
+2021-09-11,CHI-DET,reefer,110,20819,2.85,food & beverage,Lee Tran,+1 404 555 4085
+2021-09-14,ATL-DAL,reefer,123,34395,2.97,food & beverage,Pat Rivera,+1 404 555 6099
+2021-09-14,ATL-CHI,dry van,48,27455,1.83,auto parts,Lee Tran,+1 404 555 6831
+2021-09-14,DAL-HOU,reefer,128,33219,2.99,food & beverage,Lee Tran,+1 404 555 3890
+2021-09-17,ATL-CHI,flatbed,108,29515,3.21,retail,Dana Brooks,+1 404 555 8578
+2021-09-17,MEM-ATL,dry van,128,31124,2.23,retail,Pat Rivera,+1 404 555 5775
+2021-09-17,JAX-ATL,dry van,54,37952,2.92,retail,Lee Tran,+1 404 555 1655
+2021-09-20,MEM-ATL,reefer,39,30476,2.93,industrial,Dana Brooks,+1 404 555 3943
+2021-09-20,CHI-COL,flatbed,127,25459,2.63,industrial,Lee Tran,+1 404 555 6718
+2021-09-20,ATL-DAL,dry van,34,39476,2.12,retail,Dana Brooks,+1 404 555 1775
+2021-09-23,CHI-COL,dry van,121,28438,1.98,industrial,Dana Brooks,+1 404 555 2411
+2021-09-23,JAX-ATL,reefer,108,30898,3.4,food & beverage,Lee Tran,+1 404 555 9639
+2021-09-23,ATL-CHI,dry van,64,31892,2.4,industrial,Dana Brooks,+1 404 555 9242
+2021-09-26,CHI-DET,flatbed,109,24749,2.37,food & beverage,Lee Tran,+1 404 555 4101
+2021-09-26,DAL-HOU,dry van,109,36321,2.07,food & beverage,Dana Brooks,+1 404 555 4866
+2021-09-26,ATL-CHI,flatbed,53,26181,3.33,food & beverage,Lee Tran,+1 404 555 6689
+2021-09-29,NAS-IND,flatbed,59,22495,1.85,auto parts,Dana Brooks,+1 404 555 8909
+2021-09-29,ATL-CHI,dry van,110,25920,1.61,auto parts,Pat Rivera,+1 404 555 6758
+2021-09-29,ATL-DAL,flatbed,58,22371,3.19,food & beverage,Dana Brooks,+1 404 555 4944
+2021-10-02,JAX-ATL,flatbed,74,23544,2.82,food & beverage,Dana Brooks,+1 404 555 8555
+2021-10-02,CHI-DET,reefer,126,24760,1.81,industrial,Pat Rivera,+1 404 555 6906
+2021-10-02,ATL-CHI,reefer,46,19422,1.71,industrial,Lee Tran,+1 404 555 4229
+2021-10-05,ATL-DAL,reefer,34,23286,2.18,auto parts,Dana Brooks,+1 404 555 6946
+2021-10-05,JAX-ATL,reefer,41,36269,1.73,retail,Lee Tran,+1 404 555 8954
+2021-10-05,MEM-ATL,dry van,115,41499,2.2,industrial,Pat Rivera,+1 404 555 9009
+2021-10-08,NAS-IND,flatbed,61,18272,2.25,retail,Dana Brooks,+1 404 555 5685
+2021-10-08,CHI-COL,flatbed,98,41941,2.77,industrial,Dana Brooks,+1 404 555 5030
+2021-10-08,ATL-DAL,dry van,37,18906,1.65,auto parts,Pat Rivera,+1 404 555 5854
+2021-10-11,JAX-ATL,flatbed,128,40350,1.9,industrial,Dana Brooks,+1 404 555 6352
+2021-10-11,ATL-DAL,reefer,43,39210,3.09,industrial,Pat Rivera,+1 404 555 7037
+2021-10-11,CHI-DET,dry van,90,30100,3.11,industrial,Pat Rivera,+1 404 555 1945
+2021-10-14,ATL-CHI,flatbed,137,41120,2.33,retail,Pat Rivera,+1 404 555 9099
+2021-10-14,CHI-DET,reefer,83,41945,1.88,industrial,Dana Brooks,+1 404 555 2314
+2021-10-14,DAL-HOU,dry van,108,25454,1.89,auto parts,Dana Brooks,+1 404 555 7576
+2021-10-17,ATL-DAL,reefer,44,25152,2.9,retail,Pat Rivera,+1 404 555 9376
+2021-10-17,ATL-CHI,reefer,38,27281,1.73,retail,Dana Brooks,+1 404 555 7901
+2021-10-17,CHI-COL,reefer,28,32375,1.62,food & beverage,Dana Brooks,+1 404 555 3694
+2021-10-20,NAS-IND,reefer,122,36460,2.82,food & beverage,Lee Tran,+1 404 555 2393
+2021-10-20,MEM-ATL,flatbed,61,34933,2.43,food & beverage,Lee Tran,+1 404 555 2334
+2021-10-20,ATL-CHI,dry van,112,40165,2.2,industrial,Dana Brooks,+1 404 555 7899
+2021-10-23,JAX-ATL,flatbed,37,27807,3.16,retail,Pat Rivera,+1 404 555 4645
+2021-10-23,CHI-COL,flatbed,114,32658,2.84,food & beverage,Dana Brooks,+1 404 555 7095
+2021-10-23,CHI-DET,flatbed,94,31643,2.25,food & beverage,Dana Brooks,+1 404 555 8231
+2021-10-26,NAS-IND,dry van,43,24646,2.59,retail,Pat Rivera,+1 404 555 5153
+2021-10-26,MEM-ATL,flatbed,32,24145,2.56,industrial,Dana Brooks,+1 404 555 9016
+2021-10-26,ATL-CHI,dry van,90,33012,2.01,retail,Dana Brooks,+1 404 555 9408
+2021-10-29,ATL-DAL,flatbed,29,32402,1.84,retail,Dana Brooks,+1 404 555 9440
+2021-10-29,NAS-IND,dry van,78,40477,2.31,food & beverage,Pat Rivera,+1 404 555 8784
+2021-10-29,CHI-COL,dry van,37,30234,3.0,retail,Lee Tran,+1 404 555 4881
+2021-11-01,ATL-CHI,dry van,109,37474,3.32,auto parts,Lee Tran,+1 404 555 2974
+2021-11-01,MEM-ATL,flatbed,37,31958,3.24,retail,Dana Brooks,+1 404 555 4303
+2021-11-01,CHI-DET,flatbed,34,41862,3.17,food & beverage,Lee Tran,+1 404 555 6593
+2021-11-04,ATL-CHI,dry van,50,30222,2.52,industrial,Dana Brooks,+1 404 555 9011
+2021-11-04,NAS-IND,dry van,124,37785,2.24,industrial,Dana Brooks,+1 404 555 6363
+2021-11-04,MEM-ATL,flatbed,34,19118,3.27,food & beverage,Lee Tran,+1 404 555 6805
+2021-11-07,CHI-COL,dry van,127,37050,2.39,retail,Lee Tran,+1 404 555 2809
+2021-11-07,JAX-ATL,dry van,122,26467,1.93,industrial,Dana Brooks,+1 404 555 7239
+2021-11-07,CHI-DET,dry van,95,26200,2.57,industrial,Lee Tran,+1 404 555 1226
+2021-11-10,ATL-CHI,reefer,84,33858,3.17,retail,Pat Rivera,+1 404 555 3986
+2021-11-10,MEM-ATL,flatbed,124,39125,2.82,auto parts,Lee Tran,+1 404 555 3593
+2021-11-10,ATL-DAL,flatbed,128,32699,2.31,retail,Lee Tran,+1 404 555 6394
+2021-11-13,CHI-COL,flatbed,99,19430,1.98,industrial,Dana Brooks,+1 404 555 8663
+2021-11-13,MEM-ATL,reefer,93,33348,2.3,industrial,Lee Tran,+1 404 555 1098
+2021-11-13,ATL-DAL,reefer,94,33841,2.2,retail,Pat Rivera,+1 404 555 8526
+2021-11-16,ATL-CHI,flatbed,105,22707,2.09,industrial,Pat Rivera,+1 404 555 9192
+2021-11-16,JAX-ATL,reefer,65,36643,2.63,food & beverage,Dana Brooks,+1 404 555 1558
+2021-11-16,ATL-DAL,flatbed,135,21121,3.17,auto parts,Dana Brooks,+1 404 555 2621
+2021-11-19,JAX-ATL,dry van,131,22624,2.83,industrial,Lee Tran,+1 404 555 6941
+2021-11-19,NAS-IND,flatbed,129,38814,2.04,auto parts,Lee Tran,+1 404 555 1990
+2021-11-19,MEM-ATL,flatbed,63,40012,2.18,auto parts,Dana Brooks,+1 404 555 7017
+2021-11-22,CHI-COL,reefer,39,22443,1.97,auto parts,Lee Tran,+1 404 555 8299
+2021-11-22,NAS-IND,reefer,92,27909,3.27,retail,Pat Rivera,+1 404 555 5939
+2021-11-22,ATL-DAL,flatbed,59,26261,2.91,industrial,Pat Rivera,+1 404 555 4116
+2021-11-25,ATL-DAL,reefer,94,29583,3.38,industrial,Dana Brooks,+1 404 555 8016
+2021-11-25,DAL-HOU,flatbed,131,20219,3.11,industrial,Pat Rivera,+1 404 555 5519
+2021-11-25,CHI-DET,reefer,89,18756,2.97,industrial,Pat Rivera,+1 404 555 1328
+2021-11-28,CHI-COL,reefer,45,37755,2.11,retail,Pat Rivera,+1 404 555 4960
+2021-11-28,ATL-CHI,flatbed,27,22227,2.68,retail,Pat Rivera,+1 404 555 6589
+2021-11-28,CHI-DET,flatbed,37,18165,1.94,retail,Dana Brooks,+1 404 555 6290
+2021-12-01,ATL-CHI,reefer,131,18887,2.77,auto parts,Dana Brooks,+1 404 555 6534
+2021-12-01,ATL-DAL,dry van,27,31574,3.03,retail,Dana Brooks,+1 404 555 6480
+2021-12-01,MEM-ATL,reefer,96,31092,2.06,auto parts,Pat Rivera,+1 404 555 1421
+2021-12-04,JAX-ATL,reefer,27,31603,2.71,industrial,Pat Rivera,+1 404 555 2531
+2021-12-04,DAL-HOU,dry van,39,24897,1.86,retail,Lee Tran,+1 404 555 6926
+2021-12-04,CHI-DET,reefer,64,35650,2.82,food & beverage,Dana Brooks,+1 404 555 6420
+2021-12-07,CHI-COL,reefer,124,41312,2.46,retail,Dana Brooks,+1 404 555 6066
+2021-12-07,JAX-ATL,flatbed,118,36005,3.36,auto parts,Dana Brooks,+1 404 555 5559
+2021-12-07,DAL-HOU,reefer,86,35355,3.29,food & beverage,Lee Tran,+1 404 555 1148
+2021-12-10,CHI-DET,reefer,39,38607,2.01,retail,Pat Rivera,+1 404 555 3197
+2021-12-10,ATL-CHI,dry van,27,35801,2.5,food & beverage,Lee Tran,+1 404 555 6990
+2021-12-10,JAX-ATL,flatbed,39,23814,3.17,food & beverage,Dana Brooks,+1 404 555 1475
+2021-12-13,JAX-ATL,dry van,76,34349,1.98,industrial,Lee Tran,+1 404 555 8538
+2021-12-13,NAS-IND,dry van,61,18867,1.79,retail,Pat Rivera,+1 404 555 7583
+2021-12-13,CHI-DET,flatbed,130,29491,1.71,auto parts,Lee Tran,+1 404 555 7153
+2021-12-16,CHI-COL,dry van,53,41241,2.38,food & beverage,Lee Tran,+1 404 555 4329
+2021-12-16,ATL-CHI,reefer,117,31946,2.76,industrial,Lee Tran,+1 404 555 4548
+2021-12-16,MEM-ATL,flatbed,121,23135,2.46,industrial,Pat Rivera,+1 404 555 5916
+2021-12-19,DAL-HOU,dry van,82,26183,1.89,auto parts,Pat Rivera,+1 404 555 1854
+2021-12-19,ATL-CHI,dry van,128,29808,1.68,auto parts,Pat Rivera,+1 404 555 8123
+2021-12-19,MEM-ATL,dry van,139,27751,2.83,retail,Pat Rivera,+1 404 555 1154
+2021-12-22,MEM-ATL,flatbed,114,29523,1.78,food & beverage,Lee Tran,+1 404 555 7507
+2021-12-22,CHI-DET,dry van,73,29126,2.76,auto parts,Lee Tran,+1 404 555 1539
+2021-12-22,ATL-DAL,flatbed,50,24598,3.03,retail,Pat Rivera,+1 404 555 3209
+2021-12-25,CHI-COL,flatbed,33,41871,1.64,industrial,Pat Rivera,+1 404 555 2807
+2021-12-25,DAL-HOU,dry van,82,22450,2.55,retail,Pat Rivera,+1 404 555 4668
+2021-12-25,CHI-DET,flatbed,89,22847,2.74,retail,Dana Brooks,+1 404 555 6792
+2021-12-28,CHI-DET,dry van,129,25338,2.92,industrial,Dana Brooks,+1 404 555 3903
+2021-12-28,ATL-CHI,dry van,53,26814,1.72,retail,Pat Rivera,+1 404 555 9335
+2021-12-28,MEM-ATL,dry van,72,36239,3.31,industrial,Pat Rivera,+1 404 555 6336
+2021-12-31,ATL-CHI,flatbed,56,35983,2.2,auto parts,Dana Brooks,+1 404 555 5400
+2021-12-31,JAX-ATL,reefer,74,28428,2.57,auto parts,Pat Rivera,+1 404 555 7341
+2021-12-31,CHI-COL,reefer,132,31433,3.05,retail,Pat Rivera,+1 404 555 9209
+2022-01-03,DAL-HOU,flatbed,68,25889,3.09,retail,Pat Rivera,+1 404 555 1551
+2022-01-03,JAX-ATL,flatbed,26,31297,2.85,industrial,Dana Brooks,+1 404 555 8248
+2022-01-03,CHI-DET,flatbed,105,28342,2.42,retail,Lee Tran,+1 404 555 8710
+2022-01-06,JAX-ATL,reefer,50,38627,3.02,auto parts,Lee Tran,+1 404 555 2050
+2022-01-06,DAL-HOU,reefer,87,26729,2.7,industrial,Pat Rivera,+1 404 555 9897
+2022-01-06,NAS-IND,flatbed,48,38070,2.98,industrial,Lee Tran,+1 404 555 6697
+2022-01-09,CHI-DET,dry van,28,35326,2.26,food & beverage,Dana Brooks,+1 404 555 3771
+2022-01-09,DAL-HOU,reefer,50,40075,1.91,auto parts,Pat Rivera,+1 404 555 1708
+2022-01-09,ATL-DAL,reefer,68,29854,3.1,auto parts,Pat Rivera,+1 404 555 7717
+2022-01-12,MEM-ATL,reefer,33,29952,2.24,industrial,Lee Tran,+1 404 555 2441
+2022-01-12,JAX-ATL,reefer,70,27519,3.39,retail,Lee Tran,+1 404 555 8837
+2022-01-12,CHI-DET,flatbed,122,23718,2.97,food & beverage,Pat Rivera,+1 404 555 3138
+2022-01-15,JAX-ATL,flatbed,50,38406,2.27,industrial,Lee Tran,+1 404 555 5142
+2022-01-15,CHI-COL,dry van,91,24581,1.6,industrial,Pat Rivera,+1 404 555 3923
+2022-01-15,DAL-HOU,reefer,111,35847,2.09,industrial,Lee Tran,+1 404 555 4962
+2022-01-18,DAL-HOU,dry van,87,38845,2.49,retail,Pat Rivera,+1 404 555 3102
+2022-01-18,NAS-IND,reefer,121,27517,2.71,industrial,Pat Rivera,+1 404 555 8250
+2022-01-18,CHI-COL,reefer,66,19368,2.88,industrial,Lee Tran,+1 404 555 8060
+2022-01-21,DAL-HOU,reefer,128,36962,1.83,food & beverage,Dana Brooks,+1 404 555 7100
+2022-01-21,MEM-ATL,dry van,105,24656,2.19,retail,Pat Rivera,+1 404 555 8299
+2022-01-21,ATL-DAL,reefer,70,35229,2.35,retail,Pat Rivera,+1 404 555 8578
+2022-01-24,CHI-DET,reefer,80,23774,3.2,auto parts,Lee Tran,+1 404 555 9048
+2022-01-24,JAX-ATL,dry van,85,18311,2.81,food & beverage,Lee Tran,+1 404 555 9874
+2022-01-24,CHI-COL,dry van,138,40277,2.13,industrial,Lee Tran,+1 404 555 8534
+2022-01-27,ATL-DAL,dry van,93,18507,1.78,retail,Pat Rivera,+1 404 555 8442
+2022-01-27,ATL-CHI,dry van,125,40314,1.96,industrial,Lee Tran,+1 404 555 1897
+2022-01-27,CHI-DET,flatbed,108,31694,3.12,food & beverage,Lee Tran,+1 404 555 1820
+2022-01-30,MEM-ATL,dry van,86,18197,1.94,industrial,Dana Brooks,+1 404 555 5298
+2022-01-30,CHI-DET,dry van,60,30573,2.06,industrial,Dana Brooks,+1 404 555 7468
+2022-01-30,NAS-IND,flatbed,133,31769,2.83,industrial,Lee Tran,+1 404 555 5071
+2022-02-02,NAS-IND,flatbed,52,27993,1.96,retail,Pat Rivera,+1 404 555 9795
+2022-02-02,CHI-DET,flatbed,67,33211,2.78,food & beverage,Lee Tran,+1 404 555 6599
+2022-02-02,CHI-COL,dry van,78,41164,2.6,retail,Dana Brooks,+1 404 555 6148
+2022-02-05,ATL-CHI,reefer,92,28602,1.66,food & beverage,Lee Tran,+1 404 555 5776
+2022-02-05,DAL-HOU,dry van,110,24860,3.04,auto parts,Lee Tran,+1 404 555 8288
+2022-02-05,CHI-DET,dry van,132,24658,1.7,auto parts,Dana Brooks,+1 404 555 3039
+2022-02-08,ATL-CHI,flatbed,83,23903,1.63,food & beverage,Lee Tran,+1 404 555 4617
+2022-02-08,ATL-DAL,flatbed,112,40117,2.95,food & beverage,Dana Brooks,+1 404 555 3604
+2022-02-08,CHI-DET,dry van,119,41439,1.97,retail,Lee Tran,+1 404 555 2560
+2022-02-11,CHI-COL,dry van,73,25332,2.79,industrial,Dana Brooks,+1 404 555 8248
+2022-02-11,NAS-IND,flatbed,74,23073,3.16,food & beverage,Pat Rivera,+1 404 555 3623
+2022-02-11,ATL-CHI,reefer,57,25624,3.17,industrial,Dana Brooks,+1 404 555 3522
+2022-02-14,DAL-HOU,flatbed,127,25031,1.87,food & beverage,Lee Tran,+1 404 555 1539
+2022-02-14,MEM-ATL,reefer,68,23111,2.75,food & beverage,Dana Brooks,+1 404 555 9941
+2022-02-14,NAS-IND,flatbed,31,24493,2.44,food & beverage,Lee Tran,+1 404 555 6458
+2022-02-17,NAS-IND,reefer,35,39544,3.26,retail,Lee Tran,+1 404 555 9026
+2022-02-17,ATL-CHI,reefer,22,34270,3.2,retail,Pat Rivera,+1 404 555 8942
+2022-02-17,CHI-DET,reefer,130,27927,2.68,retail,Pat Rivera,+1 404 555 3288
+2022-02-20,CHI-DET,flatbed,138,27825,1.66,retail,Pat Rivera,+1 404 555 6640
+2022-02-20,MEM-ATL,dry van,140,22987,2.78,retail,Pat Rivera,+1 404 555 6458
+2022-02-20,ATL-DAL,reefer,77,33762,2.05,industrial,Pat Rivera,+1 404 555 2796
+2022-02-23,DAL-HOU,flatbed,91,32908,1.77,retail,Pat Rivera,+1 404 555 7443
+2022-02-23,NAS-IND,reefer,24,19105,1.67,retail,Lee Tran,+1 404 555 3162
+2022-02-23,ATL-CHI,reefer,93,29562,1.74,food & beverage,Lee Tran,+1 404 555 3780
+2022-02-26,ATL-DAL,flatbed,131,33736,2.15,industrial,Pat Rivera,+1 404 555 2745
+2022-02-26,MEM-ATL,dry van,34,23015,2.49,retail,Lee Tran,+1 404 555 8664
+2022-02-26,ATL-CHI,dry van,40,36624,2.56,industrial,Lee Tran,+1 404 555 4239
+2022-03-01,DAL-HOU,dry van,36,25860,2.91,food & beverage,Pat Rivera,+1 404 555 1247
+2022-03-01,CHI-COL,dry van,140,19758,2.48,food & beverage,Dana Brooks,+1 404 555 4756
+2022-03-01,CHI-DET,dry van,116,23612,1.88,industrial,Pat Rivera,+1 404 555 7946
+2022-03-04,NAS-IND,dry van,57,36671,3.2,retail,Dana Brooks,+1 404 555 4565
+2022-03-04,DAL-HOU,dry van,51,37506,2.99,retail,Pat Rivera,+1 404 555 2196
+2022-03-04,CHI-DET,flatbed,63,21213,1.67,food & beverage,Lee Tran,+1 404 555 6604
+2022-03-07,ATL-DAL,flatbed,137,23990,1.62,auto parts,Lee Tran,+1 404 555 1528
+2022-03-07,NAS-IND,dry van,120,26022,1.87,food & beverage,Pat Rivera,+1 404 555 6641
+2022-03-07,CHI-COL,dry van,46,24494,3.26,industrial,Dana Brooks,+1 404 555 2095
+2022-03-10,ATL-CHI,dry van,83,35221,3.0,retail,Dana Brooks,+1 404 555 2026
+2022-03-10,NAS-IND,dry van,130,38485,1.69,industrial,Lee Tran,+1 404 555 2513
+2022-03-10,CHI-COL,flatbed,111,29442,2.65,auto parts,Dana Brooks,+1 404 555 9130
+2022-03-13,MEM-ATL,reefer,135,19729,2.94,food & beverage,Lee Tran,+1 404 555 7321
+2022-03-13,CHI-DET,flatbed,120,34808,2.14,retail,Pat Rivera,+1 404 555 5128
+2022-03-13,JAX-ATL,dry van,50,24488,2.66,food & beverage,Lee Tran,+1 404 555 1822
+2022-03-16,NAS-IND,flatbed,107,29227,3.09,auto parts,Pat Rivera,+1 404 555 4741
+2022-03-16,JAX-ATL,flatbed,106,29127,2.79,auto parts,Lee Tran,+1 404 555 1073
+2022-03-16,CHI-COL,reefer,82,37786,1.63,retail,Lee Tran,+1 404 555 7859
+2022-03-19,NAS-IND,reefer,38,28990,2.58,retail,Lee Tran,+1 404 555 7453
+2022-03-19,DAL-HOU,reefer,99,19067,2.13,retail,Lee Tran,+1 404 555 4068
+2022-03-19,MEM-ATL,flatbed,133,32484,2.33,food & beverage,Pat Rivera,+1 404 555 4544
+2022-03-22,ATL-CHI,reefer,54,28900,3.32,industrial,Pat Rivera,+1 404 555 4673
+2022-03-22,CHI-COL,reefer,133,37996,3.19,auto parts,Lee Tran,+1 404 555 9186
+2022-03-22,ATL-DAL,reefer,132,34605,3.02,food & beverage,Pat Rivera,+1 404 555 7405
+2022-03-25,ATL-CHI,dry van,140,26056,2.42,industrial,Dana Brooks,+1 404 555 6772
+2022-03-25,CHI-DET,flatbed,32,36110,2.92,auto parts,Pat Rivera,+1 404 555 5150
+2022-03-25,ATL-DAL,flatbed,73,20487,2.53,industrial,Lee Tran,+1 404 555 5363
+2022-03-28,DAL-HOU,flatbed,110,38706,2.84,retail,Dana Brooks,+1 404 555 9161
+2022-03-28,MEM-ATL,reefer,66,40661,3.36,retail,Dana Brooks,+1 404 555 2950
+2022-03-28,NAS-IND,flatbed,68,32671,2.16,food & beverage,Dana Brooks,+1 404 555 8518
+2022-03-31,ATL-CHI,dry van,20,26895,1.86,retail,Lee Tran,+1 404 555 3843
+2022-03-31,MEM-ATL,flatbed,95,39020,3.37,food & beverage,Lee Tran,+1 404 555 9917
+2022-03-31,CHI-COL,dry van,73,35963,3.36,retail,Dana Brooks,+1 404 555 7233
+2022-04-03,CHI-DET,flatbed,135,27092,2.18,auto parts,Pat Rivera,+1 404 555 9722
+2022-04-03,JAX-ATL,reefer,134,22583,1.96,retail,Pat Rivera,+1 404 555 6046
+2022-04-03,MEM-ATL,flatbed,86,23592,2.83,retail,Dana Brooks,+1 404 555 5876
+2022-04-06,NAS-IND,flatbed,43,26924,2.16,auto parts,Pat Rivera,+1 404 555 6257
+2022-04-06,CHI-DET,reefer,71,21552,2.83,industrial,Lee Tran,+1 404 555 6236
+2022-04-06,MEM-ATL,reefer,121,33484,2.08,food & beverage,Dana Brooks,+1 404 555 8376
+2022-04-09,NAS-IND,reefer,25,22983,2.1,auto parts,Dana Brooks,+1 404 555 7745
+2022-04-09,JAX-ATL,dry van,55,30833,2.25,auto parts,Dana Brooks,+1 404 555 5724
+2022-04-09,ATL-DAL,flatbed,35,26510,2.41,retail,Pat Rivera,+1 404 555 9719
+2022-04-12,DAL-HOU,reefer,53,25974,3.19,retail,Dana Brooks,+1 404 555 7762
+2022-04-12,MEM-ATL,flatbed,34,28058,1.9,food & beverage,Dana Brooks,+1 404 555 2930
+2022-04-12,CHI-DET,reefer,70,29198,2.32,auto parts,Lee Tran,+1 404 555 6729
+2022-04-15,MEM-ATL,flatbed,114,35078,2.34,industrial,Pat Rivera,+1 404 555 4490
+2022-04-15,JAX-ATL,reefer,107,20161,3.26,retail,Dana Brooks,+1 404 555 1050
+2022-04-15,ATL-DAL,flatbed,105,25718,2.64,auto parts,Pat Rivera,+1 404 555 5486
+2022-04-18,MEM-ATL,flatbed,128,25822,2.5,industrial,Pat Rivera,+1 404 555 7241
+2022-04-18,ATL-DAL,reefer,36,39215,2.87,auto parts,Dana Brooks,+1 404 555 5506
+2022-04-18,NAS-IND,flatbed,28,37770,2.69,industrial,Dana Brooks,+1 404 555 4491
+2022-04-21,CHI-COL,reefer,106,36644,3.35,retail,Lee Tran,+1 404 555 1382
+2022-04-21,MEM-ATL,flatbed,86,20365,1.82,industrial,Pat Rivera,+1 404 555 1056
+2022-04-21,ATL-CHI,reefer,100,22546,2.4,retail,Lee Tran,+1 404 555 1528

@@ -1,0 +1,302 @@
+# Seed catalog for the offline demo.
+# REAL: the Hugging Face publishers and datasets (ids, licence tags, descriptions, URLs) — from the Hub on 4 Oct 2026.
+# SYNTHETIC (labelled synthetic: true): the five commercial vendors and their datasets, prices, the three buyer
+# firms, their contracts, the data owner, and the factor ↔ sector sensitivities. All names are fictional and all
+# fictional websites use example.com.
+
+custom_fields:          # operator-defined fields (FR-1); bind_to links a field to an ontology property or concept
+  - {entity: vendor, key: sales_contact_region, label: "Sales contact region", type: enum, options: [Americas, EMEA, APAC]}
+  - {entity: vendor, key: soc2, label: "SOC 2 report on file", type: bool}
+  - {entity: vendor, key: due_diligence_date, label: "Last due diligence", type: date}
+  - {entity: dataset, key: point_in_time, label: "Point-in-time history", type: bool}
+  - {entity: dataset, key: trial_available, label: "Trial available", type: bool}
+  - {entity: dataset, key: alpha_horizon, label: "Typical signal horizon", type: enum, options: [intraday, days, weeks, months]}
+  - {entity: dataset, key: primary_identifier, label: "Primary identifier", type: text, bind_to: "v:Ticker"}
+
+vendors:
+  - id: v-gauss314
+    name: gauss314
+    website: https://huggingface.co/gauss314
+    source: huggingface
+    marketplace_listings: [https://huggingface.co/datasets/gauss314/options-IV-SP500]
+    status: active
+  - id: v-jwigginton
+    name: jwigginton
+    website: https://huggingface.co/jwigginton
+    source: huggingface
+    marketplace_listings: [https://huggingface.co/datasets/jwigginton/index-constituents-sp500]
+    status: active
+  - id: v-jlohding
+    name: jlohding
+    website: https://huggingface.co/jlohding
+    source: huggingface
+    marketplace_listings: [https://huggingface.co/datasets/jlohding/sp500-edgar-10k]
+    status: active
+  - id: v-bee-spoke
+    name: BEE-spoke-data
+    website: https://huggingface.co/BEE-spoke-data
+    source: huggingface
+    marketplace_listings: [https://huggingface.co/datasets/BEE-spoke-data/sp500-edgar-10k-markdown]
+    status: active
+  - id: v-kurry
+    name: kurry
+    website: https://huggingface.co/kurry
+    source: huggingface
+    marketplace_listings: [https://huggingface.co/datasets/kurry/sp500_constituents_10q]
+    status: active
+  - id: v-northlight
+    synthetic: true
+    name: Northlight Vol Analytics
+    website: https://northlight.example.com
+    docs_url: https://northlight.example.com/docs
+    api_base_url: https://api.northlight.example.com/v2
+    hq: Stamford, CT
+    status: active
+    custom: {sales_contact_region: Americas, soc2: true, due_diligence_date: "2026-02-10"}
+  - id: v-tidewater
+    synthetic: true
+    name: Tidewater Freight Signals
+    website: https://tidewater.example.com
+    docs_url: https://tidewater.example.com/data-dictionary
+    hq: Rotterdam, NL
+    status: active
+    custom: {sales_contact_region: EMEA, soc2: true}
+  - id: v-meridian
+    synthetic: true
+    name: Meridian Card Panel
+    website: https://meridian.example.com
+    hq: Chicago, IL
+    status: active
+    custom: {sales_contact_region: Americas, soc2: false}
+  - id: v-larkspur
+    synthetic: true
+    name: Larkspur Web Data
+    website: https://larkspur.example.com
+    hq: Austin, TX
+    status: prospect
+  - id: v-copperline
+    synthetic: true
+    name: Copperline Rates
+    website: https://copperline.example.com
+    hq: London, UK
+    status: active
+    custom: {sales_contact_region: EMEA}
+
+datasets:
+  - id: ds-options-iv
+    vendor: v-gauss314
+    title: S&P 500 options implied volatility
+    hub_id: gauss314/options-IV-SP500
+    description: Daily per-symbol options summary for S&P 500 stocks — implied volatility by moneyness, historical volatility (20–200 days), call/put volume and open interest, VIX.
+    category: v:OptionsVolatility
+    licence: apache-2.0
+    delivery: file
+    formats: [parquet, csv]
+    frequency: daily
+    price_model: free
+    coverage: {asset_class: equity options, region: US, universe: S&P 500}
+    identifiers: [v:Ticker]
+    listed_on: [huggingface]
+    custom: {point_in_time: true, trial_available: true, alpha_horizon: days, primary_identifier: symbol}
+  - id: ds-constituents
+    vendor: v-jwigginton
+    title: S&P 500 index constituents
+    hub_id: jwigginton/index-constituents-sp500
+    description: S&P 500 constituents with GICS sector and sub-industry, headquarters, date added, CIK and year founded.
+    category: v:ReferenceData
+    licence: none
+    card_claims: "Free for commercial use."          # card text; the Hub licence tag says none → legal review (p02 / adversarial)
+    delivery: file
+    formats: [parquet]
+    frequency: ad hoc
+    price_model: free
+    coverage: {asset_class: equity, region: US, universe: S&P 500}
+    identifiers: [v:Ticker, v:CIK]
+    listed_on: [huggingface]
+  - id: ds-edgar-10k
+    vendor: v-jlohding
+    title: S&P 500 EDGAR 10-K filings
+    hub_id: jlohding/sp500-edgar-10k
+    description: Annual reports for S&P 500 historical constituents, 2010–2022, from SEC EDGAR Form 10-K filings.
+    category: v:Filings
+    licence: mit
+    delivery: file
+    formats: [parquet]
+    frequency: annual
+    price_model: free
+    coverage: {asset_class: equity, region: US, universe: S&P 500, history_start: "2010-01-01"}
+    identifiers: [v:Ticker, v:CIK]
+    listed_on: [huggingface]
+  - id: ds-10k-markdown
+    vendor: v-bee-spoke
+    title: S&P 500 10-K filings in markdown
+    hub_id: BEE-spoke-data/sp500-edgar-10k-markdown
+    description: S&P 500 EDGAR 10-K filings converted to markdown, with stock returns.
+    category: v:Filings
+    licence: odc-by
+    delivery: file
+    formats: [parquet]
+    frequency: annual
+    price_model: free
+    coverage: {asset_class: equity, region: US, universe: S&P 500}
+    identifiers: [v:Ticker]
+    listed_on: [huggingface]
+    substitute_for: [ds-edgar-10k]
+  - id: ds-10q
+    vendor: v-kurry
+    title: S&P 500 constituents 10-Q filings
+    hub_id: kurry/sp500_constituents_10q
+    description: Quarterly 10-Q reports for S&P 500 constituents (10,488 filings, full text).
+    category: v:Filings
+    licence: apache-2.0
+    delivery: file
+    formats: [parquet]
+    frequency: quarterly
+    price_model: free
+    coverage: {asset_class: equity, region: US, universe: S&P 500, history_start: "1996-01-01"}
+    identifiers: [v:Ticker]
+    listed_on: [huggingface]
+  - id: ds-nl-volsurface
+    synthetic: true
+    vendor: v-northlight
+    title: Northlight equity volatility surface
+    description: End-of-day implied volatility surfaces for US single names, with term structure and skew, and an API.
+    category: v:OptionsVolatility
+    licence: proprietary
+    delivery: api
+    formats: [json, parquet]
+    frequency: daily
+    price_model: subscription
+    list_price_usd: 48000
+    coverage: {asset_class: equity options, region: US, universe: Russell 1000, sectors: all, history_start: "2012-01-01"}
+    identifiers: [v:Ticker, v:ISIN]
+    listed_on: [snowflake]
+    substitute_for: [ds-options-iv]
+    custom: {point_in_time: true, trial_available: true, alpha_horizon: days}
+  - id: ds-port-congestion
+    synthetic: true
+    vendor: v-tidewater
+    title: Tidewater port congestion index
+    description: Daily vessel-queue and dwell-time index for 40 container ports, mapped to listed shippers, retailers and industrials.
+    category: v:Shipping
+    licence: proprietary
+    delivery: file
+    formats: [csv]
+    frequency: daily
+    price_model: subscription
+    list_price_usd: 36000
+    coverage: {asset_class: equity, region: Global, sectors: [Industrials, Consumer Discretionary, Consumer Staples], history_start: "2018-01-01"}
+    identifiers: [v:Ticker]
+    listed_on: [aws_data_exchange]
+    custom: {point_in_time: true, alpha_horizon: weeks}
+  - id: ds-card-panel
+    synthetic: true
+    vendor: v-meridian
+    title: Meridian consumer card panel
+    description: Aggregated, anonymised card spend by merchant, mapped to tickers; weekly.
+    category: v:Transactions
+    licence: proprietary
+    delivery: file
+    formats: [parquet]
+    frequency: weekly
+    price_model: subscription
+    list_price_usd: 90000
+    coverage: {asset_class: equity, region: US, sectors: [Consumer Discretionary, Consumer Staples], history_start: "2019-01-01"}
+    identifiers: [v:Ticker]
+    listed_on: [databricks]
+    custom: {point_in_time: false, alpha_horizon: weeks}
+  - id: ds-job-postings
+    synthetic: true
+    vendor: v-larkspur
+    title: Larkspur job postings
+    description: Company job postings scraped daily and mapped to tickers.
+    category: v:Labour
+    licence: proprietary
+    delivery: api
+    formats: [json]
+    frequency: daily
+    price_model: subscription
+    list_price_usd: 24000
+    coverage: {asset_class: equity, region: US, sectors: all, history_start: "2020-06-01"}
+    identifiers: [v:Ticker]
+    listed_on: []
+  - id: ds-rates-curve
+    synthetic: true
+    vendor: v-copperline
+    title: Copperline rates curve
+    description: Daily government and swap curves with forward-rate and policy-path estimates.
+    category: v:Rates
+    licence: proprietary
+    delivery: file
+    formats: [csv]
+    frequency: daily
+    price_model: subscription
+    list_price_usd: 12000
+    coverage: {asset_class: rates, region: US, sectors: [Financials, Real Estate, Utilities], history_start: "2005-01-01"}
+    identifiers: [v:ObservationDate]
+    listed_on: []
+
+customers:                 # synthetic buyer firms (tenants)
+  - id: cust-harbor
+    name: Harbor Point Capital
+    kind: multi-strategy fund
+    teams: [{id: t-vol, name: Vol desk}, {id: t-macro, name: Macro}]
+    users: [{id: u-avery, name: Avery Lin, team: t-vol}, {id: u-sam, name: Sam Okafor, team: t-macro}]
+    budget_usd: 160000
+  - id: cust-kestrel
+    name: Kestrel Quant
+    kind: quant shop
+    teams: [{id: t-qr, name: Quant research}]
+    users: [{id: u-noor, name: Noor Haddad, team: t-qr}]
+    budget_usd: 60000
+  - id: cust-alder
+    name: Alder Asset Management
+    kind: asset manager
+    teams: [{id: t-risk, name: Risk}]
+    users: [{id: u-jules, name: Jules Moreau, team: t-risk}]
+    budget_usd: 20000
+
+contracts:                 # synthetic; dates relative to as_of_date 2026-10-05
+  - {id: c-001, customer: cust-harbor, datasets: [ds-nl-volsurface], start: "2026-01-01", end: "2026-12-31", price_usd: 48000,
+     billing: annual, auto_renew: true, notice_days: 60, seats: 5, permitted_use: [v:InternalResearch, v:AIProcessing],
+     redistribution: false, status: active, signed_by: "Avery Lin"}
+  - {id: c-002, customer: cust-harbor, datasets: [ds-card-panel], start: "2025-07-01", end: "2027-06-30", price_usd: 90000,
+     billing: annual, auto_renew: false, notice_days: 90, seats: 2, permitted_use: [v:InternalResearch],
+     redistribution: false, status: active, signed_by: "Sam Okafor"}
+  - {id: c-003, customer: cust-kestrel, datasets: [ds-port-congestion], start: "2026-03-01", end: "2027-02-28", price_usd: 36000,
+     billing: quarterly, auto_renew: true, notice_days: 30, seats: 3, permitted_use: [v:InternalResearch, v:AIProcessing],
+     redistribution: false, status: active, signed_by: "Noor Haddad"}
+  - {id: c-004, customer: cust-alder, datasets: [ds-rates-curve], start: "2025-07-01", end: "2026-06-30", price_usd: 12000,
+     billing: annual, auto_renew: false, notice_days: 30, seats: 1, permitted_use: [v:InternalResearch, v:AIProcessing],
+     redistribution: false, status: expired, signed_by: "Jules Moreau"}
+
+registrations:             # free datasets; use governed by the licence
+  - {customer: cust-harbor, dataset: ds-options-iv, use: [v:InternalResearch, v:AIProcessing], registered: "2026-02-01"}
+  - {customer: cust-kestrel, dataset: ds-options-iv, use: [v:InternalResearch, v:AIProcessing], registered: "2026-04-12"}
+  - {customer: cust-kestrel, dataset: ds-edgar-10k, use: [v:InternalResearch, v:AIProcessing], registered: "2026-04-12"}
+  - {customer: cust-harbor, dataset: ds-constituents, use: [v:InternalResearch], registered: "2026-02-01"}
+
+dependencies:              # what is built on what (also written by ingestion lineage); used for impact analysis
+  - {dataset: ds-nl-volsurface, consumers: [t-vol], reports: ["Vol desk morning skew report"]}
+  - {dataset: ds-card-panel, consumers: [t-macro], reports: []}
+
+factor_sensitivities:      # SYNTHETIC assumptions for search expansion (−1 … +1); not research
+  - {factor: v:RisingRates, sector: v:Financials, sensitivity: 0.5}
+  - {factor: v:RisingRates, sector: v:RealEstate, sensitivity: -0.7}
+  - {factor: v:RisingRates, sector: v:Utilities, sensitivity: -0.6}
+  - {factor: v:OilPrices, sector: v:Energy, sensitivity: 0.8}
+  - {factor: v:OilPrices, sector: v:Industrials, sensitivity: -0.3}
+  - {factor: v:ConsumerDemand, sector: v:ConsumerDiscretionary, sensitivity: 0.7}
+  - {factor: v:ConsumerDemand, sector: v:ConsumerStaples, sensitivity: 0.3}
+  - {factor: v:SupplyChainStress, sector: v:Industrials, sensitivity: -0.5}
+  - {factor: v:SupplyChainStress, sector: v:ConsumerDiscretionary, sensitivity: -0.4}
+  - {factor: v:LabourMarket, sector: v:ConsumerDiscretionary, sensitivity: 0.4}
+  - {factor: v:RiskOff, sector: v:InformationTechnology, sensitivity: -0.5}
+  - {factor: v:RiskOff, sector: v:Financials, sensitivity: -0.4}
+factor_proxies:            # data categories that observe a factor early (synthetic assumptions)
+  - {factor: v:RisingRates, category: v:Rates}
+  - {factor: v:ConsumerDemand, category: v:Transactions}
+  - {factor: v:ConsumerDemand, category: v:Labour}
+  - {factor: v:SupplyChainStress, category: v:Shipping}
+  - {factor: v:LabourMarket, category: v:Labour}
+  - {factor: v:RiskOff, category: v:OptionsVolatility}

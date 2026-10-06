@@ -1,0 +1,187 @@
+{
+ "source": "https://huggingface.co/api/datasets?search=sp500",
+ "captured": "2026-10-04",
+ "note": "Real Hub listings captured on the date above; downloads as shown that day. `dlp marketplace search --live` refreshes it.",
+ "datasets": [
+  {
+   "id": "nick-carroll1/sp500",
+   "author": "nick-carroll1",
+   "license": null,
+   "downloads": 289,
+   "description": "Daily close prices for each stock in the current S&P 500 index dating back to January 1, 1970",
+   "hint_category": "prices",
+   "url": "https://huggingface.co/datasets/nick-carroll1/sp500"
+  },
+  {
+   "id": "beanjar/sp500-business-description-sentence-bert-embeddings",
+   "author": "beanjar",
+   "license": "mit",
+   "downloads": 25,
+   "description": "Embeddings derived from business descriptions using a sentence-BERT model",
+   "hint_category": "reference",
+   "url": "https://huggingface.co/datasets/beanjar/sp500-business-description-sentence-bert-embeddings"
+  },
+  {
+   "id": "pmoe7/SP_500_Stocks_Data-ratios_news_price_10_yrs",
+   "author": "pmoe7",
+   "license": null,
+   "downloads": 519,
+   "description": "Stock fundamentals, news articles with sentiment analysis, and price data spanning 10-20 years",
+   "hint_category": "prices",
+   "url": "https://huggingface.co/datasets/pmoe7/SP_500_Stocks_Data-ratios_news_price_10_yrs"
+  },
+  {
+   "id": "jlohding/sp500-edgar-10k",
+   "author": "jlohding",
+   "license": "mit",
+   "downloads": 657,
+   "description": "Annual reports for all SP500 historical constituents from 2010-2022 from SEC EDGAR Form 10-K filings",
+   "hint_category": "filings",
+   "url": "https://huggingface.co/datasets/jlohding/sp500-edgar-10k"
+  },
+  {
+   "id": "TalBridgewise/reports_sp500",
+   "author": "TalBridgewise",
+   "license": null,
+   "downloads": 16,
+   "description": "",
+   "hint_category": "filings",
+   "url": "https://huggingface.co/datasets/TalBridgewise/reports_sp500"
+  },
+  {
+   "id": "gauss314/options-IV-SP500",
+   "author": "gauss314",
+   "license": "apache-2.0",
+   "downloads": 362,
+   "description": "Options data including implied volatility for S&P 500 stocks",
+   "hint_category": "options",
+   "url": "https://huggingface.co/datasets/gauss314/options-IV-SP500"
+  },
+  {
+   "id": "chuyin0321/perimeter-sp500",
+   "author": "chuyin0321",
+   "license": null,
+   "downloads": 10,
+   "description": "",
+   "hint_category": "reference",
+   "url": "https://huggingface.co/datasets/chuyin0321/perimeter-sp500"
+  },
+  {
+   "id": "kurry/sp500_constituents_10q",
+   "author": "kurry",
+   "license": "apache-2.0",
+   "downloads": 497,
+   "description": "Quarterly financial reports (10-Q) for S&P 500 constituents",
+   "hint_category": "filings",
+   "url": "https://huggingface.co/datasets/kurry/sp500_constituents_10q"
+  },
+  {
+   "id": "BEE-spoke-data/sp500-edgar-10k-markdown",
+   "author": "BEE-spoke-data",
+   "license": "odc-by",
+   "downloads": 39,
+   "description": "S&P 500 EDGAR 10-K filings in markdown format with stock returns",
+   "hint_category": "filings",
+   "url": "https://huggingface.co/datasets/BEE-spoke-data/sp500-edgar-10k-markdown"
+  },
+  {
+   "id": "jwigginton/perimeter-sp500",
+   "author": "jwigginton",
+   "license": null,
+   "downloads": 16,
+   "description": "S&P 500 constituent information with sector and industry classifications",
+   "hint_category": "reference",
+   "url": "https://huggingface.co/datasets/jwigginton/perimeter-sp500"
+  },
+  {
+   "id": "jwigginton/index-constituents-sp500",
+   "author": "jwigginton",
+   "license": null,
+   "downloads": 137,
+   "description": "S&P 500 index constituent details with corporate information",
+   "hint_category": "reference",
+   "url": "https://huggingface.co/datasets/jwigginton/index-constituents-sp500"
+  },
+  {
+   "id": "jwigginton/earnings-sp500",
+   "author": "jwigginton",
+   "license": null,
+   "downloads": 98,
+   "description": "Earnings data including estimates, reported EPS, and surprise metrics",
+   "hint_category": "estimates",
+   "url": "https://huggingface.co/datasets/jwigginton/earnings-sp500"
+  },
+  {
+   "id": "jwigginton/earnings-estimate-sp500",
+   "author": "jwigginton",
+   "license": null,
+   "downloads": 99,
+   "description": "Analyst earnings estimates across multiple quarters and fiscal years",
+   "hint_category": "estimates",
+   "url": "https://huggingface.co/datasets/jwigginton/earnings-estimate-sp500"
+  },
+  {
+   "id": "jwigginton/earnings-forecast-sp500",
+   "author": "jwigginton",
+   "license": null,
+   "downloads": 52,
+   "description": "Consensus EPS forecasts with analyst estimates",
+   "hint_category": "estimates",
+   "url": "https://huggingface.co/datasets/jwigginton/earnings-forecast-sp500"
+  },
+  {
+   "id": "jwigginton/earnings-surprise-sp500",
+   "author": "jwigginton",
+   "license": null,
+   "downloads": 32,
+   "description": "Quarterly earnings surprises and reported EPS data",
+   "hint_category": "estimates",
+   "url": "https://huggingface.co/datasets/jwigginton/earnings-surprise-sp500"
+  },
+  {
+   "id": "jwigginton/extended-trading-sp500",
+   "author": "jwigginton",
+   "license": null,
+   "downloads": 10,
+   "description": "Extended hours trading data with prices and volumes",
+   "hint_category": "prices",
+   "url": "https://huggingface.co/datasets/jwigginton/extended-trading-sp500"
+  },
+  {
+   "id": "jwigginton/eps-revisions-sp500",
+   "author": "jwigginton",
+   "license": null,
+   "downloads": 31,
+   "description": "EPS revision trends across different time periods",
+   "hint_category": "estimates",
+   "url": "https://huggingface.co/datasets/jwigginton/eps-revisions-sp500"
+  },
+  {
+   "id": "jwigginton/eps-trend-sp500",
+   "author": "jwigginton",
+   "license": null,
+   "downloads": 47,
+   "description": "Historical EPS estimate trends with 30, 60, and 90-day comparisons",
+   "hint_category": "estimates",
+   "url": "https://huggingface.co/datasets/jwigginton/eps-trend-sp500"
+  },
+  {
+   "id": "jwigginton/news-sp500",
+   "author": "jwigginton",
+   "license": null,
+   "downloads": 20,
+   "description": "News articles covering S&P 500 companies with metadata",
+   "hint_category": "news",
+   "url": "https://huggingface.co/datasets/jwigginton/news-sp500"
+  },
+  {
+   "id": "jwigginton/revenue-estimate-sp500",
+   "author": "jwigginton",
+   "license": null,
+   "downloads": 14,
+   "description": "Analyst revenue estimates and growth projections",
+   "hint_category": "estimates",
+   "url": "https://huggingface.co/datasets/jwigginton/revenue-estimate-sp500"
+  }
+ ]
+}

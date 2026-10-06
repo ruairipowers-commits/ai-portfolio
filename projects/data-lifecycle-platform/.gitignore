@@ -1,0 +1,16 @@
+.env
+warehouse/
+output/
+data/landing/
+semantic/target/
+semantic/logs/
+semantic/dbt_packages/
+semantic/.user.yml
+logs/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.venv/
+infra/aws/.terraform/
+*.tfstate*
+portfolio_links.json

@@ -1,0 +1,8 @@
+dlp_semantic:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: "{{ env_var('DLP_WAREHOUSE', '../warehouse/warehouse.duckdb') }}"
+      threads: 2
+    # athena:  (see docs/aws-native.md) type: athena, s3_staging_dir, region_name, database, schema
