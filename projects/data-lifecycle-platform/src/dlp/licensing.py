@@ -129,8 +129,8 @@ def assess(s: Session, settings: Settings, dataset_id: str, use: str, customer_i
     regs = [r for r in store.tenant(s, store.Registration, customer_id) if r.dataset_id == dataset_id
             and r.status == "active"]
     if not regs:
-        v.verdict = BLOCKED if v.verdict != LEGAL_REVIEW else LEGAL_REVIEW
-        v.reasons.append("Not registered by this customer")
+        v.verdict = BLOCKED
+        v.reasons = ["Not registered by this customer"]
         v.source = "registration"
         return v
     if use not in regs[0].use and v.allowed:
