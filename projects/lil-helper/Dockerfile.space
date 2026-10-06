@@ -1,0 +1,22 @@
+# Public demo image (self-host at <demos>/lil-helper/, or a Hugging Face Space). Local equivalent:
+#   docker build -f Dockerfile.space -t lil-helper-demo . && docker run -p 7860:7860 lil-helper-demo
+# The Streamlit demo on the fictional Rivera family. Mock model only: no API keys are read, nothing is emailed or
+# sent to Instacart, and each visitor gets a private sandbox for plans and approvals. Never the real household.
+FROM python:3.11-slim
+# WeasyPrint (fridge PDFs) needs Pango; DejaVu gives the PDFs a font
+RUN apt-get update && apt-get install -y --no-install-recommends libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b \
+      fonts-dejavu-core && rm -rf /var/lib/apt/lists/* \
+    && useradd -m -u 1000 user && install -d -o user -g user /app
+ENV HOME=/home/user PATH=/home/user/.local/bin:$PATH PYTHONUNBUFFERED=1
+WORKDIR /app
+COPY --chown=user . .
+RUN rm -rf app config/household.yaml
+USER user
+RUN pip install --no-cache-dir --user -e ".[ui]"
+# Baseline run at build time (telemetry off), then clear it: visitors start from an empty week
+RUN GOVERNANCE_TELEMETRY=off helper simulate --weeks 1 && rm -rf logs output warehouse
+ENV PORTFOLIO_DEMO=1
+EXPOSE 7860
+# Under /lil-helper/ the host sets STREAMLIT_SERVER_BASE_URL_PATH, which Streamlit reads itself.
+CMD ["streamlit", "run", "src/lilhelper/ui.py", "--server.port=7860", "--server.address=0.0.0.0", \
+     "--server.headless=true", "--server.enableXsrfProtection=false", "--server.enableCORS=false"]

@@ -13,6 +13,7 @@
   helper eval [--alias helper-candidate]         golden set gate (EVAL-02, MODEL-02)
   helper promote ALIAS MODEL                     move an alias after a passing eval
   helper cost-report | check-models              COST-02/04, MODEL-03
+  helper job draft|email|restock                 run one scheduled job now
   helper serve | ui                              API (FastAPI) | Streamlit demo
 """
 from __future__ import annotations
@@ -20,6 +21,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -200,6 +202,13 @@ def cmd_check_models(a) -> int:
     return 1 if bad else 0
 
 
+def cmd_job(a) -> int:
+    from . import schedule
+    print(json.dumps({"draft": schedule.job_draft, "email": schedule.job_email,
+                      "restock": schedule.job_restock}[a.name](), default=str))
+    return 0
+
+
 def cmd_serve(a) -> int:
     import uvicorn
     uvicorn.run("lilhelper.api:app", host=a.host, port=a.port)
@@ -255,9 +264,11 @@ def main(argv: list[str] | None = None) -> int:
     sp.add_argument("model")
     add("cost-report", cmd_cost)
     add("check-models", cmd_check_models)
+    sp = add("job", cmd_job)
+    sp.add_argument("name", choices=["draft", "email", "restock"])
     sp = add("serve", cmd_serve)
-    sp.add_argument("--host", default="127.0.0.1")
-    sp.add_argument("--port", type=int, default=8700)
+    sp.add_argument("--host", default=os.getenv("HOST", "127.0.0.1"))
+    sp.add_argument("--port", type=int, default=int(os.getenv("PORT", "8650")))
     add("ui", cmd_ui)
     a = p.parse_args(argv)
     try:

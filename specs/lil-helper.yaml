@@ -1,7 +1,7 @@
 slug: lil-helper
 title: "Lil'Helper: a family meal planner that picks the week's meals, splits the shopping across stores by price and
   specials, shares the cooking and cleanup, and learns how much everyone (the dog included) actually eats"
-status: spec-approved
+status: built
 domain: household (family meal planning, grocery shopping, chores); a phone app for the people who run the kitchen
 use_case: >
   Menu planning, shopping and cooking take a family hours a week, and the effort usually lands on one person. Each
@@ -177,4 +177,11 @@ demo:
 
 links:
   repo: ''
-  blog: ''
+  blog: personal/lil-helper
+card:
+  name: Lil'Helper
+  problem: Planning a family's meals, shopping across stores and kitchen jobs takes hours a week and lands on one person
+  pattern: Workflow (a solver picks meals, stores and jobs; a model only suggests, reads flyers and writes notes)
+  stack: OR-Tools CP-SAT, FastAPI, Expo (React Native), WeasyPrint, Ollama
+  result: "$23 a week saved, 0 unsafe plans over 8 simulated weeks"
+  result_basis: "offline, mock model, fictional family and synthetic prices; eval gate 16 of 16, must-reject recall 1.00"

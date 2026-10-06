@@ -31,5 +31,7 @@
     "typecheck": "tsc --noEmit",
     "export:web": "expo export --platform web --output-dir dist-web"
   },
-  "private": true
+  "private": true,
+  "license": "Apache-2.0",
+  "author": "Ruairi Powers"
 }

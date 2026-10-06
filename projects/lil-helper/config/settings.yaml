@@ -62,6 +62,13 @@ eval:                                         # EVAL-02 thresholds; MODEL-02 gat
   min_flyer_item_accuracy: 0.90
   max_total_cost_usd: 0.10
 
+schedule:                                     # APScheduler in the API (HELPER_SCHEDULER=1); each job also runs from the CLI
+  timezone: America/New_York
+  draft_day: sat                              # draft next week (an adult still approves it)
+  draft_hour: 7
+  restock_day: wed                            # mid-week check: what the rest of the week is short of
+  restock_hour: 15                            # the Sunday email time is the household's outputs.email
+
 email:
   outbox_dir: output/outbox                   # mock mode writes .eml files here; RESEND_API_KEY sends for real
   from_env: MAIL_FROM

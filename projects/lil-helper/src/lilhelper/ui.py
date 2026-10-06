@@ -220,8 +220,9 @@ with tabs[1]:
                         for k, v in r.options.items()])
     st.dataframe(opt, hide_index=True, width="stretch")
     for o in r.split.orders:
-        with st.expander(f"{o.store_name} · {o.mode.replace('_', ' ')} · ${o.total:.2f} "
-                         f"({len(o.lines)} items{f', credits ${o.credits:.2f}' if o.credits else ''})",
+        credits = f", credits \\${o.credits:.2f}" if o.credits else ""
+        mode = o.mode.replace("_", " ")
+        with st.expander(f"{o.store_name} · {mode} · \\${o.total:.2f} ({len(o.lines)} items{credits})",
                          expanded=len(r.split.orders) == 1):
             st.dataframe(pd.DataFrame([{"Item": ln.name, "Brand": ln.brand, "Packs": ln.packs,
                                         "Each": f"${ln.price_each:.2f}", "Special": "★" if ln.special else ""}
@@ -253,7 +254,11 @@ with tabs[2]:
 with tabs[3]:
     for p in r.pets:
         st.markdown(f"**{p.name}** needs {p.food_needed:.0f} cups this week; {p.food_on_hand:.0f} on hand.")
-        st.write("Restock with the groceries:", p.restock or "nothing this week")
+        bag = next(iter(h.pets.values())).food
+        nice = {"dog_food": lambda q: f"{q:g} cups of {bag['brand']} ({q / bag['bag_cups']:g} bag)",
+                "dog_treats": lambda q: f"{q:g} treats"}
+        st.markdown("Restock with the groceries: " + (", ".join(nice.get(k, lambda q, k=k: f"{q:g} {k}")(v)
+                                                               for k, v in p.restock.items()) or "nothing this week"))
         if p.extras:
             st.dataframe(pd.DataFrame([{"Day": DAY[x["day"]], "Extra": x["item"], "Amount": f"{x['amount']} {x['unit']}",
                                         "kcal": x["kcal"], "From": x["from"], "How": x["how"]} for x in p.extras]),
@@ -273,7 +278,7 @@ with tabs[4]:
                  f"{sav['baseline_minutes']} min", delta_color="off")
         c.metric("Satisfaction", f"{sav['rating']}/5" if sav.get("rating") else "after meals",
                  "rated in the app after each meal", delta_color="off")
-        st.caption(f"Specials saved ${sav['specials_saved']:.2f}; memberships and cards ${sav['credits']:.2f}. "
+        st.caption(f"Specials saved \\${sav['specials_saved']:.2f}; memberships and cards \\${sav['credits']:.2f}. "
                    "Baseline: the same list at the home store's regular prices in one trip. " +
                    " ".join(sav.get("notes", [])))
     st.caption("Run `helper simulate --weeks 8` for eight weeks with simulated meal feedback: portions learn from "

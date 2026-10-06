@@ -32,6 +32,13 @@ SESSION_TTL = 30 * 24 * 3600
 INSTACART = {"development": "https://connect.dev.instacart.tools", "production": "https://connect.instacart.com"}
 
 app = FastAPI(title="Lil'Helper", version=__version__, root_path=os.getenv("ROOT_PATH", ""))
+
+
+@app.on_event("startup")
+def _start_scheduler() -> None:
+    if os.getenv("HELPER_SCHEDULER") == "1":
+        from . import schedule
+        schedule.start()
 app.add_middleware(CORSMiddleware, allow_origins=os.getenv("HELPER_CORS", "*").split(","), allow_methods=["*"],
                    allow_headers=["*"])
 

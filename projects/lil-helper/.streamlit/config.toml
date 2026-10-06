@@ -1,0 +1,8 @@
+[browser]
+gatherUsageStats = false   # no telemetry from demos
+
+[client]
+toolbarMode = "minimal"
+
+[server]
+maxUploadSize = 20
