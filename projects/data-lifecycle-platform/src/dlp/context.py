@@ -231,7 +231,7 @@ def answer(settings: Settings, question: str, customer_id: str, actor: str = "",
     view = json.dumps(p.model_view(), default=str)
     q, _ = sanitize_untrusted(question, 2000)
     r = runner.call("answer", "answer", {"packet": view, "question": q}, Answer, actor=actor,
-                    customer_id=customer_id, subject=question[:80], flags=p.flags,
+                    customer_id=customer_id, subject="q:" + sha(question), flags=p.flags,
                     metric_queries=[m["_sql"] for m in p.metrics])
     checks = {"schema_valid": r.ok, "ungrounded_numbers": [], "unknown_citations": [], "status_matches": True,
               "fallback_used": False}

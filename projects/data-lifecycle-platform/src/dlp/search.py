@@ -17,7 +17,7 @@ from sqlmodel import select
 
 from . import graph, licensing, marketplaces, ontology, store
 from .ai import Runner
-from .config import Settings
+from .config import Settings, sha
 from .guardrails import sanitize_untrusted
 from .schemas import SearchPlan
 
@@ -51,7 +51,7 @@ def plan(settings: Settings, need: str, runner: Runner | None = None, actor: str
     clean, flags = sanitize_untrusted(need, 2000)
     runner = runner or Runner(settings)
     r = runner.call("search", "search", {"need": clean, "vocabulary": json.dumps(vocabulary_for_prompt())}, SearchPlan,
-                    actor=actor, subject=need[:80], flags=["injection_in_need"] if flags["injection_suspected"] else [])
+                    actor=actor, subject="need:" + sha(need), flags=["injection_in_need"] if flags["injection_suspected"] else [])
     p = r.output if r.ok else SearchPlan()
     valid = {t.iri: t for t in ontology.terms()}
     dropped = []

@@ -24,8 +24,8 @@ ROOT = _find_root()
 
 
 def workspace() -> Path:
-    """Where mutable data lives: the project root, or this visitor's sandbox in the hosted demo."""
-    return demo.current() or ROOT
+    """Where mutable data lives: the project root, this visitor's sandbox in the hosted demo, or DLP_WORKSPACE."""
+    return demo.current() or (Path(os.environ["DLP_WORKSPACE"]) if os.getenv("DLP_WORKSPACE") else ROOT)
 
 
 class Settings:

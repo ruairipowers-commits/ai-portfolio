@@ -97,10 +97,13 @@ def build(settings: Settings) -> dict:
             elif uid.startswith("model."):
                 summary["models"] += r["status"] == "success"
     if proc.returncode != 0 and not summary["failures"]:
+        summary["tests_failed"] = max(1, summary["tests_failed"])
+        summary["failures"].append("dbt build error")
+        _write_gate(settings, summary)                  # a failed build closes the gate for every reader
         raise QualityGateError(f"dbt build failed:\n{(proc.stdout + proc.stderr)[-2500:]}")
+    _write_gate(settings, summary)
     if summary["failures"] and settings["data"]["require_dbt_tests_pass"]:
         raise QualityGateError("Data quality gate failed: " + "; ".join(summary["failures"]))
-    _write_gate(settings, summary)
     return summary
 
 
