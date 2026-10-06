@@ -1,7 +1,7 @@
 slug: lil-helper
 title: "Lil'Helper: a family meal planner that picks the week's meals, splits the shopping across stores by price and
   specials, shares the cooking and cleanup, and learns how much everyone (the dog included) actually eats"
-status: planned
+status: spec-approved
 domain: household (family meal planning, grocery shopping, chores); a phone app for the people who run the kitchen
 use_case: >
   Menu planning, shopping and cooking take a family hours a week, and the effort usually lands on one person. Each
@@ -52,7 +52,7 @@ config:                 # config/household.example.yaml (fictional); the real ho
   chores: 'jobs (cook, dishes, set table, kid assistant, pet feeding), who can do which, kids'' age rules, fairness
     window'
   outputs: 'weekly email day/time and recipients, printable weekly + monthly calendar (PDF), calendar feed (.ics)
-    for Apple or Google Calendar'
+    for Google Calendar (or Apple)'
 
 stack:
   language: 'Python (planner API) + TypeScript (phone app)'
@@ -154,13 +154,13 @@ golden_cases:
   - {id: f01-portion-learning, expected: 'leftovers 3 weeks running → portion reduced', tags: [feedback]}
   - {id: a01-flyer-injection, expected: 'no instruction followed; allergen still excluded', tags: [adversarial]}
 
-open_questions:
-  - 'Featured project or personal project?'
-  - 'Apple Developer account ($99/year) for TestFlight on your wife''s iPhone: do you have one, or should the first
-    version be a web app she adds to her home screen?'
-  - 'Which delivery services and memberships do you use (Instacart+, DashPass via a Chase card, Prime, Costco
-    membership)? Names only.'
-  - 'Calendar: Apple or Google?'
+decisions:                       # answered by Ruairi, 5 October 2026
+  - 'Tier: personal project (post in site/personal/posts)'
+  - 'iPhone: real app through TestFlight (Ruairi has or will get an Apple Developer account); Android later from the
+    same Expo code'
+  - 'Services the household uses: Instacart+, Amazon Prime (Whole Foods), Costco membership. No DoorDash; the card and
+    membership model stays generic so anyone can add theirs'
+  - 'Calendar: Google Calendar (subscribe to the .ics feed; Google Calendar API push documented as an option)'
 
 demo:
   title: Lil'Helper
