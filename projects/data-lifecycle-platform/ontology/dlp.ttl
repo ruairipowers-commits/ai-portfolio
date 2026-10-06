@@ -12,7 +12,7 @@
 
 <https://w3id.org/dlp/ontology> a owl:Ontology ;
     rdfs:label "Data lifecycle platform ontology" ;
-    owl:versionInfo "1.0.0" .
+    owl:versionInfo "1.1.0" .
 
 # ------------------------------------------------------------------ marketplace parties
 dlp:Party a owl:Class ; rdfs:label "Party" .
@@ -40,6 +40,9 @@ dlp:DataCategory a owl:Class ; rdfs:label "Data category" ;
 dlp:Licence a owl:Class ; rdfs:label "Licence" .
 dlp:UseCase a owl:Class ; rdfs:label "Use case" ;
     skos:definition "An intended use of data (internal research, AI processing, redistribution, commercial product)." .
+dlp:DataAsset a owl:Class ; rdfs:label "Data asset" ;
+    skos:definition "A table the platform materialises from one or more datasets (a dbt model / Dagster asset)." .
+dlp:Report a owl:Class ; rdfs:label "Report" ; skos:definition "A recurring output a team depends on." .
 dlp:Metric a owl:Class ; rdfs:label "Metric" ;
     skos:definition "A governed calculation defined in the semantic layer; the graph only points at it." .
 
@@ -76,6 +79,11 @@ dlp:proxiedBy a owl:ObjectProperty ; rdfs:domain dlp:EconomicFactor ; rdfs:range
     rdfs:label "proxied by" ; skos:definition "Data categories that observe this factor early." .
 dlp:measures a owl:ObjectProperty ; rdfs:domain dlp:Metric ; rdfs:range dlp:Concept ; rdfs:label "measures" .
 dlp:computedFrom a owl:ObjectProperty ; rdfs:domain dlp:Metric ; rdfs:range dlp:Dataset ; rdfs:label "computed from" .
+dlp:readsFrom a owl:ObjectProperty ; rdfs:domain dlp:DataAsset ; rdfs:label "reads from" ;
+    skos:note "Range is a Dataset (a source) or another DataAsset (lineage)." .
+dlp:fromAsset a owl:ObjectProperty ; rdfs:domain dlp:Metric ; rdfs:range dlp:DataAsset ; rdfs:label "from asset" .
+dlp:dependsOn a owl:ObjectProperty ; rdfs:domain dlp:Report ; rdfs:range dlp:Dataset ; rdfs:label "depends on" .
+dlp:ownedBy a owl:ObjectProperty ; rdfs:domain dlp:Report ; rdfs:range dlp:Team ; rdfs:label "owned by" .
 dlp:derivedFrom a owl:ObjectProperty ; rdfs:domain dlp:Dataset ; rdfs:range dlp:Dataset ; rdfs:label "derived from" .
 dlp:substituteFor a owl:ObjectProperty ; rdfs:domain dlp:Dataset ; rdfs:range dlp:Dataset ; rdfs:label "substitute for" .
 dlp:holder a owl:ObjectProperty ; rdfs:range dlp:Customer ; rdfs:label "holder" .

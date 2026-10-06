@@ -1,0 +1,22 @@
+version: 2
+sources:
+  - name: landing
+    description: Files landed by ingestion (offline fixture or real Hugging Face slices) and the catalog export.
+    meta:
+      external_location: "{{ env_var('DLP_LANDING') }}/{name}.parquet"
+    tables:
+      - name: options_iv
+        description: "gauss314/options-IV-SP500 (Apache-2.0). Owner: platform data engineering. Refresh: daily."
+        meta: {dataset_id: ds-options-iv}
+      - name: constituents
+        description: "jwigginton/index-constituents-sp500 (no licence declared; operator reference use only)."
+        meta: {dataset_id: ds-constituents}
+      - name: usage
+        description: "Query log: which team queried which dataset per day (synthetic in the demo)."
+        meta: {external_location: "{{ env_var('DLP_LANDING') }}/usage.csv"}
+      - name: catalog_contracts
+        description: "Contracts exported from the operational store at build time."
+      - name: catalog_datasets
+        description: "Datasets exported from the operational store at build time."
+      - name: catalog_customers
+        description: "Buyer firms exported from the operational store at build time."

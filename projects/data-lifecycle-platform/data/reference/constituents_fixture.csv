@@ -1,0 +1,46 @@
+symbol,security,gics_sector,gics_sub_industry,headquarters_location,date_added,cik,founded
+AAPL,Apple Inc.,Information Technology,"Technology Hardware, Storage & Peripherals","Cupertino, California",1982-11-30,320193,1977
+MSFT,Microsoft,Information Technology,Systems Software,"Redmond, Washington",,789019,1975
+NVDA,Nvidia,Information Technology,Semiconductors,"Santa Clara, California",,1045810,1993
+INTC,Intel,Information Technology,Semiconductors,"Santa Clara, California",,50863,1968
+CSCO,Cisco,Information Technology,Communications Equipment,"San Jose, California",,858877,1984
+ORCL,Oracle Corporation,Information Technology,Application Software,"Austin, Texas",,1341439,1977
+IBM,IBM,Information Technology,IT Consulting & Other Services,"Armonk, New York",,51143,1911
+AMZN,Amazon,Consumer Discretionary,Broadline Retail,"Seattle, Washington",,1018724,1994
+HD,Home Depot (The),Consumer Discretionary,Home Improvement Retail,"Atlanta, Georgia",,354950,1978
+MCD,McDonald's,Consumer Discretionary,Restaurants,"Chicago, Illinois",,63908,1940
+NKE,Nike Inc.,Consumer Discretionary,"Apparel, Accessories & Luxury Goods","Washington County, Oregon",,320187,1964
+JPM,JPMorgan Chase,Financials,Diversified Banks,"New York City, New York",,19617,2000
+BAC,Bank of America,Financials,Diversified Banks,"Charlotte, North Carolina",,70858,1998
+WFC,Wells Fargo,Financials,Diversified Banks,"San Francisco, California",,72971,1852
+C,Citigroup,Financials,Diversified Banks,"New York City, New York",,831001,1998
+GS,Goldman Sachs,Financials,Investment Banking & Brokerage,"New York City, New York",,886982,1869
+MS,Morgan Stanley,Financials,Investment Banking & Brokerage,"New York City, New York",,895421,1935
+BRK.B,Berkshire Hathaway,Financials,Multi-Sector Holdings,"Omaha, Nebraska",2010-02-16,1067983,1839
+XOM,ExxonMobil,Energy,Integrated Oil & Gas,"Spring, Texas",,34088,1999
+CVX,Chevron Corporation,Energy,Integrated Oil & Gas,"Houston, Texas",,93410,1879
+JNJ,Johnson & Johnson,Health Care,Pharmaceuticals,"New Brunswick, New Jersey",,200406,1886
+PFE,Pfizer,Health Care,Pharmaceuticals,"New York City, New York",,78003,1849
+MRK,Merck & Co.,Health Care,Pharmaceuticals,"Rahway, New Jersey",,310158,1891
+UNH,UnitedHealth Group,Health Care,Managed Health Care,"Minnetonka, Minnesota",,731766,1977
+ABT,Abbott Laboratories,Health Care,Health Care Equipment,"North Chicago, Illinois",,1800,1888
+KO,Coca-Cola Company (The),Consumer Staples,Soft Drinks & Non-alcoholic Beverages,"Atlanta, Georgia",,21344,1886
+PEP,PepsiCo,Consumer Staples,Soft Drinks & Non-alcoholic Beverages,"Purchase, New York",,77476,1965
+PG,Procter & Gamble,Consumer Staples,Personal Care Products,"Cincinnati, Ohio",,80424,1837
+WMT,Walmart,Consumer Staples,Consumer Staples Merchandise Retail,"Bentonville, Arkansas",,104169,1962
+COST,Costco,Consumer Staples,Consumer Staples Merchandise Retail,"Issaquah, Washington",,909832,1976
+NEE,NextEra Energy,Utilities,Multi-Utilities,"Juno Beach, Florida",,753308,1984
+DUK,Duke Energy,Utilities,Electric Utilities,"Charlotte, North Carolina",,1326160,1904
+SO,Southern Company,Utilities,Electric Utilities,"Atlanta, Georgia",,92122,1945
+AMT,American Tower,Real Estate,Telecom Tower REITs,"Boston, Massachusetts",,1053507,1995
+PLD,Prologis,Real Estate,Industrial REITs,"San Francisco, California",,1045609,1983
+CAT,Caterpillar Inc.,Industrials,Construction Machinery & Heavy Transportation Equipment,"Irving, Texas",,18230,1925
+BA,Boeing,Industrials,Aerospace & Defense,"Arlington, Virginia",,12927,1916
+GE,GE Aerospace,Industrials,Aerospace & Defense,"Evendale, Ohio",,40545,1892
+MMM,3M,Industrials,Industrial Conglomerates,"Saint Paul, Minnesota",,66740,1902
+LIN,Linde plc,Materials,Industrial Gases,"Guildford, United Kingdom",,1707925,1879
+T,AT&T,Communication Services,Integrated Telecommunication Services,"Dallas, Texas",,732717,1983
+VZ,Verizon,Communication Services,Integrated Telecommunication Services,"New York City, New York",,732712,1983
+DIS,Walt Disney Company (The),Communication Services,Movies & Entertainment,"Burbank, California",,1744489,1923
+GOOGL,Alphabet Inc. (Class A),Communication Services,Interactive Media & Services,"Mountain View, California",,1652044,1998
+META,Meta Platforms,Communication Services,Interactive Media & Services,"Menlo Park, California",,1326801,2004

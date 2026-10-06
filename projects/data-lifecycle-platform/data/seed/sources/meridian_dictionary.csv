@@ -1,0 +1,7 @@
+field,type,description
+week_ending,date,Week ending date (Sunday)
+merchant_id,string,Meridian merchant identifier
+ticker,string,Ticker of the merchant's listed parent
+spend_index,float,Panel-normalised spend index (2019 = 100)
+txn_count_index,float,Panel-normalised transaction count index
+panel_size,integer,Active cards in the panel that week

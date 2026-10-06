@@ -1,0 +1,98 @@
+# Controlled vocabulary — still LAYER 1 (meaning). The shared terms everything else maps to: business concepts a
+# field or metric can carry, data categories, use cases, licences, GICS sectors and economic factors.
+# Labels and alternative labels here drive search expansion and question parsing, so a synonym is added once,
+# here, and every layer above picks it up. No vendors, datasets, companies or contracts: those are graph data.
+
+@prefix dlp:  <https://w3id.org/dlp/ontology#> .
+@prefix v:    <https://w3id.org/dlp/vocab/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# ------------------------------------------------------------------ identifiers
+v:Ticker a dlp:Identifier ; skos:prefLabel "ticker" ; skos:altLabel "symbol", "stock symbol", "ticker symbol" .
+v:CIK a dlp:Identifier ; skos:prefLabel "CIK" ; skos:altLabel "central index key", "sec cik" .
+v:ISIN a dlp:Identifier ; skos:prefLabel "ISIN" .
+v:ObservationDate a dlp:Identifier ; skos:prefLabel "observation date" ; skos:altLabel "date", "as of date", "trade date" .
+
+# ------------------------------------------------------------------ measures (what a field or metric means)
+v:ImpliedVolATM a dlp:Measure ; skos:prefLabel "at-the-money implied volatility" ;
+    skos:altLabel "atm iv", "atm implied vol", "implied volatility", "implied vol", "iv" .
+v:ImpliedVolSkew a dlp:Measure ; skos:prefLabel "implied volatility by moneyness" ;
+    skos:altLabel "itm iv", "otm iv", "ditm iv", "dotm iv", "sitm iv", "sotm iv", "skew", "volatility smile", "moneyness" .
+v:HistoricalVol a dlp:Measure ; skos:prefLabel "historical volatility" ;
+    skos:altLabel "realized volatility", "realised volatility", "realized vol", "hv", "hv 20", "hv 60", "hv 120", "hv 200", "20-day historical volatility" .
+v:VolRiskPremium a dlp:Measure ; skos:prefLabel "implied minus historical volatility" ;
+    skos:altLabel "iv-hv spread", "volatility risk premium", "vol premium", "iv hv spread" .
+v:OptionVolume a dlp:Measure ; skos:prefLabel "options contracts traded" ;
+    skos:altLabel "option volume", "contracts traded", "calls traded", "puts traded" .
+v:PutCallRatio a dlp:Measure ; skos:prefLabel "put/call volume ratio" ;
+    skos:altLabel "put call ratio", "put-call ratio", "pcr" .
+v:OpenInterest a dlp:Measure ; skos:prefLabel "open interest" .
+v:MarketVol a dlp:Measure ; skos:prefLabel "VIX" ; skos:altLabel "vix", "market volatility", "fear index" .
+v:SymbolCoverage a dlp:Measure ; skos:prefLabel "universe coverage" ;
+    skos:altLabel "coverage", "symbol coverage", "s&p 500 coverage", "how many companies" .
+v:HistoryDepth a dlp:Measure ; skos:prefLabel "history depth" ; skos:altLabel "history", "how far back", "start date" .
+v:QueryCount a dlp:Measure ; skos:prefLabel "queries" ; skos:altLabel "usage", "query count", "number of queries" .
+v:Spend a dlp:Measure ; skos:prefLabel "spend" ; skos:altLabel "cost", "contract cost", "how much do we pay", "spend usd" .
+v:CostPerQuery a dlp:Measure ; skos:prefLabel "cost per query" ; skos:altLabel "unit cost", "cost per use" .
+# Defined concepts with no metric yet: questions about them must get "not defined", never a guess.
+v:DarkPoolShare a dlp:Measure ; skos:prefLabel "dark pool volume share" ;
+    skos:altLabel "dark pool volume ratio", "dark pool share", "off-exchange volume" .
+v:ShortInterest a dlp:Measure ; skos:prefLabel "short interest" ; skos:altLabel "days to cover" .
+v:Text a dlp:Concept ; skos:prefLabel "free text" ; skos:altLabel "filing text", "report text", "news text" .
+v:CompanyName a dlp:Concept ; skos:prefLabel "company name" ; skos:altLabel "security", "issuer name" .
+v:SectorClass a dlp:Concept ; skos:prefLabel "sector classification" ; skos:altLabel "gics sector", "gics sub industry", "industry" .
+v:Location a dlp:Concept ; skos:prefLabel "location" ; skos:altLabel "headquarters", "hq", "headquarters location" .
+v:PersonalData a dlp:Concept ; skos:prefLabel "personal data" ; skos:altLabel "pii", "phone", "email", "name of a person" .
+
+# ------------------------------------------------------------------ data categories
+v:OptionsVolatility a dlp:DataCategory ; skos:prefLabel "options & volatility" ; skos:altLabel "options", "volatility", "derivatives" .
+v:ReferenceData a dlp:DataCategory ; skos:prefLabel "reference data" ; skos:altLabel "security master", "index constituents" .
+v:Filings a dlp:DataCategory ; skos:prefLabel "regulatory filings" ; skos:altLabel "10-k", "10-q", "sec filings", "edgar" .
+v:Transactions a dlp:DataCategory ; skos:prefLabel "consumer transactions" ; skos:altLabel "card data", "card panel", "spending" .
+v:Shipping a dlp:DataCategory ; skos:prefLabel "shipping & freight" ; skos:altLabel "freight", "logistics", "port", "supply chain" .
+v:Labour a dlp:DataCategory ; skos:prefLabel "labour & hiring" ; skos:altLabel "job postings", "hiring", "employment" .
+v:Rates a dlp:DataCategory ; skos:prefLabel "rates & macro" ; skos:altLabel "yield curve", "interest rates", "rates" .
+v:Prices a dlp:DataCategory ; skos:prefLabel "prices" ; skos:altLabel "close prices", "market data", "ohlc" .
+v:Estimates a dlp:DataCategory ; skos:prefLabel "analyst estimates" ; skos:altLabel "eps", "earnings", "consensus" .
+
+# ------------------------------------------------------------------ use cases
+v:InternalResearch a dlp:UseCase ; skos:prefLabel "internal research" .
+v:AIProcessing a dlp:UseCase ; skos:prefLabel "AI processing" ;
+    skos:definition "Sending the data, or facts derived from it, to a third-party AI model." .
+v:Redistribution a dlp:UseCase ; skos:prefLabel "redistribution" .
+v:CommercialProduct a dlp:UseCase ; skos:prefLabel "commercial product" .
+
+# ------------------------------------------------------------------ licences (SPDX where one exists)
+v:licence-apache-2.0 a dlp:Licence ; dlp:spdxId "apache-2.0" ; skos:prefLabel "Apache 2.0" .
+v:licence-mit a dlp:Licence ; dlp:spdxId "mit" ; skos:prefLabel "MIT" .
+v:licence-odc-by a dlp:Licence ; dlp:spdxId "odc-by" ; skos:prefLabel "ODC Attribution" .
+v:licence-cc-by-4.0 a dlp:Licence ; dlp:spdxId "cc-by-4.0" ; skos:prefLabel "CC BY 4.0" .
+v:licence-cc-by-nc-4.0 a dlp:Licence ; dlp:spdxId "cc-by-nc-4.0" ; skos:prefLabel "CC BY-NC 4.0" .
+v:licence-proprietary a dlp:Licence ; dlp:spdxId "proprietary" ; skos:prefLabel "Proprietary (contract terms)" .
+v:licence-none a dlp:Licence ; dlp:spdxId "none" ; skos:prefLabel "No licence declared" .
+
+# ------------------------------------------------------------------ GICS sectors
+v:InformationTechnology a dlp:Sector ; skos:prefLabel "Information Technology" ; skos:altLabel "tech", "technology" .
+v:Financials a dlp:Sector ; skos:prefLabel "Financials" ; skos:altLabel "banks", "financial" .
+v:HealthCare a dlp:Sector ; skos:prefLabel "Health Care" ; skos:altLabel "healthcare", "pharma" .
+v:ConsumerDiscretionary a dlp:Sector ; skos:prefLabel "Consumer Discretionary" ; skos:altLabel "retail", "consumer" .
+v:ConsumerStaples a dlp:Sector ; skos:prefLabel "Consumer Staples" ; skos:altLabel "staples" .
+v:Energy a dlp:Sector ; skos:prefLabel "Energy" ; skos:altLabel "oil", "oil and gas" .
+v:Industrials a dlp:Sector ; skos:prefLabel "Industrials" ; skos:altLabel "industrial", "transport" .
+v:Utilities a dlp:Sector ; skos:prefLabel "Utilities" .
+v:RealEstate a dlp:Sector ; skos:prefLabel "Real Estate" ; skos:altLabel "reits", "property" .
+v:Materials a dlp:Sector ; skos:prefLabel "Materials" .
+v:CommunicationServices a dlp:Sector ; skos:prefLabel "Communication Services" ; skos:altLabel "telecom", "media" .
+
+# ------------------------------------------------------------------ economic factors
+v:RisingRates a dlp:EconomicFactor ; skos:prefLabel "rising interest rates" ;
+    skos:altLabel "rising rates", "rate hikes", "higher rates", "tightening" .
+v:OilPrices a dlp:EconomicFactor ; skos:prefLabel "oil price moves" ; skos:altLabel "oil prices", "energy prices", "crude" .
+v:ConsumerDemand a dlp:EconomicFactor ; skos:prefLabel "consumer demand" ;
+    skos:altLabel "consumer spending", "retail sales", "consumer slowdown" .
+v:SupplyChainStress a dlp:EconomicFactor ; skos:prefLabel "supply-chain stress" ;
+    skos:altLabel "supply chain", "port congestion", "freight rates", "shipping delays" .
+v:LabourMarket a dlp:EconomicFactor ; skos:prefLabel "labour market" ; skos:altLabel "hiring", "jobs", "employment" .
+v:RiskOff a dlp:EconomicFactor ; skos:prefLabel "risk-off / market stress" ;
+    skos:altLabel "market stress", "volatility spike", "risk off", "sell-off" .

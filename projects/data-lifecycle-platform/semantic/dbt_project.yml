@@ -1,0 +1,17 @@
+# LAYER 3: the semantic layer. Governed metrics, computed in SQL, one definition used by the app, the API and the
+# context layer alike. Each metric carries meta.ontology_iri: the concept it measures (layer 1).
+name: dlp_semantic
+version: "1.0.0"
+config-version: 2
+profile: dlp_semantic
+model-paths: [models]
+macro-paths: [macros]
+test-paths: [tests]
+target-path: target
+clean-targets: [target]
+models:
+  dlp_semantic:
+    staging: {+materialized: view}
+    marts: {+materialized: table}
+flags:
+  send_anonymous_usage_stats: false

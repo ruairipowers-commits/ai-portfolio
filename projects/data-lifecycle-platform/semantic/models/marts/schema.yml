@@ -1,0 +1,64 @@
+version: 2
+# DATA-02: these tests are the quality gate. `dlp build` stops before the graph load and before any model call if
+# one fails.
+models:
+  - name: metricflow_time_spine
+    time_spine:
+      standard_granularity_column: date_day
+    columns:
+      - name: date_day
+        granularity: day
+  - name: dim_company
+    columns:
+      - name: symbol
+        data_tests: [not_null, unique]
+      - name: gics_sector
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [Information Technology, Financials, Health Care, Consumer Discretionary, Consumer Staples,
+                         Energy, Industrials, Utilities, Real Estate, Materials, Communication Services]
+  - name: fct_options_daily
+    data_tests:
+      - dbt_utils_unique_combo:
+          arguments: {cols: [symbol, obs_date]}
+    columns:
+      - name: option_day_id
+        data_tests: [unique, not_null]
+      - name: atm_iv
+        data_tests:
+          - not_null
+          - in_range: {arguments: {min_value: 0, max_value: 400}}
+      - name: hv_20
+        data_tests:
+          - in_range: {arguments: {min_value: 0, max_value: 400}}
+      - name: vix
+        data_tests:
+          - in_range: {arguments: {min_value: 5, max_value: 100}}
+      - name: obs_date
+        data_tests: [not_null]
+  - name: fct_dataset_usage
+    columns:
+      - name: usage_id
+        data_tests: [unique, not_null]
+      - name: queries
+        data_tests:
+          - in_range: {arguments: {min_value: 0, max_value: 100000}}
+  - name: fct_dataset_cost
+    columns:
+      - name: cost_id
+        data_tests: [unique, not_null]
+  - name: fct_dataset_coverage
+    columns:
+      - name: coverage_pct
+        data_tests:
+          - in_range: {arguments: {min_value: 0, max_value: 1}}
+  - name: dim_dataset
+    columns:
+      - name: dataset_id
+        data_tests: [unique, not_null]
+  - name: dim_customer
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
