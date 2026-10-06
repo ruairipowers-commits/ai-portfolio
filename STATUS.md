@@ -1,7 +1,31 @@
 # Status — open items
 
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
-(or delete them) as they're done. Last updated 5 October 2026.
+(or delete them) as they're done. Last updated 6 October 2026.
+
+## 000. Lil'Helper (new personal project, built 6 October 2026)
+
+`projects/lil-helper` (Python engine + API + Streamlit demo, and `app/`, the Expo phone app) +
+`site/personal/posts/lil-helper.md`. Decisions (5 Oct): personal tier; real iPhone app through TestFlight, Android
+later; services Instacart+, Prime (Whole Foods), Costco; Google Calendar via .ics feed. Verified offline: 48 tests,
+8-week simulation, eval gate 16/16 (must-reject recall 1.00), governance check, apply_access --check, demo and phone
+app (web build at iPhone size) checked in a browser, app typecheck. On branch `spec/lil-helper`, **not pushed**.
+
+- [ ] **Push / merge** once Ruairi approves.
+- [ ] **Household server on the EVO-X1:** `docker build -t lil-helper projects/lil-helper` and run with `.env`
+      (`HELPER_SECRET` from `openssl rand -hex 32`, `RESEND_API_KEY`, `MAIL_FROM`) and the real
+      `config/household.yaml` mounted read-only (never committed). Decide how the phone reaches it: a public
+      hostname behind the magic-link sign-in, or Tailscale on her iPhone.
+- [ ] **TestFlight:** Apple Developer account, then `app/README.md` steps (`eas init`, set `EXPO_PUBLIC_API_URL`,
+      `eas build --platform ios`, `eas submit`, add her as an internal tester).
+- [ ] **Instacart Developer Platform key** (`INSTACART_API_KEY`) for one-tap delivery links; development first.
+- [ ] **Real data:** the family's recipes, store prices (`data/prices.yaml`, `verified` dates), then four real weeks
+      and update the post's results table (all numbers today are simulated).
+- [ ] **Real models:** `local-qwen` for ideas/notes and a local vision model for flyers; `helper eval --alias
+      helper-candidate`, promote on a pass.
+- [ ] **Public demo:** `git pull && ./update.sh` builds `Dockerfile.space` (`/lil-helper/`, mock only).
+- [ ] Options documented, not built: push notifications (needs the EAS project id), Google Calendar API push,
+      two-adult approval above a spend threshold, automated retention pruning.
 
 ## 00. Speaking coach (new personal project, built 5 October 2026)
 
