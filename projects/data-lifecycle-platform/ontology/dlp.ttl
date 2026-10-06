@@ -1,0 +1,109 @@
+# Data lifecycle platform ontology — LAYER 1: MEANING ONLY.
+# Classes and properties for the data marketplace. No instance data lives here (a test enforces it):
+# instances belong in the knowledge graph, numbers belong in the semantic layer.
+# Version is bumped on every change; `dlp ontology diff` shows what changed (NFR-5).
+
+@prefix dlp:  <https://w3id.org/dlp/ontology#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<https://w3id.org/dlp/ontology> a owl:Ontology ;
+    rdfs:label "Data lifecycle platform ontology" ;
+    owl:versionInfo "1.0.0" .
+
+# ------------------------------------------------------------------ marketplace parties
+dlp:Party a owl:Class ; rdfs:label "Party" .
+dlp:Vendor a owl:Class ; rdfs:subClassOf dlp:Party ;
+    rdfs:label "Vendor" ; skos:definition "An organisation that supplies one or more datasets." .
+dlp:Customer a owl:Class ; rdfs:subClassOf dlp:Party ;
+    rdfs:label "Customer" ; skos:definition "A buyer firm that registers for or subscribes to datasets." .
+dlp:Team a owl:Class ; rdfs:label "Team" ; skos:definition "A group inside a customer that consumes data." .
+dlp:DataOwner a owl:Class ; rdfs:subClassOf dlp:Party ;
+    rdfs:label "Data owner" ; skos:definition "A company assessing whether its data can become a product." .
+dlp:Marketplace a owl:Class ; rdfs:label "Marketplace" ;
+    skos:definition "An external venue where datasets are listed (e.g. Hugging Face Hub, AWS Data Exchange)." .
+
+# ------------------------------------------------------------------ data products
+dlp:Dataset a owl:Class ; rdfs:label "Dataset" ;
+    skos:definition "A deliverable body of data with a schema, coverage, licence and delivery method." .
+dlp:Field a owl:Class ; rdfs:label "Field" ; skos:definition "A column in a dataset's data dictionary." .
+dlp:Concept a owl:Class ; rdfs:label "Concept" ;
+    skos:definition "A business meaning a field can carry (e.g. ticker, CIK, implied volatility)." .
+dlp:Identifier a owl:Class ; rdfs:subClassOf dlp:Concept ; rdfs:label "Identifier" ;
+    skos:definition "A concept used to join datasets to entities (ticker, CIK, ISIN)." .
+dlp:Measure a owl:Class ; rdfs:subClassOf dlp:Concept ; rdfs:label "Measure" .
+dlp:DataCategory a owl:Class ; rdfs:label "Data category" ;
+    skos:definition "What kind of data a dataset is (options & volatility, reference, filings, transactions…)." .
+dlp:Licence a owl:Class ; rdfs:label "Licence" .
+dlp:UseCase a owl:Class ; rdfs:label "Use case" ;
+    skos:definition "An intended use of data (internal research, AI processing, redistribution, commercial product)." .
+dlp:Metric a owl:Class ; rdfs:label "Metric" ;
+    skos:definition "A governed calculation defined in the semantic layer; the graph only points at it." .
+
+# ------------------------------------------------------------------ the world the data describes
+dlp:Company a owl:Class ; rdfs:label "Company" .
+dlp:Sector a owl:Class ; rdfs:label "Sector" ; skos:note "GICS sector." .
+dlp:Industry a owl:Class ; rdfs:label "Industry" ; skos:note "GICS sub-industry." .
+dlp:EconomicFactor a owl:Class ; rdfs:label "Economic factor" ;
+    skos:definition "A macro driver (rates, energy prices, consumer demand) that moves sectors and calls for data." .
+
+# ------------------------------------------------------------------ commercial
+dlp:Contract a owl:Class ; rdfs:label "Contract" ;
+    skos:definition "A timed subscription giving a customer rights to one or more datasets." .
+dlp:Registration a owl:Class ; rdfs:label "Registration" ;
+    skos:definition "A no-charge acquisition of an openly licensed dataset." .
+dlp:Entitlement a owl:Class ; rdfs:label "Entitlement" ;
+    skos:definition "The derived right of a customer to use a dataset for a use case, from an active contract or registration." .
+
+# ------------------------------------------------------------------ object properties
+dlp:providedBy a owl:ObjectProperty ; rdfs:domain dlp:Dataset ; rdfs:range dlp:Vendor ; rdfs:label "provided by" .
+dlp:listedOn a owl:ObjectProperty ; rdfs:domain dlp:Dataset ; rdfs:range dlp:Marketplace ; rdfs:label "listed on" .
+dlp:hasField a owl:ObjectProperty ; rdfs:domain dlp:Dataset ; rdfs:range dlp:Field ; rdfs:label "has field" .
+dlp:means a owl:ObjectProperty ; rdfs:domain dlp:Field ; rdfs:range dlp:Concept ; rdfs:label "means" .
+dlp:inCategory a owl:ObjectProperty ; rdfs:domain dlp:Dataset ; rdfs:range dlp:DataCategory ; rdfs:label "in category" .
+dlp:hasLicence a owl:ObjectProperty ; rdfs:domain dlp:Dataset ; rdfs:range dlp:Licence ; rdfs:label "has licence" .
+dlp:covers a owl:ObjectProperty ; rdfs:domain dlp:Dataset ; rdfs:range dlp:Company ; rdfs:label "covers" .
+dlp:coversSector a owl:ObjectProperty ; rdfs:domain dlp:Dataset ; rdfs:range dlp:Sector ; rdfs:label "covers sector" .
+dlp:inSector a owl:ObjectProperty ; rdfs:domain dlp:Company ; rdfs:range dlp:Sector ; rdfs:label "in sector" .
+dlp:inIndustry a owl:ObjectProperty ; rdfs:domain dlp:Company ; rdfs:range dlp:Industry ; rdfs:label "in industry" .
+dlp:industryOf a owl:ObjectProperty ; rdfs:domain dlp:Industry ; rdfs:range dlp:Sector ; rdfs:label "industry of" .
+dlp:moves a owl:ObjectProperty ; rdfs:domain dlp:EconomicFactor ; rdfs:range dlp:Sector ;
+    rdfs:label "moves" ; skos:note "Sensitivity is carried on a qualified relation (dlp:Sensitivity)." .
+dlp:proxiedBy a owl:ObjectProperty ; rdfs:domain dlp:EconomicFactor ; rdfs:range dlp:DataCategory ;
+    rdfs:label "proxied by" ; skos:definition "Data categories that observe this factor early." .
+dlp:measures a owl:ObjectProperty ; rdfs:domain dlp:Metric ; rdfs:range dlp:Concept ; rdfs:label "measures" .
+dlp:computedFrom a owl:ObjectProperty ; rdfs:domain dlp:Metric ; rdfs:range dlp:Dataset ; rdfs:label "computed from" .
+dlp:derivedFrom a owl:ObjectProperty ; rdfs:domain dlp:Dataset ; rdfs:range dlp:Dataset ; rdfs:label "derived from" .
+dlp:substituteFor a owl:ObjectProperty ; rdfs:domain dlp:Dataset ; rdfs:range dlp:Dataset ; rdfs:label "substitute for" .
+dlp:holder a owl:ObjectProperty ; rdfs:range dlp:Customer ; rdfs:label "holder" .
+dlp:coversDataset a owl:ObjectProperty ; rdfs:range dlp:Dataset ; rdfs:label "covers dataset" .
+dlp:permitsUse a owl:ObjectProperty ; rdfs:range dlp:UseCase ; rdfs:label "permits use" .
+dlp:entitles a owl:ObjectProperty ; rdfs:domain dlp:Entitlement ; rdfs:range dlp:Customer ; rdfs:label "entitles" .
+dlp:toDataset a owl:ObjectProperty ; rdfs:domain dlp:Entitlement ; rdfs:range dlp:Dataset ; rdfs:label "to dataset" .
+dlp:forUse a owl:ObjectProperty ; rdfs:domain dlp:Entitlement ; rdfs:range dlp:UseCase ; rdfs:label "for use" .
+dlp:memberOf a owl:ObjectProperty ; rdfs:domain dlp:Team ; rdfs:range dlp:Customer ; rdfs:label "member of" .
+dlp:consumes a owl:ObjectProperty ; rdfs:domain dlp:Team ; rdfs:range dlp:Dataset ; rdfs:label "consumes" .
+
+# ------------------------------------------------------------------ data properties
+dlp:name a owl:DatatypeProperty ; rdfs:range xsd:string ; rdfs:label "name" .
+dlp:website a owl:DatatypeProperty ; rdfs:range xsd:anyURI ; rdfs:label "website" .
+dlp:sourceUrl a owl:DatatypeProperty ; rdfs:range xsd:anyURI ; rdfs:label "source URL" ;
+    skos:definition "Where an extracted fact came from (OBS-02)." .
+dlp:symbol a owl:DatatypeProperty ; rdfs:domain dlp:Company ; rdfs:range xsd:string ; rdfs:label "ticker symbol" .
+dlp:cik a owl:DatatypeProperty ; rdfs:domain dlp:Company ; rdfs:range xsd:string ; rdfs:label "SEC CIK" .
+dlp:spdxId a owl:DatatypeProperty ; rdfs:domain dlp:Licence ; rdfs:range xsd:string ; rdfs:label "SPDX id" .
+dlp:dataType a owl:DatatypeProperty ; rdfs:domain dlp:Field ; rdfs:range xsd:string ; rdfs:label "data type" .
+dlp:startDate a owl:DatatypeProperty ; rdfs:range xsd:date ; rdfs:label "start date" .
+dlp:endDate a owl:DatatypeProperty ; rdfs:range xsd:date ; rdfs:label "end date" .
+dlp:status a owl:DatatypeProperty ; rdfs:range xsd:string ; rdfs:label "status" .
+dlp:metricName a owl:DatatypeProperty ; rdfs:domain dlp:Metric ; rdfs:range xsd:string ;
+    rdfs:label "semantic-layer metric name" ; skos:definition "The key MetricFlow uses for this metric." .
+dlp:sensitivity a owl:DatatypeProperty ; rdfs:range xsd:decimal ; rdfs:label "sensitivity" .
+
+# Qualified factor → sector relation, so the sensitivity has somewhere to live.
+dlp:Sensitivity a owl:Class ; rdfs:label "Sensitivity" .
+dlp:factor a owl:ObjectProperty ; rdfs:domain dlp:Sensitivity ; rdfs:range dlp:EconomicFactor .
+dlp:sector a owl:ObjectProperty ; rdfs:domain dlp:Sensitivity ; rdfs:range dlp:Sector .

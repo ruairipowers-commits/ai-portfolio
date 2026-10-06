@@ -1,0 +1,67 @@
+# SHACL shapes — the rules instance data must follow before it can enter the knowledge graph (NFR-5).
+# Kept beside the ontology because they describe meaning, not data.
+
+@prefix dlp:  <https://w3id.org/dlp/ontology#> .
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+dlp:VendorShape a sh:NodeShape ;
+    sh:targetClass dlp:Vendor ;
+    sh:property [ sh:path dlp:name ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+    sh:property [ sh:path dlp:website ; sh:maxCount 1 ; sh:nodeKind sh:Literal ;
+                  sh:pattern "^https?://" ; sh:message "Vendor website must be an http(s) URL" ] .
+
+dlp:DatasetShape a sh:NodeShape ;
+    sh:targetClass dlp:Dataset ;
+    sh:property [ sh:path dlp:name ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path dlp:providedBy ; sh:minCount 1 ; sh:maxCount 1 ; sh:class dlp:Vendor ;
+                  sh:message "Every dataset needs exactly one vendor" ] ;
+    sh:property [ sh:path dlp:hasLicence ; sh:minCount 1 ; sh:maxCount 1 ; sh:class dlp:Licence ;
+                  sh:message "Every dataset needs a licence node (use dlp:licence-none when none is declared)" ] ;
+    sh:property [ sh:path dlp:inCategory ; sh:minCount 1 ; sh:class dlp:DataCategory ] ;
+    sh:property [ sh:path dlp:hasField ; sh:class dlp:Field ] .
+
+dlp:FieldShape a sh:NodeShape ;
+    sh:targetClass dlp:Field ;
+    sh:property [ sh:path dlp:name ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path dlp:dataType ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path dlp:means ; sh:maxCount 1 ; sh:class dlp:Concept ] .
+
+dlp:CompanyShape a sh:NodeShape ;
+    sh:targetClass dlp:Company ;
+    sh:property [ sh:path dlp:symbol ; sh:minCount 1 ; sh:maxCount 1 ; sh:pattern "^[A-Z][A-Z.]{0,5}$" ] ;
+    sh:property [ sh:path dlp:inSector ; sh:minCount 1 ; sh:maxCount 1 ; sh:class dlp:Sector ] ;
+    sh:property [ sh:path dlp:cik ; sh:maxCount 1 ; sh:pattern "^[0-9]{1,10}$" ] .
+
+dlp:LicenceShape a sh:NodeShape ;
+    sh:targetClass dlp:Licence ;
+    sh:property [ sh:path dlp:spdxId ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+dlp:ContractShape a sh:NodeShape ;
+    sh:targetClass dlp:Contract ;
+    sh:property [ sh:path dlp:holder ; sh:minCount 1 ; sh:maxCount 1 ; sh:class dlp:Customer ] ;
+    sh:property [ sh:path dlp:coversDataset ; sh:minCount 1 ; sh:class dlp:Dataset ] ;
+    sh:property [ sh:path dlp:startDate ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:date ] ;
+    sh:property [ sh:path dlp:endDate ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:date ] ;
+    sh:sparql [ sh:message "Contract must end after it starts" ;
+                sh:select """SELECT $this WHERE { $this <https://w3id.org/dlp/ontology#startDate> ?s ;
+                                                         <https://w3id.org/dlp/ontology#endDate> ?e .
+                                                 FILTER (?e <= ?s) }""" ] .
+
+dlp:EntitlementShape a sh:NodeShape ;
+    sh:targetClass dlp:Entitlement ;
+    sh:property [ sh:path dlp:entitles ; sh:minCount 1 ; sh:maxCount 1 ; sh:class dlp:Customer ] ;
+    sh:property [ sh:path dlp:toDataset ; sh:minCount 1 ; sh:maxCount 1 ; sh:class dlp:Dataset ] ;
+    sh:property [ sh:path dlp:forUse ; sh:minCount 1 ; sh:class dlp:UseCase ] .
+
+dlp:MetricShape a sh:NodeShape ;
+    sh:targetClass dlp:Metric ;
+    sh:property [ sh:path dlp:metricName ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path dlp:measures ; sh:minCount 1 ; sh:class dlp:Concept ] .
+
+dlp:SensitivityShape a sh:NodeShape ;
+    sh:targetClass dlp:Sensitivity ;
+    sh:property [ sh:path dlp:factor ; sh:minCount 1 ; sh:maxCount 1 ; sh:class dlp:EconomicFactor ] ;
+    sh:property [ sh:path dlp:sector ; sh:minCount 1 ; sh:maxCount 1 ; sh:class dlp:Sector ] ;
+    sh:property [ sh:path dlp:sensitivity ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:minInclusive -1.0 ; sh:maxInclusive 1.0 ] .

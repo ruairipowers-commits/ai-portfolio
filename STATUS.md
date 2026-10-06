@@ -78,6 +78,23 @@ deploy passed, and the post is listed under Personal projects. The demo containe
 - [ ] Hugging Face live assets (`PUZZLE_LIVE_ASSETS=1`) not exercised yet: the Hub licence check and download path
       are untested against the live Hub.
 
+## 0. Build in flight: data-lifecycle-platform (featured)
+
+Spec approved 4 Oct 2026 (`specs/data-lifecycle-platform.yaml`): a data marketplace (vendors, datasets, buyer firms,
+contracts, AI cataloguing, search, compare, monetization, retirement) with the ontology, knowledge graph, semantic
+layer and context layer kept separate. Built so far: `projects/data-lifecycle-platform/ontology/dlp.ttl` and
+`shapes.ttl` only. Next, in order:
+
+- [ ] Check the stack installs together in Python 3.11 (dbt-duckdb + dbt-metricflow, rdflib, pyshacl, pyoxigraph,
+      dagster, fastapi, sqlmodel, mcp, streamlit, huggingface_hub). If MetricFlow fights dbt-duckdb, fall back to
+      dbt semantic-model YAML compiled by a small in-repo compiler and say so in the post.
+- [ ] Confirm the real column names of `gauss314/options-IV-SP500` (Hub viewer) before writing the offline fixture;
+      `jwigginton/index-constituents-sp500` is symbol, security, gics_sector, gics_sub_industry,
+      headquarters_location, date_added, cik, founded. The sandbox can't reach huggingface.co, so `dlp fetch` must
+      be run on the EVO-X1 for the real slices and README numbers.
+- [ ] Then scaffold from altdata-triage and work through the task list: data → four layers → catalog/contracts →
+      AI workflows + adapters → Streamlit app → docs/post → verify.
+
 ## 1. Security fixes on the EVO-X1 (Ruairi's steps)
 
 This repo is public, so the specifics live only in the private scan report on the machine
