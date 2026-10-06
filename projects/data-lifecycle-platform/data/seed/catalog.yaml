@@ -97,6 +97,7 @@ datasets:
     coverage: {asset_class: equity options, region: US, universe: S&P 500}
     identifiers: [v:Ticker]
     listed_on: [huggingface]
+    dictionary_source: "hub:gauss314/options-IV-SP500"        # card features → parsed by code
     custom: {point_in_time: true, trial_available: true, alpha_horizon: days, primary_identifier: symbol}
   - id: ds-constituents
     vendor: v-jwigginton
@@ -113,6 +114,7 @@ datasets:
     coverage: {asset_class: equity, region: US, universe: S&P 500}
     identifiers: [v:Ticker, v:CIK]
     listed_on: [huggingface]
+    dictionary_source: "columns:symbol,security,gics_sector,gics_sub_industry,headquarters_location,date_added,cik,founded"
   - id: ds-edgar-10k
     vendor: v-jlohding
     title: S&P 500 EDGAR 10-K filings
@@ -172,6 +174,7 @@ datasets:
     identifiers: [v:Ticker, v:ISIN]
     listed_on: [snowflake]
     substitute_for: [ds-options-iv]
+    dictionary_source: "openapi:data/seed/sources/northlight_openapi.json"
     custom: {point_in_time: true, trial_available: true, alpha_horizon: days}
   - id: ds-port-congestion
     synthetic: true
@@ -204,6 +207,7 @@ datasets:
     coverage: {asset_class: equity, region: US, sectors: [Consumer Discretionary, Consumer Staples], history_start: "2019-01-01"}
     identifiers: [v:Ticker]
     listed_on: [databricks]
+    dictionary_source: "csv:data/seed/sources/meridian_dictionary.csv"
     custom: {point_in_time: false, alpha_horizon: weeks}
   - id: ds-job-postings
     synthetic: true

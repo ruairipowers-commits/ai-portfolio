@@ -1,0 +1,7 @@
+{"listings": [
+  {"global_name": "GZT0Z1N2L3", "title": "Northlight equity volatility surface", "provider": "Northlight Vol Analytics",
+   "description": "End-of-day implied volatility surfaces for US single names.", "category": "Financial",
+   "is_free": false, "trial": true, "regions": ["AWS_US_EAST_1"], "url": "https://app.snowflake.com/marketplace/listing/GZT0Z1N2L3",
+   "columns": [{"name": "TRADE_DATE", "type": "DATE"}, {"name": "TICKER", "type": "VARCHAR"}, {"name": "TENOR_DAYS", "type": "NUMBER"},
+               {"name": "DELTA", "type": "FLOAT"}, {"name": "IMPLIED_VOL", "type": "FLOAT"}]}
+]}

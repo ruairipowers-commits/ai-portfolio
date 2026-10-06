@@ -29,7 +29,7 @@ PII_PATTERNS = {
     "SSN": r"\b\d{3}-\d{2}-\d{4}\b",
     "CARD": r"\b(?:\d[ -]?){13,16}\b",
 }
-_HIDDEN = re.compile(r"<(script|style)[^>]*>.*?</\1>|<!--.*?-->", re.S | re.I)
+_HIDDEN = re.compile(r"<(script|style|head)[^>]*>.*?</\1>|<!--.*?-->", re.S | re.I)
 _TAG = re.compile(r"<[^>]+>")
 
 

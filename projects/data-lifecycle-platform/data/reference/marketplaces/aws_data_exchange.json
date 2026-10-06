@@ -1,0 +1,6 @@
+{"DataSets": [
+  {"Id": "a1b2c3d4e5f6", "Name": "Tidewater port congestion index", "Origin": "ENTITLED",
+   "OriginDetails": {"ProductId": "prod-tidewater01"}, "Description": "Daily vessel-queue and dwell-time index for 40 container ports.",
+   "AssetType": "S3_SNAPSHOT", "Arn": "arn:aws:dataexchange:us-east-1::data-sets/a1b2c3d4e5f6",
+   "ProviderName": "Tidewater Freight Signals", "Url": "https://aws.amazon.com/marketplace/pp/prodview-tidewater01"}
+]}

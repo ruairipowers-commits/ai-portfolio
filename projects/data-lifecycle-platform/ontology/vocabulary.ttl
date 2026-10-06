@@ -48,7 +48,7 @@ v:PersonalData a dlp:Concept ; skos:prefLabel "personal data" ; skos:altLabel "p
 # ------------------------------------------------------------------ data categories
 v:OptionsVolatility a dlp:DataCategory ; skos:prefLabel "options & volatility" ; skos:altLabel "options", "volatility", "derivatives" .
 v:ReferenceData a dlp:DataCategory ; skos:prefLabel "reference data" ; skos:altLabel "security master", "index constituents" .
-v:Filings a dlp:DataCategory ; skos:prefLabel "regulatory filings" ; skos:altLabel "10-k", "10-q", "sec filings", "edgar" .
+v:Filings a dlp:DataCategory ; skos:prefLabel "regulatory filings" ; skos:altLabel "filings", "10-k", "10-q", "sec filings", "edgar", "annual reports", "quarterly reports" .
 v:Transactions a dlp:DataCategory ; skos:prefLabel "consumer transactions" ; skos:altLabel "card data", "card panel", "spending" .
 v:Shipping a dlp:DataCategory ; skos:prefLabel "shipping & freight" ; skos:altLabel "freight", "logistics", "port", "supply chain" .
 v:Labour a dlp:DataCategory ; skos:prefLabel "labour & hiring" ; skos:altLabel "job postings", "hiring", "employment" .
@@ -76,7 +76,7 @@ v:licence-none a dlp:Licence ; dlp:spdxId "none" ; skos:prefLabel "No licence de
 v:InformationTechnology a dlp:Sector ; skos:prefLabel "Information Technology" ; skos:altLabel "tech", "technology" .
 v:Financials a dlp:Sector ; skos:prefLabel "Financials" ; skos:altLabel "banks", "financial" .
 v:HealthCare a dlp:Sector ; skos:prefLabel "Health Care" ; skos:altLabel "healthcare", "pharma" .
-v:ConsumerDiscretionary a dlp:Sector ; skos:prefLabel "Consumer Discretionary" ; skos:altLabel "retail", "consumer" .
+v:ConsumerDiscretionary a dlp:Sector ; skos:prefLabel "Consumer Discretionary" ; skos:altLabel "retail", "retailers", "consumer" .
 v:ConsumerStaples a dlp:Sector ; skos:prefLabel "Consumer Staples" ; skos:altLabel "staples" .
 v:Energy a dlp:Sector ; skos:prefLabel "Energy" ; skos:altLabel "oil", "oil and gas" .
 v:Industrials a dlp:Sector ; skos:prefLabel "Industrials" ; skos:altLabel "industrial", "transport" .

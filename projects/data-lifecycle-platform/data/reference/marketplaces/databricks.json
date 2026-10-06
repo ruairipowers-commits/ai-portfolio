@@ -1,0 +1,6 @@
+{"listings": [
+  {"id": "dbx-meridian-01", "summary": {"name": "Meridian consumer card panel", "subtitle": "Aggregated, anonymised card spend by merchant",
+   "provider_info": {"name": "Meridian Card Panel"}, "listing_type": "STANDARD", "categories": ["FINANCIAL"],
+   "share": {"name": "meridian_card_panel"}}, "detail": {"pricing_model": "PAID", "file_extensions": ["parquet"]},
+   "url": "https://marketplace.databricks.com/details/dbx-meridian-01"}
+]}

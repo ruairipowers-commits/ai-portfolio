@@ -301,6 +301,7 @@ def seed(settings: Settings | None = None, path=None) -> dict:
         for d in raw["datasets"]:
             d = dict(d)
             d["vendor_id"] = d.pop("vendor")
+            d.pop("dictionary_source", None)          # applied by pipeline.seed_all (parsed by code)
             d["custom"] = validate_custom(s, "dataset", d.get("custom", {}))
             d["status"] = "active" if d.get("hub_id") in (settings["hub"]["options_dataset"],) else "listed"
             s.add(Dataset(**d))
