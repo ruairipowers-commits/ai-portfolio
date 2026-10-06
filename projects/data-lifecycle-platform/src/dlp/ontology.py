@@ -111,25 +111,30 @@ def term(iri_or_curie: str) -> Term | None:
 def resolve(text: str, kinds: set[str] | None = None, whole: bool = False) -> list[Term]:
     """Concepts mentioned in `text`, longest label first, no overlaps. `whole=True` matches a field name, where every
     label word must be in the name (so 'calls_contracts_traded' → options contracts traded)."""
-    norm = f" {_norm(text)} "
-    found: list[tuple[int, Term]] = []
+    norm = _norm(text)
     words = set(norm.split())
+    cands: list[tuple[int, int, int, Term]] = []        # (score, start, end, term)
     for t in terms():
         if kinds and t.kind not in kinds:
             continue
         for lab in t.labels:
-            hit = set(lab.split()) <= words if whole else f" {lab} " in norm
-            if hit:
-                found.append((len(lab.split()) * 100 + len(lab), t))
-                break
-    found.sort(key=lambda x: -x[0])
+            if whole:
+                if set(lab.split()) <= words:
+                    cands.append((len(lab.split()) * 100 + len(lab), 0, 0, t))
+                    break
+                continue
+            for m in re.finditer(rf"(?<![a-z0-9]){re.escape(lab)}(?![a-z0-9])", norm):
+                cands.append((len(lab.split()) * 100 + len(lab), m.start(), m.end(), t))
+    cands.sort(key=lambda c: -c[0])
     if whole:
-        return [found[0][1]] if found else []
-    out, used = [], set()
-    for _, t in found:
-        if t.iri not in used:
-            out.append(t)
-            used.add(t.iri)
+        return [cands[0][3]] if cands else []
+    out, used, spans = [], set(), []
+    for score, a_, b_, t in cands:                       # longest label wins; no overlapping matches
+        if t.iri in used or any(a_ < e and s_ < b_ for s_, e in spans):
+            continue
+        out.append(t)
+        used.add(t.iri)
+        spans.append((a_, b_))
     return out
 
 

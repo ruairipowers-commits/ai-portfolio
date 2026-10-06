@@ -64,6 +64,7 @@ contracts:
   require_contract_for_paid: true
 
 lifecycle:                          # FR-7 / FR-8
+  roi_window_days: 90               # usage and spend are compared over the same window
   retire_if_cost_per_query_above: 150.0
   overlap_threshold: 0.6
 

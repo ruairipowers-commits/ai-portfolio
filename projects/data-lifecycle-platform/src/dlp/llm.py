@@ -5,7 +5,6 @@ SEC-05 (approved providers only), SEC-01 (keys only from the environment).
 """
 from __future__ import annotations
 
-import json
 import os
 import re
 import time
@@ -126,51 +125,6 @@ class Budget:
 
 
 # ---------------------------------------------------------------- providers
-class MockProvider:
-    """Deterministic heuristic 'model' so the project runs offline and CI is free.
-
-    It reads the facts block and applies simple rules; it deliberately does NOT
-    know about injection or policy, so the deterministic guardrails downstream
-    are exercised exactly as they would be with a real model.
-    """
-
-    def complete(self, spec: ModelSpec, system: str, user: str, max_tokens: int) -> tuple[str, int, int]:
-        m = re.search(r"<vendor_facts>\s*(\{.*?\})\s*</vendor_facts>", user, re.S)
-        f = json.loads(m.group(1)) if m else {}
-        score = f.get("rule_score", 0)
-        if f.get("pii_present") and not f.get("license_derived_use"):
-            rec, conf = "REJECT", 0.85
-        elif not f.get("point_in_time", True):
-            rec, conf = "PARK", 0.7
-        elif score >= 70 and f.get("days_stale", 99) <= 14:
-            rec, conf = "PURSUE", 0.8
-        elif score >= 40:
-            rec, conf = "PARK", 0.6
-        else:
-            rec, conf = "REJECT", 0.7
-        cite = ["rule_score", "history_years", "pct_tickers_mapped", "null_rate", "days_stale"]
-        memo = {
-            "vendor_id": f.get("vendor_id", "unknown"),
-            "recommendation": rec,
-            "confidence": conf,
-            "summary": f"{f.get('vendor_name')} ({f.get('category')}): rule score {score}, "
-                       f"{f.get('history_years')}y history, {f.get('pct_tickers_mapped')} of tickers mapped.",
-            "strengths": [s for s, ok in [
-                ("Long history", f.get("history_years", 0) >= 5),
-                ("High ticker mapping", f.get("pct_tickers_mapped", 0) >= 0.85),
-                ("Fresh delivery", f.get("days_stale", 99) <= 14)] if ok],
-            "risks": [s for s, bad in [
-                ("PII present without derived-use license", f.get("pii_present") and not f.get("license_derived_use")),
-                ("History is not point-in-time (look-ahead risk)", not f.get("point_in_time", True)),
-                ("Weak ticker mapping", f.get("pct_tickers_mapped", 1) < 0.7),
-                ("Stale delivery", f.get("days_stale", 0) > 14)] if bad],
-            "evidence": [{"metric": k, "value": f[k]} for k in cite if k in f],
-            "next_steps": ["Human reviewer to confirm recommendation"],
-        }
-        text = json.dumps(memo)
-        return text, estimate_tokens(system + user), estimate_tokens(text)
-
-
 class AnthropicProvider:
     def complete(self, spec, system, user, max_tokens):
         import anthropic  # pip install '.[anthropic]'
@@ -213,7 +167,12 @@ class BedrockProvider:
         return text, resp["usage"]["inputTokens"], resp["usage"]["outputTokens"]
 
 
-PROVIDERS = {"mock": MockProvider, "anthropic": AnthropicProvider, "openai": OpenAIProvider, "bedrock": BedrockProvider}
+def _mock():
+    from .mock import MockProvider   # deterministic offline stand-in (mock.py)
+    return MockProvider()
+
+
+PROVIDERS = {"mock": _mock, "anthropic": AnthropicProvider, "openai": OpenAIProvider, "bedrock": BedrockProvider}
 
 
 class LLMClient:
