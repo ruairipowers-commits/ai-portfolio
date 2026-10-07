@@ -9,9 +9,9 @@ What's in flight, so a new chat can pick up without the old one's history. Newes
 `site/personal/posts/lil-helper.md`. Decisions (5 Oct): personal tier; real iPhone app through TestFlight, Android
 later; services Instacart+, Prime (Whole Foods), Costco; Google Calendar via .ics feed. Verified offline: 48 tests,
 8-week simulation, eval gate 16/16 (must-reject recall 1.00), governance check, apply_access --check, demo and phone
-app (web build at iPhone size) checked in a browser, app typecheck. On branch `spec/lil-helper`, **not pushed**.
+app (web build at iPhone size) checked in a browser, app typecheck. Merged to `main` on 7 October with Ruairi's
+go-ahead.
 
-- [ ] **Push / merge** once Ruairi approves.
 - [ ] **Household server on the EVO-X1:** `docker build -t lil-helper projects/lil-helper` and run with `.env`
       (`HELPER_SECRET` from `openssl rand -hex 32`, `RESEND_API_KEY`, `MAIL_FROM`) and the real
       `config/household.yaml` mounted read-only (never committed). Decide how the phone reaches it: a public
