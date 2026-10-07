@@ -3383,7 +3383,7 @@
     "SEC-06": {
      "status": "partial",
      "mark": "🟡",
-     "how": "Six runtime dependencies (duckdb, httpx, numpy, pandas, pydantic, PyYAML), version-bounded; repo CI runs `pip-audit`, the image check and the security self-assessment.",
+     "how": "Seven runtime dependencies (duckdb, httpx, numpy, pandas, pydantic, PyYAML, pytz), version-bounded; repo CI runs `pip-audit`, the image check and the security self-assessment.",
      "configure": "`pyproject.toml`",
      "options": "Lockfile with hashes"
     },
