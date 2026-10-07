@@ -50,6 +50,7 @@ projects:
   - daily-puzzle            # daily AI puzzle agents (personal project)
   - speaking-coach          # filler-word and transcript coach (personal project)
   - lil-helper              # family meal planner, shopping split, chores, the dog (personal project)
+  - launch-tracker          # every launch to space from public data (personal project)
 
 # Which projects are FEATURED (home page + main blog) and which are smaller PERSONAL projects (listed on the
 # "Personal projects" page, with posts under site/personal/posts/). Every project above is featured unless it's
@@ -61,6 +62,7 @@ personal_projects:
   - daily-puzzle
   - speaking-coach
   - lil-helper
+  - launch-tracker
   - title: Loan default prediction (MIT capstone)
     summary: Which home-equity loans will default, and why — an explainable credit model and a parallel-run rollout plan
     pattern: Classical ML (decision trees, random forests)

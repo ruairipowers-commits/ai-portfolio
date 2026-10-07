@@ -3280,6 +3280,313 @@
      "aliases": []
     }
    ]
+  },
+  {
+   "slug": "launch-tracker",
+   "title": "Launch tracker: every launch to space from public data — missions, payloads, crews, reuse, orbit crowding and the space economy",
+   "name": "Launch tracker",
+   "emoji": "🚀",
+   "status": "built",
+   "built": true,
+   "pattern": "workflow",
+   "domain": "space launch and the space economy (personal interest); anyone curious about launches, and anyone sizing the industry",
+   "risk_tier": "low",
+   "risk_rationale": "Public data, no personal decisions, no money moved. Risks are getting facts wrong (stale or mis-merged records, invented costs or numbers in summaries) and untrusted text (mission descriptions) reaching the model, so numbers come only from SQL, summaries cite row ids and are checked, and descriptions are treated as data.\n",
+   "users": "me, out of curiosity; anyone following launches; anyone sizing the launch market or the sectors around it",
+   "deep_dive": [
+    "DATA-01",
+    "DATA-04",
+    "OBS-02",
+    "SEC-02"
+   ],
+   "stack": {
+    "language": "python",
+    "data": "DuckDB (one file, rebuilt into a copy and swapped in atomically); plain SQL; pandas for bulk inserts (Polars was planned, not needed)",
+    "orchestration": "Prefect flows: refresh-upcoming (hourly, within the 15 req/hour budget), refresh-history (daily), refresh-satcat (daily), snapshot target times (each refresh, for delay measurement)",
+    "llm_access": "registry adapter (mock, anthropic, openai, bedrock, local Ollama on the EVO-X1)",
+    "retrieval": "SQL only (the model gets selected rows, never free text it can't cite)",
+    "ui": "Streamlit — Input (filters, a launch, or a question) → Run (refresh or summarise) → Output (tabs: Upcoming, Launch, Explorer, Dashboard, Economy, Orbit, Audit). Plotly charts, pydeck map of pads. Try to break it: edit a mission description to include instructions, or ask for a cost the data doesn't have. Human step: approve a cost or reference-table entry before it's used.\n",
+    "forecasting": "log-linear fit on annual launch counts (numpy), 80% interval, back-tested on the last three complete years and the error shown",
+    "aws_native": "EventBridge Scheduler + Lambda for refreshes, S3 + Athena for history, Bedrock for summaries, CloudFront for images"
+   },
+   "controls": {
+    "DATA-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Three sources, each with URL, refresh cadence and licence in config. Every row keeps `source` and `fetched_at`; matched launches keep both ids (LL2 id, GCAT tag); every load is a `source_runs` row with request count. Disagreements between sources are kept in `discrepancies` and shown on the launch page.",
+     "configure": "`sources.*`",
+     "options": "OpenLineage events per refresh"
+    },
+    "DATA-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Parsers read columns by name and stop with the real header if a source changes format (tested). Reconciliation checks every detailed past launch matched the history (tested). A summary is built only from a launch that exists, with dates parsed.",
+     "configure": "`sources.*`",
+     "options": "dbt tests on the tables; freshness alerts per source"
+    },
+    "DATA-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "A summary's facts are a whitelist of fields (no description, no image URLs, tested); the description is passed only after screening, and withheld if flagged. Crew names are public mission data; telemetry carries counts and flags only.",
+     "configure": "`guard.*`",
+     "options": "—"
+    },
+    "DATA-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Licences recorded per source (GCAT CC-BY-4.0, credited in the app). Images are displayed only with a recorded licence on the allowed list; \"Unknown\" becomes a link to the source (tested, golden `s06`). SATCAT downloaded at most daily per CelesTrak's usage policy; LL2 within its free-tier limit.",
+     "configure": "`images.allowed_licences`, `sources.*.refresh_hours`",
+     "options": "Licence lookup for Wikimedia images per file"
+    },
+    "DATA-05": {
+     "status": "not_applicable",
+     "mark": "⚪",
+     "how": "No text retrieval corpus; summaries are built from SQL rows.",
+     "configure": "—",
+     "options": "—"
+    },
+    "SEC-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Optional keys (LL2, model providers) only from the environment; `.env` git-ignored; the hosted demo reads none.",
+     "configure": "`.env.example`",
+     "options": "Secrets Manager"
+    },
+    "SEC-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Two layers. Descriptions are scanned, escaped and delimited; if flagged they are withheld from the model. If that layer is off, the guard still rejects a draft that repeats an injected claim (\"this launch failed\") because it contradicts the row (golden `s02`, `s02b`; UI break-it test).",
+     "configure": "`guard.drop_description_on_injection`, `guard.flag_on_injection`",
+     "options": "Llama Guard / Bedrock Guardrails classifier"
+    },
+    "SEC-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "The model has no tools. Writes are the app's own: loads, snapshots, reviews by a named person, audit rows.",
+     "configure": "—",
+     "options": "—"
+    },
+    "SEC-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Strict Pydantic schema; anything else is rejected and replaced by a plain template from the same facts. Summary text is rendered with dollar signs escaped and never executed. Filters are parameterised SQL (injection test).",
+     "configure": "`guardrails.Summary`",
+     "options": "Provider-native structured outputs"
+    },
+    "SEC-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Only `approved: true` models resolve; a local Ollama model keeps everything on the machine.",
+     "configure": "`config/models.yaml`",
+     "options": "—"
+    },
+    "SEC-06": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Six runtime dependencies (duckdb, httpx, numpy, pandas, pydantic, PyYAML), version-bounded; repo CI runs `pip-audit`, the image check and the security self-assessment.",
+     "configure": "`pyproject.toml`",
+     "options": "Lockfile with hashes"
+    },
+    "COST-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Per-call token cap, per-run spend cap and a daily AI budget; unpriced models refused (tested). The LL2 request budget is enforced the same way for the data side.",
+     "configure": "`cost.*`, `sources.ll2.max_requests_per_hour`",
+     "options": "Per-visitor quotas"
+    },
+    "COST-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Tokens, cost and latency per call, purpose and model in `audit.ai_calls`; `launches cost-report` by month, purpose and model.",
+     "configure": "—",
+     "options": "—"
+    },
+    "COST-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Summaries are short (500-token cap) from a small fact set; a small model is enough; local model option at $0. Summaries are only written on request.",
+     "configure": "`llm.max_output_tokens`",
+     "options": "Cache summaries per (launch, prompt hash)"
+    },
+    "COST-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`launches cost-report` compares 30-day spend with the alert threshold and names the reviewer.",
+     "configure": "`cost.monthly_alert_usd`",
+     "options": "Email from the governance console"
+    },
+    "MODEL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Code names aliases only (`summary-primary`, `summary-fallback`, `summary-candidate`).",
+     "configure": "`config/models.yaml`",
+     "options": "LiteLLM router"
+    },
+    "MODEL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`launches eval --alias summary-candidate --baseline summary-primary` gates on thresholds and no regression; `promote` refuses without a passing eval.",
+     "configure": "`eval.*`",
+     "options": "Shadow runs on live summaries"
+    },
+    "MODEL-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "`launches check-models` warns inside the window; dates entered by hand.",
+     "configure": "`governance.deprecation_warning_days`",
+     "options": "Scrape provider deprecation pages"
+    },
+    "MODEL-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Three prompt files (`mission_summary.v1`, `weekly_digest.v1`, `what_changed.v1`); version and hash logged per call (tested).",
+     "configure": "`llm.prompts`",
+     "options": "Prompt registry"
+    },
+    "MODEL-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Retries, then the fallback alias; if a draft fails the guard or the model is down, a plain template from the same facts is shown and labelled. A failed data refresh keeps serving the last good database.",
+     "configure": "`llm.fallback_alias`",
+     "options": "Cross-provider fallback"
+    },
+    "EVAL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Nine cases on the sample, found by query: grounded summary, injection (both layers), cost not public, digest numbers vs SQL, measured slip, unlicensed image, source disagreement, retirement.",
+     "configure": "`evals/golden_set.yaml`",
+     "options": "Cases from live data, frozen weekly"
+    },
+    "EVAL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Case accuracy, citation accuracy (re-checked independently), injection flag recall, cost.",
+     "configure": "`eval.min_*`",
+     "options": "LLM-as-judge for readability"
+    },
+    "EVAL-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Repo and project CI run the tests and `launches all`; project CI runs the eval gate (mock, $0).",
+     "configure": "`.github/workflows/ci.yml`",
+     "options": "Weekly live eval on the local model"
+    },
+    "OBS-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`audit.ai_calls` (model, prompt hash, input hash, tokens, cost, latency, status, flags), `audit.summaries`, `source_runs`, `ll2_requests`.",
+     "configure": "—",
+     "options": "OpenTelemetry spans"
+    },
+    "OBS-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Every accepted summary's citations match the row, every number in it appears in its facts, and outcome and cost claims must agree with the data (tested, golden `s01`, `s04`). Every cost and projection on screen shows its source and date.",
+     "configure": "`guardrails.check`",
+     "options": "Per-sentence source links in the UI"
+    },
+    "OBS-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Audit and source-run rows kept in the database file; a personal project, so a one-year window is configured but not yet enforced by a prune job.",
+     "configure": "`governance.log_retention_days`",
+     "options": "Nightly prune"
+    },
+    "HITL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`risk_tier: low` with the rationale above.",
+     "configure": "`risk_tier`",
+     "options": "—"
+    },
+    "HITL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Every cost row is used only after a named person approves it against its source (UI and `launches approve`); rejections are recorded too.",
+     "configure": "`costs.require_approval`",
+     "options": "Approval for reference and market rows as well"
+    },
+    "HITL-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Reviews are kept and override the file's status; a rejected cost never reappears. Summaries aren't rated yet.",
+     "configure": "`reference_reviews`",
+     "options": "👍/👎 on summaries feeding the golden set"
+    },
+    "HITL-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "See README → *Use-case card*.",
+     "configure": "`README.md`",
+     "options": "—"
+    }
+   },
+   "models": [
+    {
+     "name": "mock-local",
+     "provider": "mock",
+     "model_id": "mock-summary-v1",
+     "kind": "chat",
+     "approved": true,
+     "priced": true,
+     "deprecation_date": null,
+     "aliases": [
+      "summary-primary",
+      "summary-fallback",
+      "summary-candidate"
+     ]
+    },
+    {
+     "name": "local-qwen",
+     "provider": "ollama",
+     "model_id": "qwen3:14b",
+     "kind": "chat",
+     "approved": true,
+     "priced": true,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "claude-haiku",
+     "provider": "anthropic",
+     "model_id": "claude-haiku-4-5-20251001",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "claude-sonnet",
+     "provider": "anthropic",
+     "model_id": "claude-sonnet-5-5",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "openai-default",
+     "provider": "openai",
+     "model_id": "SET-CURRENT-OPENAI-MODEL-ID",
+     "kind": "chat",
+     "approved": false,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "bedrock-claude",
+     "provider": "bedrock",
+     "model_id": "SET-BEDROCK-MODEL-OR-INFERENCE-PROFILE-ID",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    }
+   ]
   }
  ],
  "author": "Ruairi Powers"

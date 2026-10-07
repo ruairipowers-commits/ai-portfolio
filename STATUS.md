@@ -3,6 +3,28 @@
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
 (or delete them) as they're done. Last updated 7 October 2026.
 
+## 0000. Launch tracker (new personal project, built 7 October 2026)
+
+`projects/launch-tracker` + `site/personal/posts/launch-tracker.md` + tech pages (Prefect, Plotly). Every launch from
+Launch Library 2 + GCAT + CelesTrak SATCAT, reconciled in DuckDB; countdowns, reuse, crews, measured slips, cited
+costs (approval required), industry trend, orbit crowding; model summaries checked against the rows. Defaults taken
+(Ruairi didn't answer): suborbital off by default (a setting), no 3D globe. Verified offline on a FICTIONAL sample:
+30 tests, `launches all` 1.5 s, eval 9/9, governance / telemetry / image-deps / access / catalog checks,
+`mkdocs build --strict`, app checked in Chromium (every tab).
+
+- [ ] **Real data:** the sandbox can't reach the sources. On the EVO-X1: `pip install -e ".[ui]" && LAUNCHES_MODE=live
+      launches fetch` (repeat hourly, or `launches refresh-loop`; the history backfill takes a few hours at 15
+      requests/hour). Parsers follow field names checked against the live LL2 API and GCAT docs; the SATCAT header is
+      the documented one but wasn't downloaded (robots.txt blocks automated fetches of records.php; the bulk
+      `pub/satcat.csv` is used). A format change stops the load and prints the real header. Then replace the sample
+      numbers in the README and post.
+- [ ] **Demo host:** `git pull && ./update.sh` builds `Dockerfile.space` (`/launch-tracker/`, 1g). The spec sets
+      `egress: true` (first demo after the console with outbound access) so the background refresher can fetch;
+      optional `LL2_API_KEY` in `.env`. Without egress it serves the sample and says so.
+- [ ] **Costs:** approve or reject the two real entries (NASA OIG SLS/Orion $4.1bn per launch; SpaceX rideshare
+      $6,500/kg, Mar 2023) in the app or `launches approve <id> --reviewer "Ruairi Powers"`; add more with sources.
+- [ ] Not run: Terraform (not installed), Prefect `serve` (flows import-checked only), real models.
+
 ## 000. Lil'Helper (new personal project, built 6 October 2026)
 
 `projects/lil-helper` (Python engine + API + Streamlit demo, and `app/`, the Expo phone app) +

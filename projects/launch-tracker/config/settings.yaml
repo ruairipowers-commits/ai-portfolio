@@ -1,0 +1,81 @@
+# Runtime + governance settings. Every key here is referenced in docs/governance.md.
+use_case: launch-tracker
+risk_tier: low                 # HITL-01: public data, no decisions about people, no money; see the spec's rationale
+workflow:
+  owner: Ruairi Powers
+  purpose: Track every launch to space from public data, with cited AI summaries
+duckdb_path: warehouse/launches.duckdb
+
+mode: fixture                  # fixture (offline, fictional sample) | live (Launch Library 2 + GCAT + SATCAT); env LAUNCHES_MODE
+fixture_clock: "2026-10-07T12:00:00Z"   # the fixture's "now": countdowns and "upcoming" are relative to it
+
+sources:                       # DATA-01: owner, cadence and licence of every source; DATA-04 usage rights
+  ll2:
+    base_url: https://ll.thespacedevs.com/2.3.0
+    dev_url: https://lldev.thespacedevs.com/2.3.0   # stale mirror, no rate limit: for testing the client
+    max_requests_per_hour: 15  # NFR-2: the free tier; the client refuses the 16th (LL2_API_KEY raises it on their side)
+    page_size: 100
+    upcoming_refresh_minutes: 60
+    history_days: 120          # each refresh pulls launches updated in this many days (history before that comes from GCAT)
+    licence: "Free for everyone per The Space Devs; images carry their own licence"
+  gcat:
+    launch_url: https://planet4589.org/space/gcat/tsv/launch/launch.tsv
+    refresh_hours: 24
+    licence: "CC-BY-4.0, Jonathan C. McDowell, planet4589.org/space/gcat"
+  satcat:
+    url: https://celestrak.org/pub/satcat.csv
+    refresh_hours: 24          # CelesTrak's usage policy: don't download more often than the data changes
+    licence: "CelesTrak public data; usage policy at celestrak.org"
+  user_agent: "launch-tracker/0.1 (personal project; github.com/ruairipowers-commits/ai-portfolio)"
+
+include_suborbital: false      # default view: orbital launches only (LL2 tracks some popular suborbital flights too)
+
+images:                        # DATA-04: no licence, no image
+  allowed_licences: ["CC BY", "CC BY-SA", "CC BY 2.0", "CC BY 4.0", "CC BY-SA 4.0", "CC0", "Public Domain",
+                     "NASA Image Use Policy", "Own work (generated)"]
+  show_unknown_licence_as_link: true   # an unlicensed image is a link to its source, never displayed
+
+costs:                         # cost figures come only from data/reference/costs.yaml, approved by a person
+  require_approval: true
+  allow_model_estimates: false # never: a missing cost is "not public"
+
+llm:
+  summary_alias: summary-primary      # MODEL-01
+  fallback_alias: summary-fallback    # MODEL-05
+  max_output_tokens: 500
+  retries: 1
+  prompts:                            # MODEL-04: versioned files, hash logged per call
+    mission: prompts/mission_summary.v1.md
+    digest: prompts/weekly_digest.v1.md
+    changes: prompts/what_changed.v1.md
+
+cost:                                 # COST-01..04
+  max_usd_per_run: 0.20
+  max_input_tokens_per_call: 3000
+  daily_budget_usd: 0.50
+  monthly_alert_usd: 5.00
+  allow_unpriced_models: false
+
+guard:                                # SEC-02, SEC-04, OBS-02
+  max_description_chars: 1500
+  flag_on_injection: true
+  drop_description_on_injection: true # the model then sees only structured facts
+
+analytics:
+  retired_after_months: 18            # heuristic: a rocket with no launch for this long counts as retired (shown as such)
+  forecast_years: 5
+  forecast_fit_years: 10
+  backtest_years: 3
+  shell_km: 50                        # LEO crowding: objects per altitude shell of this width
+  leo_max_km: 2000
+
+eval:                                 # EVAL-02 thresholds; MODEL-02 gate
+  golden_set: evals/golden_set.yaml
+  min_accuracy: 1.0
+  min_citation_accuracy: 1.0
+  min_injection_flag_recall: 1.0
+  max_total_cost_usd: 0.05
+
+governance:
+  deprecation_warning_days: 90        # MODEL-03
+  log_retention_days: 365             # OBS-03: a personal project; no books-and-records duty

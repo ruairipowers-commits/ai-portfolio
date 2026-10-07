@@ -1,0 +1,11 @@
+# Sectors that grow alongside space. Only what a cited source says; extend with more rows (and sources) as you find them.
+basis: "WEF/McKinsey (2024): more than 60% of demand will be driven by supply chain and transportation, food and
+  beverage, defence, retail, consumer goods and lifestyle, and digital communications."
+source_url: https://www.weforum.org/press/2024/04/space-economy-set-to-triple-to-1-8-trillion-by-2035-new-research-reveals/
+entries:
+  - {sector: Supply chain and transportation, layer: reach, how: "Satellite positioning, tracking and connectivity for fleets and cargo", source: wef-mckinsey-2024}
+  - {sector: Food and beverage, layer: reach, how: "Earth observation for crops, yields and weather", source: wef-mckinsey-2024}
+  - {sector: Defence, layer: reach, how: "Communications, observation and navigation for national security", source: wef-mckinsey-2024}
+  - {sector: "Retail, consumer goods and lifestyle", layer: reach, how: "Location services and connectivity built on satellite signals", source: wef-mckinsey-2024}
+  - {sector: Digital communications, layer: reach, how: "Satellite broadband and direct-to-device connectivity", source: wef-mckinsey-2024}
+  - {sector: "Satellites, launch and space services", layer: backbone, how: "Building and launching spacecraft; broadcast, GPS and imagery services", source: wef-mckinsey-2024}

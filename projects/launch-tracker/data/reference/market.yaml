@@ -1,0 +1,13 @@
+# Third-party projections. Shown labelled with who made them; never mixed with this project's own trend fit.
+entries:
+  - id: wef-mckinsey-2024-total
+    metric: Global space economy (USD)
+    values: {2023: 630000000000, 2035: 1800000000000}
+    note: "Backbone (satellites, launch, services such as broadcast, GPS, imagery) plus reach (space technology used
+      by other industries). In 2023: backbone $330bn, reach $300bn."
+    growth_note: "Growing almost twice as fast as global GDP"
+    source: "World Economic Forum with McKinsey & Company, 'Space: The $1.8 Trillion Opportunity for Global Economic Growth'"
+    url: https://www.weforum.org/press/2024/04/space-economy-set-to-triple-to-1-8-trillion-by-2035-new-research-reveals/
+    url2: https://www.mckinsey.com/industries/aerospace-and-defense/our-insights/space-the-1-point-8-trillion-dollar-opportunity-for-global-economic-growth
+    published: 2024-04-08
+    status: approved

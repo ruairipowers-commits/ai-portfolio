@@ -1,6 +1,6 @@
 slug: launch-tracker
 title: "Launch tracker: every launch to space from public data — missions, payloads, crews, reuse, orbit crowding and the space economy"
-status: planned
+status: built
 tier: personal
 domain: space launch and the space economy (personal interest); anyone curious about launches, and anyone sizing the industry
 use_case: >
@@ -89,7 +89,7 @@ views:
 
 stack:
   language: python
-  data: DuckDB (one file) with dbt-free plain SQL models; Polars for parsing GCAT's TSVs and the SATCAT CSV
+  data: DuckDB (one file, rebuilt into a copy and swapped in atomically); plain SQL; pandas for bulk inserts (Polars was planned, not needed)
   orchestration: "Prefect flows: refresh-upcoming (hourly, within the 15 req/hour budget), refresh-history (daily),
     refresh-satcat (daily), snapshot target times (each refresh, for delay measurement)"
   llm_access: registry adapter (mock, anthropic, openai, bedrock, local Ollama on the EVO-X1)
@@ -99,7 +99,7 @@ stack:
     Launch, Explorer, Dashboard, Economy, Orbit, Audit). Plotly charts, pydeck map of pads. Try to break it: edit a
     mission description to include instructions, or ask for a cost the data doesn't have. Human step: approve a cost
     or reference-table entry before it's used.
-  forecasting: "statsforecast (or a log-linear fit) on annual launch counts, with intervals; back-tested on earlier years and the error shown"
+  forecasting: "log-linear fit on annual launch counts (numpy), 80% interval, back-tested on the last three complete years and the error shown"
   aws_native: EventBridge Scheduler + Lambda for refreshes, S3 + Athena for history, Bedrock for summaries, CloudFront for images
 showcases:
   - three public sources reconciled into one model (Launch Library 2 ↔ GCAT ↔ SATCAT by international designator)
@@ -127,8 +127,8 @@ non_functional_requirements:
 governance:
   deep_dive: [DATA-01, DATA-04, OBS-02, SEC-02]
   not_applicable:
-    HITL-02: "no consequential decisions; the only human step is approving cost and reference entries (documented as HITL-03 feedback)"
     DATA-05: "no text retrieval corpus; summaries are built from SQL rows"
+  # HITL-02 is implemented: every cost row is used only after a named person approves it.
 
 synthetic_data:
   description: >
@@ -151,9 +151,14 @@ demo:
   title: Launch tracker
   emoji: "🚀"
   short_description: Every launch to space, with reuse, crews, delays and orbit crowding
+  memory: 1g
+  egress: true      # the background refresher reaches Launch Library 2, GCAT and CelesTrak (read-only GETs, budgeted)
+  env: [LL2_API_KEY]
 links: {repo: "", blog: "personal/launch-tracker"}
 card:
   name: "Launch tracker"
-  problem: "Launch facts are public but scattered, and delays are never measured"
-  pattern: "Workflow"
-  stack: "Prefect, DuckDB, Polars, Streamlit, Plotly"
+  problem: "Launch facts are public but scattered across three sources, and delays are never measured"
+  pattern: "Workflow (SQL computes every number; a model only writes summaries, checked against the rows)"
+  stack: "DuckDB, Prefect, Streamlit, Plotly, Ollama"
+  result: "Every detailed launch reconciled to the history; 9 of 9 eval cases, the injected claim rejected"
+  result_basis: "offline, mock model, fictional sample in the real sources' formats; slips measured on 13 launches"
