@@ -1,7 +1,7 @@
 # Status — open items
 
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
-(or delete them) as they're done. Last updated 6 October 2026.
+(or delete them) as they're done. Last updated 7 October 2026.
 
 ## 000. Lil'Helper (new personal project, built 6 October 2026)
 
@@ -26,6 +26,23 @@ go-ahead.
 - [ ] **Public demo:** `git pull && ./update.sh` builds `Dockerfile.space` (`/lil-helper/`, mock only).
 - [ ] Options documented, not built: push notifications (needs the EAS project id), Google Calendar API push,
       two-adult approval above a spend threshold, automated retention pruning.
+## 000a. Data marketplace & lifecycle platform (featured, built 6 October 2026)
+
+`projects/data-lifecycle-platform` + `site/blog/posts/data-lifecycle-platform.md` + tech pages (MetricFlow,
+Oxigraph/SHACL, Dagster). Ontology, knowledge graph (Oxigraph, SHACL-gated), semantic layer (dbt + MetricFlow on
+DuckDB) and context layer kept apart; vendor/dataset CRUD with custom fields, AI cataloguing, search with economic
+factors, assess/compare, contracts and entitlements, ROI and retirement, monetization, marketplace adapters, REST API,
+read-only MCP server (SDK 2.x), Dagster assets. Verified offline: 43 tests, `dlp all` (22 dbt tests, SHACL conforms,
+19-case eval gate all 1.0), governance check, app checked in Chromium (every workflow).
+
+- [ ] **Real data (Ruairi, on the EVO-X1):** `pip install -e ".[hub]" && dlp fetch && dlp build && dlp all`. The
+      fixture's options column names come from the Hub viewer summary, not a download; `dlp fetch` stops with the real
+      column list if they differ (then fix `semantic/models/staging/stg_options.sql`). Replace the fixture numbers in
+      the README and post (results table, IV–HV test) with the real run.
+- [ ] **Demo host:** `git pull && ./update.sh` builds `Dockerfile.space` (`/data-lifecycle-platform/`, 2g).
+- [ ] **Real model:** point `dlp-candidate` at a priced model, run `dlp eval --alias dlp-candidate --baseline dlp-primary`.
+- [ ] Not run against real services: Snowflake / ADX / Databricks adapters, S3/SFTP feeds, Terraform (`terraform` not
+      installed in the build sandbox, so not even `validate`d).
 
 ## 00. Speaking coach (new personal project, built 5 October 2026)
 
@@ -101,23 +118,6 @@ deploy passed, and the post is listed under Personal projects. The demo containe
       on the EVO-X1, run `puzzle eval --role generator`, and update the post's "What I'd do next" with real pass rates.
 - [ ] Hugging Face live assets (`PUZZLE_LIVE_ASSETS=1`) not exercised yet: the Hub licence check and download path
       are untested against the live Hub.
-
-## 0. Build in flight: data-lifecycle-platform (featured)
-
-Spec approved 4 Oct 2026 (`specs/data-lifecycle-platform.yaml`): a data marketplace (vendors, datasets, buyer firms,
-contracts, AI cataloguing, search, compare, monetization, retirement) with the ontology, knowledge graph, semantic
-layer and context layer kept separate. Built so far: `projects/data-lifecycle-platform/ontology/dlp.ttl` and
-`shapes.ttl` only. Next, in order:
-
-- [ ] Check the stack installs together in Python 3.11 (dbt-duckdb + dbt-metricflow, rdflib, pyshacl, pyoxigraph,
-      dagster, fastapi, sqlmodel, mcp, streamlit, huggingface_hub). If MetricFlow fights dbt-duckdb, fall back to
-      dbt semantic-model YAML compiled by a small in-repo compiler and say so in the post.
-- [ ] Confirm the real column names of `gauss314/options-IV-SP500` (Hub viewer) before writing the offline fixture;
-      `jwigginton/index-constituents-sp500` is symbol, security, gics_sector, gics_sub_industry,
-      headquarters_location, date_added, cik, founded. The sandbox can't reach huggingface.co, so `dlp fetch` must
-      be run on the EVO-X1 for the real slices and README numbers.
-- [ ] Then scaffold from altdata-triage and work through the task list: data → four layers → catalog/contracts →
-      AI workflows + adapters → Streamlit app → docs/post → verify.
 
 ## 1. Security fixes on the EVO-X1 (Ruairi's steps)
 

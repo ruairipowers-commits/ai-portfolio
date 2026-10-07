@@ -1,6 +1,6 @@
 slug: data-lifecycle-platform
 title: "Data marketplace and lifecycle platform: ontology, knowledge graph, semantic layer and context layer, kept apart"
-status: spec-approved
+status: built
 tier: featured
 domain: alternative and market data — a broker/marketplace between data vendors, data owners and investment-firm buyers
 use_case: >
@@ -200,4 +200,6 @@ card:
   name: "Data marketplace & lifecycle platform"
   problem: "Finding, licensing and paying for data runs on spreadsheets"
   pattern: "Agent + platform"
-  stack: "FastAPI, Oxigraph, SHACL, MetricFlow, Dagster, MCP"
+  stack: "dbt + MetricFlow, Oxigraph + SHACL, Dagster, FastAPI, MCP, Streamlit"
+  result: "19 of 19 golden cases, including every injection, licence and entitlement block"
+  result_basis: "grounding 1.00 (every number traced to SQL); 22 dbt tests + SHACL gate the AI; offline fixture data"

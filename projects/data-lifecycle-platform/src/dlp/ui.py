@@ -473,7 +473,10 @@ with t_res:
                 st.warning(f"Contract **{r['contract_id']}** ({', '.join(r['datasets'])}): notice deadline "
                            f"**{r['notice_deadline']}** — {r['days_to_deadline']} days; auto-renew {r['auto_renew']}.")
             st.subheader("Spend, usage and cost per query (semantic layer)")
-            st.dataframe(pd.DataFrame(out["roi"]), hide_index=True, width="stretch")
+            st.dataframe(pd.DataFrame(out["roi"])[["title", "spend_usd", "queries", "cost_per_query", "flags", "window",
+                                                   "query_id"]], hide_index=True, width="stretch",
+                         column_config={"spend_usd": st.column_config.NumberColumn("spend (USD)", format="$%,.0f"),
+                                        "cost_per_query": st.column_config.NumberColumn("cost / query", format="$%.2f")})
             if out.get("candidates"):
                 st.subheader("Retirement and migration candidates")
                 st.dataframe(pd.DataFrame(out["candidates"])[["title", "cost_per_query", "flags", "suggestion"]],
@@ -525,18 +528,20 @@ with t_layers:
         with c[2]:
             st.markdown("**3 · Semantic layer** — governed metrics")
             for mm in p.metrics:
-                st.caption(f"`{mm['query_id']}` {', '.join(mm['metrics'])} by {mm['group_by'] or '—'}")
-                st.code(mm["_sql"], language="sql")
+                st.caption(f"`{mm['query_id']}` {', '.join(mm['metrics'])} by {mm['group_by'] or '—'} — SQL below")
         with c[3]:
             st.markdown("**4 · Context layer** — the packet the model saw")
-            st.json(p.model_view(), expanded=False)
+            st.json(p.model_view(), expanded=2)
             st.caption(f"packet {p.packet_sha()} · {p.token_estimate} tokens · checks {out['res'].checks}")
+        for mm in p.metrics:
+            st.markdown(f"**SQL behind `{mm['query_id']}`** (compiled by MetricFlow, run read-only on DuckDB)")
+            st.code(mm["_sql"], language="sql")
     else:
         st.caption("Run **Ask about our data** to see a question traced through all four layers.")
     st.subheader("Layer contents")
     lc = st.columns(4)
-    lc[0].json(ontology.summary(), expanded=False)
-    lc[1].json(graph.counts(s), expanded=False)
+    lc[0].json(ontology.summary())
+    lc[1].json(graph.counts(s))
     lc[2].dataframe(pd.DataFrame([{"metric": m.name, "concept": ontology.labels_for(m.ontology_iri), "from": m.dataset_id}
                                   for m in semantic.metrics().values()]), hide_index=True)
     lc[3].markdown(f"Context cap **{s['layers']['context_max_tokens']}** tokens; only datasets the firm may send to an "
