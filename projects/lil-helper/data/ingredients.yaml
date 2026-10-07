@@ -1,0 +1,145 @@
+# Ingredient catalog. Fictional prices live in data/prices.yaml (generated); this file is the food facts.
+#   unit      what recipes and prices are measured in
+#   cat       store section; aisle = walking order for an in-store list (lower first)
+#   allergens peanut, tree_nut, dairy, egg, gluten, soy, fish, shellfish, sesame
+#   dog       safe   = OK for a dog plain and cooked, in small amounts (still ask your vet)
+#             toxic  = never for a dog (ASPCA / vet guidance); blocks any dog extra containing it
+#   shelf     days it keeps once bought (drives leftovers in the pantry and replenishment)
+#   staple    pantry item bought occasionally, not per recipe
+ingredients:
+  # produce
+  apples:          {name: apples, unit: each, cat: produce, aisle: 1, dog: safe, shelf: 21}
+  bananas:         {name: bananas, unit: each, cat: produce, aisle: 1, dog: safe, shelf: 5}
+  blueberries:     {name: blueberries, unit: cup, cat: produce, aisle: 1, dog: safe, shelf: 6}
+  strawberries:    {name: strawberries, unit: cup, cat: produce, aisle: 1, shelf: 4}
+  grapes:          {name: grapes, unit: cup, cat: produce, aisle: 1, dog: toxic, shelf: 7}
+  pears:           {name: pears, unit: each, cat: produce, aisle: 1, shelf: 10}
+  lemons:          {name: lemons, unit: each, cat: produce, aisle: 1, shelf: 21}
+  avocado:         {name: avocado, unit: each, cat: produce, aisle: 1, dog: toxic, shelf: 4}
+  carrots:         {name: carrots, unit: lb, cat: produce, aisle: 2, dog: safe, shelf: 21}
+  celery:          {name: celery, unit: each, cat: produce, aisle: 2, shelf: 14}
+  onion:           {name: yellow onion, unit: each, cat: produce, aisle: 2, dog: toxic, shelf: 30}
+  garlic:          {name: garlic, unit: each, cat: produce, aisle: 2, dog: toxic, shelf: 30}
+  scallions:       {name: scallions, unit: each, cat: produce, aisle: 2, dog: toxic, shelf: 7}
+  potatoes:        {name: potatoes, unit: lb, cat: produce, aisle: 2, shelf: 30}
+  sweet_potatoes:  {name: sweet potatoes, unit: lb, cat: produce, aisle: 2, dog: safe, shelf: 21}
+  butternut_squash: {name: butternut squash, unit: each, cat: produce, aisle: 2, dog: safe, shelf: 30}
+  pumpkin:         {name: pie pumpkin, unit: each, cat: produce, aisle: 2, dog: safe, shelf: 30}
+  broccoli:        {name: broccoli, unit: lb, cat: produce, aisle: 2, shelf: 6}
+  green_beans:     {name: green beans, unit: lb, cat: produce, aisle: 2, dog: safe, shelf: 6}
+  spinach:         {name: baby spinach, unit: oz, cat: produce, aisle: 2, shelf: 5}
+  kale:            {name: kale, unit: each, cat: produce, aisle: 2, shelf: 6}
+  lettuce:         {name: romaine, unit: each, cat: produce, aisle: 2, shelf: 6}
+  tomatoes:        {name: tomatoes, unit: lb, cat: produce, aisle: 2, shelf: 6}
+  cherry_tomatoes: {name: cherry tomatoes, unit: cup, cat: produce, aisle: 2, shelf: 6}
+  cucumber:        {name: cucumber, unit: each, cat: produce, aisle: 2, dog: safe, shelf: 7}
+  zucchini:        {name: zucchini, unit: each, cat: produce, aisle: 2, dog: safe, shelf: 6}
+  bell_pepper:     {name: bell pepper, unit: each, cat: produce, aisle: 2, shelf: 7}
+  corn:            {name: sweet corn, unit: each, cat: produce, aisle: 2, shelf: 3}
+  asparagus:       {name: asparagus, unit: lb, cat: produce, aisle: 2, shelf: 4}
+  brussels_sprouts: {name: brussels sprouts, unit: lb, cat: produce, aisle: 2, shelf: 7}
+  mushrooms:       {name: mushrooms, unit: oz, cat: produce, aisle: 2, shelf: 5}
+  cilantro:        {name: cilantro, unit: each, cat: produce, aisle: 2, shelf: 5}
+  basil:           {name: basil, unit: each, cat: produce, aisle: 2, shelf: 4}
+  ginger:          {name: ginger, unit: oz, cat: produce, aisle: 2, shelf: 21}
+  cranberries:     {name: fresh cranberries, unit: cup, cat: produce, aisle: 1, shelf: 21}
+  # meat & fish
+  chicken_breast:  {name: chicken breast, unit: lb, cat: meat, aisle: 6, dog: safe, shelf: 2}
+  chicken_thighs:  {name: chicken thighs, unit: lb, cat: meat, aisle: 6, shelf: 2}
+  whole_chicken:   {name: whole chicken, unit: each, cat: meat, aisle: 6, shelf: 2}
+  ground_beef:     {name: ground beef, unit: lb, cat: meat, aisle: 6, shelf: 2}
+  ground_turkey:   {name: ground turkey, unit: lb, cat: meat, aisle: 6, dog: safe, shelf: 2}
+  pork_tenderloin: {name: pork tenderloin, unit: lb, cat: meat, aisle: 6, shelf: 3}
+  bacon:           {name: bacon, unit: oz, cat: meat, aisle: 6, shelf: 10}
+  sausage:         {name: Italian sausage, unit: lb, cat: meat, aisle: 6, shelf: 3}
+  turkey_slices:   {name: sliced turkey, unit: oz, cat: deli, aisle: 5, shelf: 5}
+  salmon:          {name: salmon fillet, unit: lb, cat: fish, aisle: 6, allergens: [fish], dog: safe, shelf: 2}
+  cod:             {name: cod fillet, unit: lb, cat: fish, aisle: 6, allergens: [fish], shelf: 2}
+  shrimp:          {name: shrimp, unit: lb, cat: fish, aisle: 6, allergens: [shellfish], shelf: 2}
+  # dairy & eggs
+  eggs:            {name: eggs, unit: each, cat: dairy, aisle: 7, allergens: [egg], dog: safe, shelf: 28}
+  milk:            {name: milk, unit: cup, cat: dairy, aisle: 7, allergens: [dairy], shelf: 10}
+  butter:          {name: butter, unit: tbsp, cat: dairy, aisle: 7, allergens: [dairy], shelf: 60, staple: true}
+  yogurt:          {name: plain yogurt, unit: cup, cat: dairy, aisle: 7, allergens: [dairy], dog: safe, shelf: 14}
+  cheddar:         {name: cheddar, unit: oz, cat: dairy, aisle: 7, allergens: [dairy], shelf: 30}
+  mozzarella:      {name: mozzarella, unit: oz, cat: dairy, aisle: 7, allergens: [dairy], shelf: 14}
+  parmesan:        {name: parmesan, unit: oz, cat: dairy, aisle: 7, allergens: [dairy], shelf: 60}
+  feta:            {name: feta, unit: oz, cat: dairy, aisle: 7, allergens: [dairy], shelf: 21}
+  cream_cheese:    {name: cream cheese, unit: oz, cat: dairy, aisle: 7, allergens: [dairy], shelf: 21}
+  tofu:            {name: firm tofu, unit: oz, cat: dairy, aisle: 7, allergens: [soy], shelf: 10}
+  # bakery & grains
+  bread:           {name: whole wheat bread, unit: slice, cat: bakery, aisle: 3, allergens: [gluten], shelf: 7}
+  tortillas:       {name: flour tortillas, unit: each, cat: bakery, aisle: 3, allergens: [gluten], shelf: 14}
+  corn_tortillas:  {name: corn tortillas, unit: each, cat: bakery, aisle: 3, shelf: 14}
+  pizza_dough:     {name: pizza dough, unit: each, cat: bakery, aisle: 3, allergens: [gluten], shelf: 4}
+  bagels:          {name: bagels, unit: each, cat: bakery, aisle: 3, allergens: [gluten], shelf: 5}
+  pasta:           {name: pasta, unit: oz, cat: pantry, aisle: 4, allergens: [gluten], shelf: 365}
+  gf_pasta:        {name: gluten-free pasta, unit: oz, cat: pantry, aisle: 4, shelf: 365}
+  rice:            {name: brown rice, unit: cup, cat: pantry, aisle: 4, dog: safe, shelf: 365}
+  quinoa:          {name: quinoa, unit: cup, cat: pantry, aisle: 4, shelf: 365}
+  oats:            {name: rolled oats, unit: cup, cat: pantry, aisle: 4, dog: safe, shelf: 365}
+  flour:           {name: flour, unit: cup, cat: pantry, aisle: 4, allergens: [gluten], shelf: 365, staple: true}
+  granola:         {name: granola, unit: cup, cat: pantry, aisle: 4, allergens: [tree_nut], shelf: 60}
+  pancake_mix:     {name: pancake mix, unit: cup, cat: pantry, aisle: 4, allergens: [gluten, egg, dairy], shelf: 180}
+  breadcrumbs:     {name: panko, unit: cup, cat: pantry, aisle: 4, allergens: [gluten], shelf: 180}
+  # pantry
+  olive_oil:       {name: olive oil, unit: tbsp, cat: pantry, aisle: 4, shelf: 365, staple: true}
+  black_beans:     {name: black beans, unit: can, cat: pantry, aisle: 4, shelf: 730}
+  chickpeas:       {name: chickpeas, unit: can, cat: pantry, aisle: 4, shelf: 730}
+  lentils:         {name: lentils, unit: cup, cat: pantry, aisle: 4, shelf: 365}
+  canned_tomatoes: {name: crushed tomatoes, unit: can, cat: pantry, aisle: 4, shelf: 730}
+  marinara:        {name: marinara sauce, unit: cup, cat: pantry, aisle: 4, shelf: 365}
+  chicken_broth:   {name: chicken broth, unit: cup, cat: pantry, aisle: 4, shelf: 365}
+  pumpkin_puree:   {name: pumpkin puree, unit: can, cat: pantry, aisle: 4, dog: safe, shelf: 730}
+  peanut_butter:   {name: peanut butter, unit: tbsp, cat: pantry, aisle: 4, allergens: [peanut], shelf: 180}
+  almond_butter:   {name: almond butter, unit: tbsp, cat: pantry, aisle: 4, allergens: [tree_nut], shelf: 180}
+  sunbutter:       {name: sunflower seed butter, unit: tbsp, cat: pantry, aisle: 4, shelf: 180}
+  jam:             {name: strawberry jam, unit: tbsp, cat: pantry, aisle: 4, shelf: 180}
+  honey:           {name: honey, unit: tbsp, cat: pantry, aisle: 4, shelf: 730, staple: true}
+  maple_syrup:     {name: maple syrup, unit: tbsp, cat: pantry, aisle: 4, shelf: 365}
+  soy_sauce:       {name: soy sauce, unit: tbsp, cat: pantry, aisle: 4, allergens: [soy, gluten], shelf: 365, staple: true}
+  tamari:          {name: tamari (gluten-free), unit: tbsp, cat: pantry, aisle: 4, allergens: [soy], shelf: 365}
+  sesame_oil:      {name: sesame oil, unit: tbsp, cat: pantry, aisle: 4, allergens: [sesame], shelf: 365}
+  curry_paste:     {name: red curry paste, unit: tbsp, cat: pantry, aisle: 4, allergens: [shellfish], shelf: 180}
+  coconut_milk:    {name: coconut milk, unit: can, cat: pantry, aisle: 4, shelf: 730}
+  pesto:           {name: basil pesto, unit: tbsp, cat: pantry, aisle: 4, allergens: [tree_nut, dairy], shelf: 30}
+  salsa:           {name: salsa, unit: cup, cat: pantry, aisle: 4, shelf: 30}
+  taco_seasoning:  {name: taco seasoning, unit: tbsp, cat: pantry, aisle: 4, shelf: 365}
+  walnuts:         {name: walnuts, unit: cup, cat: pantry, aisle: 4, allergens: [tree_nut], shelf: 120}
+  raisins:         {name: raisins, unit: cup, cat: pantry, aisle: 4, dog: toxic, shelf: 180}
+  chocolate_chips: {name: chocolate chips, unit: cup, cat: pantry, aisle: 4, allergens: [dairy], dog: toxic, shelf: 365}
+  # frozen
+  frozen_peas:     {name: frozen peas, unit: cup, cat: frozen, aisle: 8, dog: safe, shelf: 180}
+  frozen_berries:  {name: frozen berries, unit: cup, cat: frozen, aisle: 8, shelf: 180}
+  frozen_dumplings: {name: frozen dumplings, unit: each, cat: frozen, aisle: 8, allergens: [gluten, soy], shelf: 180}
+  # pet
+  dog_food:        {name: dry dog food, unit: cup, cat: pet, aisle: 9, shelf: 120}
+  dog_treats:      {name: dog treats, unit: each, cat: pet, aisle: 9, shelf: 180}
+
+# Hidden sources: words in a recipe or ingredient name that mean an allergen even when the ingredient isn't listed
+# with it (a model's suggestion, a store's product name). Matched as whole words, case-insensitive.
+hidden_allergens:
+  peanut:    [peanut, peanuts, satay, groundnut, "pad thai", "kung pao", "monkey bread"]
+  tree_nut:  [almond, almonds, walnut, walnuts, pecan, pecans, cashew, cashews, pistachio, hazelnut, pesto,
+              "pine nut", "pine nuts", praline, marzipan, nutella, macadamia]
+  dairy:     [milk, butter, cheese, cream, yogurt, ghee, whey, casein, alfredo, ricotta, parmesan, mozzarella]
+  egg:       [egg, eggs, mayonnaise, mayo, aioli, meringue, frittata, quiche, carbonara]
+  gluten:    [wheat, flour, bread, pasta, couscous, barley, rye, seitan, breadcrumbs, panko, tortilla, noodles]
+  soy:       [soy, tofu, edamame, miso, tempeh, tamari]
+  fish:      [salmon, cod, tuna, anchovy, anchovies, "fish sauce", worcestershire, tilapia, halibut]
+  shellfish: [shrimp, prawn, prawns, crab, lobster, scallop, scallops, "curry paste", "oyster sauce"]
+  sesame:    [sesame, tahini, hummus, "everything bagel", "everything seasoning"]
+
+# Never for a dog, in any amount, cooked or not (ASPCA / vet guidance). Words, matched as whole words.
+dog_toxic_words: [grape, grapes, raisin, raisins, sultana, currant, onion, onions, garlic, chive, chives, leek, leeks,
+                  scallion, scallions, shallot, chocolate, cocoa, xylitol, macadamia, avocado, alcohol, wine, beer,
+                  coffee, caffeine, "cooked bones", "nutmeg"]
+
+# Phrases that look like an allergen word but aren't (removed before matching): coconut milk isn't dairy,
+# peanut butter isn't dairy, gluten-free pasta isn't gluten. Over-flagging is the safe side; these keep it sane.
+hidden_exceptions:
+  dairy:  ["peanut butter", "almond butter", "seed butter", "sunflower butter", "sunbutter", "sunflower seed butter", "nut butter", "coconut milk",
+           "oat milk", "almond milk", "soy milk", "coconut cream", "cream of tartar", "cocoa butter", "apple butter",
+           "butternut"]
+  gluten: ["gluten free", "gluten free pasta", "gluten free bread", "corn tortillas", "rice noodles"]
+  egg:    ["eggplant", "egg free"]

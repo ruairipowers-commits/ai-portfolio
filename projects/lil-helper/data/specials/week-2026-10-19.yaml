@@ -1,0 +1,187 @@
+week_of: '2026-10-19'
+valid_to: '2026-10-25'
+items:
+- store: whole_foods
+  ingredient: sweet_potatoes
+  brand: 365 by Whole Foods
+  pack: 3
+  price: 3.82
+  regular: 4.78
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: potatoes
+  brand: 365 by Whole Foods
+  pack: 5
+  price: 3.8
+  regular: 5.43
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: broccoli
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 2.3
+  regular: 2.71
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: pancake_mix
+  brand: 365 by Whole Foods
+  pack: 6
+  price: 4.85
+  regular: 5.71
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: chickpeas
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 1.02
+  regular: 1.45
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: ground_beef
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 4.22
+  regular: 7.03
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: walnuts
+  brand: 365 by Whole Foods
+  pack: 2
+  price: 5.99
+  regular: 9.99
+  source: flyer
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: cheddar
+  brand: 365 by Whole Foods
+  pack: 8
+  price: 2.9
+  regular: 3.86
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: brussels_sprouts
+  brand: Kirkland Signature
+  pack: 4
+  price: 9.04
+  regular: 10.63
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: carrots
+  brand: Kirkland Signature
+  pack: 8
+  price: 5.85
+  regular: 8.36
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: apples
+  brand: Kirkland Signature
+  pack: 24
+  price: 9.64
+  regular: 13.77
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: bacon
+  brand: Kirkland Signature
+  pack: 48
+  price: 12.76
+  regular: 18.23
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: chicken_thighs
+  brand: Kirkland Signature
+  pack: 8
+  price: 18.71
+  regular: 23.39
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: pesto
+  brand: Kirkland Signature
+  pack: 48
+  price: 19.09
+  regular: 23.86
+  source: flyer
+  confirmed_by: demo
+- store: costco
+  ingredient: bagels
+  brand: Kirkland Signature
+  pack: 24
+  price: 12.1
+  regular: 15.12
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: kale
+  brand: Stop & Shop
+  pack: 1
+  price: 2.13
+  regular: 2.51
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: lettuce
+  brand: Stop & Shop
+  pack: 1
+  price: 1.62
+  regular: 2.16
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: potatoes
+  brand: Stop & Shop
+  pack: 5
+  price: 3.57
+  regular: 4.76
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: soy_sauce
+  brand: Stop & Shop
+  pack: 30
+  price: 3.52
+  regular: 4.69
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: corn
+  brand: Stop & Shop
+  pack: 4
+  price: 1.74
+  regular: 2.9
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: tortillas
+  brand: Stop & Shop
+  pack: 10
+  price: 2.87
+  regular: 3.82
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: pasta
+  brand: Stop & Shop
+  pack: 16
+  price: 1.34
+  regular: 1.79
+  source: flyer
+  confirmed_by: demo
+- store: stop_and_shop
+  ingredient: yogurt
+  brand: Stop & Shop
+  pack: 4
+  price: 3.38
+  regular: 4.51
+  source: flyer
+  confirmed_by: demo

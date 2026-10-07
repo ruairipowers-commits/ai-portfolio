@@ -1,0 +1,27 @@
+# EVAL-03 / SEC-06: every push runs the Python tests, a 4-week offline simulation, the eval gate (mock model, $0),
+# the phone app's typecheck and a dependency scan.
+name: ci
+on: [push, pull_request]
+permissions: {contents: read}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env: {GOVERNANCE_TELEMETRY: "off"}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: sudo apt-get update && sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0
+      - run: pip install -e ".[ui,dev]" pip-audit
+      - run: pytest -q
+      - run: helper simulate --weeks 4 && helper eval
+      - run: pip-audit --skip-editable || true   # report-only; make blocking once triaged
+  app:
+    runs-on: ubuntu-latest
+    defaults: {run: {working-directory: app}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "22", cache: npm, cache-dependency-path: app/package-lock.json}
+      - run: npm ci
+      - run: npx tsc --noEmit

@@ -1,0 +1,32 @@
+# Local harvest months for the US Northeast (CT, NY, MA, NJ …). Approximate; a farm stand will know better.
+# Ingredients not listed are treated as available all year (store-bought). Add a file per region and set
+# household.region in the household file.
+region: northeast-us
+label: US Northeast
+peak_months:
+  apples: [8, 9, 10, 11]
+  pears: [8, 9, 10]
+  butternut_squash: [9, 10, 11, 12]
+  pumpkin: [9, 10, 11]
+  sweet_potatoes: [9, 10, 11, 12]
+  brussels_sprouts: [9, 10, 11, 12]
+  kale: [5, 6, 9, 10, 11]
+  cranberries: [10, 11, 12]
+  carrots: [7, 8, 9, 10]
+  potatoes: [8, 9, 10]
+  broccoli: [6, 9, 10]
+  green_beans: [7, 8, 9]
+  tomatoes: [7, 8, 9]
+  cherry_tomatoes: [7, 8, 9]
+  corn: [7, 8, 9]
+  zucchini: [6, 7, 8, 9]
+  cucumber: [7, 8, 9]
+  bell_pepper: [8, 9]
+  basil: [7, 8, 9]
+  strawberries: [6, 7]
+  blueberries: [7, 8]
+  asparagus: [4, 5, 6]
+  spinach: [4, 5, 6, 9, 10]
+  lettuce: [5, 6, 9, 10]
+# Out of season these cost more and taste worse; the planner avoids recipes that lean on them.
+out_of_season_penalty: true

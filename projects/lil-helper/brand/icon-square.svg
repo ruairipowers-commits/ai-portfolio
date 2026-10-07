@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Lil'Helper">
+  <title>Lil'Helper</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFF6E0"/><stop offset="1" stop-color="#FFE3B3"/>
+    </linearGradient>
+    <radialGradient id="apple" cx="0.38" cy="0.32" r="0.75">
+      <stop offset="0" stop-color="#FF7A5C"/><stop offset="0.6" stop-color="#F0452F"/><stop offset="1" stop-color="#C8301E"/>
+    </radialGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8BD45A"/><stop offset="1" stop-color="#3E9E3A"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <!-- stem + leaf -->
+  <path d="M520 250 C 522 210, 540 180, 566 160" fill="none" stroke="#6B4423" stroke-width="30" stroke-linecap="round"/>
+  <path d="M548 236 C 600 150, 720 140, 770 190 C 720 270, 610 290, 548 236 Z" fill="url(#leaf)"/>
+  <path d="M570 226 C 630 200, 690 190, 740 196" fill="none" stroke="#2F7D2C" stroke-width="10" stroke-linecap="round" opacity=".6"/>
+  <!-- apple body -->
+  <path d="M512 300 C 450 250, 300 250, 240 360 C 175 480, 205 650, 290 750 C 360 832, 440 860, 512 820
+           C 584 860, 664 832, 734 750 C 819 650, 849 480, 784 360 C 724 250, 574 250, 512 300 Z" fill="url(#apple)"/>
+  <!-- shine -->
+  <ellipse cx="340" cy="420" rx="46" ry="78" transform="rotate(-28 340 420)" fill="#fff" opacity=".35"/>
+  <!-- face -->
+  <ellipse cx="420" cy="540" rx="30" ry="40" fill="#3A1F14"/>
+  <ellipse cx="604" cy="540" rx="30" ry="40" fill="#3A1F14"/>
+  <circle cx="430" cy="526" r="10" fill="#fff"/><circle cx="614" cy="526" r="10" fill="#fff"/>
+  <ellipse cx="350" cy="620" rx="46" ry="28" fill="#FF9E9E" opacity=".75"/>
+  <ellipse cx="674" cy="620" rx="46" ry="28" fill="#FF9E9E" opacity=".75"/>
+  <path d="M440 640 Q 512 712 584 640" fill="none" stroke="#3A1F14" stroke-width="22" stroke-linecap="round"/>
+</svg>

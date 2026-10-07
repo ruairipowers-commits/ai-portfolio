@@ -1,0 +1,41 @@
+# Stores and how you can get groceries from each. Fees, minimums and trip times are EXAMPLES for the fictional
+# household: set your own (they vary by plan, area and month). `verified` is when you last checked them.
+#   modes      in_store | pickup | delivery; each has a fee, a minimum order, minutes of your time, and the service
+#   markup     some services charge more per item than the shelf price (e.g. 0.15 = 15%)
+#   handoff    how the list leaves Lil'Helper: instacart (a shopping-list link), amazon (a shareable list),
+#              print (aisle-ordered list for the store), reminders (Apple Reminders via the share sheet)
+stores:
+  whole_foods:
+    name: Whole Foods
+    verified: null
+    modes:
+      in_store: {minutes: 35, fee: 0}
+      pickup:   {minutes: 12, fee: 0, minimum: 35, needs: amazon_prime, handoff: amazon}
+      delivery: {minutes: 3, fee: 9.95, minimum: 35, needs: amazon_prime, handoff: amazon}
+    handoff: print
+  trader_joes:
+    name: Trader Joe's
+    verified: null
+    modes:
+      in_store: {minutes: 40, fee: 0}     # Trader Joe's doesn't sell online or through delivery apps
+    handoff: print
+  costco:
+    name: Costco
+    verified: null
+    needs: costco                          # membership
+    bulk: true                             # big packs: cheaper per unit, but leftovers must keep (shelf life)
+    modes:
+      in_store: {minutes: 60, fee: 0}
+      delivery: {minutes: 3, fee: 3.99, minimum: 35, markup: 0.15, service: instacart, handoff: instacart}
+    handoff: print
+  stop_and_shop:
+    name: Stop & Shop
+    verified: null
+    modes:
+      in_store: {minutes: 30, fee: 0}
+      pickup:   {minutes: 10, fee: 2.95, minimum: 30}
+      delivery: {minutes: 3, fee: 3.99, minimum: 35, markup: 0.10, service: instacart, handoff: instacart}
+    handoff: print
+
+# Shopping more than this many stores in a week costs you more than it saves for most families.
+max_stores_per_week: 3

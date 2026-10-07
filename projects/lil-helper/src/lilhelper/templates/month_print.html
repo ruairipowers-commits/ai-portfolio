@@ -1,0 +1,9 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_print.css"></head><body>
+<header>{{ logo|safe }}<div><h1>Lil’<span>Helper</span> · {{ title }}</h1><div class="sub">{{ household }} — dinners</div></div></header>
+<table class="month">
+<tr>{% for n in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}<th>{{ n }}</th>{% endfor %}</tr>
+{% for wk in weeks %}<tr>{% for d in wk %}<td class="{{ '' if d.month == month else 'out' }}"><div class="d">{{ d.day }}</div>
+{% if d.month == month and d in dinners %}<div class="dn">{{ dinners[d] }}</div>{% endif %}</td>{% endfor %}</tr>{% endfor %}
+</table>
+<div class="foot">Planned weeks show their dinners; blank days aren't planned yet.</div>
+</body></html>

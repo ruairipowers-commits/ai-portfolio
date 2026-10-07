@@ -1,0 +1,85 @@
+# A fictional household for the demo and tests. Your real file is config/household.yaml (git-ignored) or lives
+# in the app's database on your own server; children's names never belong in a public repo.
+household:
+  name: The Rivera family
+  region: northeast-us            # data/season/<region>.yaml
+  week_starts: monday
+  budget_per_week: 260            # groceries incl. the dog, USD; the plan says so if it can't fit
+  time_value_per_hour: 20         # what an hour of your time is worth when trading a trip against a delivery fee
+  planning_minutes_before: 75     # your own estimate of a week's planning + list-making before Lil'Helper (baseline)
+
+people:
+  dana: {name: Dana, age_band: adult, portion: 1.0, allergies: [], diet: [], likes: [salmon_rice_broccoli, roast_chicken_potatoes],
+         dislikes: [], home: [mon, tue, wed, thu, fri, sat, sun], can_cook: true,
+         email: dana@example.com}
+  sam:  {name: Sam, age_band: adult, portion: 1.2, allergies: [], diet: [], likes: [beef_bolognese, chicken_tacos],
+         dislikes: [mushroom_risotto], home: [mon, tue, thu, fri, sat, sun], can_cook: true,
+         email: sam@example.com}
+  leo:  {name: Leo, age: 9, age_band: kid, portion: 0.8, allergies: [peanut], diet: [], likes: [veggie_pizza, quesadillas],
+         dislikes: [shrimp_curry], home: [mon, tue, wed, thu, fri, sat, sun]}
+  ivy:  {name: Ivy, age: 4, age_band: kid, portion: 0.5, allergies: [], diet: [], likes: [mac_and_cheese_broccoli],
+         dislikes: [mushroom_risotto, chickpea_curry], home: [mon, tue, wed, thu, fri, sat, sun]}
+
+pets:
+  maple:
+    name: Maple
+    species: dog
+    weight_kg: 25
+    food: {ingredient: dog_food, cups_per_day: 3.0, brand: "Kirkland Signature (Costco)", bag_cups: 160}
+    treats_per_day: 2
+    kcal_per_day: 1250            # from the food bag / your vet; extras are capped at a share of this
+    extras: true                  # plain, dog-safe bits set aside from family meals (before seasoning)
+    vet_notes: ""                 # anything your vet said to avoid; words here are blocked like the toxic list
+
+meals:                            # which meals to plan; eaters: all | list of people
+  dinner:    {days: [mon, tue, wed, thu, fri, sat, sun], eaters: all}
+  breakfast: {days: [sat, sun], eaters: all}
+  lunch:     {days: [mon, tue, wed, thu, fri], eaters: [leo], label: lunchbox, from_leftovers: false}
+  special_nights:                 # nights that aren't cooked from the plan
+    thu: leftovers                # eat up what's in the fridge (the plan cooks extra earlier in the week)
+
+prep_minutes:                     # max hands-on minutes per meal, by day
+  mon: 30
+  tue: 30
+  wed: 30
+  thu: 20
+  fri: 20
+  sat: 45
+  sun: 90
+batch_day: sun                    # batch recipes can be cooked on this day for a later night
+
+health:                           # preferences, not medical advice
+  min_veg_per_dinner: 1.5         # average vegetable/fruit servings per portion across the week's dinners
+  max_fried_per_week: 1
+  max_processed_per_week: 2
+  min_fish_per_week: 1
+  min_vegetarian_per_week: 2
+  no_repeat_days: 10              # don't repeat a recipe within this many days (uses last week's plan)
+
+brands:                           # per ingredient: prefer a brand/label; ban one; organic only
+  milk: {organic: true}
+  eggs: {organic: true}
+  dog_food: {prefer: "Kirkland Signature"}
+  peanut_butter: {banned: true}   # nut-free house rule; the allergy rule would remove it anyway
+
+stores: [whole_foods, trader_joes, costco, stop_and_shop]
+home_store: whole_foods           # the "before" baseline: everything from here at regular price
+memberships: [instacart_plus, amazon_prime, costco]
+cards: [example_grocery_card]     # names only (benefits in config/money.yaml); never a card number
+
+suggestions:
+  per_week: 2                     # new recipes the model may suggest each week (they must pass every rule)
+
+chores:
+  window_weeks: 4                 # fairness is measured over this many weeks
+  jobs:
+    cook:          {per: dinner, who: can_cook}
+    dishes:        {per: dinner, min_age: 9, not_same_as: cook, kid_max_per_week: 2}
+    set_table:     {per: dinner, min_age: 4}
+    kid_assistant: {per: dinner, kids_only: true, min_age: 4, optional: true}
+    feed_dog:      {per: day, min_age: 7}
+
+outputs:
+  email: {day: sun, time: "08:00", to: [dana@example.com, sam@example.com]}
+  print: {weekly: true, monthly: true}
+  calendar: {kind: google, feed: true}   # subscribe in Google Calendar to the .ics link

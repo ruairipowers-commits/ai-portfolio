@@ -1,0 +1,24 @@
+# Memberships and cards: what they save. EXAMPLES only — benefits change often, so the household enters what
+# its own plans give and the date it checked. Lil'Helper never stores card numbers (anything that looks like one
+# is refused), only a name you'd recognise.
+#   waive_fee      service fees that drop to zero, with the order minimum that unlocks it
+#   pct_back       cash or credit back on spend at matching stores/services (applied to the item total)
+#   monthly_credit a fixed credit you lose if you don't use it (counted once a month, first eligible order)
+memberships:
+  instacart_plus:
+    name: Instacart+
+    verified: null
+    waive_fee: {service: instacart, minimum: 35}
+  amazon_prime:
+    name: Amazon Prime
+    verified: null
+    waive_fee: {store: whole_foods, modes: [pickup], minimum: 35}
+  costco:
+    name: Costco membership
+    verified: null
+    pct_back: {store: costco, pct: 0.0}   # Executive members: set your reward rate here
+cards:
+  example_grocery_card:
+    name: "Example grocery card (3% at supermarkets)"
+    verified: null
+    pct_back: {stores: [whole_foods, trader_joes, stop_and_shop], pct: 0.03}

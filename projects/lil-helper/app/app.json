@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "Lil'Helper",
+    "slug": "lil-helper",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "lilhelper",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF6E0"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.agentls.lilhelper",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.agentls.lilhelper",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#FFF6E0"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Lil'Helper reads store flyers you choose so it can find this week's specials.",
+          "cameraPermission": "Lil'Helper reads store flyers you photograph so it can find this week's specials."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "apiUrl": "http://localhost:8650",
+      "router": {}
+    }
+  }
+}
