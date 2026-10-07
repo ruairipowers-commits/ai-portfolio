@@ -11,8 +11,11 @@ import hmac
 import os
 from datetime import date
 
-from fastapi import Depends, FastAPI, Header, HTTPException
-from fastapi.responses import FileResponse
+try:   # optional surface: not in the demo image; install with  pip install -e ".[api]"
+    from fastapi import Depends, FastAPI, Header, HTTPException
+    from fastapi.responses import FileResponse
+except ImportError as e:
+    raise ImportError("api.py needs the 'api' extra: pip install -e \".[api]\"") from e
 from pydantic import BaseModel
 from sqlmodel import select
 

@@ -8,7 +8,10 @@ from __future__ import annotations
 
 import os
 
-from mcp.server.mcpserver import MCPServer
+try:   # optional surface: not in the demo image; install with  pip install -e ".[mcp]"
+    from mcp.server.mcpserver import MCPServer
+except ImportError as e:
+    raise ImportError("mcp_server.py needs the 'mcp' extra: pip install -e \".[mcp]\"") from e
 from sqlmodel import select
 
 from . import context, graph, licensing, search, semantic, store, telemetry
