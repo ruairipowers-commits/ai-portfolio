@@ -138,9 +138,10 @@ I don't think this is fully solved, and pretending otherwise would undercut ever
 
 ## If you're evaluating someone like me
 
-The commit count won't tell you which reading is true. Questions will:
+The commit count won't tell you which reading is true. Questions will, because anyone can give the first answer,
+but only the person who built or owns the work can give the second:
 
-| Ask | A facade answers… | Someone in command answers… |
+| Ask | The initial, shallow answer | The deeper answer a builder or owner gives |
 |---|---|---|
 | Why is it built this way? | By describing what it does | With the trade-off and the option rejected |
 | What broke last week? | "Nothing" | With the failure, the cause, and the check it became |
