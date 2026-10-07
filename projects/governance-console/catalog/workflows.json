@@ -1469,6 +1469,308 @@
    ]
   },
   {
+   "slug": "data-lifecycle-platform",
+   "title": "Data marketplace and lifecycle platform: ontology, knowledge graph, semantic layer and context layer, kept apart",
+   "name": "Data marketplace & lifecycle",
+   "emoji": "🧭",
+   "status": "built",
+   "built": true,
+   "pattern": "agent",
+   "domain": "alternative and market data — a broker/marketplace between data vendors, data owners and investment-firm buyers",
+   "risk_tier": "medium",
+   "risk_rationale": "Output steers licence, spend and listing decisions, and the platform reads untrusted vendor content. Contracts, catalog publication, listing approvals for data owners and retirements all need a named approver; licence conflicts go to legal; the model has no write tools.\n",
+   "users": "marketplace operator (catalog managers, account managers, legal), buyer firms (heads of data, sourcing analysts, quants, data engineers, finance), data vendors, and data owners exploring monetization\n",
+   "deep_dive": [
+    "DATA-04",
+    "DATA-01",
+    "DATA-03",
+    "SEC-02",
+    "HITL-02"
+   ],
+   "stack": {
+    "language": "python",
+    "operational_store": "SQLModel on SQLite (Postgres via DATABASE_URL), tenant-scoped queries",
+    "api": "FastAPI (CRUD for vendors, datasets, custom fields, customers, contracts; entitlement-checked downloads)",
+    "ontology": "OWL/Turtle (rdflib) + SHACL (pySHACL)",
+    "knowledge_graph": "Oxigraph (embedded, SPARQL)",
+    "semantic_layer": "dbt semantic models + MetricFlow on DuckDB (Snowflake/Athena target documented)",
+    "orchestration": "Dagster (assets: fetch → dbt + tests → SHACL → graph load; feed schedules; renewal checks)",
+    "tools": "Python MCP server (FastMCP) exposing read-only catalog/graph/metric tools to the agent and to outside clients",
+    "llm_access": "registry adapter (mock, anthropic, openai, bedrock)",
+    "retrieval": "graph + metric retrieval plus keyword search over catalog text; no vector store",
+    "ui": "streamlit — Catalog (vendors, datasets, custom fields, links out), Find data (AI search), Assess & compare, Contracts & subscriptions, Integrate (feeds/downloads), Spend & ROI, Monetize, Retire, and \"Four layers\" (one question traced through ontology → graph → semantic layer → context packet → answer). Try to break it: edit a vendor page or dataset card (prompt injection, a licence claim the Hub tag contradicts), ask for an undefined metric, ask as a firm without a contract. Human steps: approve catalog extraction, sign contract, approve listing, approve retirement.\n",
+    "aws_native": "S3, Glue + Athena (dbt-athena), Neptune (SPARQL), Bedrock, RDS Postgres, Dagster on ECS or MWAA, Lake Formation for entitlements, AWS Data Exchange, Budgets + cost-allocation tags"
+   },
+   "controls": {
+    "DATA-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Every landing source is declared in dbt `sources.yml` with owner, licence and the catalog `dataset_id`; dbt's lineage (the same graph the Dagster assets are built from) is written into the knowledge graph as `DataAsset → readsFrom → Dataset`, so `impact()` can answer \"what breaks if this goes\". Extracted catalog fields keep their source URL (`provenance`).",
+     "configure": "`semantic/models/sources.yml`, `graph._lineage`",
+     "options": "OpenLineage events from Dagster; DataHub / Unity Catalog lineage"
+    },
+    "DATA-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "22 dbt tests (unique, not-null, accepted GICS sectors, IV/HV/VIX ranges, one row per symbol-day) plus SHACL validation of the graph. A failed test closes the gate file; `semantic.query()` and therefore every answer refuses to run; a SHACL violation stops the graph load.",
+     "configure": "`data.require_dbt_tests_pass`, `data.require_shacl_conforms`",
+     "options": "Great Expectations / Soda; dbt source freshness as a hard gate"
+    },
+    "DATA-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "The model only ever sees the context packet: metric results and short graph facts for datasets in scope, capped at 4,000 tokens, with no customer ids. Vendor text is PII-redacted before extraction. A data owner's sample with personal-data columns is blocked before any model call.",
+     "configure": "`layers.context_max_tokens`, `data.redact_pii`, `data.pii_columns`, `monetize.block_on_pii`",
+     "options": "Presidio / Comprehend PII detection; column-level masking in the warehouse"
+    },
+    "DATA-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`licensing.py` decides PERMITTED / CONDITIONAL / LEGAL_REVIEW / BLOCKED per dataset, use case and firm from licence tags and active contracts. No licence → legal review; vendor text that contradicts the tag → legal review; a contract that excludes AI processing keeps the data out of every packet. Extraction can never set a licence tag.",
+     "configure": "`licensing.*`, `contracts.*`",
+     "options": "Contract-management system integration; clause extraction from signed PDFs (with legal review)"
+    },
+    "DATA-05": {
+     "status": "not_applicable",
+     "mark": "⚪",
+     "how": "No text retrieval corpus: retrieval is SPARQL over the graph plus governed metric queries. The equivalent hygiene is the ontology version, SHACL and the graph version recorded per build.",
+     "configure": "—",
+     "options": "—"
+    },
+    "SEC-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Keys only from the environment (`.env` git-ignored). API tokens are HMACs of the principal with `DLP_TOKEN_SECRET`; the hosted demo refuses to start the API without it. Bedrock uses IAM.",
+     "configure": "`.env.example`",
+     "options": "Secrets Manager / Vault; OIDC for CI"
+    },
+    "SEC-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Vendor pages, cards, owner descriptions, search needs and questions are scanned, escaped and delimited. Extracted values whose quote comes from injected text are dropped and flagged; the Larkspur page is a live test. Injection in a question is flagged and changes nothing (the packet is built by code).",
+     "configure": "`guardrails.INJECTION_PATTERNS`, `data.max_untrusted_chars`",
+     "options": "Classifier-based screening (Llama Guard / Bedrock Guardrails)"
+    },
+    "SEC-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "The model has no tools. The MCP server exposes six read-only tools, runs as one firm's entitlements and caps calls per session. Every write goes through the approval queue.",
+     "configure": "`DLP_MCP_CUSTOMER`, `DLP_MCP_MAX_CALLS`",
+     "options": "Per-tool OAuth scopes"
+    },
+    "SEC-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Every response is parsed into a Pydantic schema; anything off-contract is rejected and the answer falls back to a plain rendering of the packet. Search plans keep only vocabulary ids; proposed field concepts are re-checked.",
+     "configure": "`schemas.py`",
+     "options": "Provider structured outputs"
+    },
+    "SEC-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Registry `approved:` flag; unapproved models can't be resolved (OpenAI ships disabled).",
+     "configure": "`config/models.yaml`",
+     "options": "Zero-retention agreements; private endpoints"
+    },
+    "SEC-06": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Version-bounded deps, `pip-audit` in CI (report-only), MCP SDK pinned to 2.x.",
+     "configure": "`pyproject.toml`, CI",
+     "options": "Hash-pinned lockfile; SBOM"
+    },
+    "COST-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Per-call token cap, per-action cap ($0.05) and per-run cap ($0.50) checked before every call; the eval run has its own budget. Blocked calls are logged as `budget_exceeded`.",
+     "configure": "`cost.*`, `eval.max_total_cost_usd`",
+     "options": "Gateway budgets per key"
+    },
+    "COST-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`AICall` rows hold tokens and $ per call, purpose, firm, actor and model; `cost-report` splits prod and eval. Data spend is attributed per firm and dataset in the semantic layer (`spend_usd`, `cost_per_query`).",
+     "configure": "—",
+     "options": "Langfuse; cost-allocation tags"
+    },
+    "COST-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Structured sources are parsed by code, not a model; the context packet is small by design; model tiering is one alias change.",
+     "configure": "`models.yaml` aliases",
+     "options": "Prompt caching; batch extraction overnight"
+    },
+    "COST-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Monthly AI spend vs alert with a named reviewer in `cost-report`; firm budgets vs annualised commitments and renewal deadlines in the app and `dlp roi`.",
+     "configure": "`cost.monthly_alert_usd`, `cost.reviewer`, `contracts.renewal_alert_days`",
+     "options": "Slack alerts; AWS Budgets"
+    },
+    "MODEL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Code only uses `dlp-primary` / `dlp-fallback` / `dlp-candidate`.",
+     "configure": "`config/models.yaml`",
+     "options": "LiteLLM router"
+    },
+    "MODEL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`dlp eval --alias dlp-candidate --baseline dlp-primary` fails on thresholds or regression; `promote` refuses without a passing eval on the current prompt hashes.",
+     "configure": "`eval.*`",
+     "options": "Shadow traffic"
+    },
+    "MODEL-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "`dlp models-check` warns inside the window; runbook below. Dates entered by hand.",
+     "configure": "`governance.deprecation_warning_days`",
+     "options": "Scrape provider deprecation pages"
+    },
+    "MODEL-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Five prompts in `prompts/*.v1.md`; version and SHA logged per call; a prompt change invalidates promotion.",
+     "configure": "`llm.prompts`",
+     "options": "Prompt registry"
+    },
+    "MODEL-05": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Retries then `dlp-fallback`; `used_fallback` logged; a failed or ungrounded answer falls back to the packet itself.",
+     "configure": "`llm.fallback_alias`, `llm.retries`",
+     "options": "Cross-provider fallback"
+    },
+    "EVAL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "19 cases: search (incl. economic factors), answers (grounded, undefined metric, not entitled, injection, contract excludes AI), extraction (concept mapping, injection), licences, monetization (PII), retirement.",
+     "configure": "`evals/golden_set.yaml`",
+     "options": "Larger set from reviewer corrections"
+    },
+    "EVAL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Accuracy, schema-valid rate, citation/grounding accuracy, must-escalate recall, total cost, fallback count.",
+     "configure": "`eval.*`",
+     "options": "LLM-as-judge for memo quality"
+    },
+    "EVAL-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "CI runs the tests, `dlp all` and the eval gate on every push (mock, $0).",
+     "configure": "`.github/workflows/ci.yml`",
+     "options": "Scheduled live eval"
+    },
+    "OBS-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "`AICall`: model, prompt version + SHA, input and context hashes, tokens, latency, cost, status, flags and the SQL of every metric query behind an answer. Questions and sources are stored only as hashes.",
+     "configure": "—",
+     "options": "OpenTelemetry GenAI spans"
+    },
+    "OBS-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Every number in an answer must appear in the packet and every citation must be a packet id (metric query id or graph IRI); otherwise the packet is rendered instead. Extracted values must quote their source.",
+     "configure": "`guardrails.ungrounded_numbers`, `guardrails.quotes_missing`",
+     "options": "Span-level attribution"
+    },
+    "OBS-03": {
+     "status": "partial",
+     "mark": "🟡",
+     "how": "Local SQLite with no expiry; retirements leave an archive record; the AWS path sets ~7-year retention.",
+     "configure": "`governance.log_retention_days`",
+     "options": "S3 Object Lock (WORM)"
+    },
+    "HITL-01": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Medium, rationale above.",
+     "configure": "`risk_tier`",
+     "options": "Tier-driven checklist in CI"
+    },
+    "HITL-02": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "One approval queue for extractions, contracts, licence decisions, listings and retirements; a decision needs a named reviewer and is recorded with time and note. Contracts give no entitlement until approved.",
+     "configure": "`catalog.decide`",
+     "options": "Four-eyes approval for contracts above a price"
+    },
+    "HITL-03": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Reviewer edits to an extraction are stored as `Feedback` and counted in every eval report.",
+     "configure": "—",
+     "options": "Auto-add corrections as golden cases"
+    },
+    "HITL-04": {
+     "status": "implemented",
+     "mark": "✅",
+     "how": "README → *Use-case card*.",
+     "configure": "`README.md`",
+     "options": "Model cards per model version"
+    }
+   },
+   "models": [
+    {
+     "name": "mock-local",
+     "provider": "mock",
+     "model_id": "mock-heuristic-v1",
+     "kind": "chat",
+     "approved": true,
+     "priced": true,
+     "deprecation_date": null,
+     "aliases": [
+      "dlp-primary",
+      "dlp-fallback",
+      "dlp-candidate"
+     ]
+    },
+    {
+     "name": "claude-sonnet",
+     "provider": "anthropic",
+     "model_id": "claude-sonnet-5-5",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "claude-haiku",
+     "provider": "anthropic",
+     "model_id": "claude-haiku-4-5-20251001",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "openai-default",
+     "provider": "openai",
+     "model_id": "SET-CURRENT-OPENAI-MODEL-ID",
+     "kind": "chat",
+     "approved": false,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    },
+    {
+     "name": "bedrock-claude",
+     "provider": "bedrock",
+     "model_id": "SET-BEDROCK-MODEL-OR-INFERENCE-PROFILE-ID",
+     "kind": "chat",
+     "approved": true,
+     "priced": false,
+     "deprecation_date": null,
+     "aliases": []
+    }
+   ]
+  },
+  {
    "slug": "site-assistant",
    "title": "Site assistant: search and chat over the portfolio blog with a local model, logged and governed",
    "name": "Ask the portfolio",
