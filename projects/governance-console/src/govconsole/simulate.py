@@ -9,7 +9,7 @@ The 90 days tell a story you can find in the charts:
   - day -38: trade-ops promotes its investigator from a small model to a large one after the eval gate passed;
              cost per investigation roughly triples, the day is flagged as an anomaly and the budget warning trips
   - day -21: an alt-data vendor batch carries prompt-injection text; escalations spike
-  - day -12: the CRO switches research-qa-rag off for a day over a broker-licence question (kill switch);
+  - day -12 (or the next business day): the CRO switches research-qa-rag off for a day over a broker-licence question (kill switch);
              analysts' attempts that day are recorded as blocked, then it is re-enabled
   - last 6 days: an unregistered "pm-notes-summarizer" starts sending events (shadow AI, flagged)
 Incidents follow the same story: the trade-ops spend anomaly and the injection batch were escalated, worked and
@@ -138,7 +138,9 @@ def _research(g: _Gen, d: date, i: int, wf: str) -> None:
     n = g.vol(d, 70, 30, i)
     for u in set(g.rng.sample(users, k=min(len(users), max(1, n // 7)))) if n else []:
         g.add(d, wf, "visit", u)
-    if i == off and n:
+    # first business day from day -12 (traffic is zero at weekends, and the story must not depend on the calendar)
+    if i >= off and n and not getattr(g, "_research_switched", False):
+        g._research_switched = True
         g.changes.append({"ts": g.ts(d, 13, 14), "workflow": wf, "enabled": False, "actor": "cro.office",
                           "reason": "Pending legal review of broker-research licence terms for AI processing"})
         g.changes.append({"ts": g.ts(d + timedelta(days=1), 14, 15),

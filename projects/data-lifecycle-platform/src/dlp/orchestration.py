@@ -7,8 +7,11 @@ need Dagster running; lineage still lands in the graph from the dbt manifest Dag
 """
 from __future__ import annotations
 
-from dagster import (AssetCheckResult, AssetExecutionContext, Definitions, MaterializeResult, ScheduleDefinition,
-                     asset, asset_check, define_asset_job, job, op)
+try:   # optional surface: not in the demo image; install with  pip install -e ".[orchestration]"
+    from dagster import (AssetCheckResult, AssetExecutionContext, Definitions, MaterializeResult, ScheduleDefinition,
+                         asset, asset_check, define_asset_job, job, op)
+except ImportError as e:
+    raise ImportError("orchestration.py needs the 'orchestration' extra: pip install -e \".[orchestration]\"") from e
 
 from . import graph, licensing, pipeline, semantic, store
 from .config import Settings
