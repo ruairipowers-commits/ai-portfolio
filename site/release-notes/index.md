@@ -7,6 +7,14 @@ hide: [navigation]
 
 The big changes to this portfolio, newest first. Each project's repository has the detail in its commit history.
 
+## 6 October 2026
+
+**A new featured project: the [data marketplace & lifecycle platform](../blog/posts/data-lifecycle-platform.md).**
+Vendors, datasets, buyer firms and contracts, with AI for cataloguing, search, assessment and helping companies sell
+their data, on real Hugging Face data. It keeps four layers apart: an ontology for meaning, a knowledge graph for what
+exists, a semantic layer for governed numbers, and a context layer for what a model may see. New technology pages:
+[MetricFlow](../tech/metricflow.md), [Oxigraph and SHACL](../tech/oxigraph.md) and [Dagster](../tech/dagster.md).
+
 ## 5 October 2026
 
 **Open, with credit.** The code is now under the Apache 2.0 licence and the writing under CC BY 4.0, so anyone can

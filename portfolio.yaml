@@ -43,6 +43,7 @@ projects:
   - eod-heartbeat
   - trade-ops-exceptions
   - research-qa-rag
+  - data-lifecycle-platform # data marketplace on four layers: ontology, graph, semantic, context
   - governance-console      # platform: governs the workflows above
   - site-assistant          # the blog's search + chat assistant (personal project)
   - editorial-agents        # topic scout, weekly writer + editor, subscriptions (personal project)

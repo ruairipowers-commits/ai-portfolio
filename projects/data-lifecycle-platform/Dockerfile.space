@@ -1,0 +1,17 @@
+# Hosted demo image (self-host at <demos>/data-lifecycle-platform/, or a Hugging Face Space). Local equivalent:
+#   docker build -f Dockerfile.space -t dlp-demo . && docker run -p 7860:7860 dlp-demo
+# Mock model only: no API keys are needed or read. Each visitor gets a private copy of the catalog, warehouse and graph.
+FROM python:3.11-slim
+RUN useradd -m -u 1000 user && install -d -o user -g user /app
+ENV HOME=/home/user PATH=/home/user/.local/bin:$PATH PYTHONUNBUFFERED=1
+WORKDIR /app
+COPY --chown=user . .
+USER user
+RUN pip install --no-cache-dir --user -e ".[ui]"
+# Baseline every visitor's sandbox is copied from: offline fixture, dbt build + tests, SHACL-validated graph.
+RUN GOVERNANCE_TELEMETRY=off dlp build
+ENV PORTFOLIO_DEMO=1
+EXPOSE 7860
+# Under /data-lifecycle-platform/ the host sets STREAMLIT_SERVER_BASE_URL_PATH, which Streamlit reads itself.
+CMD ["streamlit", "run", "src/dlp/ui.py", "--server.port=7860", "--server.address=0.0.0.0", \
+     "--server.headless=true", "--server.enableXsrfProtection=false", "--server.enableCORS=false"]
