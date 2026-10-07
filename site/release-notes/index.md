@@ -7,6 +7,16 @@ hide: [navigation]
 
 The big changes to this portfolio, newest first. Each project's repository has the detail in its commit history.
 
+## 7 October 2026
+
+**A new personal project: the [launch tracker](../personal/posts/launch-tracker.md).** Every launch to space from
+three free public sources (Launch Library 2, GCAT and CelesTrak), reconciled into one model: countdowns, booster
+reuse, crews and splashdowns, measured delays, success and failure, cited costs, launches by industry with a
+back-tested trend, and how crowded orbit is getting. A model writes short summaries; code checks every number in
+them. New technology pages: [Prefect](../tech/prefect.md) and [Plotly](../tech/plotly.md).
+
+**A new post: [I didn't write most of this site. Here's why I'm still accountable for all of it](../blog/posts/the-ceo-and-the-junior.md).**
+
 ## 6 October 2026
 
 **A new featured project: the [data marketplace & lifecycle platform](../blog/posts/data-lifecycle-platform.md).**

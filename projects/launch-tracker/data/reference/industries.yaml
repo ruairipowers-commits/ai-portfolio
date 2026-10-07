@@ -1,0 +1,19 @@
+# Launch Library 2 mission type → industry. Deterministic, edited by hand, never decided by a model.
+# Unmapped types fall into "other" and are listed on the Economy tab so this file can be extended.
+mission_types:
+  Communications: Communications
+  Earth Science: Earth observation
+  Meteorology: Earth observation
+  Navigation: Navigation
+  Government/Top Secret: Defence & national security
+  Planetary Science: Science & exploration
+  Astrophysics: Science & exploration
+  Heliophysics: Science & exploration
+  Robotic Exploration: Science & exploration
+  Biology: Science & exploration
+  Microgravity Research: Science & exploration
+  Human Exploration: Crewed & stations
+  Resupply: Crewed & stations
+  Tourism: Crewed & stations
+  Test Flight: Technology demonstration
+  Dedicated Rideshare: Rideshare (mixed customers)

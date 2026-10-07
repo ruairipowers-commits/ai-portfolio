@@ -1,0 +1,20 @@
+# Published findings on how crowded orbit is. Shown beside this project's own counts from SATCAT, labelled.
+entries:
+  - id: esa-ser-2025-tracked
+    finding: "About 40,000 objects are tracked by space surveillance networks, of which about 11,000 are active payloads."
+    as_of: end of 2024
+  - id: esa-ser-2025-debris
+    finding: "Over 1.2 million debris objects larger than 1 cm, over 50,000 of them larger than 10 cm (estimated)."
+    as_of: end of 2024
+  - id: esa-ser-2025-550km
+    finding: "Around 550 km altitude there is now the same order of magnitude of threatening debris as active satellites."
+    as_of: end of 2024
+  - id: esa-ser-2025-growth
+    finding: "Even with no more launches, debris would keep growing: fragmentations add objects faster than they re-enter."
+    as_of: end of 2024
+  - id: esa-ser-2025-reentries
+    finding: "Intact satellites or rocket bodies now re-enter more than three times a day on average."
+    as_of: 2024
+source: "ESA Space Environment Report 2025"
+url: https://www.esa.int/Space_Safety/Space_Debris/ESA_Space_Environment_Report_2025
+published: "2025"

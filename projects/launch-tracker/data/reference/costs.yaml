@@ -1,0 +1,35 @@
+# Published costs only. Every row has a source, its date and what kind of figure it is. A person approves each row
+# (in the app's Audit tab, or `launches approve <id>`) before it is used anywhere; until then it shows as pending.
+# Nothing here is ever estimated by a model, and a rocket or mission without a row is shown as "not public".
+#   kind: list_price (provider's own published price) | reported (government or audited figure) | estimate (someone else's estimate)
+#   unit: per_launch | per_kg
+entries:
+  - id: sls-orion-oig-2021
+    applies_to: {rocket_family: SLS}
+    amount_usd: 4100000000
+    unit: per_launch
+    kind: reported
+    note: "Projected cost to fly one SLS/Orion system through at least Artemis IV, at about one mission a year"
+    quote: "We project the cost to fly a single SLS/Orion system through at least Artemis IV to be $4.1 billion per launch at a cadence of approximately one mission per year."
+    source: "NASA Office of Inspector General, Report IG-22-003 (p. 23)"
+    url: https://www.oversight.gov/sites/default/files/documents/reports/2021-11/Final-Report-IG-22-003-NASAs-Management-Artemis-Missions.pdf
+    published: 2021-11-15
+    status: pending
+  - id: falcon9-rideshare-2023
+    applies_to: {rocket_family: Falcon, mission_type: Dedicated Rideshare}
+    amount_usd: 6500
+    unit: per_kg
+    kind: list_price
+    note: "SpaceX Transporter rideshare price per kg after the March 2023 increase (previously $5,500)"
+    quote: "The price tag of a Falcon 9 Transporter launch increased by 18%, from $5,500 per kg to $6,500 per kg."
+    source: "Payload, 'SpaceX Increases Rideshare Prices'"
+    url: https://payloadspace.com/spacex-increases-rideshare-prices/
+    published: 2023-03-01
+    status: pending
+  # ---- fixture only: fictional rockets in the offline sample (never shown in live mode)
+  - {id: fx-kestrel1, fixture: true, applies_to: {rocket_family: Kestrel}, amount_usd: 7000000, unit: per_launch,
+     kind: list_price, note: "Fictional price for the fictional Kestrel 1", source: "Offline sample (fictional)",
+     url: "", published: 2026-01-01, status: approved}
+  - {id: fx-condor9, fixture: true, applies_to: {rocket_family: Condor}, amount_usd: 62000000, unit: per_launch,
+     kind: list_price, note: "Fictional price for the fictional Condor 9", source: "Offline sample (fictional)",
+     url: "", published: 2026-01-01, status: approved}

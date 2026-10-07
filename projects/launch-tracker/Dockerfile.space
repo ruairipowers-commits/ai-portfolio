@@ -1,0 +1,18 @@
+# Hosted demo image (self-host at <demos>/launch-tracker/, or a Hugging Face Space). Local equivalent:
+#   docker build -f Dockerfile.space -t launch-tracker . && docker run -p 7860:7860 launch-tracker
+# Mock model only: no API keys are needed or read. The image is built on the offline (fictional) sample; when the
+# container can reach the internet (the demo spec sets egress: true) a background loop refreshes real data from
+# Launch Library 2 (within 15 requests an hour), GCAT and SATCAT, and the app labels whichever it is showing.
+FROM python:3.11-slim
+RUN useradd -m -u 1000 user && install -d -o user -g user /app
+ENV HOME=/home/user PATH=/home/user/.local/bin:$PATH PYTHONUNBUFFERED=1
+WORKDIR /app
+COPY --chown=user . .
+USER user
+RUN pip install --no-cache-dir --user -e ".[ui]"
+# Baseline every visitor's sandbox is copied from (telemetry off at build time).
+RUN python scripts/generate_sample_data.py && GOVERNANCE_TELEMETRY=off launches build && rm -rf output logs
+ENV PORTFOLIO_DEMO=1 LAUNCHES_MODE=live
+EXPOSE 7860
+# Under /launch-tracker/ the host sets STREAMLIT_SERVER_BASE_URL_PATH, which Streamlit reads itself.
+CMD ["sh", "-c", "launches refresh-loop & exec streamlit run src/launchtracker/ui.py --server.port=7860 --server.address=0.0.0.0 --server.headless=true --server.enableXsrfProtection=false --server.enableCORS=false"]
