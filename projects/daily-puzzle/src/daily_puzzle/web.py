@@ -522,6 +522,7 @@ def create_app(scheduler: bool | None = None) -> FastAPI:
                 return JSONResponse({"error": "not found"}, 404)
         return Response(pdf, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{pack_id}-{which}.pdf"'})
 
+    @app.get("/api/health")                          # the portfolio's uptime check polls this path
     @app.get("/healthz")
     def healthz():
         with eng.connect() as c:
