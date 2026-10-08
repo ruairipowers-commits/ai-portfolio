@@ -27,7 +27,7 @@ from sqlalchemy import func, select
 
 from . import assets, cycle, demo, game, generate, grading, mailer, packs, telemetry
 from .config import PKG, TRACK_LABEL, TRACKS, Settings, root
-from .store import acceptances, engine, fetch_all, fetch_one, jobs, players, puzzle_for_day, puzzles as P
+from .store import acceptances, engine, fetch_all, fetch_one, jobs, outbox, players, puzzle_for_day, puzzles as P
 
 ROOT_PATH = os.getenv("ROOT_PATH", "").rstrip("/")
 COOKIE = "dp_session"
@@ -84,6 +84,16 @@ def fmt_local(dt: datetime | None, s: Settings) -> str:
 def scoring_line(s: Settings) -> str:
     sc, mx = s.puzzles["scoring"], int(s.puzzles["attempts"]["max_per_puzzle"])
     return " / ".join(str(grading.points(n, True, sc)) for n in range(1, mx + 1)) + f" for 1–{mx} attempts"
+
+
+def mail_mode() -> str:
+    """One line for the operator: is email actually going out, and from where."""
+    if not os.getenv("RESEND_API_KEY"):
+        return "OFF — RESEND_API_KEY isn't set in this container, so emails are only written to output/outbox/."
+    frm = os.getenv("MAIL_FROM", "")
+    if not frm:
+        return "Resend key set, but MAIL_FROM is empty (a placeholder sender is used and Resend will refuse it)."
+    return f"Sending through Resend as {frm}. The sender's domain must be verified in Resend."
 
 
 # ---------------------------------------------------------------- app
@@ -447,7 +457,8 @@ def create_app(scheduler: bool | None = None) -> FastAPI:
                        for t in s.enabled_tracks()}
             jl = fetch_all(c, select(jobs).where(jobs.c.job != "tick").order_by(jobs.c.id.desc()).limit(15))
             pk = packs.list_packs(c)
-        return page(req, "admin.html", today=today, escalated=esc, reserve=reserve, jobs=jl, packs=pk, flash=flash,
+            mails = fetch_all(c, select(outbox).order_by(outbox.c.id.desc()).limit(10))
+        return page(req, "admin.html", mails=mails, mail_mode=mail_mode(), today=today, escalated=esc, reserve=reserve, jobs=jl, packs=pk, flash=flash,
                     tracks=s.enabled_tracks(), pack_cfg=s.puzzles["packs"], warnings=generate.model_warnings(s))
 
     @app.post("/admin/login", response_class=HTMLResponse)

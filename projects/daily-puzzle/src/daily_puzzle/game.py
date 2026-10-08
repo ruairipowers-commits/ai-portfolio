@@ -5,6 +5,7 @@ Everything a player can trigger is code: their answer is normalized and compared
 from __future__ import annotations
 
 import hashlib
+import os
 import hmac
 import re
 import secrets
@@ -57,12 +58,20 @@ def check_unsub(pid: int, token: str) -> bool:
 
 
 # ---------------------------------------------------------------- accounts
-def clean_handle(handle: str) -> str:
+def is_operator(email: str) -> bool:
+    """The site owner (PUZZLE_OPERATOR_EMAIL) may use reserved handles such as their own name."""
+    op = os.getenv("PUZZLE_OPERATOR_EMAIL", "").strip().lower()
+    return bool(op) and (email or "").strip().lower() == op
+
+
+def clean_handle(handle: str, email: str = "") -> str:
     h = (handle or "").strip()
     if not HANDLE.match(h):
         raise GameError("Handles are 3–24 letters, digits, dots, dashes or underscores, starting with a letter or digit.")
-    if re.sub(r"[^a-z]", "", h.lower()) in {re.sub(r"[^a-z]", "", r) for r in RESERVED}:
-        raise GameError("That handle is reserved. Please pick another.")
+    # letters only, so "Ruairi_Powers" and "r.u.a.i.r.i" can't impersonate the owner; digits stay, so "admin1" is fine
+    if re.sub(r"[^a-z0-9]", "", h.lower()) in {re.sub(r"[^a-z0-9]", "", r) for r in RESERVED} and not is_operator(email):
+        raise GameError(f"“{h}” is reserved for the site (it looks like an official or the owner's name). "
+                        "Please pick another handle.")
     return h
 
 
@@ -80,7 +89,7 @@ def subscribe(conn, s: Settings, email: str, handle: str, tracks: list[str], bas
         else:
             mailer.confirm(conn, email, existing["handle"], f"{base_url}/confirm/{_token(conn, existing['id'], 'confirm', 7 * 24 * 60)}")
         return "check-email"
-    handle = clean_handle(handle)
+    handle = clean_handle(handle, email)
     if fetch_one(conn, select(players.c.id).where(func.lower(players.c.handle) == handle.lower())):
         raise GameError("That handle is taken. Please pick another.")
     pid = conn.execute(players.insert().values(email=email, handle=handle, tracks=tracks, created_at=now())).inserted_primary_key[0]
@@ -114,7 +123,7 @@ def import_subscribers(conn, s: Settings, rows: list[tuple[str, str]]) -> dict:
             out["suppressed"] += 1
             continue
         try:
-            conn.execute(players.insert().values(email=email, handle=clean_handle(handle), created_at=now(),
+            conn.execute(players.insert().values(email=email, handle=clean_handle(handle, email), created_at=now(),
                                                  confirmed_at=now(), tracks=list(s.puzzles["players"]["default_tracks"])))
             out["added"] += 1
         except IntegrityError:

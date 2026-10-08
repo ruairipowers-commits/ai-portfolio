@@ -165,7 +165,7 @@ outbox = Table(                                                     # every emai
     Column("kind", String(16)),                                     # confirm | signin | daily | escalation
     Column("subject", String(200)),
     Column("status", String(12)),                                   # sent | written | failed | suppressed
-    Column("provider_id", String(80)),
+    Column("provider_id", String(200)),                             # provider message id, or the error when failed
     Column("at", DateTime(timezone=True)),
 )
 
