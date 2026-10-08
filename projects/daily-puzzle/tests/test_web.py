@@ -71,7 +71,8 @@ def test_existing_email_gets_signin_not_a_second_account(site, s):
 
 
 @pytest.mark.parametrize("handle,msg", [("<script>x</script>", "Handles are"), ("Ruairi", "reserved"),
-                                         ("r.u.a.i.r.i", "reserved"), ("ab", "Handles are")])
+                                         ("r.u.a.i.r.i", "reserved"), ("Ruairi_Powers", "reserved"),
+                                         ("ab", "Handles are")])
 def test_bad_handles(site, handle, msg):
     client, _, _ = site
     r = client.post("/subscribe", data={"email": "x@example.com", "handle": handle})
@@ -185,3 +186,32 @@ def test_health_endpoint_matches_the_uptime_check(site):
     for path in ("/api/health", "/healthz"):
         r = client.get(path)
         assert r.status_code == 200 and r.json()["ok"] is True
+
+
+def test_owner_can_use_a_reserved_handle(site, monkeypatch, s):
+    client, _, project = site
+    assert "is reserved for the site" in client.post("/subscribe", data={"email": "a@example.com", "handle": "Ruairi"}).text
+    assert client.post("/subscribe", data={"email": "b@example.com", "handle": "admin1"}).status_code == 200   # digits count
+    monkeypatch.setenv("PUZZLE_OPERATOR_EMAIL", "Owner@Example.com")
+    r = client.post("/subscribe", data={"email": "owner@example.com", "handle": "Ruairi"})
+    assert r.status_code == 200 and "Check your email" in r.text
+    assert list((project / "output" / "outbox").glob("*-confirm-owner*"))
+
+
+def test_resend_rejection_is_recorded_and_shown(site, s, monkeypatch):
+    """A refused send (e.g. unverified sender domain) is stored with its reason and shown to the operator."""
+    import httpx
+    client, _, _ = site
+    monkeypatch.setenv("RESEND_API_KEY", "re_test")
+    monkeypatch.setenv("MAIL_FROM", "Daily puzzle <puzzle@unverified.example>")
+    monkeypatch.setattr(httpx, "post", lambda *a, **k: httpx.Response(
+        403, json={"message": "The unverified.example domain is not verified."}))
+    client.post("/subscribe", data={"email": "c@example.com", "handle": "carol_c"})
+    from daily_puzzle.store import outbox
+    with engine(s).connect() as c:
+        row = fetch_one(c, select(outbox))
+    assert row["status"] == "failed" and "403" in row["provider_id"] and "not verified" in row["provider_id"]
+    monkeypatch.setenv("PUZZLE_ADMIN_TOKEN", "op")
+    client.post("/admin/login", data={"token": "op"})
+    page = client.get("/admin").text
+    assert "Sending through Resend as" in page and "not verified" in page

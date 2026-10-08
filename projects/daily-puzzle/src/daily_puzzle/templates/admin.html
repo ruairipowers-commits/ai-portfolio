@@ -30,6 +30,10 @@
 <input type="text" name="reviewer" placeholder="Your name" required><input type="text" name="note" placeholder="Note (why)" style="flex:1 1 200px">
 <button name="decision" value="approve">Approve → reserve</button><button class="ghost" name="decision" value="reject">Reject</button></form></div>
 {% else %}<p class="muted">Nothing to review.</p>{% endfor %}
+<div class="card"><h3>Email</h3><p class="small">{{ mail_mode }}</p>
+<table><tbody>{% for m in mails %}<tr><td class="small">{{ m.at.strftime('%m-%d %H:%M') }}</td><td>{{ m.kind }}</td>
+<td><b>{{ m.status }}</b></td><td class="small muted">{{ m.provider_id or '' }}</td></tr>
+{% else %}<tr><td class="muted">No emails yet.</td></tr>{% endfor %}</tbody></table></div>
 <div class="card"><h3>Recent jobs</h3><table><tbody>{% for j in jobs %}<tr><td class="small">{{ j.at.strftime('%m-%d %H:%M') }}</td><td>{{ j.job }}</td><td>{{ j.day or '' }}</td><td>{{ j.status }}</td></tr>{% endfor %}</tbody></table></div>
 <form method="post" action="{{ base }}/admin/logout"><button class="ghost">Sign out of operator</button></form>
 {% endblock %}

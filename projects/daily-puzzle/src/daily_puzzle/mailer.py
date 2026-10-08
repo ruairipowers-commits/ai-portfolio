@@ -47,7 +47,7 @@ def send(conn, to: str, kind: str, subject: str, text: str, unsubscribe_url: str
     else:
         status, pid = _write(to, kind, subject, text, unsubscribe_url)
     conn.execute(outbox.insert().values(to_hash=email_hash(to), kind=kind, subject=subject[:200], status=status,
-                                        provider_id=pid, at=now()))
+                                        provider_id=(pid or "")[:200] or None, at=now()))
     return status
 
 
@@ -60,11 +60,19 @@ def _resend(to, subject, text, unsub) -> tuple[str, str | None]:
     try:
         r = httpx.post("https://api.resend.com/emails", json=body, timeout=15,
                        headers={"Authorization": f"Bearer {os.environ['RESEND_API_KEY']}"})
-        r.raise_for_status()
-        return "sent", r.json().get("id")
     except Exception as e:  # noqa: BLE001 — a mail failure must not stop the daily cycle
-        print(f"email to {email_hash(to)[:8]} failed: {type(e).__name__}")
-        return "failed", None
+        why = f"{type(e).__name__}: {e}"[:200]
+        print(f"email to {email_hash(to)[:8]} failed: {why}")
+        return "failed", why
+    if r.status_code >= 300:          # e.g. 403 "domain is not verified", 422 bad from-address: keep the reason
+        try:
+            msg = r.json().get("message") or r.text
+        except ValueError:
+            msg = r.text
+        why = f"HTTP {r.status_code}: {msg}"[:200]
+        print(f"email to {email_hash(to)[:8]} failed: {why}")
+        return "failed", why
+    return "sent", r.json().get("id")
 
 
 def outbox_dir() -> Path:
