@@ -177,3 +177,11 @@ def test_every_kind_renders_open_and_revealed(s, project, kind):
         cycle.reveal(c, fetch_one(c, select(P).where(P.c.id == pid)), now)
     r = client.get(f"/p/{pid}")
     assert r.status_code == 200 and "Worked solution" in r.text
+
+
+def test_health_endpoint_matches_the_uptime_check(site):
+    """scripts/uptime.py polls <app>/api/health on every FastAPI demo and expects {"ok": true}."""
+    client, _, _ = site
+    for path in ("/api/health", "/healthz"):
+        r = client.get(path)
+        assert r.status_code == 200 and r.json()["ok"] is True
