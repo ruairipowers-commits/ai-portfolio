@@ -107,9 +107,19 @@ project_queue:
     URLs], first_seen, last_seen}"
   priority: "computed: roles asking for it × their fit score × must-have weight × recency; P1 when it's a
     must-have in two or more roles scoring 60+"
-  privacy: "job references stay owner-only (governance console); the public Suggestions page shows the idea and
-    tags, never which firms or roles raised it"
-  approval: "the copilot proposes, I approve in the app before it's sent; the console still decides what's published"
+  privacy: >
+    Job-interest items are owner-only: they never appear on the public Suggestions page, in its API or in the
+    daily public counts. I see them, with the specific roles and postings that raised them, in the governance
+    console's Content tab (owner token).
+  source_tags: >
+    Every queue item, whatever its origin, carries a source: visitor-suggestion (the site's suggestion box),
+    topic-agent (the editorial scout), claude-chat (an idea from a working session), job-interest (this copilot).
+    Only visitor-suggestion items can be published for votes.
+  provenance_when_built: >
+    When I turn a queue item into a project, its spec gets `origin: {source, suggestion_id}` and the project page
+    and post show "Why I built this" with the source tag (e.g. "job interest"). The specific job stays internal:
+    the suggestion id links to it only in the console.
+  approval: "the copilot proposes, I approve in the app before it's sent to the queue"
 
 stack:
   language: python
@@ -183,9 +193,12 @@ golden_cases:
   - {id: j09, expected: "reply classified correctly (rejection / screen invite / interview / offer / not-employer)", tags: [tracker]}
 
 site_assistant_change: >
-  The suggestions table gains tags, priority, source and an owner-only ref column, and an owner-token endpoint to
-  create a suggestion (POST /admin/suggestions). Public endpoints never return ref. Its tests and governance doc are
-  updated in the same change.
+  The suggestions table gains tags, priority, source (visitor-suggestion | topic-agent | claude-chat |
+  job-interest) and an owner-only refs column, plus an owner-token endpoint to create or merge a suggestion
+  (POST /admin/suggestions). Public endpoints list only published visitor-suggestion items and never return refs;
+  publishing a non-visitor item is refused. Existing rows migrate as visitor-suggestion. The console's Content tab
+  shows source, tags, priority and, for job-interest, the linked roles. Specs gain an optional `origin` block that
+  the site renders as a "Why I built this" source tag. Tests and governance docs updated in the same change.
 
 demo:
   title: Job copilot
