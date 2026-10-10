@@ -1,7 +1,7 @@
 # Hosted demo image (Hugging Face Space, Docker SDK). Local equivalent:
 #   docker build -f Dockerfile.space -t tradeops-demo . && docker run -p 7860:7860 tradeops-demo
 # Mock model only: no API keys are needed or read. Each visitor gets a private copy of the data.
-FROM node:22-slim AS server
+FROM node:25-slim AS server
 WORKDIR /srv
 COPY mcp-server/package*.json ./
 RUN npm install --no-audit --no-fund
