@@ -35,8 +35,8 @@ jobs:
       GOVERNANCE_ADMIN_TOKEN: ${{ secrets.GOVERNANCE_ADMIN_TOKEN }}
       GOVERNANCE_DATABASE_URL: ${{ secrets.GOVERNANCE_DATABASE_URL }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with: {python-version: "3.11"}
       - run: pip install pyyaml "huggingface_hub>=0.25"
       - id: t
@@ -64,11 +64,11 @@ jobs:
           python scripts/demos.py deploy cloudflare
       - name: google auth
         if: steps.t.outputs.target == 'cloudrun'
-        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed  # v2.1.13
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093  # v3.0.0
         with: {credentials_json: "${{ secrets.GCP_SA_KEY }}"}
       - name: gcloud
         if: steps.t.outputs.target == 'cloudrun'
-        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f  # v2.2.1
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db  # v3.0.1
       - name: cloudrun (untested target)
         if: steps.t.outputs.target == 'cloudrun'
         run: python scripts/demos.py deploy cloudrun
