@@ -10,9 +10,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with: {fetch-depth: 0}             # full history: the About page's build stats count commits
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with: {python-version: "3.11"}
       - run: pip install -r requirements-site.txt
       - run: python scripts/check_governance.py
@@ -31,7 +31,7 @@ jobs:
           PORTFOLIO_DEMOS_URL: ${{ vars.DEMOS_URL }}
           PORTFOLIO_DEMOS_TARGET: ${{ vars.DEMOS_TARGET }}
           PORTFOLIO_SITE_URL: ${{ vars.SITE_URL || format('https://{0}.github.io/{1}/', github.repository_owner, github.event.repository.name) }}
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with: {path: build}
   deploy:
     needs: build
@@ -39,4 +39,4 @@ jobs:
     environment: {name: github-pages, url: "${{ steps.d.outputs.page_url }}"}
     steps:
       - id: d
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
