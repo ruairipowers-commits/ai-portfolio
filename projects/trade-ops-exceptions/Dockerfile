@@ -1,4 +1,4 @@
-FROM node:22-slim AS server
+FROM node:25-slim AS server
 WORKDIR /srv
 COPY mcp-server/package*.json ./
 RUN npm install --no-audit --no-fund
