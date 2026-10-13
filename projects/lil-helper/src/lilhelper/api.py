@@ -36,6 +36,7 @@ app = FastAPI(title="Lil'Helper", version=__version__, root_path=os.getenv("ROOT
 
 @app.on_event("startup")
 def _start_scheduler() -> None:
+    _secret()                       # production: stop at start-up if HELPER_SECRET is missing, not at first sign-in
     if os.getenv("HELPER_SCHEDULER") == "1":
         from . import schedule
         schedule.start()

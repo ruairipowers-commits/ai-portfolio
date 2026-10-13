@@ -21,6 +21,8 @@ Locally: `helper serve` in the project folder, then use `http://<your-computer's
 
 ## Onto an iPhone with TestFlight
 
+Step by step, with the server on the EVO-X1 first: [../docs/household-setup.md](../docs/household-setup.md).
+
 Needs an Apple Developer Program membership ($99 a year) and an Expo account (free). No Mac or Xcode needed:
 EAS builds in the cloud.
 

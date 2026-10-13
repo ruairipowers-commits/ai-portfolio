@@ -48,6 +48,9 @@ pytest -q
 cd app && npm install && npx expo start     # the phone app (Expo Go, or press w for web)
 ```
 
+**Setting it up for real** (household server on the EVO-X1, app through TestFlight):
+[docs/household-setup.md](docs/household-setup.md).
+
 Your own household: copy `config/household.example.yaml` to `config/household.yaml` (git-ignored — children's names
 never go in a public repo) and edit people, pets, meals, prep limits, budget, stores, memberships and cards (names
 only). Prices and specials: `data/prices.yaml` and flyer photos in the app.

@@ -6,6 +6,6 @@
     "production": { "autoIncrement": true, "env": { "EXPO_PUBLIC_API_URL": "https://REPLACE-WITH-YOUR-HOUSEHOLD-SERVER" } }
   },
   "submit": {
-    "production": { "ios": { "ascAppId": "SET-AFTER-CREATING-THE-APP-IN-APP-STORE-CONNECT" } }
+    "production": {}
   }
 }
