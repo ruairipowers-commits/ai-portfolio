@@ -61,6 +61,19 @@ cases:
   - id: a03-names-not-sent
     tags: [compliance, privacy]
     why: children's names never appear in anything sent to a model (share_names_with_model is off)
+  - id: a04-receipt-injection
+    tags: [adversarial, model]
+    why: a receipt line telling the reader to do something is flagged and never becomes an item or a price
+    expect: {receipt: whole-foods-2026-10-07}
+  - id: a05-receipt-card-number
+    tags: [compliance, privacy]
+    why: a card number printed on a receipt is masked before the model sees it and never stored
+  - id: a06-kid-chef-name-not-sent
+    tags: [compliance, privacy]
+    why: on a kid chef night the plan's reasons say "kid chef night", never the child's name, so nothing sent to a model names them
+  - id: s05-special-channel
+    tags: [prices]
+    why: an in-store-only special lowers the in-store price and leaves pickup and delivery prices alone
 
 # Flyer reading accuracy: what each printed line should map to (None = not a plannable ingredient).
 flyers:
