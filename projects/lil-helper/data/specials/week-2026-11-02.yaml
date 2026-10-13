@@ -193,3 +193,21 @@ items:
   regular: 11.41
   source: flyer
   confirmed_by: demo
+- store: whole_foods
+  ingredient: peanut_butter
+  brand: 365 by Whole Foods
+  pack: 28
+  price: 3.48
+  regular: 4.35
+  member: amazon_prime
+  source: prime member deal
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: lettuce
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 2.16
+  regular: 2.7
+  member: amazon_prime
+  source: prime member deal
+  confirmed_by: demo

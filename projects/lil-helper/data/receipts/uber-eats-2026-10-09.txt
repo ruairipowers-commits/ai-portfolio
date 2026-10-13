@@ -1,0 +1,6 @@
+Uber Eats (fictional receipt)
+DATE 2026-10-09
+Pad see ew .... $16.50
+Chicken satay .... $11.00
+Spring rolls .... $7.50
+TOTAL .... $41.20

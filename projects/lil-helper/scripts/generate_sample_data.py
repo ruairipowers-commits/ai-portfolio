@@ -107,6 +107,16 @@ def specials(rng: random.Random, price_list: dict) -> None:
                 items.append({"store": sid, "ingredient": ing, "brand": reg["brand"], "pack": reg["pack"],
                               "price": r2(reg["price"] * (1 - pct)), "regular": reg["price"],
                               "source": "flyer", "confirmed_by": "demo"})
+        # Prime member deals at Whole Foods (only count for households with amazon_prime). A separate seed per week,
+        # so adding them left every other special unchanged.
+        prng = random.Random(1000 + w)
+        wf = price_list.get("whole_foods", {})
+        taken = {i["ingredient"] for i in items if i["store"] == "whole_foods"}
+        for ing in prng.sample(sorted(set(wf) - taken), min(2, len(set(wf) - taken))):
+            reg = wf[ing][0]
+            items.append({"store": "whole_foods", "ingredient": ing, "brand": reg["brand"], "pack": reg["pack"],
+                          "price": r2(reg["price"] * 0.8), "regular": reg["price"], "member": "amazon_prime",
+                          "source": "prime member deal", "confirmed_by": "demo"})
         path = DATA / "specials" / f"week-{start.isoformat()}.yaml"
         path.write_text(yaml.safe_dump({"week_of": start.isoformat(), "valid_to": (start + dt.timedelta(days=6)).isoformat(),
                                         "items": items}, sort_keys=False, width=120))

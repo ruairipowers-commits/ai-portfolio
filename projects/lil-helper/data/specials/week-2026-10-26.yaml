@@ -257,3 +257,21 @@ items:
   regular: 5.53
   source: flyer
   confirmed_by: demo
+- store: whole_foods
+  ingredient: milk
+  brand: 365 by Whole Foods
+  pack: 16
+  price: 4.53
+  regular: 5.66
+  member: amazon_prime
+  source: prime member deal
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: broccoli
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 2.17
+  regular: 2.71
+  member: amazon_prime
+  source: prime member deal
+  confirmed_by: demo

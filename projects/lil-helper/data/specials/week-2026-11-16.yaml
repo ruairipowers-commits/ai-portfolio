@@ -193,3 +193,21 @@ items:
   regular: 6.2
   source: flyer
   confirmed_by: demo
+- store: whole_foods
+  ingredient: bagels
+  brand: 365 by Whole Foods
+  pack: 6
+  price: 4.76
+  regular: 5.95
+  member: amazon_prime
+  source: prime member deal
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: shrimp
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 10.46
+  regular: 13.08
+  member: amazon_prime
+  source: prime member deal
+  confirmed_by: demo

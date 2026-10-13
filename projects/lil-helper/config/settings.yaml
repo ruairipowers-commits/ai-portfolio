@@ -48,6 +48,7 @@ llm:
     suggest: prompts/suggest.v1.md
     flyer: prompts/flyer.v1.md
     notes: prompts/notes.v1.md
+    receipt: prompts/receipt.v1.md
 
 cost:                                         # COST-01..04
   max_usd_per_run: 0.10

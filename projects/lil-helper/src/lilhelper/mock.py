@@ -63,6 +63,27 @@ def flyer(text: str) -> dict:
     return {"store": store, "valid_from": None, "valid_to": None, "items": items, "other": other}
 
 
+def receipt(text: str) -> dict:
+    """Copies every priced line like a careless reader would (savings lines and printed notes included); the code
+    around it decides what counts."""
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    store = re.sub(r"\s*\(.*?\)", "", lines[0]) if lines else ""
+    date, total, items, other = None, None, [], []
+    for ln in lines[1:]:
+        m = re.match(r"DATE\s+(\d{4}-\d{2}-\d{2})", ln, re.I)
+        if m:
+            date = m.group(1)
+            continue
+        p = re.search(r"(-?\$\s?\d+(?:\.\d{1,2})?)\s*$", ln)
+        if p and ln.upper().startswith("TOTAL"):
+            total = p.group(1)
+        elif p:
+            items.append({"text": re.sub(r"\s*\.{2,}\s*", " ", ln[: p.start()]).strip(" .-"), "price": p.group(1)})
+        else:
+            other.append(ln)
+    return {"store": store, "date": date, "total": total, "items": items, "other": other}
+
+
 def notes(plan: dict) -> dict:
     out = []
     for e in plan.get("entries", []):
@@ -78,6 +99,17 @@ def notes(plan: dict) -> dict:
             bits.append("an ingredient on special" if n == 1 else f"{n} ingredients on special")
         if any(w.startswith("cooked double") for w in why):
             bits.append("makes enough for leftovers night")
+        if any(w.startswith("cooked extra for") for w in why):
+            bits.append("makes tomorrow's lunch too")
+        if any(w.startswith("cook") and w.endswith("to freeze") for w in why):
+            bits.append("extra goes in the freezer")
+        if any(w.endswith("cooks tonight (an adult helps)") for w in why):
+            bits.insert(0, "a kid chef night, with a grown-up helping")
+        if "due again" in why:
+            bits.insert(0, "one of your own recipes, due again")
+        src = next((w for w in why if w.startswith("from ") and w.endswith("dinner")), None)
+        if src:
+            bits.insert(0, src.replace("from", "reheat", 1))
         if any(w.startswith("prep on") for w in why):
             bits.append(next(w for w in why if w.startswith("prep on")))
         if e.get("active", 0) and e.get("active") <= 20:

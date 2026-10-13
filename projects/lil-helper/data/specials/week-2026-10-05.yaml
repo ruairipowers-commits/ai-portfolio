@@ -193,3 +193,21 @@ items:
   regular: 2.6
   source: flyer
   confirmed_by: demo
+- store: whole_foods
+  ingredient: basil
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 2.54
+  regular: 3.18
+  member: amazon_prime
+  source: prime member deal
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: coconut_milk
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 2.25
+  regular: 2.81
+  member: amazon_prime
+  source: prime member deal
+  confirmed_by: demo

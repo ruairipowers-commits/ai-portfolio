@@ -1,6 +1,8 @@
 """Food facts: ingredients, recipes, the season, and the words that mean an allergen or a danger to a dog."""
 from __future__ import annotations
 
+import copy
+import json
 import re
 from dataclasses import dataclass, field
 from functools import lru_cache
@@ -21,6 +23,25 @@ class Ingredient:
     dog: str = ""
     shelf: int = 7
     staple: bool = False
+    storage: str = ""              # pantry | fridge | freezer (blank: from the category)
+    freezable: bool | None = None  # can go in the freezer to keep longer (blank: from the category)
+    frozen_days: int = 0           # how long it keeps frozen
+    litres: float = 0.0            # space one unit takes (blank: from the unit)
+    source: str = "book"           # book | household
+    prices: dict = field(default_factory=dict)   # household-added: {store: {pack, price}}
+
+    def __post_init__(self):
+        d = STORAGE_DEFAULTS.get(self.cat, ("pantry", False, 0))
+        if self.id in ROOM_TEMP_PRODUCE:
+            d = ("pantry", False, 0)
+        self.storage = self.storage or d[0]
+        if self.freezable is None:
+            self.freezable = d[1]
+        self.frozen_days = self.frozen_days or d[2]
+        self.litres = self.litres or LITRES_PER_UNIT.get(self.unit, 0.1)
+
+    def keeps_for(self, frozen: bool = False) -> int:
+        return self.frozen_days if (frozen and self.freezable) else self.shelf
 
 
 @dataclass
@@ -36,9 +57,26 @@ class Recipe:
     tags: list[str] = field(default_factory=list)
     dog: list[str] = field(default_factory=list)
     source: str = "book"           # book | household | suggested
+    kid_min_age: int = 0           # > 0: a kid this age or older can make it with an adult nearby
+    instructions: list[str] = field(default_factory=list)
+    season_months: list[int] = field(default_factory=list)   # only plan it in these months (blank: any time)
+    want: dict = field(default_factory=dict)  # how often: {times: 2, per_weeks: 4} → due until had that often
+    notes: str = ""
+    created_by: str = ""
 
     def has(self, tag: str) -> bool:
         return tag in self.tags
+
+
+# Where things keep, by category: (storage, can be frozen, days frozen). Rough guides; any ingredient can override.
+STORAGE_DEFAULTS = {
+    "produce": ("fridge", False, 0), "meat": ("fridge", True, 120), "fish": ("fridge", True, 90),
+    "dairy": ("fridge", False, 0), "deli": ("fridge", True, 60), "bakery": ("pantry", True, 60),
+    "frozen": ("freezer", True, 240), "pantry": ("pantry", False, 0), "pet": ("pantry", False, 0),
+}
+ROOM_TEMP_PRODUCE = {"potatoes", "sweet_potatoes", "onion", "garlic", "butternut_squash", "bananas", "avocado",
+                     "lemons", "limes", "tomatoes"}
+LITRES_PER_UNIT = {"lb": 0.6, "each": 0.3, "cup": 0.25, "oz": 0.04, "can": 0.45, "tbsp": 0.0, "slice": 0.02}
 
 
 def _singular(w: str) -> str:
@@ -73,8 +111,15 @@ class Catalog:
         self.hidden: dict[str, list[str]] = raw["hidden_allergens"]
         self.dog_toxic_words: list[str] = raw["dog_toxic_words"]
         self.exceptions: dict[str, list[str]] = raw.get("hidden_exceptions", {})
-        recipes = yaml.safe_load((ROOT / "data" / "recipes.yaml").read_text())["recipes"]
-        self.recipes = {k: Recipe(id=k, **v) for k, v in recipes.items()}
+        book = yaml.safe_load((ROOT / "data" / "recipes.yaml").read_text())
+        self.recipes = {k: Recipe(id=k, **v) for k, v in book["recipes"].items()}
+        for rid, age in (book.get("kid_can_make") or {}).items():
+            if rid in self.recipes:
+                self.recipes[rid].kid_min_age = int(age)
+                self.recipes[rid].tags.append("kid_can_make")
+        for rid in book.get("freezes_well") or []:
+            if rid in self.recipes:
+                self.recipes[rid].tags.append("freezes_well")
         season_file = ROOT / "data" / "season" / f"{region}.yaml"
         self.season = yaml.safe_load(season_file.read_text())["peak_months"] if season_file.exists() else {}
 
@@ -137,3 +182,36 @@ class Catalog:
 @lru_cache(maxsize=4)
 def get(region: str = "northeast-us") -> Catalog:
     return Catalog(region)
+
+
+_household_cache: dict[tuple, Catalog] = {}
+
+
+def for_household(h) -> Catalog:
+    """The book plus the household's own ingredients and recipes (from its database)."""
+    from . import store
+    base = get(h.info.get("region", "northeast-us"))
+    con = store.connect()
+    try:
+        ver = con.execute("SELECT COALESCE(MAX(updated), '') AS v, COUNT(*) AS n FROM custom_recipes").fetchone()
+        iver = con.execute("SELECT COALESCE(MAX(updated), '') AS v, COUNT(*) AS n FROM custom_ingredients").fetchone()
+        key = (str(store.db_path()), ver["v"], ver["n"], iver["v"], iver["n"])
+        if key in _household_cache:
+            return _household_cache[key]
+        ings = [json.loads(r["data"]) for r in con.execute("SELECT data FROM custom_ingredients")]
+        recs = [json.loads(r["data"]) for r in con.execute("SELECT data FROM custom_recipes WHERE active = 1")]
+    finally:
+        con.close()
+    if not ings and not recs:
+        return base
+    c = copy.copy(base)
+    c.ingredients = dict(base.ingredients)
+    c.recipes = dict(base.recipes)
+    for d in ings:
+        c.ingredients[d["id"]] = Ingredient(**{k: v for k, v in d.items() if k in Ingredient.__dataclass_fields__})
+    for d in recs:
+        c.recipes[d["id"]] = Recipe(**{k: v for k, v in d.items() if k in Recipe.__dataclass_fields__})
+    if len(_household_cache) > 64:
+        _household_cache.clear()
+    _household_cache[key] = c
+    return c

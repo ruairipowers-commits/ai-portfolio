@@ -206,3 +206,32 @@ recipes:
     {name: Pasta salad with veggies and mozzarella, meal: lunch, active: 15, total: 20, veg: 1, protein: 12,
      tags: [vegetarian, kid_friendly, batch],
      ing: {pasta: 2, cherry_tomatoes: 0.3, cucumber: 0.2, mozzarella: 1, olive_oil: 0.5, basil: 0.05}}
+
+# Recipes a kid can make with an adult nearby, and the youngest age that's realistic (knife work, stove, oven).
+# Used for "kid chef" nights and the "easy for kids to make" style. Raw meat and the oven start at 12.
+kid_can_make:
+  sunbutter_jelly: 5
+  pb_jelly: 5
+  yogurt_parfait: 5
+  apple_cinnamon_oats: 6
+  turkey_sandwich: 6
+  hummus_veg_box: 6
+  bagels_cream_cheese: 6
+  sunbutter_toast_banana: 6
+  oatmeal_berries: 8
+  smoothie_pb_banana: 8
+  pasta_salad: 8
+  veggie_pizza: 8
+  quesadillas: 10
+  black_bean_tacos: 10
+  breakfast_for_dinner: 10
+  scrambled_eggs_toast: 10
+  mac_and_cheese_broccoli: 10
+  summer_corn_tomato_pasta: 11
+  sheet_pan_chicken_veg: 12
+  chicken_fajitas: 12
+  chicken_tacos: 12
+
+# Recipes that freeze well: when there's freezer room, Lil'Helper can cook extra and freeze it for a busy night.
+freezes_well: [turkey_chili, beef_bolognese, turkey_meatballs, butternut_soup, lentil_soup, chicken_noodle_soup,
+               pumpkin_chili, slow_cooker_chicken_stew, chickpea_curry, egg_muffins]
