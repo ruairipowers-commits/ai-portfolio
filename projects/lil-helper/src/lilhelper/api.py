@@ -1,10 +1,15 @@
-"""The API the phone app talks to (FastAPI). It runs on the household's own server; the family's data never leaves it.
+"""The API the phone app talks to (FastAPI). One server can hold many households; each household's data stays in
+its own folder and database, and every request is pointed at the caller's household only.
 
-Sign-in: an adult types their email, gets a one-time link (15 minutes), and the app keeps a signed session token
-(30 days). Kids don't sign in. Only an adult can approve a week (HITL-02). Nothing here buys anything: the shopping
-endpoint returns hand-offs (an Instacart link, a list to share, a printable aisle list) that a person opens.
+Sign-in: type your email, get a one-time link (15 minutes); the app keeps a signed session (30 days) naming you and
+your current household. New households need a sign-up code until open sign-up is turned on (HELPER_SIGNUP);
+everyone else joins by invitation. Roles: admin (settings, people, invites), adult (plan, approve, shop, spend),
+kid (see the week and jobs, say how much was eaten, rate). Nothing here buys anything.
 
-Secrets come from the environment (SEC-01): HELPER_SECRET signs links, sessions and the calendar-feed URL.
+Calendar: each person gets a private feed URL to subscribe to; events carry signed one-tap links back here (rate the
+meal, how much was left, change it, the shopping list). Push: the app registers an Expo push token.
+
+Secrets come from the environment (SEC-01): HELPER_SECRET signs links, sessions, feeds and tap-back links.
 """
 from __future__ import annotations
 
@@ -12,36 +17,43 @@ import base64
 import datetime as dt
 import hashlib
 import hmac
+import html
 import json
 import os
+import re
 import time
+from collections import defaultdict
+from dataclasses import dataclass
 
 import httpx
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import BaseModel, Field
 
-from . import __version__, ai, catalog, chores, feedback, outputs, store, telemetry, week
-from .config import DAYS, Settings, load_household, work_root
+from . import (__version__, accounts, ai, catalog, chores, cookfrom, feedback, forecast, money, notify, outputs,
+               reports, spend, storage, store, telemetry, week)
+from .config import (ALLERGENS, DAYS, DIETS, MEALS, NIGHT_KINDS, HouseholdError, Settings, data_root, load_household,
+                     reset_tenant, save_household, set_tenant, stores as load_stores, work_root)
 from .prices import PriceBook, week_start
 
 DEV_SECRET = "dev-only-not-secret"
 LINK_TTL = 15 * 60
 SESSION_TTL = 30 * 24 * 3600
+TAP_TTL = 30 * 24 * 3600
 INSTACART = {"development": "https://connect.dev.instacart.tools", "production": "https://connect.instacart.com"}
 
 app = FastAPI(title="Lil'Helper", version=__version__, root_path=os.getenv("ROOT_PATH", ""))
+app.add_middleware(CORSMiddleware, allow_origins=os.getenv("HELPER_CORS", "*").split(","), allow_methods=["*"],
+                   allow_headers=["*"])
 
 
 @app.on_event("startup")
-def _start_scheduler() -> None:
+def _startup() -> None:
     _secret()                       # production: stop at start-up if HELPER_SECRET is missing, not at first sign-in
     if os.getenv("HELPER_SCHEDULER") == "1":
         from . import schedule
         schedule.start()
-app.add_middleware(CORSMiddleware, allow_origins=os.getenv("HELPER_CORS", "*").split(","), allow_methods=["*"],
-                   allow_headers=["*"])
 
 
 # ---------------------------------------------------------------- signing
@@ -54,10 +66,13 @@ def _secret() -> bytes:
     return sec.encode()
 
 
+def _b64(b: bytes) -> str:
+    return base64.urlsafe_b64encode(b).decode().rstrip("=")
+
+
 def sign(kind: str, subject: str, ttl: int) -> str:
     body = json.dumps({"k": kind, "s": subject, "e": int(time.time()) + ttl}, separators=(",", ":")).encode()
-    mac = hmac.new(_secret(), body, hashlib.sha256).digest()
-    return base64.urlsafe_b64encode(body).decode().rstrip("=") + "." + base64.urlsafe_b64encode(mac).decode().rstrip("=")
+    return _b64(body) + "." + _b64(hmac.new(_secret(), body, hashlib.sha256).digest())
 
 
 def verify(kind: str, token: str) -> str:
@@ -75,19 +90,84 @@ def verify(kind: str, token: str) -> str:
     return d["s"]
 
 
-def feed_key() -> str:
-    return hmac.new(_secret(), b"calendar-feed", hashlib.sha256).hexdigest()[:24]
+def public_url() -> str:
+    return os.getenv("HELPER_PUBLIC_URL", "http://localhost:8650").rstrip("/")
 
 
-def me(authorization: str = Header(default="")) -> str:
-    """The signed-in adult's id."""
+def feed_sig(hid: str, uid: str, salt: str) -> str:
+    return hmac.new(_secret(), f"feed|{hid}|{uid}|{salt}".encode(), hashlib.sha256).hexdigest()[:32]
+
+
+# ---------------------------------------------------------------- who's calling
+@dataclass
+class Ctx:
+    uid: str
+    hid: str | None
+    role: str | None
+    person: str | None
+    email: str
+    name: str
+
+
+def _session(authorization: str) -> tuple[str, str | None]:
     if not authorization.startswith("Bearer "):
         raise HTTPException(401, "sign in first")
-    pid = verify("session", authorization[7:])
-    h = load_household()
-    if pid not in h.people or h.people[pid].is_kid:
-        raise HTTPException(403, "not an adult in this household")
-    return pid
+    sub = verify("session", authorization[7:])
+    uid, _, hid = sub.partition("|")
+    return uid, hid or None
+
+
+async def signed_in(authorization: str = Header(default="")) -> Ctx:
+    """Any signed-in person (no household needed: for the welcome wizard)."""
+    uid, hid = _session(authorization)
+    con = accounts.connect()
+    u = accounts.user(con, uid)
+    con.close()
+    if not u:
+        raise HTTPException(401, "that account no longer exists")
+    return Ctx(uid, hid, None, None, u["email"], u["name"])
+
+
+async def member(authorization: str = Header(default="")):
+    """A member of the session's household. Points the engine at that household for the rest of the request."""
+    uid, hid = _session(authorization)
+    if not hid:
+        raise HTTPException(409, "set up or join a household first")
+    con = accounts.connect()
+    u = accounts.user(con, uid)
+    m = accounts.membership(con, uid, hid) if u else None
+    if m:
+        accounts.touch(con, uid)
+    con.close()
+    if not u or not m:
+        raise HTTPException(403, "you're not a member of that household")
+    tok = set_tenant(hid)
+    try:
+        yield Ctx(uid, hid, m["role"], m["person_id"], u["email"], u["name"])
+    finally:
+        reset_tenant(tok)
+
+
+def need(ctx: Ctx, role: str) -> None:
+    order = {"kid": 0, "adult": 1, "admin": 2}
+    if order.get(ctx.role or "kid", 0) < order[role]:
+        raise HTTPException(403, f"only {'an admin' if role == 'admin' else 'an adult'} in the household can do that")
+
+
+def actor(ctx: Ctx) -> str:
+    return ctx.person or ctx.uid
+
+
+# ---------------------------------------------------------------- small helpers
+_hits: dict[str, list[float]] = defaultdict(list)
+
+
+def rate_limit(key: str, per_hour: int) -> None:
+    now = time.time()
+    _hits[key] = [t for t in _hits[key] if now - t < 3600]
+    if len(_hits[key]) >= per_hour:
+        raise HTTPException(429, "too many requests; try again later")
+    _hits[key].append(now)
 
 
 def _week(w: str | None) -> dt.date:
@@ -103,63 +183,400 @@ def _stored(w: dt.date) -> dict:
     return rec
 
 
-# ---------------------------------------------------------------- sign-in
-class EmailIn(BaseModel):
-    email: str = Field(max_length=200)
+def _hh():
+    try:
+        return load_household()
+    except HouseholdError as e:
+        raise HTTPException(409, str(e))
 
 
-class TokenIn(BaseModel):
-    token: str = Field(max_length=500)
-
-
-@app.get("/api/health")
-def health() -> dict:
-    return {"ok": True, "version": __version__}
-
-
-@app.post("/api/auth/request")
-def auth_request(body: EmailIn) -> dict:
-    """Always answers the same way, so the endpoint doesn't reveal who's in the household."""
-    h = load_household()
-    who = next((p for p in h.people.values() if not p.is_kid and p.email and p.email.lower() == body.email.lower()), None)
-    if who:
-        link = f"{os.getenv('HELPER_APP_LINK', 'lilhelper://signin')}?token={sign('link', who.id, LINK_TTL)}"
-        _send_link(who.email, link)
-    return {"sent": True, "message": "If that email belongs to an adult in this household, a sign-in link is on its way."}
-
-
-def _send_link(to: str, link: str) -> None:
-    html = f"<p>Tap to sign in to Lil'Helper (valid 15 minutes):</p><p><a href='{link}'>{link}</a></p>"
+def _send_email(to: str, subject: str, body_html: str, tag: str) -> None:
     if os.getenv("RESEND_API_KEY"):
         httpx.post("https://api.resend.com/emails", timeout=15,
                    headers={"Authorization": f"Bearer {os.environ['RESEND_API_KEY']}"},
                    json={"from": os.getenv("MAIL_FROM", "Lil'Helper <helper@example.com>"), "to": [to],
-                         "subject": "Your Lil'Helper sign-in link", "html": html})
+                         "subject": subject, "html": body_html})
     else:
-        d = work_root() / "output" / "outbox"
+        d = data_root() / "outbox"                      # account emails aren't any one household's
         d.mkdir(parents=True, exist_ok=True)
-        (d / f"signin-{hashlib.sha256(to.encode()).hexdigest()[:8]}.html").write_text(html)
+        (d / f"{tag}-{hashlib.sha256(to.encode()).hexdigest()[:8]}.html").write_text(body_html)
+
+
+# ---------------------------------------------------------------- sign-in and accounts
+class EmailIn(BaseModel):
+    email: str = Field(max_length=200)
+    invite: str | None = Field(default=None, max_length=100)
+
+
+class TokenIn(BaseModel):
+    token: str = Field(max_length=600)
+    invite: str | None = Field(default=None, max_length=100)
+
+
+@app.get("/api/health")
+def health() -> dict:
+    return {"ok": True, "version": __version__, "signup": accounts.signup_mode()}
+
+
+@app.post("/api/auth/request")
+def auth_request(body: EmailIn, request: Request) -> dict:
+    """Always answers the same way, so it doesn't reveal who has an account."""
+    try:
+        email = accounts.norm_email(body.email)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    rate_limit(f"ip:{request.client.host if request.client else '-'}", 30)
+    rate_limit(f"email:{email}", 5)
+    con = accounts.connect()
+    known = accounts.user_by_email(con, email)
+    con.close()
+    if known or accounts.signup_mode() != "closed" or body.invite:
+        q = f"token={sign('link', email, LINK_TTL)}" + (f"&invite={body.invite}" if body.invite else "")
+        link = f"{os.getenv('HELPER_APP_LINK', 'lilhelper://signin')}?{q}"
+        _send_email(email, "Your Lil'Helper sign-in link",
+                    f"<p>Tap to sign in to Lil'Helper (valid 15 minutes):</p><p><a href='{html.escape(link)}'>"
+                    f"{html.escape(link)}</a></p>", "signin")
+    return {"sent": True, "message": "Check your email for a sign-in link."}
+
+
+def _session_for(con, uid: str, hid: str | None) -> dict:
+    ms = accounts.memberships(con, uid)
+    if hid is None and ms:
+        hid = ms[0]["household_id"]
+    u = accounts.user(con, uid)
+    return {"session": sign("session", f"{uid}|{hid or ''}", SESSION_TTL), "user": {"id": uid, "email": u["email"],
+            "name": u["name"]}, "household": hid, "households": ms}
 
 
 @app.post("/api/auth/verify")
 def auth_verify(body: TokenIn) -> dict:
-    pid = verify("link", body.token)
-    h = load_household()
-    return {"session": sign("session", pid, SESSION_TTL), "person": pid, "name": h.people[pid].name}
+    email = verify("link", body.token)
+    con = accounts.connect()
+    u = accounts.get_or_create_user(con, email)
+    hid = None
+    if body.invite:
+        try:
+            hid = accounts.accept_invite(con, body.invite, u["id"], email)["household_id"]
+        except ValueError as e:
+            con.close()
+            raise HTTPException(409, str(e))
+    out = _session_for(con, u["id"], hid)
+    con.close()
+    return out
 
 
-# ---------------------------------------------------------------- household
-@app.get("/api/household")
-def household(pid: str = Depends(me)) -> dict:
-    h = load_household()
-    return {"name": h.info.get("name"), "me": pid,
-            "people": [{"id": p.id, "name": p.name, "kid": p.is_kid, "allergies": p.allergies, "diet": p.diet}
-                       for p in h.people.values()],
-            "pets": [{"id": p.id, "name": p.name, "species": p.species, "food": p.food.get("brand")} for p in h.pets.values()],
-            "meals": {k: v for k, v in h.meals.items() if k != "special_nights"},
-            "prep_minutes": h.raw.get("prep_minutes", {}), "budget_per_week": h.info.get("budget_per_week"),
-            "stores": h.raw.get("stores", []),
-            "calendar_feed": f"/api/calendar/{feed_key()}.ics"}
+@app.get("/api/me")
+def me(ctx: Ctx = Depends(signed_in)) -> dict:
+    con = accounts.connect()
+    ms = accounts.memberships(con, ctx.uid)
+    con.close()
+    cur = next((m for m in ms if m["household_id"] == ctx.hid), None)
+    return {"user": {"id": ctx.uid, "email": ctx.email, "name": ctx.name}, "households": ms, "current": cur,
+            "signup": accounts.signup_mode()}
+
+
+class SwitchIn(BaseModel):
+    household_id: str
+
+
+@app.post("/api/session/household")
+def switch_household(body: SwitchIn, ctx: Ctx = Depends(signed_in)) -> dict:
+    con = accounts.connect()
+    if not accounts.membership(con, ctx.uid, body.household_id):
+        con.close()
+        raise HTTPException(403, "you're not a member of that household")
+    out = _session_for(con, ctx.uid, body.household_id)
+    con.close()
+    return out
+
+
+class NewHouseholdIn(BaseModel):
+    name: str = Field(min_length=1, max_length=60)
+    region: str = "northeast-us"
+    your_name: str = Field(min_length=1, max_length=40)
+    signup_code: str | None = Field(default=None, max_length=100)
+
+
+def _pid(name: str, taken) -> str:
+    base = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")[:20] or "person"
+    pid, n = base, 2
+    while pid in taken:
+        pid, n = f"{base}_{n}", n + 1
+    return pid
+
+
+@app.post("/api/households")
+def create_household(body: NewHouseholdIn, ctx: Ctx = Depends(signed_in)) -> dict:
+    """The welcome wizard's first step: a new household, with you as its admin."""
+    if not accounts.signup_code_ok(body.signup_code):
+        raise HTTPException(403, "a sign-up code is needed to start a new household (or ask to be invited)")
+    con = accounts.connect()
+    try:
+        hid = accounts.create_household(con, ctx.uid, body.name, body.region,
+                                        {"id": _pid(body.your_name, set()), "name": body.your_name,
+                                         "email": ctx.email, "can_cook": True})
+    except (ValueError, HouseholdError) as e:
+        con.close()
+        raise HTTPException(422, str(e))
+    out = _session_for(con, ctx.uid, hid)
+    con.close()
+    return out
+
+
+@app.delete("/api/account")
+def delete_account(ctx: Ctx = Depends(signed_in)) -> dict:
+    """Delete my account (in the app, as the App Store requires). Households left with nobody are deleted too."""
+    con = accounts.connect()
+    gone = accounts.delete_user(con, ctx.uid)
+    con.close()
+    return {"deleted": True, "households_deleted": len(gone)}
+
+
+class ConfirmName(BaseModel):
+    confirm: str
+
+
+@app.delete("/api/household")
+def delete_household(body: ConfirmName, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "admin")
+    h = _hh()
+    if body.confirm.strip() != h.info.get("name"):
+        raise HTTPException(422, "type the household's name to confirm")
+    con = accounts.connect()
+    accounts.delete_household(con, ctx.hid)
+    con.close()
+    return {"deleted": True}
+
+
+# ---------------------------------------------------------------- household settings (admin)
+def _version() -> str:
+    from .config import household_path
+    return hashlib.sha256(household_path().read_bytes()).hexdigest()[:12]
+
+
+def _catalogs() -> dict:
+    st = load_stores()["stores"]
+    m = money.catalog()
+    return {"allergens": list(ALLERGENS), "diets": list(DIETS), "night_kinds": list(NIGHT_KINDS),
+            "days": DAYS, "meals": MEALS, "regions": ["northeast-us"],
+            "stores": [{"id": k, "name": v["name"], "modes": list(v["modes"]), "needs": v.get("needs")}
+                       for k, v in st.items()],
+            "cards": [{"id": k, "name": v["name"], "verified": str(v.get("verified") or "")} for k, v in m["cards"].items()],
+            "memberships": [{"id": k, "name": v["name"]} for k, v in m["memberships"].items()],
+            "styles": ["kid_friendly", "kid_can_make", "one_pot", "sheet_pan", "slow_cooker", "batch", "leftovers",
+                       "vegetarian", "freezes_well"]}
+
+
+@app.get("/api/household/settings")
+def get_settings(ctx: Ctx = Depends(member)) -> dict:
+    h = _hh()
+    return {"settings": h.raw, "version": _version(), "role": ctx.role, "me": ctx.person, "catalogs": _catalogs()}
+
+
+class SettingsIn(BaseModel):
+    settings: dict
+    version: str
+
+
+@app.put("/api/household/settings")
+def put_settings(body: SettingsIn, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "admin")
+    if body.version != _version():
+        raise HTTPException(409, "someone else changed the settings; reload and try again")
+    raw = body.settings
+    raw["require_admin"] = True
+    try:
+        save_household(raw)
+    except (HouseholdError, KeyError, TypeError, ValueError) as e:
+        raise HTTPException(422, str(e))
+    con = store.connect()
+    store.audit(con, actor(ctx), "settings", {"sections": sorted(raw)})
+    con.close()
+    return {"saved": True, "version": _version()}
+
+
+SECTIONS = {"household", "meals", "dinner_times", "prep_minutes", "batch_day", "health", "brands", "stores",
+            "home_store", "memberships", "cards", "suggestions", "chores", "outputs", "styles", "kid_chef", "leftovers",
+            "eating_out", "cost_per_serving", "storage", "freezer_meals", "shopping_sessions", "pets",
+            "plan_ahead_weeks"}
+
+
+class SectionIn(BaseModel):
+    value: object = None
+
+
+@app.patch("/api/household/settings/{section}")
+def patch_section(section: str, body: SectionIn, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "admin")
+    if section not in SECTIONS:
+        raise HTTPException(404, "unknown settings section")
+    h = _hh()
+    raw = h.raw
+    if body.value is None:
+        raw.pop(section, None)
+    else:
+        raw[section] = body.value
+    raw["require_admin"] = True
+    try:
+        save_household(raw)
+    except (HouseholdError, KeyError, TypeError, ValueError) as e:
+        raise HTTPException(422, str(e))
+    con = store.connect()
+    store.audit(con, actor(ctx), "settings", {"section": section})
+    con.close()
+    return {"saved": True, "version": _version(), "value": raw.get(section)}
+
+
+class PersonIn(BaseModel):
+    name: str = Field(min_length=1, max_length=40)
+    age_band: str = "adult"
+    age: int | None = Field(default=None, ge=0, le=120)
+    allergies: list[str] = []
+    diet: list[str] = []
+    portion: float = Field(default=1.0, ge=0.2, le=3.0)
+    likes: list[str] = []
+    dislikes: list[str] = []
+    home: list[str] = Field(default_factory=lambda: list(DAYS))
+    can_cook: bool = False
+    email: str | None = None
+    admin: bool = False
+
+
+@app.get("/api/household/people")
+def people(ctx: Ctx = Depends(member)) -> dict:
+    h = _hh()
+    con = accounts.connect()
+    ms = accounts.members(con, ctx.hid)
+    inv = accounts.pending_invites(con, ctx.hid)
+    con.close()
+    by_person = {m["person_id"]: m for m in ms}
+    out = []
+    for p in h.people.values():
+        d = {k: v for k, v in h.raw["people"][p.id].items()}
+        m = by_person.get(p.id)
+        d.update({"id": p.id, "role": m["role"] if m else ("kid" if p.is_kid else "adult"),
+                  "signed_up": bool(m), "invited": any(i["person_id"] == p.id for i in inv),
+                  "last_seen": m["last_seen"] if m else None})
+        out.append(d)
+    return {"people": out, "pets": h.raw.get("pets") or {}, "me": ctx.person, "role": ctx.role}
+
+
+@app.post("/api/household/people")
+def add_person(body: PersonIn, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "admin")
+    h = _hh()
+    pid = _pid(body.name, h.people)
+    h.raw["people"][pid] = {k: v for k, v in body.model_dump().items() if v not in (None, [], False) or k in
+                            ("home",)}
+    h.raw["require_admin"] = True
+    try:
+        save_household(h.raw)
+    except HouseholdError as e:
+        raise HTTPException(422, str(e))
+    return {"added": pid}
+
+
+@app.put("/api/household/people/{pid}")
+def edit_person(pid: str, body: PersonIn, ctx: Ctx = Depends(member)) -> dict:
+    h = _hh()
+    if pid not in h.people:
+        raise HTTPException(404, "no such person")
+    if ctx.role != "admin":
+        # anyone may change their own likes and dislikes; everything else is the admin's
+        if pid != ctx.person:
+            raise HTTPException(403, "only an admin can change someone else's details")
+        cur = h.raw["people"][pid]
+        cur["likes"], cur["dislikes"] = body.likes, body.dislikes
+    else:
+        h.raw["people"][pid] = {k: v for k, v in body.model_dump().items() if v not in (None, [], False) or k in
+                                ("home",)}
+    h.raw["require_admin"] = True
+    try:
+        save_household(h.raw)
+    except HouseholdError as e:
+        raise HTTPException(422, str(e))
+    con = accounts.connect()
+    for m in accounts.members(con, ctx.hid):
+        if m["person_id"] == pid and ctx.role == "admin":
+            want = "admin" if body.admin else ("kid" if body.age_band == "kid" else "adult")
+            if want != m["role"]:
+                try:
+                    accounts.set_role(con, ctx.hid, m["user_id"], want)
+                except ValueError as e:
+                    con.close()
+                    raise HTTPException(422, str(e))
+    con.close()
+    return {"saved": pid}
+
+
+@app.delete("/api/household/people/{pid}")
+def remove_person(pid: str, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "admin")
+    h = _hh()
+    if pid not in h.people:
+        raise HTTPException(404, "no such person")
+    if pid == ctx.person:
+        raise HTTPException(422, "you can't remove yourself here; delete your account in Settings instead")
+    con = accounts.connect()
+    for m in accounts.members(con, ctx.hid):
+        if m["person_id"] == pid:
+            accounts.remove_member(con, ctx.hid, m["user_id"])
+    con.close()
+    del h.raw["people"][pid]
+    for meal in MEALS:
+        cfg = h.raw["meals"].get(meal) or {}
+        if isinstance(cfg.get("eaters"), list) and pid in cfg["eaters"]:
+            cfg["eaters"] = [x for x in cfg["eaters"] if x != pid] or "all"
+    h.raw["kid_chef"] = {d: p for d, p in (h.raw.get("kid_chef") or {}).items() if p != pid}
+    h.raw["require_admin"] = True
+    try:
+        save_household(h.raw)
+    except HouseholdError as e:
+        raise HTTPException(422, str(e))
+    return {"removed": pid}
+
+
+class InviteIn(BaseModel):
+    person_id: str
+    email: str = Field(max_length=200)
+
+
+@app.post("/api/household/invites")
+def invite(body: InviteIn, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "admin")
+    h = _hh()
+    if body.person_id not in h.people:
+        raise HTTPException(404, "add the person first")
+    p = h.people[body.person_id]
+    role = "admin" if p.admin else ("kid" if p.is_kid else "adult")
+    rate_limit(f"invite:{ctx.hid}", 20)
+    con = accounts.connect()
+    try:
+        code = accounts.invite(con, ctx.hid, body.email, body.person_id, role, ctx.uid)
+    except ValueError as e:
+        con.close()
+        raise HTTPException(422, str(e))
+    con.close()
+    email = accounts.norm_email(body.email)
+    link = f"{os.getenv('HELPER_APP_LINK', 'lilhelper://signin')}?token={sign('link', email, 7 * 24 * 3600)}&invite={code}"
+    _send_email(email, f"{ctx.name} invited you to {h.info.get('name')} on Lil'Helper",
+                f"<p>{html.escape(ctx.name)} added you to <b>{html.escape(h.info.get('name', ''))}</b> on Lil'Helper, "
+                f"the family meal planner.</p><p>Install Lil'Helper, then tap: <a href='{html.escape(link)}'>join "
+                f"the household</a> (valid 7 days).</p>", "invite")
+    return {"invited": email, "person": body.person_id, "role": role}
+
+
+@app.delete("/api/household/members/{uid}")
+def remove_member(uid: str, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "admin")
+    con = accounts.connect()
+    try:
+        accounts.remove_member(con, ctx.hid, uid)
+    except ValueError as e:
+        con.close()
+        raise HTTPException(422, str(e))
+    con.close()
+    return {"removed": uid}
 
 
 # ---------------------------------------------------------------- the week
@@ -181,75 +598,182 @@ class ApproveIn(BaseModel):
     seconds: float = Field(ge=0, le=36000)       # time the person spent in the app on this week (NFR-3)
 
 
+class NightIn(BaseModel):
+    week: str | None = None
+    day: str
+    kind: str
+
+
+class AwayIn(BaseModel):
+    week: str | None = None
+    day: str
+    person: str
+    away: bool
+
+
+class AheadIn(BaseModel):
+    week: str | None = None
+    ingredients: list[str]
+
+
 def _view(rec: dict) -> dict:
-    h = load_household()
+    h = _hh()
     choice = rec.get("shopping_choice") or "balanced"
     return {"week_of": rec["week_of"], "status": rec.get("status"), "approved_by": rec.get("approved_by"),
             "plan": rec["plan"], "choice": choice,
-            "options": {k: {"total": v["total"], "minutes": v["minutes"],
-                            "stores": [{"store": o["store_name"], "mode": o["mode"], "total": o["total"]}
+            "options": {k: {"total": v["total"], "minutes": v["minutes"], "flags": v.get("flags", []),
+                            "storage_used": v.get("storage_used", {}),
+                            "stores": [{"store": o["store_name"], "mode": o["mode"], "total": o["total"],
+                                        "day": o.get("day"), "time": o.get("time"), "card": o.get("card_name")}
                                        for o in v["orders"]]} for k, v in rec["split"].items()},
             "chores": rec.get("chores", []), "pets": rec.get("pets", []), "savings": rec.get("savings"),
-            "people": {p.id: p.name for p in h.people.values()}}
+            "eating_out": rec.get("eating_out") or [], "extras": rec.get("extras") or {},
+            "people": {p.id: p.name for p in h.people.values()},
+            "dinner_times": {d: h.dinner_time(d) for d in DAYS}}
 
 
 @app.get("/api/week")
-def get_week(week: str | None = None, pid: str = Depends(me)) -> dict:
+def get_week(week: str | None = None, ctx: Ctx = Depends(member)) -> dict:
     return _view(_stored(_week(week)))
 
 
 @app.post("/api/week/draft")
-def draft_week(body: WeekIn, pid: str = Depends(me)) -> dict:
-    week.draft(_week(body.week), choice=body.choice, actor=pid)
+def draft_week(body: WeekIn, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    week.draft(_week(body.week), choice=body.choice, actor=actor(ctx))
     return _view(_stored(_week(body.week)))
 
 
 @app.post("/api/week/swap")
-def swap_meal(body: SwapIn, pid: str = Depends(me)) -> dict:
+def swap_meal(body: SwapIn, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
     if body.day not in DAYS:
         raise HTTPException(422, "day must be mon..sun")
+    rec = _stored(_week(body.week))
+    if rec.get("status") == "approved":
+        raise HTTPException(409, "this week is approved; change it from next week, or use Cook from what I've got")
     try:
-        week.swap(_week(body.week), body.day, body.meal, to=body.to, actor=pid)
+        week.swap(_week(body.week), body.day, body.meal, to=body.to, actor=actor(ctx))
     except ValueError as e:
         raise HTTPException(409, str(e))
+    _notify_others(ctx, "The plan changed", f"{body.day.title()} {body.meal} was swapped.", f"lilhelper://week?day={body.day}")
     return _view(_stored(_week(body.week)))
 
 
-@app.post("/api/week/approve")
-def approve_week(body: ApproveIn, pid: str = Depends(me)) -> dict:
+@app.post("/api/week/night")
+def set_night(body: NightIn, ctx: Ctx = Depends(member)) -> dict:
+    """Make a night takeout, eating out, leftovers, a freezer meal, or cooked again — then the week re-plans."""
+    need(ctx, "adult")
     try:
-        week.approve(_week(body.week), pid, body.seconds, body.choice)
+        week.set_night(_week(body.week), body.day, body.kind, actor(ctx))
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    rec = store.get_week(store.connect(), _week(body.week).isoformat())
+    if not rec or rec.get("status") != "approved":
+        week.draft(_week(body.week), actor=actor(ctx), ideas=False)
+    _notify_others(ctx, "Dinner plans changed", f"{body.day.title()} is now {body.kind.replace('_', ' ')}.",
+                   f"lilhelper://week?day={body.day}")
+    return _view(_stored(_week(body.week)))
+
+
+@app.post("/api/week/away")
+def set_away(body: AwayIn, ctx: Ctx = Depends(member)) -> dict:
+    """Someone's out for dinner on a day this week (anyone may mark themselves; adults may mark anyone)."""
+    if body.person != ctx.person:
+        need(ctx, "adult")
+    h = _hh()
+    if body.person not in h.people:
+        raise HTTPException(404, "no such person")
+    try:
+        week.set_away(_week(body.week), body.day, body.person, body.away, actor(ctx))
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    rec = store.get_week(store.connect(), _week(body.week).isoformat())
+    if not rec or rec.get("status") != "approved":
+        week.draft(_week(body.week), actor=actor(ctx), ideas=False)
+    return _view(_stored(_week(body.week)))
+
+
+@app.post("/api/week/ahead")
+def buy_ahead(body: AheadIn, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    try:
+        added = week.add_ahead(_week(body.week), body.ingredients, actor(ctx))
+    except ValueError as e:
+        raise HTTPException(409, str(e))
+    return {"added": added}
+
+
+@app.post("/api/week/approve")
+def approve_week(body: ApproveIn, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    try:
+        week.approve(_week(body.week), ctx.person, body.seconds, body.choice)
     except PermissionError as e:
         raise HTTPException(403, str(e))
     except (ValueError, KeyError) as e:
         raise HTTPException(409, str(e))
+    _notify_others(ctx, "This week's plan is set", f"Approved by {ctx.name}. Shopping lists are ready.",
+                   "lilhelper://shopping")
     return _view(_stored(_week(body.week)))
 
 
+def _notify_others(ctx: Ctx, title: str, body: str, link: str) -> None:
+    con = accounts.connect()
+    others = [m["user_id"] for m in accounts.members(con, ctx.hid) if m["user_id"] != ctx.uid]
+    con.close()
+    if others:
+        notify.send(ctx.hid, title, body, to_users=others, link=link, kind="change")
+
+
 # ---------------------------------------------------------------- shopping hand-offs
+def _orders(rec: dict, choice: str) -> list[dict]:
+    """The chosen split's orders, with any buy-ahead items added to the matching store's order."""
+    orders = [dict(o, lines=list(o["lines"])) for o in rec["split"][choice]["orders"]]
+    for a in (rec.get("extras") or {}).get("buy_ahead_added", []):
+        o = next((o for o in orders if o["store_name"] == a["store_name"]
+                  and (a.get("channel", "any") == "any" or (a["channel"] == "in_store") == (o["mode"] == "in_store"))),
+                 None)
+        line = {"ingredient": a["ingredient"], "name": a["name"] + " (buy ahead)", "brand": "", "packs": a["packs"],
+                "pack": a["pack"], "price_each": a["price"], "special": True, "cost": round(a["packs"] * a["price"], 2)}
+        if o:
+            o["lines"].append(line)
+            o["total"] = round(o["total"] + line["cost"], 2)
+        else:
+            orders.append({"store": a["store"], "store_name": a["store_name"], "mode": "in_store", "handoff": "print",
+                           "lines": [line], "total": line["cost"], "payload": {"aisle_ordered": []}, "credits": 0,
+                           "minutes": 30})
+    return orders
+
+
 @app.get("/api/week/shopping")
-def shopping(week: str | None = None, choice: str | None = None, pid: str = Depends(me)) -> dict:
+def shopping(week: str | None = None, choice: str | None = None, ctx: Ctx = Depends(member)) -> dict:
     rec = _stored(_week(week))
     if rec.get("status") != "approved":
         raise HTTPException(409, "approve the week first; nothing is handed to a store before that")
     choice = choice or rec.get("shopping_choice") or "balanced"
+    h = _hh()
     out = []
-    for o in rec["split"][choice]["orders"]:
+    for o in _orders(rec, choice):
         item = {"store": o["store_name"], "mode": o["mode"], "handoff": o["handoff"], "total": o["total"],
+                "day": o.get("day"), "time": o.get("time"),
+                "who": h.people[o["who"]].name if o.get("who") in h.people else None,
+                "card": o.get("card_name"), "card_note": o.get("card_note"), "rewards": o.get("rewards", 0),
                 "lines": [{"name": ln["name"], "packs": ln["packs"], "brand": ln["brand"], "special": ln["special"],
                            "price": ln["price_each"]} for ln in o["lines"]],
                 "credits": o.get("credits", 0), "url": None, "note": None}
         if o["handoff"] == "instacart":
             item["url"], item["note"] = instacart_link(o["payload"])
-        elif o["handoff"] == "amazon":
-            item["share_text"] = "\n".join(o["payload"]["items"])
+        lines = "\n".join(f"{ln['packs']} × {ln['name']}" + (f" ({ln['brand']})" if ln.get("brand") else "")
+                          for ln in o["lines"])
+        item["share_text"] = lines
+        if o["handoff"] == "amazon":
             item["note"] = "Share to the Amazon or Whole Foods app, or to Reminders"
-        else:
-            item["share_text"] = "\n".join(o["payload"]["aisle_ordered"])
+        elif o["handoff"] != "instacart":
             item["note"] = ("In-store list in aisle order; share it to Reminders or print it" if o["mode"] == "in_store"
                             else f"Order {o['mode']} in {o['store_name']}'s own app with this list")
         out.append(item)
-    store.audit(store.connect(), pid, "handoff_view", {"week_of": rec["week_of"], "choice": choice})
+    store.audit(store.connect(), actor(ctx), "handoff_view", {"week_of": rec["week_of"], "choice": choice})
     return {"week_of": rec["week_of"], "choice": choice, "orders": out}
 
 
@@ -269,7 +793,7 @@ def instacart_link(payload: dict) -> tuple[str | None, str]:
         return None, f"Instacart didn't answer ({type(e).__name__}); the list below still works"
 
 
-# ---------------------------------------------------------------- jobs
+# ---------------------------------------------------------------- jobs and feedback
 class JobSwapIn(BaseModel):
     week: str | None = None
     day: str
@@ -278,8 +802,9 @@ class JobSwapIn(BaseModel):
 
 
 @app.post("/api/jobs/swap")
-def swap_job(body: JobSwapIn, pid: str = Depends(me)) -> dict:
-    h = load_household()
+def swap_job(body: JobSwapIn, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    h = _hh()
     spec = ((h.raw.get("chores") or {}).get("jobs") or {}).get(body.job)
     p = h.people.get(body.person)
     if not spec or not p or not chores.eligible(p, body.job, spec, body.day):
@@ -294,106 +819,723 @@ def swap_job(body: JobSwapIn, pid: str = Depends(me)) -> dict:
         if a["day"] == body.day and a["job"] == body.job:
             a["person"], a["name"] = p.id, p.name
     store.save_week(con, wk, chores=jobs)
-    store.audit(con, pid, "job_swap", body.model_dump())
+    store.audit(con, actor(ctx), "job_swap", body.model_dump())
     con.close()
     return {"chores": jobs}
 
 
-# ---------------------------------------------------------------- feedback
 class FeedbackIn(BaseModel):
     week: str | None = None
     day: str
     meal: str
-    eaten: str
+    eaten: str | None = None
     rating: int | None = Field(default=None, ge=1, le=5)
 
 
-@app.post("/api/feedback")
-def give_feedback(body: FeedbackIn, pid: str = Depends(me)) -> dict:
+def _record_feedback(wk: str, day: str, meal: str, eaten: str | None, rating: int | None, by: str) -> dict:
     con = store.connect()
-    wk = _week(body.week).isoformat()
     rec = store.get_week(con, wk)
-    e = next((e for e in (rec or {}).get("plan", {}).get("entries", [])
-              if e["day"] == body.day and e["meal"] == body.meal), None)
+    e = next((e for e in (rec or {}).get("plan", {}).get("entries", []) if e["day"] == day and e["meal"] == meal), None)
     if not e:
+        con.close()
         raise HTTPException(404, "no such meal that week")
+    prev = con.execute("SELECT eaten, rating FROM feedback WHERE week_of=? AND day=? AND meal=?", (wk, day, meal)).fetchone()
+    eaten = eaten or (prev["eaten"] if prev else "all")
+    rating = rating if rating is not None else (prev["rating"] if prev else None)
     try:
-        feedback.record(con, wk, body.day, body.meal, e["recipe"], body.eaten, body.rating, pid)
+        feedback.record(con, wk, day, meal, e["recipe"], eaten, rating, by)
     except ValueError as ex:
+        con.close()
         raise HTTPException(422, str(ex))
     changed = feedback.learn(con, Settings.load(), wk)
     con.close()
-    return {"recorded": True, "portions_changed": changed}
+    return {"recorded": True, "meal": e["name"], "eaten": eaten, "rating": rating, "portions_changed": changed}
 
 
-# ---------------------------------------------------------------- specials from a flyer
+@app.post("/api/feedback")
+def give_feedback(body: FeedbackIn, ctx: Ctx = Depends(member)) -> dict:
+    return _record_feedback(_week(body.week).isoformat(), body.day, body.meal, body.eaten, body.rating, actor(ctx))
+
+
+# ---------------------------------------------------------------- recipes and ingredients (the household's own)
+class LineIn(BaseModel):
+    text: str | None = Field(default=None, max_length=80)
+    ingredient: str | None = None
+    qty: float = Field(gt=0, le=1000)
+    unit: str | None = None
+
+
+class RecipeIn(BaseModel):
+    name: str = Field(min_length=2, max_length=80)
+    meal: str = "dinner"
+    serves: float = Field(default=4, gt=0, le=40)        # the amounts below make this many servings
+    active: int = Field(default=20, ge=1, le=300)
+    total: int = Field(default=30, ge=1, le=1440)
+    ingredients: list[LineIn]
+    instructions: list[str] = []
+    tags: list[str] = []
+    season_months: list[int] = []
+    want: dict = {}                                       # {times: 2, per_weeks: 4}
+    kid_min_age: int = Field(default=0, ge=0, le=18)
+    veg: float = Field(default=1, ge=0, le=6)
+    protein: float = Field(default=20, ge=0, le=150)
+    notes: str = Field(default="", max_length=500)
+
+
+UNIT_TO = {("tbsp", "cup"): 1 / 16, ("cup", "tbsp"): 16, ("tsp", "tbsp"): 1 / 3, ("tsp", "cup"): 1 / 48,
+           ("oz", "lb"): 1 / 16, ("lb", "oz"): 16, ("g", "lb"): 1 / 453.6, ("g", "oz"): 1 / 28.35, ("kg", "lb"): 2.2046,
+           ("ml", "cup"): 1 / 236.6, ("l", "cup"): 4.227}
+
+
+def _convert(qty: float, frm: str | None, to: str) -> float:
+    if not frm or frm == to:
+        return qty
+    f = UNIT_TO.get((frm.lower().rstrip("s"), to))
+    if f is None:
+        raise HTTPException(422, f"can't convert {frm} to {to}; use {to}")
+    return qty * f
+
+
+@app.get("/api/recipes")
+def list_recipes(q: str = "", meal: str | None = None, mine: bool = False, ctx: Ctx = Depends(member)) -> dict:
+    c = catalog.for_household(_hh())
+    out = []
+    for r in c.recipes.values():
+        if (meal and r.meal != meal) or (mine and r.source != "household") or (q and q.lower() not in r.name.lower()):
+            continue
+        out.append({"id": r.id, "name": r.name, "meal": r.meal, "active": r.active, "total": r.total, "tags": r.tags,
+                    "source": r.source, "season_months": r.season_months, "want": r.want,
+                    "kid_min_age": r.kid_min_age})
+    out.sort(key=lambda r: (r["source"] != "household", r["meal"], r["name"]))
+    return {"recipes": out}
+
+
+@app.get("/api/recipes/{rid}")
+def get_recipe(rid: str, ctx: Ctx = Depends(member)) -> dict:
+    c = catalog.for_household(_hh())
+    r = c.recipes.get(rid)
+    if not r:
+        raise HTTPException(404, "no such recipe")
+    return {**r.__dict__, "ingredients": [{"ingredient": i, "name": c.ingredients[i].name, "per_serving": q,
+                                           "unit": c.ingredients[i].unit} for i, q in r.ing.items()],
+            "allergens": c.allergens_of(r)}
+
+
+@app.post("/api/recipes")
+def save_recipe(body: RecipeIn, rid: str | None = None, ctx: Ctx = Depends(member)) -> dict:
+    """Add (or, with ?rid=, replace) one of the household's own recipes. Amounts are for `serves` servings."""
+    need(ctx, "adult")
+    h = _hh()
+    c = catalog.for_household(h)
+    if body.meal not in MEALS:
+        raise HTTPException(422, "meal must be breakfast, lunch or dinner")
+    if any(not 1 <= m <= 12 for m in body.season_months):
+        raise HTTPException(422, "season months are 1–12")
+    ing, unknown = {}, []
+    for ln in body.ingredients:
+        iid = ln.ingredient if ln.ingredient in c.ingredients else (c.match(ln.text or "") if ln.text else None)
+        if not iid:
+            unknown.append(ln.text or ln.ingredient or "?")
+            continue
+        ing[iid] = round(ing.get(iid, 0) + _convert(ln.qty, ln.unit, c.ingredients[iid].unit) / body.serves, 4)
+    if unknown:
+        raise HTTPException(422, {"message": "add these as your own ingredients first", "unknown": unknown})
+    if not ing:
+        raise HTTPException(422, "a recipe needs ingredients")
+    rid = rid or "h_" + re.sub(r"[^a-z0-9]+", "_", body.name.lower()).strip("_")[:40]
+    if rid in c.recipes and c.recipes[rid].source != "household":
+        raise HTTPException(409, "that's a built-in recipe; choose another name")
+    tags = sorted(set(body.tags) | ({"kid_can_make"} if body.kid_min_age else set()))
+    data = {"id": rid, "name": body.name, "meal": body.meal, "active": body.active, "total": body.total, "ing": ing,
+            "veg": body.veg, "protein": body.protein, "tags": tags, "source": "household",
+            "kid_min_age": body.kid_min_age, "instructions": [s[:300] for s in body.instructions[:30]],
+            "season_months": body.season_months, "want": {k: int(v) for k, v in body.want.items()
+                                                          if k in ("times", "per_weeks")},
+            "notes": body.notes, "created_by": actor(ctx)}
+    from .catalog import Recipe
+    allergens = c.allergens_of(Recipe(**{k: v for k, v in data.items() if k in Recipe.__dataclass_fields__}))
+    con = store.connect()
+    con.execute("INSERT OR REPLACE INTO custom_recipes VALUES (?,?,?,?,?)",
+                (rid, json.dumps(data), 1, actor(ctx), store.now()))
+    con.commit()
+    store.audit(con, actor(ctx), "recipe", {"id": rid})
+    con.close()
+    house = h.everyone_allergies()
+    return {"saved": rid, "allergens": allergens,
+            "warning": (f"Contains {', '.join(sorted(set(allergens) & house))}: someone in the house is allergic, so "
+                        "Lil'Helper won't plan it.") if set(allergens) & house else None}
+
+
+@app.delete("/api/recipes/{rid}")
+def delete_recipe(rid: str, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    con = store.connect()
+    con.execute("UPDATE custom_recipes SET active = 0, updated = ? WHERE id = ?", (store.now(), rid))
+    con.commit()
+    con.close()
+    return {"removed": rid}
+
+
+class IngredientIn(BaseModel):
+    name: str = Field(min_length=2, max_length=60)
+    unit: str = "each"
+    cat: str = "pantry"
+    allergens: list[str] = []
+    storage: str = ""
+    freezable: bool | None = None
+    shelf: int = Field(default=7, ge=1, le=1000)
+    prices: dict = {}                                   # {store: {pack, price, brand?}}
+
+
+@app.get("/api/ingredients")
+def list_ingredients(q: str = "", ctx: Ctx = Depends(member)) -> dict:
+    c = catalog.for_household(_hh())
+    out = [{"id": i.id, "name": i.name, "unit": i.unit, "cat": i.cat, "source": i.source, "storage": i.storage}
+           for i in c.ingredients.values() if not q or q.lower() in i.name.lower() or q.lower() in i.id]
+    return {"ingredients": sorted(out, key=lambda x: x["name"])[:200]}
+
+
+@app.post("/api/ingredients")
+def add_ingredient(body: IngredientIn, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    from .catalog import LITRES_PER_UNIT, STORAGE_DEFAULTS
+    if body.unit not in LITRES_PER_UNIT or body.cat not in STORAGE_DEFAULTS:
+        raise HTTPException(422, f"unit one of {sorted(LITRES_PER_UNIT)}; category one of {sorted(STORAGE_DEFAULTS)}")
+    if set(body.allergens) - set(ALLERGENS):
+        raise HTTPException(422, f"allergens: {', '.join(ALLERGENS)}")
+    for st, p in body.prices.items():
+        if st not in load_stores()["stores"] or float(p.get("price", 0)) <= 0 or float(p.get("pack", 0)) <= 0:
+            raise HTTPException(422, "prices: {store: {pack, price}} for stores Lil'Helper knows")
+    iid = "h_" + re.sub(r"[^a-z0-9]+", "_", body.name.lower()).strip("_")[:40]
+    c = catalog.for_household(_hh())
+    found = c.text_allergens(body.name)
+    data = {"id": iid, "name": body.name.lower(), "unit": body.unit, "cat": body.cat, "aisle": 5,
+            "allergens": sorted(set(body.allergens) | set(found)), "shelf": body.shelf, "storage": body.storage,
+            "freezable": body.freezable, "source": "household", "prices": body.prices}
+    con = store.connect()
+    con.execute("INSERT OR REPLACE INTO custom_ingredients VALUES (?,?,?,?)", (iid, json.dumps(data), actor(ctx),
+                                                                              store.now()))
+    con.commit()
+    con.close()
+    return {"saved": iid, "allergens": data["allergens"]}
+
+
+# ---------------------------------------------------------------- specials
+class SpecialIn(BaseModel):
+    week: str | None = None
+    store: str
+    item: str | None = Field(default=None, max_length=80)
+    ingredient: str | None = None
+    price: float = Field(gt=0, le=500)
+    per: str = "pack"                         # the price is for the store's usual pack, or per unit (per lb, each)
+    regular: float | None = Field(default=None, gt=0, le=500)
+    channel: str = "any"                      # any | in_store | online
+    repeat_weekly: bool = False
+    valid_to: str | None = None
+    note: str = Field(default="", max_length=120)
+
+
+@app.get("/api/specials")
+def list_specials(week: str | None = None, ctx: Ctx = Depends(member)) -> dict:
+    con = store.connect()
+    rows = [dict(r) for r in con.execute(
+        "SELECT * FROM specials WHERE week_of = ? OR repeat_weekly = 1 ORDER BY store", (_week(week).isoformat(),))]
+    con.close()
+    c = catalog.for_household(_hh())
+    for r in rows:
+        r["name"] = c.ingredients[r["ingredient"]].name if r["ingredient"] in c.ingredients else r["ingredient"]
+    return {"specials": rows}
+
+
+@app.post("/api/specials")
+def add_special(body: SpecialIn, ctx: Ctx = Depends(member)) -> dict:
+    """A special the household knows about: this week only or every week, in store, online (pickup/delivery) or both."""
+    need(ctx, "adult")
+    h = _hh()
+    c = catalog.for_household(h)
+    if body.store not in load_stores()["stores"]:
+        raise HTTPException(422, "unknown store")
+    if body.channel not in ("any", "in_store", "online"):
+        raise HTTPException(422, "channel: any, in_store or online")
+    iid = body.ingredient if body.ingredient in c.ingredients else (c.match(body.item or "") if body.item else None)
+    if not iid:
+        raise HTTPException(422, "couldn't match that to an ingredient; add it as your own ingredient first")
+    pb = PriceBook(h, _week(body.week), catalog=c, enabled=[body.store])
+    shelf = pb.shelf.get(body.store, {}).get(iid, [])
+    pack = float(shelf[0]["pack"]) if shelf else 1.0
+    price = round(body.price * pack, 2) if body.per == "unit" else body.price
+    regular = body.regular * (pack if body.per == "unit" else 1) if body.regular else (
+        float(shelf[0]["price"]) if shelf else None)
+    if regular and price < float(Settings.load()["shopping"]["typo_special_ratio"]) * regular:
+        raise HTTPException(422, f"${price / pack:.2f} a {c.ingredients[iid].unit} is far below the usual "
+                                 f"${regular / pack:.2f} — check the price (and whether it's per pack or per unit)")
+    con = store.connect()
+    con.execute("INSERT INTO specials (week_of, store, ingredient, price, regular, source, confirmed_by, ts, channel, "
+                "repeat_weekly, valid_to, note, pack) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (_week(body.week).isoformat(), body.store, iid, price, regular, "entered", actor(ctx), store.now(),
+                 body.channel, int(body.repeat_weekly), body.valid_to, body.note, pack if shelf else None))
+    con.commit()
+    con.close()
+    return {"saved": iid, "pack": pack, "unit": c.ingredients[iid].unit, "price": price, "regular": regular,
+            "note": None if shelf else
+            "This store isn't on file as selling it; the special is kept but only counts once a price exists."}
+
+
+@app.delete("/api/specials/{sid}")
+def delete_special(sid: int, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    con = store.connect()
+    con.execute("DELETE FROM specials WHERE id = ?", (sid,))
+    con.commit()
+    con.close()
+    return {"removed": sid}
+
+
 @app.post("/api/flyer")
 async def flyer(store_id: str = Form(...), week: str | None = Form(None), image: UploadFile = File(...),
-                pid: str = Depends(me)) -> dict:
+                ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
     data = await image.read()
     if len(data) > 8_000_000:
         raise HTTPException(413, "photo too large (8 MB max)")
-    h = load_household()
+    h = _hh()
     s = Settings.load()
-    c = catalog.get(h.info.get("region", "northeast-us"))
-    pb = PriceBook(h, _week(week))
+    c = catalog.for_household(h)
+    pb = PriceBook(h, _week(week), catalog=c)
     res = ai.read_flyer(ai.AIContext.make(s), h, c, pb, store_id, image=data)
-    return {"store": store_id, "flags": res.flags, "items": res.items,
-            "note": "Nothing counts until you confirm it"}
+    return {"store": store_id, "flags": res.flags, "items": res.items, "note": "Nothing counts until you confirm it"}
 
 
 class ConfirmIn(BaseModel):
     week: str | None = None
     store_id: str
     items: list[dict]
+    channel: str = "any"
 
 
 @app.post("/api/specials/confirm")
-def confirm_specials(body: ConfirmIn, pid: str = Depends(me)) -> dict:
+def confirm_specials(body: ConfirmIn, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
     con = store.connect()
     wk = _week(body.week).isoformat()
     n = 0
     for it in body.items:
         if not it.get("ingredient") or it.get("price") is None:
             continue
-        con.execute("INSERT INTO specials VALUES (?,?,?,?,?,?,?,?)",
-                    (wk, body.store_id, it["ingredient"], float(it["price"]), it.get("regular"), "flyer", pid,
-                     store.now()))
+        con.execute("INSERT INTO specials (week_of, store, ingredient, price, regular, source, confirmed_by, ts, "
+                    "channel) VALUES (?,?,?,?,?,?,?,?,?)",
+                    (wk, body.store_id, it["ingredient"], float(it["price"]), it.get("regular"), "flyer", actor(ctx),
+                     store.now(), body.channel))
         n += 1
     con.commit()
-    store.audit(con, pid, "specials_confirm", {"week_of": wk, "store": body.store_id, "count": n})
+    store.audit(con, actor(ctx), "specials_confirm", {"week_of": wk, "store": body.store_id, "count": n})
     con.close()
     return {"confirmed": n}
 
 
-# ---------------------------------------------------------------- outputs
-@app.get("/api/calendar/{key}.ics")
-def calendar_feed(key: str) -> Response:
-    """The one URL a household subscribes to in Google Calendar. Unguessable, revocable by changing HELPER_SECRET."""
-    if not hmac.compare_digest(key, feed_key()):
-        raise HTTPException(404)
+# ---------------------------------------------------------------- money: budget, spending, cards
+class SpendIn(BaseModel):
+    date: str | None = None
+    amount: float = Field(gt=0, le=5000)
+    store: str | None = None
+    merchant: str = Field(default="", max_length=60)
+    category: str = "groceries"
+    card: str | None = None
+    note: str = Field(default="", max_length=120)
+
+
+@app.get("/api/money/summary")
+def money_summary(week: str | None = None, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
     con = store.connect()
-    weeks = [store.get_week(con, r["week_of"]) for r in con.execute("SELECT week_of FROM weeks ORDER BY week_of")]
+    out = spend.summary(con, _hh(), _week(week))
     con.close()
-    return Response(outputs.ics(load_household(), [w for w in weeks if w]), media_type="text/calendar")
+    return out
+
+
+@app.post("/api/money/spend")
+def add_spend(body: SpendIn, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    con = store.connect()
+    try:
+        ok = spend.add(con, _hh(), date=dt.date.fromisoformat(body.date) if body.date else dt.date.today(),
+                       amount=body.amount, store_id=body.store, merchant=body.merchant or body.store or "Purchase",
+                       category=body.category, card=body.card, source="manual", by=actor(ctx), note=body.note)
+    except ValueError as e:
+        con.close()
+        raise HTTPException(422, str(e))
+    con.close()
+    return {"recorded": ok}
+
+
+@app.delete("/api/money/spend/{sid}")
+def delete_spend(sid: int, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    con = store.connect()
+    con.execute("DELETE FROM spend WHERE id = ?", (sid,))
+    con.commit()
+    con.close()
+    return {"removed": sid}
+
+
+@app.post("/api/money/statement")
+async def import_statement(file: UploadFile = File(...), card: str | None = Form(None), ctx: Ctx = Depends(member)) -> dict:
+    """A card statement CSV: only food purchases are kept (store, date, amount)."""
+    need(ctx, "adult")
+    data = await file.read()
+    if len(data) > 2_000_000:
+        raise HTTPException(413, "file too large (2 MB max)")
+    con = store.connect()
+    try:
+        out = spend.import_statement(con, _hh(), data.decode("utf-8", errors="replace"), card or None, actor(ctx))
+    except ValueError as e:
+        con.close()
+        raise HTTPException(422, str(e))
+    con.close()
+    return out
+
+
+_receipts: dict[str, object] = {}
+
+
+@app.post("/api/money/receipt")
+async def read_receipt(image: UploadFile | None = File(None), text: str | None = Form(None),
+                       ctx: Ctx = Depends(member)) -> dict:
+    """A receipt photo or pasted email: read it, show it back; nothing counts until confirmed."""
+    need(ctx, "adult")
+    data = await image.read() if image else None
+    if data and len(data) > 8_000_000:
+        raise HTTPException(413, "photo too large (8 MB max)")
+    if not data and not text:
+        raise HTTPException(422, "send a photo or the receipt text")
+    h = _hh()
+    c = catalog.for_household(h)
+    res = ai.read_receipt(ai.AIContext.make(Settings.load()), h, c, PriceBook(h, dt.date.today(), catalog=c),
+                          image=data, text=text[:20000] if text else None)
+    rid = hashlib.sha256(f"{ctx.hid}{time.time()}".encode()).hexdigest()[:12]
+    _receipts[f"{ctx.hid}:{rid}"] = res
+    best = money.best_card(h, res.store or "", "in_store", res.total or 0)
+    return {"receipt": rid, **res.__dict__, "suggested_card": best.card}
+
+
+class ReceiptConfirmIn(BaseModel):
+    receipt: str
+    card: str | None = None
+    use_prices: bool = True
+
+
+@app.post("/api/money/receipt/confirm")
+def confirm_receipt(body: ReceiptConfirmIn, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    res = _receipts.pop(f"{ctx.hid}:{body.receipt}", None)
+    if res is None:
+        raise HTTPException(404, "read the receipt again")
+    con = store.connect()
+    try:
+        out = spend.confirm_receipt(con, _hh(), res, body.card, actor(ctx), body.use_prices)
+    except ValueError as e:
+        con.close()
+        raise HTTPException(422, str(e))
+    con.close()
+    return out
+
+
+@app.get("/api/money/cards")
+def cards(ctx: Ctx = Depends(member)) -> dict:
+    """Which card to use where, with this year's progress toward each bonus cap."""
+    h = _hh()
+    con = store.connect()
+    used = spend.ytd_used(con, dt.date.today().year)
+    con.close()
+    st = load_stores()["stores"]
+    picks = []
+    for sid in h.raw.get("stores", []):
+        for mode in st.get(sid, {}).get("modes", {}):
+            p = money.best_card(h, sid, mode, 100.0, {**st[sid]["modes"][mode], "_mode": mode}, used)
+            picks.append({"store": st[sid]["name"], "mode": mode, "card": p.name, "per_100": p.earned, "note": p.note})
+    return {"cards": [{"id": cid, "name": c.name, "network": c.network, "earn": c.earn, "credits": c.credits,
+                       "verified": str(c.verified or "")} for cid, c in money.cards(h).items()],
+            "best": picks, "ytd": [{"card": k[0], "category": k[1], "spent": round(v, 2)} for k, v in used.items()]}
+
+
+# ---------------------------------------------------------------- reports, forecast, cook from, storage
+@app.get("/api/reports/cost")
+def cost_report(weeks: int = 8, end: str | None = None, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    h = _hh()
+    return reports.cost_report(h, catalog.for_household(h), end=_week(end), weeks=max(1, min(weeks, 26)))
+
+
+def _ensure_ahead(h, start: dt.date, weeks: int, by: str) -> None:
+    """Draft any upcoming week that has no plan yet, so a forecast has something to look at."""
+    con = store.connect()
+    missing = [start + dt.timedelta(weeks=n) for n in range(weeks)
+               if not store.get_week(con, (start + dt.timedelta(weeks=n)).isoformat())]
+    con.close()
+    for wk in missing:
+        week.draft(wk, ideas=False, actor=by)
+
+
+@app.get("/api/forecast/ingredients")
+def forecast_list(weeks: int = 4, start: str | None = None, ctx: Ctx = Depends(member)) -> dict:
+    h = _hh()
+    s = _week(start)
+    weeks = max(1, min(weeks, 8))
+    _ensure_ahead(h, s, weeks, actor(ctx))
+    c = catalog.for_household(h)
+    con = store.connect()
+    recs = forecast._week_records(con, s, weeks)
+    con.close()
+    return {"weeks": weeks, "ingredients": forecast.common(c, PriceBook(h, s, catalog=c), recs, top=20)}
+
+
+@app.get("/api/forecast")
+def forecast_one(ingredient: str, weeks: int = 4, start: str | None = None, ctx: Ctx = Depends(member)) -> dict:
+    h = _hh()
+    s = _week(start)
+    weeks = max(1, min(weeks, 8))
+    _ensure_ahead(h, s, weeks, actor(ctx))
+    c = catalog.for_household(h)
+    try:
+        return forecast.forecast(h, c, PriceBook(h, s, catalog=c), ingredient, s, weeks, today=dt.date.today())
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+
+
+class CookFromIn(BaseModel):
+    text: str = Field(default="", max_length=1000)
+    use_soon: list[str] = []
+    use_pantry: bool = True
+    meal: str = "dinner"
+    day: str | None = None
+    max_minutes: int | None = Field(default=None, ge=5, le=300)
+
+
+@app.post("/api/cookfrom")
+def cook_from(body: CookFromIn, ctx: Ctx = Depends(member)) -> dict:
+    h = _hh()
+    c = catalog.for_household(h)
+    return cookfrom.suggest(h, c, PriceBook(h, dt.date.today(), catalog=c), text=body.text, use_pantry=body.use_pantry,
+                            use_soon=body.use_soon, meal=body.meal, day=body.day, max_minutes=body.max_minutes)
+
+
+class UseIn(BaseModel):
+    recipe: str
+    day: str
+    meal: str = "dinner"
+    week: str | None = None
+
+
+@app.post("/api/cookfrom/use")
+def cook_from_use(body: UseIn, ctx: Ctx = Depends(member)) -> dict:
+    """Put a "what I've got" idea into the plan for that day (the rest of the week stays put)."""
+    need(ctx, "adult")
+    rec = store.get_week(store.connect(), _week(body.week).isoformat())
+    if rec and rec.get("status") == "approved":
+        # an approved week keeps its shopping; only the meal changes
+        for e in rec["plan"]["entries"]:
+            if e["day"] == body.day and e["meal"] == body.meal and e.get("kind", "cook") == "cook":
+                c = catalog.for_household(_hh())
+                r = c.recipes.get(body.recipe)
+                if not r:
+                    raise HTTPException(404, "no such recipe")
+                e.update({"recipe": r.id, "name": r.name, "active": r.active, "why": ["from what you've got"]})
+        con = store.connect()
+        store.save_week(con, rec["week_of"], plan=rec["plan"])
+        store.audit(con, actor(ctx), "cook_from", {"day": body.day, "recipe": body.recipe})
+        con.close()
+        return _view(_stored(_week(body.week)))
+    try:
+        week.swap(_week(body.week), body.day, body.meal, to=body.recipe, actor=actor(ctx))
+    except ValueError as e:
+        raise HTTPException(409, str(e))
+    return _view(_stored(_week(body.week)))
+
+
+@app.get("/api/storage")
+def get_storage(ctx: Ctx = Depends(member)) -> dict:
+    h = _hh()
+    c = catalog.for_household(h)
+    con = store.connect()
+    out = {"capacity": h.storage(), "used": storage.usage(con, c), "free": storage.free_space(h, con, c),
+           "freezer_meals": store.freezer_meals(con),
+           "frozen": [{"ingredient": i, "name": c.ingredients[i].name if i in c.ingredients else i, "qty": q,
+                       "unit": c.ingredients[i].unit if i in c.ingredients else ""} for i, q in store.frozen(con).items()]}
+    con.close()
+    return out
+
+
+class FreezerIn(BaseModel):
+    name: str = Field(min_length=2, max_length=80)
+    portions: float = Field(gt=0, le=40)
+    recipe: str | None = None
+    frozen_on: str | None = None
+
+
+@app.post("/api/storage/freezer")
+def add_freezer_meal(body: FreezerIn, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    d = dt.date.fromisoformat(body.frozen_on) if body.frozen_on else dt.date.today()
+    con = store.connect()
+    con.execute("INSERT INTO freezer (recipe, name, portions, frozen_on, use_by) VALUES (?,?,?,?,?)",
+                (body.recipe or "h_freezer", body.name, body.portions, d.isoformat(),
+                 (d + dt.timedelta(days=90)).isoformat()))
+    con.commit()
+    con.close()
+    return {"added": body.name}
+
+
+# ---------------------------------------------------------------- calendar feeds and tap-back links
+@app.get("/api/calendar/link")
+def calendar_link(ctx: Ctx = Depends(member)) -> dict:
+    con = accounts.connect()
+    u = accounts.user(con, ctx.uid)
+    con.close()
+    path = f"/cal/{ctx.hid}/{ctx.uid}/{feed_sig(ctx.hid, ctx.uid, u['feed_salt'])}.ics"
+    https = public_url() + path
+    return {"https": https, "webcal": re.sub(r"^https?://", "webcal://", https),
+            "google": "https://calendar.google.com/calendar/r?cid=" + re.sub(r"^https?://", "webcal://", https),
+            "note": "Subscribe once; it updates itself (Apple about hourly, Google every few hours)."}
+
+
+@app.post("/api/calendar/rotate")
+def calendar_rotate(ctx: Ctx = Depends(member)) -> dict:
+    con = accounts.connect()
+    accounts.rotate_feed(con, ctx.uid)
+    con.close()
+    return calendar_link(ctx)
+
+
+def _tap_links(hid: str, uid: str):
+    def link(kind: str, **kw) -> str:
+        if kind == "app":
+            return f"lilhelper://week?day={kw.get('day', '')}"
+        sub = json.dumps({"h": hid, "u": uid, "k": kind, **kw}, separators=(",", ":"), default=str)
+        return f"{public_url()}/t/{sign('tap', sub, TAP_TTL)}"
+    return link
+
+
+@app.get("/cal/{hid}/{uid}/{sig}.ics")
+def calendar_feed(hid: str, uid: str, sig: str) -> Response:
+    """A person's private calendar feed. Revoke it with /api/calendar/rotate."""
+    con = accounts.connect()
+    u = accounts.user(con, uid)
+    m = accounts.membership(con, uid, hid) if u else None
+    con.close()
+    if not u or not m or not hmac.compare_digest(sig, feed_sig(hid, uid, u["feed_salt"])):
+        raise HTTPException(404)
+    tok = set_tenant(hid)
+    try:
+        h = load_household()
+        con = store.connect()
+        today = week_start(dt.date.today())
+        weeks = [store.get_week(con, (today + dt.timedelta(weeks=n)).isoformat()) for n in (-1, 0, 1, 2)]
+        con.close()
+        text = outputs.ics(h, [w for w in weeks if w], person=m["person_id"], links=_tap_links(hid, uid))
+    finally:
+        reset_tenant(tok)
+    return Response(text, media_type="text/calendar")
+
+
+PAGE = """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,
+initial-scale=1"><title>Lil'Helper</title><style>body{{font-family:-apple-system,Helvetica,Arial,sans-serif;
+background:#FFF8EC;color:#3A2A1E;max-width:520px;margin:0 auto;padding:24px}}h1{{font-size:22px;margin:0 0 8px}}
+h1 span.l{{color:#D7392A}}h1 span.h{{color:#3E9E3A}}.card{{background:#fff;border:1px solid #F0E2CC;border-radius:14px;
+padding:16px;margin:12px 0}}button,a.b{{display:inline-block;background:#D7392A;color:#fff;border:0;border-radius:12px;
+padding:12px 16px;font-size:16px;font-weight:700;text-decoration:none}}li{{margin:4px 0}}.m{{color:#7A6A5C;font-size:14px}}
+</style></head><body><h1><span class="l">Lil’</span><span class="h">Helper</span></h1>{body}</body></html>"""
+
+
+@app.get("/t/{token}", response_class=HTMLResponse)
+def tap(token: str) -> str:
+    """A link tapped from a calendar event. Feedback is recorded by the page's script (a real browser), not by the
+    GET itself, so link previews and scanners can't record a rating nobody chose."""
+    d = json.loads(verify("tap", token))
+    kind = d["k"]
+    if kind in ("rate", "eaten"):
+        what = f"{d['value']} star{'s' if str(d['value']) != '1' else ''}" if kind == "rate" else \
+            {"all": "all gone", "some_left": "some left", "lots_left": "lots left"}.get(d["value"], d["value"])
+        body = (f"<div class='card'><p id='msg'>Saving “{html.escape(what)}”…</p><form method='post'>"
+                f"<noscript><button>Save “{html.escape(what)}”</button></noscript></form></div>"
+                "<script>fetch(location.href,{method:'POST'}).then(r=>r.json()).then(j=>{document.getElementById('msg')"
+                ".textContent=j.ok?'Thanks! Saved for '+j.meal+'.':(j.detail||'Sorry, that did not save.')})"
+                ".catch(()=>{document.getElementById('msg').textContent='Sorry, that did not save.'})</script>")
+        return PAGE.format(body=body)
+    if kind == "change":
+        link = f"lilhelper://week?day={d.get('day', '')}"
+        return PAGE.format(body=f"<div class='card'><p>Open Lil'Helper to change {html.escape(d.get('day', '').title())}"
+                                f"'s {html.escape(d.get('meal', 'meal'))}.</p><a class='b' href='{link}'>Open "
+                                "Lil'Helper</a></div>")
+    if kind == "list":
+        tok = set_tenant(d["h"])
+        try:
+            rec = store.get_week(store.connect(), d["week"])
+            orders = _orders(rec, rec.get("shopping_choice") or "balanced") if rec else []
+            o = orders[int(d["order"])] if int(d["order"]) < len(orders) else None
+        finally:
+            reset_tenant(tok)
+        if not o:
+            return PAGE.format(body="<div class='card'>That list has changed. Open Lil'Helper for the latest.</div>")
+        items = "".join(f"<li>☐ {ln['packs']} × {html.escape(ln['name'])}</li>" for ln in o["lines"])
+        return PAGE.format(body=f"<div class='card'><b>{html.escape(o['store_name'])}</b> "
+                                f"<span class='m'>{html.escape(o['mode'].replace('_', ' '))} · about "
+                                f"${o['total']:.2f}</span><ul>{items}</ul></div>")
+    raise HTTPException(404)
+
+
+@app.post("/t/{token}")
+def tap_save(token: str) -> dict:
+    d = json.loads(verify("tap", token))
+    if d["k"] not in ("rate", "eaten"):
+        raise HTTPException(404)
+    con = accounts.connect()
+    m = accounts.membership(con, d["u"], d["h"])
+    con.close()
+    if not m:
+        raise HTTPException(403, "no longer a member of that household")
+    tok = set_tenant(d["h"])
+    try:
+        out = _record_feedback(d["week"], d["day"], d["meal"], d["value"] if d["k"] == "eaten" else None,
+                               int(d["value"]) if d["k"] == "rate" else None, m["person_id"] or d["u"])
+    finally:
+        reset_tenant(tok)
+    return {"ok": True, "meal": out["meal"]}
+
+
+# ---------------------------------------------------------------- devices, print, savings
+class DeviceIn(BaseModel):
+    token: str = Field(max_length=200)
+    platform: str = "ios"
+
+
+@app.post("/api/devices")
+def add_device(body: DeviceIn, ctx: Ctx = Depends(member)) -> dict:
+    con = accounts.connect()
+    try:
+        accounts.add_device(con, ctx.uid, ctx.hid, body.token, body.platform)
+    except ValueError as e:
+        con.close()
+        raise HTTPException(422, str(e))
+    con.close()
+    return {"registered": True}
 
 
 @app.get("/api/print/week.pdf")
-def print_week(week: str | None = None, pid: str = Depends(me)) -> Response:
-    return Response(outputs.week_pdf(load_household(), _stored(_week(week))), media_type="application/pdf")
+def print_week(week: str | None = None, ctx: Ctx = Depends(member)) -> Response:
+    return Response(outputs.week_pdf(_hh(), _stored(_week(week))), media_type="application/pdf")
 
 
 @app.get("/api/print/month.pdf")
-def print_month(month: str | None = None, pid: str = Depends(me)) -> Response:
-    y, m = map(int, (month or dt.date.today().strftime("%Y-%m")).split("-"))
+def print_month(month: str | None = None, ctx: Ctx = Depends(member)) -> Response:
+    y, mth = map(int, (month or dt.date.today().strftime("%Y-%m")).split("-"))
     con = store.connect()
     weeks = [store.get_week(con, r["week_of"]) for r in con.execute("SELECT week_of FROM weeks ORDER BY week_of")]
     con.close()
-    return Response(outputs.month_pdf(load_household(), y, m, [w for w in weeks if w]), media_type="application/pdf")
+    return Response(outputs.month_pdf(_hh(), y, mth, [w for w in weeks if w]), media_type="application/pdf")
 
 
 @app.get("/api/savings")
-def savings_report(weeks: int = 8, pid: str = Depends(me)) -> dict:
+def savings_report(weeks: int = 8, ctx: Ctx = Depends(member)) -> dict:
     con = store.connect()
     rows = con.execute("SELECT week_of FROM weeks WHERE status='approved' ORDER BY week_of DESC LIMIT ?",
                        (weeks,)).fetchall()
@@ -401,10 +1543,9 @@ def savings_report(weeks: int = 8, pid: str = Depends(me)) -> dict:
     for r in rows:
         rec = store.get_week(con, r["week_of"])
         sv = rec.get("savings") or {}
+        rs = feedback.ratings(con, r["week_of"])
         out.append({"week_of": r["week_of"], "dollars_saved": sv.get("dollars_saved"),
-                    "minutes_saved": sv.get("minutes_saved"), "rating": sv.get("rating") or
-                    (sum(feedback.ratings(con, r["week_of"])) / max(1, len(feedback.ratings(con, r["week_of"])))
-                     if feedback.ratings(con, r["week_of"]) else None)})
+                    "minutes_saved": sv.get("minutes_saved"), "rating": round(sum(rs) / len(rs), 2) if rs else None})
     con.close()
     return {"weeks": out[::-1],
             "dollars_saved": round(sum(w["dollars_saved"] or 0 for w in out), 2),
@@ -413,5 +1554,5 @@ def savings_report(weeks: int = 8, pid: str = Depends(me)) -> dict:
 
 @app.get("/", response_class=HTMLResponse)
 def root() -> str:
-    return ("<h1>Lil'Helper API</h1><p>This is the server the phone app talks to. "
-            "See <a href='docs'>docs</a>.</p>")
+    return PAGE.format(body="<div class='card'><p>This is the Lil'Helper server the app talks to.</p>"
+                            "<p class='m'>Get the app, then sign in with your email.</p></div>")

@@ -366,7 +366,7 @@ def plan_week(h: Household, c: Catalog, pb: PriceBook, s: Settings, *, extra: li
             e.why.append(f"{extra_p:g} spare portion{'s' if extra_p != 1 else ''}")
         if e.day in kid_chef and r.has("kid_can_make") and 0 < r.kid_min_age <= h.people[kid_chef[e.day]].years:
             e.cook = kid_chef[e.day]
-            e.why.append(f"{h.people[e.cook].name} cooks tonight (an adult helps)")
+            e.why.append("kid chef night (an adult helps)")      # no name: `why` is sent to the notes model
     eaters = h.leftover_eaters()
     for lunch_day, dinner_day in lunch_from.items():
         src = next((e for e in entries if e.day == dinner_day and e.meal == "dinner"), None)

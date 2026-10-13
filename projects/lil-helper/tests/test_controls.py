@@ -143,7 +143,7 @@ def test_swap_keeps_the_rest_of_the_week(workspace):
     r2 = week.swap(WEEK, "tue", "dinner")
     assert r2.plan.at("tue", "dinner").recipe != e.recipe
     for x in r1.plan.entries:
-        if (x.day, x.meal) != ("tue", "dinner"):
+        if (x.day, x.meal) != ("tue", "dinner") and x.kind == "cook":
             assert r2.plan.at(x.day, x.meal).recipe == x.recipe
 
 
@@ -152,7 +152,7 @@ def test_prep_limits_and_variety(ctx):
     h, c, s, pb = ctx
     p = planner.plan_week(h, c, pb, s)
     assert all(e.active <= h.prep_limit(e.day) or e.prep_day != e.day for e in p.entries)
-    rids = [e.recipe for e in p.entries]
+    rids = [e.recipe for e in p.entries if e.kind == "cook"]
     assert len(rids) == len(set(rids))
 
 
@@ -191,7 +191,9 @@ def test_rota_respects_ages_and_is_fair():
     by = {(a.day, a.job): a.person for a in rota}
     assert not gaps
     assert all(by.get((d, "dishes")) != "ivy" for d in DAYS)        # 4-year-old: no dishes
-    assert all(by.get((d, "cook")) in ("dana", "sam") for d in DAYS if (d, "cook") in by)
+    assert all(by.get((d, "cook")) in ("dana", "sam") for d in DAYS if (d, "cook") in by and d != "wed")
+    assert by[("wed", "cook")] == "leo"                              # Leo's kid chef night
+    assert by.get(("wed", "kid_assistant")) != "leo"
     assert all(by.get((d, "dishes")) != by.get((d, "cook")) for d in DAYS if (d, "dishes") in by)
     assert abs(load["dana"] - load["sam"]) <= 3
 

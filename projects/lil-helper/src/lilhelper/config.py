@@ -28,8 +28,22 @@ MODES = ("in_store", "pickup", "delivery")
 _tenant: ContextVar[Path | None] = ContextVar("lilhelper-tenant", default=None)
 
 
-def _read(path: Path) -> dict:
-    return yaml.safe_load(path.read_text()) or {}
+_cache: dict[Path, tuple[float, dict]] = {}
+
+
+def _read(path: Path, fresh: bool = True) -> dict:
+    """YAML, cached until the file changes (settings files are read on every call path). `fresh=False` returns the
+    shared cached object for read-only config (stores, money): callers must not change it."""
+    try:
+        mt = path.stat().st_mtime_ns
+    except FileNotFoundError:
+        raise
+    hit = _cache.get(path)
+    if hit and hit[0] == mt:
+        return copy.deepcopy(hit[1]) if fresh else hit[1]
+    data = yaml.safe_load(path.read_text()) or {}
+    _cache[path] = (mt, data)
+    return copy.deepcopy(data) if fresh else data
 
 
 def data_root() -> Path:
@@ -366,8 +380,10 @@ class Settings(dict):
 
 
 def stores() -> dict:
-    return _read(ROOT / "config" / "stores.yaml")
+    """Read-only (shared): don't change what this returns."""
+    return _read(ROOT / "config" / "stores.yaml", fresh=False)
 
 
 def money() -> dict:
-    return _read(ROOT / "config" / "money.yaml")
+    """Read-only (shared): don't change what this returns."""
+    return _read(ROOT / "config" / "money.yaml", fresh=False)

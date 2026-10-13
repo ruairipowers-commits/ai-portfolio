@@ -103,7 +103,7 @@ def notes(plan: dict) -> dict:
             bits.append("makes tomorrow's lunch too")
         if any(w.startswith("cook") and w.endswith("to freeze") for w in why):
             bits.append("extra goes in the freezer")
-        if any(w.endswith("cooks tonight (an adult helps)") for w in why):
+        if "kid chef night (an adult helps)" in why:
             bits.insert(0, "a kid chef night, with a grown-up helping")
         if "due again" in why:
             bits.insert(0, "one of your own recipes, due again")

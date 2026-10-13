@@ -68,6 +68,18 @@ class Recipe:
         return tag in self.tags
 
 
+# Everyday words for groups of ingredients ("cheese", "beans") when a phrase names no one ingredient.
+GENERIC = {
+    "cheese": ["cheddar", "mozzarella", "parmesan", "feta", "cream_cheese"],
+    "bean": ["black_beans", "chickpeas", "white_beans"],
+    "fish": ["salmon", "cod"],
+    "pasta": ["pasta"],
+    "berry": ["blueberries", "strawberries", "frozen_berries"],
+    "bread": ["bread", "bagels", "tortillas"],
+    "turkey": ["ground_turkey", "turkey_slices"],
+    "beef": ["ground_beef", "beef_sirloin"],
+}
+
 # Where things keep, by category: (storage, can be frozen, days frozen). Rough guides; any ingredient can override.
 STORAGE_DEFAULTS = {
     "produce": ("fridge", False, 0), "meat": ("fridge", True, 120), "fish": ("fridge", True, 90),
@@ -177,6 +189,28 @@ class Catalog:
                     if len(cand) > score:
                         best, score = iid, len(cand)
         return best
+
+
+    def match_all(self, text: str) -> list[str]:
+        """Every ingredient a short phrase could mean ("chicken" → breast, thighs, whole chicken; "cheese" → cheddar,
+        mozzarella…). Exact match first."""
+        one = self.match(text)
+        if one:
+            return [one]
+        t = _norm(text)
+        for word, ids in GENERIC.items():
+            if f" {word} " in t:
+                return [i for i in ids if i in self.ingredients]
+        words = [w for w in _norm(text).split() if len(w) > 2 and w not in {"half", "bag", "some", "leftover", "box", "of",
+                                                                             "the", "and", "pack", "few"}]
+        if not words:
+            return []
+        out = []
+        for iid, ing in self.ingredients.items():
+            hay = _norm(ing.name + " " + iid.replace("_", " ") + " " + ing.cat)
+            if all(f" {w} " in hay for w in words):
+                out.append(iid)
+        return out
 
 
 @lru_cache(maxsize=4)

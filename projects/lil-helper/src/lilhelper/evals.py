@@ -69,7 +69,7 @@ def run(alias: str | None = None) -> dict:
     p = planner.plan_week(h0, c, pb, s)
     over = [e for e in p.entries if e.active > h0.prep_limit(e.day) and e.prep_day == e.day]
     case("p03-prep-limit", p.entries and not over, str([(e.day, e.name) for e in over]))
-    rids = [e.recipe for e in p.entries]
+    rids = [e.recipe for e in p.entries if e.kind == "cook"]
     hist = {rid: week_of - dt.timedelta(days=3) for rid in ("beef_bolognese", "chicken_tacos")}
     p_hist = planner.plan_week(h0, c, pb, s, history=hist)
     case("p04-variety", len(rids) == len(set(rids)) and not {"beef_bolognese", "chicken_tacos"} &
