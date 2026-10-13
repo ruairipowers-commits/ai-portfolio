@@ -14,7 +14,7 @@ projects/*/logs/
 projects/*/dbt/.user.yml
 
 # Machine-local agent skill links (symlinks into a project's .venv) — never portable
-.agents/
+.agents/skills/developing-with-streamlit
 .claude/skills/developing-with-streamlit
 
 # Self-hosted demo machine: secrets and generated deploy files stay local
@@ -22,3 +22,6 @@ deploy/selfhost/.env
 deploy/*/generated/
 deploy/selfhost/.state/
 deploy/selfhost/docker-compose.override.yml
+.DS_Store
+CLAUDE.md.bak
+lilhelper-iOS-build.txt
