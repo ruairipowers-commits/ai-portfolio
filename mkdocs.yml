@@ -75,7 +75,7 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
 
 nav:
-  # Six tabs. Every page keeps its URL; only the menu moved (release notes are in the footer).
+  # Seven tabs. Every page keeps its URL; only the menu moved (release notes are in the footer).
   - Start here:
       - Home: index.md
       - 3-minute tour: tour.md
@@ -91,7 +91,7 @@ nav:
   - Learn:
       - Crash course: learn/index.md
       - Classes: classes/index.md
-      - Technologies: tech/index.md
+  - Technologies: tech/index.md
   - About: about.md
 
 validation:
