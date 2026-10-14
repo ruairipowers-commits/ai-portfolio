@@ -46,8 +46,25 @@ go-ahead.
 - [ ] **Real models:** `local-qwen` for ideas/notes and a local vision model for flyers; `helper eval --alias
       helper-candidate`, promote on a pass.
 - [ ] **Public demo:** `git pull && ./update.sh` builds `Dockerfile.space` (`/lil-helper/`, mock only).
-- [ ] Options documented, not built: push notifications (needs the EAS project id), Google Calendar API push,
-      two-adult approval above a spend threshold, automated retention pruning.
+- [ ] Options documented, not built: two-adult approval above a spend threshold, automated retention pruning.
+### Lil'Helper v2 (built 11–14 October 2026, branch `lil-helper-v2`, not merged)
+
+Accounts and many households (admin/adult/kid roles, invites, welcome wizard, in-app settings), custom recipes,
+specials by store and channel, shopping trips, dinner times and attendance, takeout/eat-out/leftovers/freezer
+nights, kid chef, cards and partnerships, spending import (statements, receipts), budget and cost reports, cost per
+serving range, fridge/freezer space and buy-ahead, cook from what I've got, ingredient forecast, per-person calendar
+feeds with one-tap feedback, Expo push, a 15-minute scheduler tick per household. Verified offline: 71 tests, eval
+gate 20/20, 8-week simulation, governance and access checks, mkdocs --strict, app typecheck, and the web build
+walked through at iPhone size (wizard → first plan → approve → specials, recipe, forecast, money, calendar).
+
+- [ ] **Ruairi: merge** `lil-helper-v2` to `main` when happy.
+- [ ] **Server:** follow the new `docs/household-setup.md` (Cloudflare hostname `helper.agentls.com`, sign-up code,
+      `HELPER_PUSH=expo`); import the v1 household file if you set one up.
+- [ ] **TestFlight build** with push (say yes to push notifications in `eas build`); push and Apple/Google calendar
+      subscribe are untested on a real phone.
+- [ ] **Not done:** the Streamlit demo still shows v1 screens only; the App Store release work (AWS + RevenueCat +
+      privacy) is planned in `docs/aws-native.md`, not built.
+
 ## 000a. Data marketplace & lifecycle platform (featured, built 6 October 2026)
 
 `projects/data-lifecycle-platform` + `site/blog/posts/data-lifecycle-platform.md` + tech pages (MetricFlow,
