@@ -71,6 +71,8 @@ def posts() -> list[dict]:
             if f"{folder}/posts/{f.name}" in _hidden():
                 continue                                # portfolio.yaml access: hidden
             meta, body = _front(f.read_text())
+            if meta.get("draft"):
+                continue                                # draft: true — unpublished, so the assistant can't quote it
             slug = meta.get("slug", f.stem)
             title = next((ln[2:].strip() for ln in body.splitlines() if ln.startswith("# ")), slug)
             intro = body.split("<!-- more -->")[0]
