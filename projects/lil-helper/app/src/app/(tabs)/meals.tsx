@@ -19,7 +19,7 @@ export default function Meals() {
     try { await api.feedback(e.day, e.meal, eaten, rating); setError(null); } catch (err) { setError(err); }
   }
 
-  const meals = (week?.plan.entries ?? []).filter((e) => e.meal !== "lunch");
+  const meals = (week?.plan.entries ?? []).filter((e) => e.meal !== "lunch" && (e.kind ?? "cook") !== "leftovers");
   return (
     <Screen refreshing={loading} onRefresh={reload}>
       <Text style={s.h1}>After meals</Text>

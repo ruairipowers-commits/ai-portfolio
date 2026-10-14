@@ -115,7 +115,11 @@ def forecast(h: Household, c: Catalog, pb: PriceBook, iid: str, start: dt.date, 
             o = stores_ok[0]
             packs = max(1, math.ceil(short / o.pack - 1e-9))
             buy_date = trip["date"] if trip else max(today, date - dt.timedelta(days=min(ing.shelf, 3)))
-            buys.append({"date": buy_date.isoformat(), "trip": trip["id"] if trip else None,
+            early = (date - buy_date).days > ing.shelf
+            keep = ("freeze" if ing.freezable else "too_early") if early else ing.storage
+            buys.append({"keep": keep, "keep_note": {"freeze": "freeze it, thaw the day before",
+                                                     "too_early": "won't keep that long; add a trip closer to the day"}
+                         .get(keep, f"keeps in the {ing.storage}"),"date": buy_date.isoformat(), "trip": trip["id"] if trip else None,
                          "when": f"{DAYS[buy_date.weekday()]} {trip.get('time', '')}".strip() if trip else "before it's needed",
                          "store": pb.store_cfg[o.store]["name"], "mode": trip["mode"] if trip else "any",
                          "packs": packs, "pack": o.pack, "unit": ing.unit, "brand": o.brand,

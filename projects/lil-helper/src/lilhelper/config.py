@@ -307,6 +307,13 @@ def validate_household(raw: dict, s: "Settings") -> None:
             raise HouseholdError("A card field looks like a card number. Use a name you'd recognise, never the number.")
     if not isinstance(raw.get("household"), dict) or not isinstance(raw.get("people"), dict) or not raw["people"]:
         raise HouseholdError("settings need a household section and at least one person")
+    tz = raw["household"].get("timezone")
+    if tz is not None:
+        from zoneinfo import ZoneInfo
+        try:
+            ZoneInfo(str(tz))
+        except Exception:
+            raise HouseholdError(f"unknown time zone {tz!r} (use a name like America/New_York)")
     if not isinstance(raw.get("meals"), dict):
         raise HouseholdError("settings need a meals section")
     people = set(raw.get("people", {}))

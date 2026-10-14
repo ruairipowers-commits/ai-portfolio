@@ -165,3 +165,28 @@ def test_calendar_feed_per_person(hc):
     feed = outputs.ics(h, [rec], person="dana")
     assert "BEGIN:VEVENT" in feed and "REFRESH-INTERVAL" in feed
     assert all(len(line.encode()) <= 75 for line in feed.split("\r\n"))
+
+
+def test_forecast_never_suggests_food_that_wont_keep(hc):
+    h, c, pb = hc
+    h.raw["shopping_sessions"] = [{"day": "sun_before", "time": "10:00", "store": "whole_foods", "mode": "in_store"}]
+    for n in range(3):
+        week.draft(W + dt.timedelta(weeks=n), h=h, ideas=False)
+    for iid in ("salmon", "cod", "chicken_thighs", "spinach"):
+        if iid not in c.ingredients:
+            continue
+        f = forecast.forecast(h, c, pb, iid, W, weeks=3, today=W - dt.timedelta(days=2))
+        ing = c.ingredients[iid]
+        for b in f["buys"]:
+            assert b["keep"] in ("freeze", "too_early") or b["keep"] == ing.storage
+            if b["keep"] == "freeze":
+                assert ing.freezable
+
+
+def test_kid_chef_night_survives_the_no_repeat_rule(hc):
+    h, c, _ = hc
+    for n in range(3):
+        res = week.draft(W + dt.timedelta(weeks=n), ideas=False)
+        week.approve(W + dt.timedelta(weeks=n), "dana", 30)
+        wed = next(e for e in res.plan.entries if e.day == "wed" and e.meal == "dinner")
+        assert wed.cook == "leo"

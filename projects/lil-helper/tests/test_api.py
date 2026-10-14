@@ -205,3 +205,22 @@ def test_money_reports_forecast_and_cookfrom_endpoints(server):
     cf = c.post("/api/cookfrom", headers=H, json={"text": "eggs, spinach, cheese"}).json()
     assert cf["ideas"]
     assert c.get("/api/storage", headers=H).status_code == 200
+
+
+def test_changes_to_an_approved_week_apply_in_place(server):
+    c = server.client
+    H, _ = server.household()
+    c.post("/api/household/people", headers=H, json={"name": "Lili", "can_cook": True})
+    c.post("/api/week/draft", headers=H, json={"week": W})
+    a = c.post("/api/week/approve", headers=H, json={"week": W, "seconds": 30}).json()
+    shop_before = a["options"][a["choice"]]["total"]
+    w = c.post("/api/week/night", headers=H, json={"week": W, "day": "wed", "kind": "takeout"}).json()
+    assert w["status"] == "approved" and w["plan"]["special_nights"]["wed"] == "takeout"
+    assert not any(e["day"] == "wed" and e["meal"] == "dinner" for e in w["plan"]["entries"])
+    assert w["eating_out"] and w["options"][w["choice"]]["total"] == shop_before      # shopping untouched
+    assert c.post("/api/week/night", headers=H, json={"week": W, "day": "wed", "kind": "cook"}).status_code == 409
+    w = c.post("/api/week/away", headers=H, json={"week": W, "day": "thu", "person": "lili", "away": True}).json()
+    thu = next(e for e in w["plan"]["entries"] if e["day"] == "thu" and e["meal"] == "dinner")
+    assert "lili" not in thu["eaters"] and w["away"] == {"thu": ["lili"]}
+    # a later change still works (the refused one left nothing behind)
+    assert c.post("/api/week/night", headers=H, json={"week": W, "day": "fri", "kind": "eat_out"}).status_code == 200

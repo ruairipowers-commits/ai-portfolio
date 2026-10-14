@@ -161,6 +161,15 @@ decisions:                       # answered by Ruairi, 5 October 2026
   - 'Services the household uses: Instacart+, Amazon Prime (Whole Foods), Costco membership. No DoorDash; the card and
     membership model stays generic so anyone can add theirs'
   - 'Calendar: Google Calendar (subscribe to the .ics feed; Google Calendar API push documented as an option)'
+  # answered by Ruairi, 11–13 October 2026 (v2)
+  - 'v2 features: cook from what I have, leftovers, takeout and eat-out nights, kid-friendly and kid-chef settings,
+    weekly budget and spending import, card cashback and Whole Foods/Amazon savings, cost reports per person, meal and
+    week, a cost-per-serving range, fridge and freezer space, in-app household setup with an admin, shopping trips,
+    dinner times and attendance, specials by store and channel, custom recipes, a welcome wizard, ingredient
+    forecasts, per-person calendar feeds with one-tap feedback, push updates'
+  - 'Sign-up: invite codes now, many households; open App Store sign-up with subscriptions at production release'
+  - 'Hosting: public behind sign-in via Cloudflare now; a cloud-hosted service for the production release'
+  - 'Work in progress may be pushed to feature branches; merging to main needs Ruairi''s OK'
 
 demo:
   title: Lil'Helper

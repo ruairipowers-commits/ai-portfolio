@@ -310,6 +310,43 @@ def set_away(week_of: dt.date, day: str, person: str, away: bool, by: str) -> No
     con.close()
 
 
+def apply_to_approved(week_of: dt.date, by: str) -> dict:
+    """An approved week's shopping is done, so a change can't re-plan it. Apply this week's nights and who's-away in
+    place instead: a night switched away from cooking drops that dinner (what was bought for it stays in the pantry
+    for later), nights out are re-costed, and each dinner's eaters follow who's home. Switching a night back to cooking
+    needs ingredients, so that's refused here (Cook from what I've got can fill it)."""
+    from .config import load_household
+    con = store.connect()
+    wk = week_start(week_of)
+    rec = store.get_week(con, wk.isoformat())
+    if not rec or rec.get("status") != "approved":
+        con.close()
+        raise ValueError("not an approved week")
+    h = with_overrides(load_household(), con, wk)
+    plan = rec["plan"]
+    nights = dict(plan.get("special_nights") or {})
+    entries = plan["entries"]
+    for day, kind in h.night_overrides.items():
+        cooked = [e for e in entries if e["day"] == day and e["meal"] == "dinner"]
+        if kind == "cook":
+            if cooked:                 # back to cooking a dinner that's still in the plan
+                nights.pop(day, None)
+            continue
+        if cooked:
+            entries = [e for e in entries if not (e["day"] == day and e["meal"] == "dinner")]
+            entries = [e for e in entries if not (e.get("kind") == "leftovers" and e.get("prep_day") == day)]
+        nights[day] = kind
+    for e in entries:
+        if e["meal"] == "dinner":
+            e["eaters"] = [p.id for p in h.eaters("dinner", e["day"])]
+    plan.update(entries=entries, special_nights=nights)
+    eating_out = _nights_out(h, con, wk)
+    store.save_week(con, wk.isoformat(), plan=plan, eating_out=eating_out)
+    store.audit(con, by, "change_approved", {"week_of": wk.isoformat()})
+    con.close()
+    return {"plan": plan, "eating_out": eating_out}
+
+
 def add_ahead(week_of: dt.date, ingredients: list[str], by: str) -> list[dict]:
     """Add buy-ahead suggestions to this week's list (they go into the store's order at hand-off)."""
     con = store.connect()

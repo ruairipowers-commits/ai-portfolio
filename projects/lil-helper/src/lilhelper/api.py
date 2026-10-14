@@ -293,6 +293,7 @@ def switch_household(body: SwitchIn, ctx: Ctx = Depends(signed_in)) -> dict:
 class NewHouseholdIn(BaseModel):
     name: str = Field(min_length=1, max_length=60)
     region: str = "northeast-us"
+    timezone: str = Field(default="America/New_York", max_length=60)
     your_name: str = Field(min_length=1, max_length=40)
     signup_code: str | None = Field(default=None, max_length=100)
 
@@ -314,7 +315,7 @@ def create_household(body: NewHouseholdIn, ctx: Ctx = Depends(signed_in)) -> dic
     try:
         hid = accounts.create_household(con, ctx.uid, body.name, body.region,
                                         {"id": _pid(body.your_name, set()), "name": body.your_name,
-                                         "email": ctx.email, "can_cook": True})
+                                         "email": ctx.email, "can_cook": True}, body.timezone)
     except (ValueError, HouseholdError) as e:
         con.close()
         raise HTTPException(422, str(e))
@@ -558,11 +559,11 @@ def invite(body: InviteIn, ctx: Ctx = Depends(member)) -> dict:
         raise HTTPException(422, str(e))
     con.close()
     email = accounts.norm_email(body.email)
-    link = f"{os.getenv('HELPER_APP_LINK', 'lilhelper://signin')}?token={sign('link', email, 7 * 24 * 3600)}&invite={code}"
+    link = f"{os.getenv('HELPER_APP_LINK', 'lilhelper://signin')}?token={sign('link', email, accounts.INVITE_DAYS * 24 * 3600)}&invite={code}"
     _send_email(email, f"{ctx.name} invited you to {h.info.get('name')} on Lil'Helper",
                 f"<p>{html.escape(ctx.name)} added you to <b>{html.escape(h.info.get('name', ''))}</b> on Lil'Helper, "
                 f"the family meal planner.</p><p>Install Lil'Helper, then tap: <a href='{html.escape(link)}'>join "
-                f"the household</a> (valid 7 days).</p>", "invite")
+                f"the household</a> (valid {accounts.INVITE_DAYS} days).</p>", "invite")
     return {"invited": email, "person": body.person_id, "role": role}
 
 
@@ -619,6 +620,9 @@ class AheadIn(BaseModel):
 def _view(rec: dict) -> dict:
     h = _hh()
     choice = rec.get("shopping_choice") or "balanced"
+    con = store.connect()
+    away, _ = store.overrides(con, rec["week_of"])
+    con.close()
     return {"week_of": rec["week_of"], "status": rec.get("status"), "approved_by": rec.get("approved_by"),
             "plan": rec["plan"], "choice": choice,
             "options": {k: {"total": v["total"], "minutes": v["minutes"], "flags": v.get("flags", []),
@@ -629,7 +633,9 @@ def _view(rec: dict) -> dict:
             "chores": rec.get("chores", []), "pets": rec.get("pets", []), "savings": rec.get("savings"),
             "eating_out": rec.get("eating_out") or [], "extras": rec.get("extras") or {},
             "people": {p.id: p.name for p in h.people.values()},
-            "dinner_times": {d: h.dinner_time(d) for d in DAYS}}
+            "dinner_times": {d: h.dinner_time(d) for d in DAYS},
+            "away": {d: sorted(v) for d, v in away.items()},
+            "home": {p.id: p.home for p in h.people.values()}}
 
 
 @app.get("/api/week")
@@ -664,13 +670,16 @@ def swap_meal(body: SwapIn, ctx: Ctx = Depends(member)) -> dict:
 def set_night(body: NightIn, ctx: Ctx = Depends(member)) -> dict:
     """Make a night takeout, eating out, leftovers, a freezer meal, or cooked again — then the week re-plans."""
     need(ctx, "adult")
+    rec = store.get_week(store.connect(), _week(body.week).isoformat())
+    if rec and rec.get("status") == "approved" and body.kind == "cook" and not any(
+            e["day"] == body.day and e["meal"] == "dinner" for e in rec["plan"]["entries"]):
+        raise HTTPException(409, "this week's shopping is done, so there's nothing bought for that night; "
+                                 "use Cook from what I've got to fill it")
     try:
         week.set_night(_week(body.week), body.day, body.kind, actor(ctx))
     except ValueError as e:
         raise HTTPException(422, str(e))
-    rec = store.get_week(store.connect(), _week(body.week).isoformat())
-    if not rec or rec.get("status") != "approved":
-        week.draft(_week(body.week), actor=actor(ctx), ideas=False)
+    _apply(body.week, ctx)
     _notify_others(ctx, "Dinner plans changed", f"{body.day.title()} is now {body.kind.replace('_', ' ')}.",
                    f"lilhelper://week?day={body.day}")
     return _view(_stored(_week(body.week)))
@@ -688,10 +697,20 @@ def set_away(body: AwayIn, ctx: Ctx = Depends(member)) -> dict:
         week.set_away(_week(body.week), body.day, body.person, body.away, actor(ctx))
     except ValueError as e:
         raise HTTPException(422, str(e))
-    rec = store.get_week(store.connect(), _week(body.week).isoformat())
-    if not rec or rec.get("status") != "approved":
-        week.draft(_week(body.week), actor=actor(ctx), ideas=False)
+    _apply(body.week, ctx)
     return _view(_stored(_week(body.week)))
+
+
+def _apply(wk: str | None, ctx: Ctx) -> None:
+    """After a night or who's-away change: re-plan a draft; change an approved week in place."""
+    rec = store.get_week(store.connect(), _week(wk).isoformat())
+    if rec and rec.get("status") == "approved":
+        try:
+            week.apply_to_approved(_week(wk), actor(ctx))
+        except ValueError as e:
+            raise HTTPException(409, str(e))
+    else:
+        week.draft(_week(wk), actor=actor(ctx), ideas=False)
 
 
 @app.post("/api/week/ahead")
@@ -1431,7 +1450,8 @@ def calendar_feed(hid: str, uid: str, sig: str) -> Response:
         today = week_start(dt.date.today())
         weeks = [store.get_week(con, (today + dt.timedelta(weeks=n)).isoformat()) for n in (-1, 0, 1, 2)]
         con.close()
-        text = outputs.ics(h, [w for w in weeks if w], person=m["person_id"], links=_tap_links(hid, uid))
+        text = outputs.ics(h, [w for w in weeks if w], person=m["person_id"], links=_tap_links(hid, uid),
+                           tz=h.info.get("timezone", "America/New_York"))
     finally:
         reset_tenant(tok)
     return Response(text, media_type="text/calendar")

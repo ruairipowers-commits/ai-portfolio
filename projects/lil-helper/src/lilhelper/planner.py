@@ -120,6 +120,7 @@ def candidates(h: Household, c: Catalog, pb: PriceBook, extra: list[Recipe], his
         lo, hi = h.cost_range(meal)
         ok = []
         too_dear = []
+        repeats = []                                       # blocked only by the no-repeat rule (kid chef fallback)
         for r in pool:
             if r.meal != meal:
                 continue
@@ -142,6 +143,8 @@ def candidates(h: Household, c: Catalog, pb: PriceBook, extra: list[Recipe], his
             last = history.get(r.id)
             if meal == "dinner" and last and (date - last).days < no_repeat:
                 rejected.setdefault(r.id, [f"had it {(date - last).days} days before"])
+                if r.active <= h.prep_limit(day):
+                    repeats.append(r)
                 continue
             limit = h.prep_limit(day)
             if r.active > limit and not (r.has("batch") and batch_day and r.active <= h.prep_limit(batch_day)
@@ -159,9 +162,15 @@ def candidates(h: Household, c: Catalog, pb: PriceBook, extra: list[Recipe], his
         req, _ = _rules(h, day, meal)
         if meal == "dinner" and day in kid_chef:
             kid = h.people[kid_chef[day]]
-            fit = [r for r in ok if r.has("kid_can_make") and 0 < r.kid_min_age <= kid.years]
+            can = lambda r: r.has("kid_can_make") and 0 < r.kid_min_age <= kid.years   # noqa: E731
+            fit = [r for r in ok if can(r)]
+            again = [r for r in repeats if can(r)]
             if fit:
                 ok = fit
+            elif again:
+                # there are only so many dinners a child can make: repeating one beats taking the night away
+                ok = again
+                notes.append(f"kid chef {day}: a recent kid chef dinner again (few recipes fit their age)")
             else:
                 notes.append(f"kid chef {day}: nothing on the list is easy enough for their age, so an adult cooks")
         if req:

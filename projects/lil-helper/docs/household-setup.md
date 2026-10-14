@@ -1,140 +1,142 @@
-# Setting up Lil'Helper for your household
+# Setting up Lil'Helper
 
-Two parts: **A** runs the household server on the EVO-X1 (about 30 minutes), **B** puts the app on the iPhones
-through TestFlight (about an hour, most of it waiting for Apple and Expo). Do A first: the app needs the server.
+Two parts: **A** runs the server on the EVO-X1 behind your Cloudflare domain (about 30 minutes), **B** puts the app on
+the iPhones through TestFlight (about an hour, most of it waiting for Apple and Expo). Do A first: the app needs the
+server. After that, everything about your household (people, dinners, stores, trips, recipes) is set up **in the
+app**: the welcome wizard walks you through it, and you invite your family from there.
 
 How it fits together:
 
 ```
-iPhone (Lil'Helper app) ── Tailscale ──▶ https://<evo-x1>.<tailnet>.ts.net ──▶ 127.0.0.1:8650 on the EVO-X1
-                                          (tailscale serve: private HTTPS,      └─ docker container "lil-helper"
-                                           only devices on your tailnet)           household.yaml (read-only)
-                                                                                    volume lilhelper-data (database)
+iPhone (Lil'Helper app) ─┐
+Calendar apps (feeds)  ──┼─▶ https://helper.agentls.com ─▶ Cloudflare ══ tunnel ══ cloudflared ─▶ lil-helper:8650
+Calendar tap-back links ─┘    (public HTTPS; every request                                         on the EVO-X1
+                               except sign-in, health, feeds                                       volume lilhelper-data:
+                               and signed links needs a session)                                   accounts + one folder
+                                                                                                    per household
 ```
 
-The household server is **not** part of the public demo stack (`deploy/selfhost`, demos.agentls.com). That stack
-runs the public demo on a fictional family; this one holds your family's data and is reachable only over Tailscale.
-Nothing about it is public: no Cloudflare hostname, nothing open on the router.
+The server is reachable from the internet so phones work anywhere and Google Calendar can fetch the feed, but
+nothing in it is readable without signing in: sign-in is by an emailed one-time link, a session belongs to one
+household, calendar feeds are private unguessable URLs (each person can replace theirs), and the one-tap links in
+calendar events are signed and expire. Starting a new household needs a sign-up code while you're the only user.
+
+This is separate from the public demo stack (`deploy/selfhost`, demos.agentls.com), which runs the demo on a fictional
+family. It only shares the Cloudflare tunnel.
 
 ---
 
-## A. The household server (on the EVO-X1)
+## A. The server (on the EVO-X1)
 
-Run everything in this part **on the EVO-X1**, over SSH from the Mac (`ssh <you>@<evo-x1 tailscale name or IP>`).
+Run everything in this part **on the EVO-X1**, over SSH from the Mac.
 
 ### A1. Get the code
-
-The deploy clone used by the demos is at `~/ai-portfolio`. Pull it:
 
 ```bash
 cd ~/ai-portfolio && git pull
 ls projects/lil-helper/Dockerfile        # should exist
 ```
 
-### A2. A private folder for your household's file and secrets
+### A2. Secrets and settings
 
-This lives outside the repo, so a `git pull` never touches it and nothing in it can be committed.
+These live outside the repo, so a `git pull` never touches them.
 
 ```bash
 mkdir -p ~/lil-helper-home && chmod 700 ~/lil-helper-home
-cp ~/ai-portfolio/projects/lil-helper/config/household.example.yaml ~/lil-helper-home/household.yaml
-chmod 644 ~/lil-helper-home/household.yaml     # the container's user must be able to read it
-nano ~/lil-helper-home/household.yaml
-```
-
-Edit it for your family (the example is the fictional Rivera family):
-
-| Section | What to set |
-|---|---|
-| `household` | `name`, `budget_per_week`, `planning_minutes_before` (your honest estimate; it's the time-saved baseline) |
-| `people` | One entry per person. Adults: `age_band: adult`, `can_cook: true`, and **`email`** — that's the address the sign-in link goes to, so use the one each of you reads on the iPhone. Kids: `age_band: kid` and `age`. `allergies` uses these names only: `peanut`, `tree_nut`, `dairy`, `egg`, `gluten`, `soy`, `fish`, `shellfish`, `sesame`. `likes` / `dislikes` are optional (recipe ids from `data/recipes.yaml`) |
-| `pets` | Your dog: name, weight, food brand, cups a day, bag size, `kcal_per_day` from the bag, and `vet_notes` for anything your vet said to avoid |
-| `meals` | Which meals to plan on which days; `special_nights` for leftovers or eating out |
-| `prep_minutes`, `batch_day` | Hands-on cooking minutes you'll accept each day |
-| `stores`, `home_store`, `memberships` | Which stores you use, and `instacart_plus`, `amazon_prime`, `costco` |
-| `cards` | Names only (never numbers); their credits go in `config/money.yaml` |
-| `outputs.email` | Day, time and both of your addresses for the Sunday email |
-
-### A3. Secrets
-
-```bash
 cat > ~/lil-helper-home/.env <<EOF
 HELPER_SECRET=$(openssl rand -hex 32)
+HELPER_PUBLIC_URL=https://helper.agentls.com
+HELPER_APP_LINK=lilhelper://signin
+HELPER_SIGNUP=invite
+HELPER_SIGNUP_CODES=$(openssl rand -hex 6)
+HELPER_PUSH=expo
 RESEND_API_KEY=re_xxxxxxxx
 MAIL_FROM=Lil'Helper <helper@agentls.com>
-HELPER_APP_LINK=lilhelper://signin
 EOF
 chmod 600 ~/lil-helper-home/.env
-nano ~/lil-helper-home/.env        # paste your real Resend key
+nano ~/lil-helper-home/.env                         # paste your real Resend key
+grep HELPER_SIGNUP_CODES ~/lil-helper-home/.env     # note the code: you type it once, in the welcome wizard
 ```
 
-`MAIL_FROM` must be an address on the domain you verified in Resend. Changing `HELPER_SECRET` later signs everyone
-out and changes the calendar-feed link.
+| Setting | What it does |
+|---|---|
+| `HELPER_SECRET` | Signs sign-in links, sessions, calendar feeds and tap links. Changing it signs everyone out and changes every calendar link |
+| `HELPER_PUBLIC_URL` | The address in calendar feeds and tap links |
+| `HELPER_SIGNUP` | `invite`: a new household needs a code from `HELPER_SIGNUP_CODES` (comma-separated); joining by invite always works. `open` when the app goes public; `closed` to stop new households |
+| `HELPER_PUSH=expo` | Sends push notifications through Expo's push service. Without it they're written to a file instead |
+| `EXPO_ACCESS_TOKEN` | Only if you turn on "enhanced push security" for the project on expo.dev |
+| `RESEND_API_KEY`, `MAIL_FROM` | Sign-in links, invites and the weekly email. `MAIL_FROM` must be on the domain you verified in Resend |
 
-### A4. Build and check your household file
+### A3. Build and start it
 
 ```bash
 cd ~/ai-portfolio/projects/lil-helper
 docker build -t lil-helper .                                  # 3–5 minutes the first time
 
-# A dry run on your real file: prints a week's plan, then exits. Fix household.yaml until this works.
-docker run --rm -v ~/lil-helper-home/household.yaml:/app/config/household.yaml:ro lil-helper helper plan --no-ideas
-```
-
-### A5. Start it
-
-```bash
 docker run -d --name lil-helper --restart unless-stopped \
   -p 127.0.0.1:8650:8650 \
   --env-file ~/lil-helper-home/.env \
-  -v ~/lil-helper-home/household.yaml:/app/config/household.yaml:ro \
   -v lilhelper-data:/app/warehouse \
   --memory 1g --cpus 2 --pids-limit 200 --cap-drop ALL --security-opt no-new-privileges \
   lil-helper
 
-curl -s http://127.0.0.1:8650/api/health          # {"ok":true,"version":"0.1.0"}
+curl -s http://127.0.0.1:8650/api/health          # {"ok":true,…,"signup":"invite"}
 docker logs lil-helper | tail -5                  # "Application startup complete"
 ```
 
-It listens on 127.0.0.1 only: Docker skips ufw for published ports, so binding to loopback is what keeps it off
-your LAN. It restarts with the machine. The Saturday draft, Sunday email and Wednesday restock check run inside it.
+The scheduler runs inside it: every 15 minutes it checks each household, in its own time zone, for what's due
+(Saturday's draft, the weekly email, Wednesday's restock check, a reminder an hour before each shopping trip, and
+"how was dinner?" a little after dinner). Each happens once, even across restarts.
 
-### A6. Private HTTPS over Tailscale
+### A4. Put it on the tunnel
 
-One-time, in the Tailscale admin console (login.tailscale.com) → **DNS**: turn on **MagicDNS** and **HTTPS
-Certificates**. Then on the EVO-X1:
+The demos' `cloudflared` container already runs a tunnel. Let it reach Lil'Helper by name:
 
 ```bash
-sudo tailscale serve --bg 8650
-tailscale serve status        # shows https://<machine>.<tailnet>.ts.net → http://127.0.0.1:8650
+NET=$(docker inspect $(docker ps -qf name=cloudflared) -f '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}' | awk '{print $1}')
+echo $NET                                         # e.g. generated_default
+docker network connect "$NET" lil-helper
 ```
 
-From the Mac (with Tailscale on), open `https://<machine>.<tailnet>.ts.net/api/health`. **Write that URL down**:
-it's the server address for the app.
+Then in the Cloudflare dashboard: **Zero Trust → Networks → Tunnels → ai-portfolio-demos → Public hostnames → Add**:
+subdomain `helper`, domain `agentls.com`, path empty, **service `HTTP` → `lil-helper:8650`**. Save.
 
-### A7. Let your wife's iPhone reach it
+Check from the Mac: `https://helper.agentls.com/api/health`.
 
-Tailscale admin console → **Users → Invite users** → her email. She installs **Tailscale** from the App Store,
-signs in with that account, and leaves it on. (Your own iPhone too, if you'll use the app.)
+Recommended, in **Security → WAF → Rate limiting rules** (free plan includes one): 60 requests a minute per IP on
+`helper.agentls.com`. The server also limits sign-in requests per address and per email.
+
+### A5. Already using v1 (a household.yaml)?
+
+Bring it in once, and you're its admin:
+
+```bash
+docker run --rm --env-file ~/lil-helper-home/.env -v lilhelper-data:/app/warehouse \
+  -v ~/lil-helper-home/household.yaml:/tmp/household.yaml:ro \
+  lil-helper helper household import /tmp/household.yaml --email you@example.com --person ruairi
+```
+
+`--person` is your id in the file. From then on, change settings in the app (the file is no longer read). Skip
+this for a fresh start: the welcome wizard creates the household.
 
 ### Updating the server later
 
 ```bash
 cd ~/ai-portfolio && git pull
 cd projects/lil-helper && docker build -t lil-helper . && docker rm -f lil-helper
-# …then the same `docker run -d …` command as A5. The database is in the volume, so nothing is lost.
+# …then the same `docker run -d …` as A3, and `docker network connect "$NET" lil-helper` again.
 ```
 
-Back up the database: `docker run --rm -v lilhelper-data:/d -v ~/lil-helper-home:/b alpine tar czf /b/lilhelper-$(date +%F).tgz -C /d .`
+Back up: `docker run --rm -v lilhelper-data:/d -v ~/lil-helper-home:/b alpine tar czf /b/lilhelper-$(date +%F).tgz -C /d .`
 
 ---
 
 ## B. The iPhone app (from the Mac)
 
-You need: the Apple Developer membership (you have it), a free Expo account (**expo.dev → Sign up**), and Node.js
-on the Mac (`node -v` should print v20 or later; if not, `brew install node`).
+You need: the Apple Developer membership, a free Expo account (**expo.dev → Sign up**), and Node.js on the Mac
+(`node -v` v20 or later; if not, `brew install node`).
 
-### B1. Get the code on the Mac
+### B1. Get the code
 
 ```bash
 cd ~/Documents/AIPF/ai-portfolio && git pull          # or wherever your clone is
@@ -142,30 +144,23 @@ cd projects/lil-helper/app
 npm install
 ```
 
-### B2. (Optional, 5 minutes) Try it on your own iPhone first
+### B2. (Optional) Try it in the browser or Expo Go first
 
-Install **Expo Go** and **Tailscale** on your iPhone (Tailscale on). Then on the Mac:
-
-```bash
-npx expo start
-```
-
-Scan the QR code with the iPhone camera. In the app, set **Your household's server** to the `https://….ts.net`
-URL from A6, type your email, and tap **Email me a sign-in link**. In Expo Go the link in the email can't open the
-app directly: long-press it, **Copy**, and paste it into **Opened the email on another device?**. Plan a week, swap
-a meal, approve. Stop with Ctrl-C when done.
+`npx expo start --web` opens the app in a browser; `npx expo start` and scan the QR code with Expo Go on the iPhone.
+On the sign-in screen, tap **Use my own server** and enter `https://helper.agentls.com`. In Expo Go the emailed link
+can't open the app directly: long-press it, **Copy**, and paste it into **Opened the email on another device?**.
+Push notifications only work in the real build (B5).
 
 ### B3. Link the project to Expo
 
 ```bash
-npx eas-cli@latest login          # your Expo account
-npx eas-cli@latest init           # "Would you like to create a project?" → yes. Adds the project id to app.json
+npx eas-cli@latest login
+npx eas-cli@latest init           # creates the project and adds its id to app.json (push needs it)
 ```
 
 ### B4. Point the build at your server
 
-Edit `eas.json` → `build.production.env.EXPO_PUBLIC_API_URL` → your `https://….ts.net` URL from A6. (She can also
-change it on the sign-in screen, but this way she never has to.)
+`eas.json` → `build.production.env.EXPO_PUBLIC_API_URL` → `https://helper.agentls.com`.
 
 ### B5. Build in the cloud
 
@@ -173,13 +168,9 @@ change it on the sign-in screen, but this way she never has to.)
 npx eas-cli@latest build --platform ios --profile production
 ```
 
-Answer the prompts:
-- **Log in to your Apple account?** Yes → your Apple ID and the 2-factor code.
-- **Team:** your developer team.
-- **Bundle identifier** `com.agentls.lilhelper`: let EAS register it.
-- **Distribution certificate / provisioning profile:** let EAS generate them.
-
-The build takes 15–25 minutes on Expo's servers; the terminal (and expo.dev) shows progress.
+Answer the prompts: log in to your Apple account → your team → let EAS register `com.agentls.lilhelper` and generate
+the certificate and profile → **"Set up Push Notifications?" yes** (EAS creates the Apple push key; Expo's push
+service uses it, nothing to put on the server). The build takes 15–25 minutes.
 
 ### B6. Send it to App Store Connect
 
@@ -187,39 +178,40 @@ The build takes 15–25 minutes on Expo's servers; the terminal (and expo.dev) s
 npx eas-cli@latest submit --platform ios --latest
 ```
 
-Log in with your Apple ID again. If there's no app record yet, EAS creates one in App Store Connect. App names are
-unique across the whole App Store: if "Lil'Helper" is taken, use something like "Lil'Helper Family" (the name on
-her home screen stays "Lil'Helper"). Apple then processes the build for 10–30 minutes and emails you when it's ready.
-Encryption export compliance is already answered in `app.json`, so the build won't wait on that question.
+If "Lil'Helper" is taken as an App Store name, use something like "Lil'Helper Family" (the home-screen name stays
+"Lil'Helper"). Apple processes the build for 10–30 minutes and emails you.
 
-### B7. Invite your wife as a tester
+### B7. Testers
 
-In **App Store Connect** (appstoreconnect.apple.com):
-1. **Users and Access → +** → her name and Apple ID email → role **Marketing** → Invite. She accepts the email.
-2. **Apps → Lil'Helper → TestFlight → Internal Testing → +** → create a group (e.g. "Family") → add her (and you)
-   → add the build.
+**App Store Connect → Users and Access → +** → your wife's Apple ID email (role Marketing). Then **Apps →
+Lil'Helper → TestFlight → Internal Testing → +** → a group ("Family") → add her and you → add the build. She
+installs **TestFlight**, opens the invite → **Accept** → **Install**.
 
-She gets an email from TestFlight. On her iPhone: install **TestFlight** from the App Store, open the invite →
-**Accept** → **Install**.
+---
 
-### B8. Her first sign-in
+## C. First run (in the app)
 
-1. Tailscale on.
-2. Open Lil'Helper → type her email (the one in `household.yaml`) → **Email me a sign-in link**.
-3. Tap the link in the email on the iPhone; it opens Lil'Helper signed in (for 30 days).
-4. **This week → Plan this week** (or wait for Saturday's draft), swap anything, **Approve**.
-5. **Home → Copy the Google Calendar feed link**, then on the iPhone: **Settings → Calendar → Accounts → Add
-   Account → Other → Add Subscribed Calendar** → paste. The phone fetches the feed itself over Tailscale, so the
-   meals, cooks and dish-washers appear in her Calendar app and update on their own.
+1. **You:** open Lil'Helper → your email → **Email me a sign-in link** → tap the link. The welcome wizard starts.
+2. **Welcome → Start my household:** household name, your first name, time zone (filled in from the phone), and the
+   sign-up code from A2. You're the household's **admin**.
+3. **Who's in it:** add your wife (adult, her email → **Add and invite**) and your son (child, age, allergies). Kids
+   don't need the app; add an email only if they'll use it (they can see the plan and their jobs, and rate meals).
+4. **Dinners:** which days, usual time, and who's usually home each night.
+5. **Nights off:** any regular takeout, eating-out, leftovers or freezer nights, and what takeout and eating out cost.
+6. **Stores and money:** where you shop, memberships (Prime, Costco, Instacart+), the cards you pay with (names only),
+   the weekly budget and the most a dinner should cost per serving.
+7. **Kitchen:** fridge and freezer size, cooking extra for the freezer, and a kid chef night.
+8. **Shopping trips:** your regular trips (day, time, store, in store / pickup / delivery, who goes), or skip and let
+   Lil'Helper choose each week.
+9. **Stay in the loop:** **Add to Apple Calendar** (or Google), and **Turn on notifications**.
+10. **Plan this week now.**
 
-   **Google Calendar can't subscribe to it** while the server is private: Google fetches subscribed calendars from its
-   own servers, which can't reach a Tailscale address. To get it into Google Calendar, Lil'Helper would need to push
-   events through the Google Calendar API (documented as the next option, not built yet).
+**Your wife:** she gets an email "Ruairi invited you to … on Lil'Helper". She installs the app from TestFlight, then
+taps **join the household** in the email (or signs in with that email): she lands straight in the household as an
+adult. She does step 9 for her own phone; her calendar shows her dinners, her jobs and the trips she's on.
 
-### Later builds
-
-TestFlight builds expire after 90 days. After a change: `npx eas-cli@latest build --platform ios --profile production`
-then `npx eas-cli@latest submit --platform ios --latest`; testers get the update in TestFlight.
+Everything in the wizard is under **Home** later. Only the admin changes settings and people; any adult can plan,
+swap, change a night, add specials and recipes, approve and record spending.
 
 ---
 
@@ -227,9 +219,12 @@ then `npx eas-cli@latest submit --platform ios --latest`; testers get the update
 
 | Symptom | Check |
 |---|---|
-| App says it can't reach the server | Tailscale on? Open the `https://….ts.net/api/health` URL in Safari on the phone |
-| Tapping the sign-in link doesn't open the app | Long-press the link → **Copy**, then paste it into **Opened the email on another device?** on the sign-in screen |
-| No sign-in email | `docker logs lil-helper`; `RESEND_API_KEY` and `MAIL_FROM` in `~/lil-helper-home/.env`; the email must match an **adult** in `household.yaml` |
-| Container keeps restarting | `docker logs lil-helper` — usually a missing `HELPER_SECRET` or a typo in `household.yaml` (run the A4 dry run) |
-| "Only an adult can approve" | That person needs `age_band: adult` in `household.yaml` |
-| Sunday email not arriving | `docker exec lil-helper helper job email` sends it now and prints what happened |
+| App can't reach the server | `https://helper.agentls.com/api/health` in Safari. If that fails: `docker ps` (running?), the tunnel's public hostname, and `docker network connect` (A4) after any re-create |
+| Tapping the sign-in link doesn't open the app | Long-press → **Copy**, paste into **Opened the email on another device?** |
+| No sign-in email | `docker logs lil-helper`; `RESEND_API_KEY` and `MAIL_FROM` in `.env` |
+| "A sign-up code is needed" | Use a code from `HELPER_SIGNUP_CODES`, or ask the admin to invite you |
+| Invite link says "expired" or "for a different email" | Invites last 14 days and only work for the invited address; the admin sends it again from **People** |
+| No notifications | **Home → Calendar and notifications** shows the state; iPhone **Settings → Lil'Helper → Notifications**; `HELPER_PUSH=expo` on the server; the build had push set up (B5) |
+| Calendar not updating | Apple refreshes subscribed calendars about hourly, Google every few hours. **Make a new private link** if a link was shared by mistake |
+| Container keeps restarting | `docker logs lil-helper` — usually a missing `HELPER_SECRET` |
+| Weekly email not arriving | The email day and time in settings, and `docker logs lil-helper` |

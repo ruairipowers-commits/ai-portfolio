@@ -135,11 +135,11 @@ def members(con, hid: str) -> list[dict]:
         "JOIN users u ON u.id = m.user_id WHERE m.household_id = ?", (hid,))]
 
 
-def starter_settings(name: str, region: str, admin_person: dict) -> dict:
+def starter_settings(name: str, region: str, admin_person: dict, timezone: str = "America/New_York") -> dict:
     """A new household's settings: the wizard fills in the rest."""
     ex = yaml.safe_load((ROOT / "config" / "household.example.yaml").read_text())
     return {
-        "household": {"name": name[:60], "region": region, "week_starts": "monday", "budget_per_week": 200,
+        "household": {"name": name[:60], "region": region, "timezone": timezone, "week_starts": "monday", "budget_per_week": 200,
                       "time_value_per_hour": 20, "planning_minutes_before": 60},
         "people": {admin_person["id"]: {k: v for k, v in admin_person.items() if k != "id"}},
         "pets": {},
@@ -164,11 +164,11 @@ def starter_settings(name: str, region: str, admin_person: dict) -> dict:
     }
 
 
-def create_household(con, uid: str, name: str, region: str, person: dict) -> str:
+def create_household(con, uid: str, name: str, region: str, person: dict, timezone: str = "America/New_York") -> str:
     from .config import parse_household
     hid = _id(12)
     pid = person["id"]
-    settings = starter_settings(name, region, {**person, "admin": True, "age_band": "adult"})
+    settings = starter_settings(name, region, {**person, "admin": True, "age_band": "adult"}, timezone)
     parse_household(settings)                                   # validate before anything is written
     d = household_dir(hid)
     d.mkdir(parents=True, exist_ok=True)

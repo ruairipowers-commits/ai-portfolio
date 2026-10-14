@@ -31,6 +31,12 @@ export const s = StyleSheet.create({
     backgroundColor: c.card, alignItems: "center" },
   ghostText: { color: c.ink, fontSize: 14, fontWeight: "600" },
   pill: { borderRadius: 999, paddingVertical: 3, paddingHorizontal: 10, alignSelf: "flex-start" },
+  label: { fontSize: 13, fontWeight: "700", color: c.muted, textTransform: "uppercase", letterSpacing: 0.5 },
+  wrap: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  chip: { borderRadius: 999, borderWidth: 1, borderColor: c.line, backgroundColor: c.card, paddingVertical: 6,
+    paddingHorizontal: 12 },
+  chipText: { fontSize: 14, color: c.ink, fontWeight: "600" },
+  step: { paddingVertical: 10, paddingHorizontal: 16 },
   input: { backgroundColor: c.card, borderWidth: 1, borderColor: c.line, borderRadius: 12, padding: 12, fontSize: 16,
     color: c.ink },
 });

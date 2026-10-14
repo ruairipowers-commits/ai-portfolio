@@ -51,8 +51,19 @@ them badly, so the brief was to do the planning and hand everything else to the 
 - **Shares the jobs** by age and by who's home, evened out over four weeks.
 - **Feeds the dog.** Its food is restocked with the groceries, and plain, dog-safe extras are set aside from dinner
   before the seasoning goes in, capped at 10% of its daily calories.
-- **Tells everyone.** A Sunday email, a Google Calendar feed you subscribe to once, and weekly and monthly fridge
-  calendars as PDFs.
+- **Fits how the week really goes.** Dinner times and who's home each night; takeout, eating-out, leftovers and
+  freezer nights; cooking a bit extra for tomorrow's lunch; a kid chef night with something that child can make.
+- **Keeps the money visible.** A weekly budget against what's planned and what was spent, with spending imported
+  from card statements or read from receipts, the best card for each order (and credits like Uber Cash), and cost
+  per meal, per week and per person. Dinners stay inside a cost-per-serving range you set.
+- **Plans the shopping trips.** You say when you shop, where, how and who goes; fresh food goes on the trip nearest
+  the day it's cooked, sale items are bought ahead only if they'll fit in the fridge or freezer, and you can
+  forecast any ingredient: how much the coming weeks need, which trip to buy it on, and where it's cheapest.
+- **Tells everyone.** Each person subscribes their own calendar to their dinners, jobs and trips, and every dinner
+  has one-tap links to rate it and say how much is left. Push notifications, a weekly email, and fridge calendars
+  as PDFs.
+- **Set up in the app.** A welcome wizard creates the household; its admin adds and invites everyone, and settings,
+  recipes (with seasons and how often you'd like them) and specials (in store or online) are all edited there.
 - **Learns from one tap after each meal:** all gone, some left or lots left, plus a rating. Portions move, and the
   weekly report shows dollars, minutes and satisfaction against a stated baseline.
 
@@ -64,16 +75,18 @@ Eight simulated weeks for the Riveras (`helper simulate --weeks 8`, mock model, 
 
 | Measure | Result |
 |---|---|
-| Saved against the home store at regular prices, one trip | $184.82 ($23.10 a week, 17% of the baseline) |
-| Minutes saved a week | ~121, mostly the family's own estimate of planning time before (75 min), plus a pickup instead of a trip |
+| Saved against the home store at regular prices, one trip | $190.54 ($23.82 a week, 17% of the baseline) |
+| Minutes saved a week | ~120, mostly the family's own estimate of planning time before (75 min), plus a pickup instead of a trip |
 | Plans containing an allergen for someone eating | 0 of 8 |
-| Dog extras held back (toxic, or not on the dog-safe list) | 8 |
+| Dog extras held back (toxic, or not on the dog-safe list) | 6 |
 | Adults' job load over 8 weeks | 132 and 132 |
-| Model cost | $0.042 for 8 weeks (simulated; $0 on local models) |
+| Kid chef nights kept | 8 of 8 |
+| Model cost | $0.047 for 8 weeks (simulated; $0 on local models) |
 
-Two honest caveats about this table. With these synthetic prices, the balanced option chose one store (Stop & Shop
-pickup) every week, and only the cheapest option split the list across three. And the meal ratings and leftovers
-come from a simulated family, so "food left over" bounces between 0% and 8% a week instead of showing a clean trend.
+Three honest caveats about this table. With these synthetic prices, the balanced option chose Stop & Shop pickup in
+seven of eight weeks. The meal ratings and leftovers come from a simulated family, so "food left over" bounces
+between 1% and 8% a week instead of showing a clean trend. And the recipe book has only one dinner marked for a
+9-year-old, so the kid chef makes the same thing every Wednesday until the family adds its own.
 
 ## Architecture
 
@@ -137,14 +150,15 @@ recall has to be 1.00, and `helper promote` refuses a model without a passing re
 | Email time, calendar, printouts | `config/household.yaml` | `outputs` |
 | Weekly timer | `config/settings.yaml` | `schedule` |
 
-## Taking it to AWS
+## Taking it to the App Store
 
-For one household, a small server at home is the right answer. For many, the API moves to App Runner, SQLite to
-Aurora with a household id on every row, sign-in to Cognito, the weekly timer to EventBridge Scheduler, email to
-SES, and the three model jobs to Bedrock under the same aliases. The bigger change is legal, not technical: children's
-data leaving the house means consent and deletion rules. The
-[guide](https://github.com/{{GITHUB_OWNER}}/ai-portfolio/blob/main/projects/lil-helper/docs/aws-native.md) and a
-Terraform starter (not applied to a live account) cover the parts.
+Right now it runs on a small server at home behind my Cloudflare domain, with sign-up by invite code. The code
+already handles many households: each has its own data, a session can only see its own household, and roles decide
+who can change what. Releasing it to anyone on the App Store means a hosted service (Postgres with row-level
+security on AWS), subscriptions through Apple's in-app purchase, and the legal part: a privacy policy, and care with
+children's data under COPPA. The
+[plan](https://github.com/{{GITHUB_OWNER}}/ai-portfolio/blob/main/projects/lil-helper/docs/aws-native.md) lists each
+step, and a Terraform starter (not applied to a live account) covers the storage and scheduler pieces.
 
 ## What I'd do next / limits
 

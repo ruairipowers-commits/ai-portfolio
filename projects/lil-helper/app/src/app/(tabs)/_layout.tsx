@@ -12,7 +12,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ title: "This week", tabBarIcon: icon("🍎") }} />
       <Tabs.Screen name="shopping" options={{ title: "Shopping", tabBarIcon: icon("🛒") }} />
       <Tabs.Screen name="jobs" options={{ title: "Jobs", tabBarIcon: icon("🧽") }} />
-      <Tabs.Screen name="meals" options={{ title: "After meals", tabBarIcon: icon("⭐") }} />
+      <Tabs.Screen name="meals" options={{ title: "Rate", tabBarIcon: icon("⭐") }} />
+      <Tabs.Screen name="money" options={{ title: "Money", tabBarIcon: icon("💵") }} />
       <Tabs.Screen name="settings" options={{ title: "Home", tabBarIcon: icon("🏠") }} />
     </Tabs>
   );
