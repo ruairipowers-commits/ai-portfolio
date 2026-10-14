@@ -311,6 +311,8 @@ def all_posts() -> list[dict]:
             text = f.read_text()
             m = re.match(r"^---\n(.*?)\n---\n", text, re.S)
             meta = yaml.safe_load(m.group(1)) if m else {}
+            if meta.get("draft"):
+                continue                                # draft: true — not built, so never listed or linked
             body = text[m.end():] if m else text
             title = next((ln[2:].strip() for ln in body.splitlines() if ln.startswith("# ")), f.stem)
             intro = body.split("<!-- more -->")[0]
