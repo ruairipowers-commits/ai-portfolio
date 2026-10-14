@@ -7,7 +7,7 @@ hide: [navigation]
 
 The big changes to this portfolio, newest first. Each project's repository has the detail in its commit history.
 
-## 15 October 2026
+## 14 October 2026
 
 **A new post most days, and you choose what's next.** The [Blog](../blog/index.md) now shows the **upcoming topics**
 my scout agent found, and you can vote on them (one vote per topic per day, anonymous). My picks go first, then the
