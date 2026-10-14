@@ -119,9 +119,9 @@ AUTO_TAG = "AutoPublished"
 
 def gate(post: str | Path, editor: dict, sources_dir: str | Path | None = None,
          published: list[str] | None = None, min_score: int = 4) -> dict:
-    """The auto-publish decision, made by code: every code check passes, every editor criterion scores at least
+    """The ready-to-publish decision, made by code: every code check passes, every editor criterion scores at least
     `min_score` and the editor calls it publishable, the post is tagged AutoPublished, and its disclosure says it
-    went out without the owner's review. Anything else → hold it as a draft pull request for the owner (HITL-02)."""
+    passed every automated check. Either way the owner merges (HITL-02); this decides the label and his email."""
     r = review(post, sources_dir, published)
     meta, _ = _split(Path(post).read_text())
     reasons = [f"code check failed: {c['criterion']} ({c['detail']})" for c in r["checks"] if not c["passed"]]
@@ -134,7 +134,7 @@ def gate(post: str | Path, editor: dict, sources_dir: str | Path | None = None,
         reasons.append("editor did not mark it publishable")
     if AUTO_TAG not in (meta.get("tags") or []):
         reasons.append(f"front matter tags must include {AUTO_TAG}")
-    if "without my review" not in Path(post).read_text().lower():
-        reasons.append("disclosure must say it was published without my review")
+    if "passed every automated check" not in Path(post).read_text().lower():
+        reasons.append("disclosure must say it passed every automated check")
     return {"publish": not reasons, "reasons": reasons, "review": r,
             "editor_min": min((c["score"] for c in crit if isinstance(c.get("score"), int)), default=None)}

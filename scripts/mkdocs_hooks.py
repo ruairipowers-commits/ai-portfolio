@@ -406,8 +406,8 @@ def _upcoming_box() -> str:
     return ('\n\n<div class="upcoming" data-upcoming data-max="6" data-editorial="' + _html.escape(url) + '">'
             '<p class="upcoming__head">Upcoming topics: vote for what I write next</p>'
             '<p class="upcoming__how">A scout agent finds these every morning. My picks go first, then the most-voted. '
-            'Each day the top one becomes a post: a local model drafts it, Claude reviews it, and it publishes tagged '
-            '<em>AutoPublished</em> only if every check passes. One vote per topic per day; votes are anonymous.</p>'
+            'Each day the top one becomes a post: a local model drafts it, Claude reviews it, code checks it, and I approve '
+            'it before it goes live. One vote per topic per day; votes are anonymous.</p>'
             '<div data-upcoming-list><p class="ideas__empty">Loading…</p></div></div>\n')
 
 

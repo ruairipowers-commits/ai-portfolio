@@ -1,4 +1,4 @@
-"""The auto-publish gate: code decides, from the code checks and the editor's scores; any doubt holds the post."""
+"""The ready-to-publish gate: code decides, from the code checks and the editor's scores; any doubt holds the post."""
 import json
 
 from editorial import review
@@ -9,7 +9,7 @@ BODY = ("---\ndate: 2026-10-15\nslug: x\nshort: X\ncategories: [Agents]\ntags: [
         "[one](https://a.example/1) and [two](https://b.example/2).\n\n*{disc}*\n")
 GOOD = {"criteria": [{"criterion": c, "score": 4, "note": "ok"} for c in
                      ("Accuracy", "Originality", "Usefulness", "Clarity and voice", "Site rules")], "publishable": True}
-DISC = "Drafted with AI agents and published automatically after passing every check, without my review."
+DISC = "Drafted with AI agents: Claude reviewed and edited it, it passed every automated check, and I approved it."
 
 
 def _post(tmp_path, tags="Agents, AutoPublished", disc=DISC, n=1000):
