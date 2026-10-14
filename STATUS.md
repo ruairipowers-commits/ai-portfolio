@@ -3,6 +3,18 @@
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
 (or delete them) as they're done. Last updated 14 October 2026.
 
+## 00000000. Daily pipeline state (14 October 2026, evening)
+
+- **Ruairi merges every post** (decision 14 Oct): the daily-post skill opens a PR labelled `ready-to-publish` or
+  `needs-work` and never merges; CLAUDE.md, gate, skill, site copy updated (branch `agent/claude-owner-merges`).
+- **Daily task paused** (trigger "Daily blog post"): the EVO-X1 `ollama_generate` tool goes through the Mac's
+  Claude app, which times out at 60 s, and a ~1,200-word draft takes longer. Fix chosen: a start-job / fetch-result
+  tool in the EVO-X1 MCP server (needs `evo-x1-mcp` from Ruairi). Re-enable the task after.
+- **Weekly task paused**; replaced by the daily one.
+- **Today's three posts** (AesCode, GreenWAM, supermarket fridge hack) were Claude-written after the local bridge timed
+  out: draft PRs #29–#31 for Ruairi; logged as claude-only baseline runs (PR #28).
+- Open dependency PRs: #6 (Actions; merge when watching a deploy), #9 and #11 (waiting on Dependabot rebase), #25.
+
 ## 0000000. Daily auto-published posts + votes + Blog/Learn tabs (14 October 2026, PR #24, `agent/claude-daily-post`)
 
 Built: reader votes on the editorial queue (blog page), daily owner email with votes, `editorial gate` (code decides
@@ -14,8 +26,6 @@ Classes + Technologies.
       computer, for the EVO-X1 model). Not created yet: the skill must be on `main` first.
 - [ ] **Three comparison posts** (top 3 queue topics, both arms, published if the gate passes): blocked on reading
       the queue — the fetch permission prompt timed out twice; Ruairi to paste the queue URL in the chat.
-- [ ] Suggested edit, not made: `how-i-govern-this-site.md` "never push or publish without my approval" now has the
-      daily-post exception.
 - [ ] After the first week: Ruairi reads a sample of AutoPublished posts (HITL-02 recommendation).
 
 ## 00000a. Every app has its own email sender (14 October 2026)

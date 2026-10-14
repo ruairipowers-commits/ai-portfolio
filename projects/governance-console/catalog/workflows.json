@@ -2254,11 +2254,11 @@
      "options": "—"
     },
     "HITL-02": {
-     "status": "partial",
-     "mark": "🟡",
-     "how": "Topics: the owner's picks first (signed links, recorded), then readers' votes. Posts: the owner decided (14 Oct 2026) that a daily post publishes without his review **only** when code says so (`editorial gate`: every code check passes, the independent editor scores every criterion ≥ 4 and marks it publishable, the post is tagged AutoPublished and says it wasn't reviewed). Everything else waits for the owner to merge. The owner can dismiss tomorrow's topic from the daily email or pause the scheduled task. The service host still has no write access to the repo.",
+     "status": "implemented",
+     "mark": "✅",
+     "how": "Topics: the owner's picks first (signed links, recorded), then readers' votes. Posts: nothing publishes until the owner merges the pull request (his decision, 14 Oct 2026, recorded in CLAUDE.md). Code (`editorial gate`) labels each daily post `ready-to-publish` or `needs-work` from the code checks and the independent editor's scores, so the owner knows which to read first. The service host has no write access to the repo.",
      "configure": "`review.gate`, `.claude/skills/daily-post`",
-     "options": "Owner reviews a sample of AutoPublished posts each week"
+     "options": "—"
     },
     "HITL-03": {
      "status": "implemented",
@@ -2270,7 +2270,7 @@
     "HITL-04": {
      "status": "implemented",
      "mark": "✅",
-     "how": "README use-case card; every post says it was drafted with AI agents (a code check). Auto-published posts also say they went out without the owner's review and carry the AutoPublished tag (gate checks).",
+     "how": "README use-case card; every post says it was drafted with AI agents (a code check). Daily-pipeline posts carry the AutoPublished tag and say they passed every automated check and were approved by the owner (gate checks).",
      "configure": "`review.disclosure`, `review.gate`",
      "options": "—"
     }

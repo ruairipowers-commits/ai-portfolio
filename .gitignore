@@ -25,3 +25,6 @@ deploy/selfhost/docker-compose.override.yml
 .DS_Store
 CLAUDE.md.bak
 lilhelper-iOS-build.txt
+
+# post research: source texts and briefs (never committed; see the weekly-post and daily-post skills)
+/drafts/
