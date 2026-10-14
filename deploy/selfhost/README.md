@@ -118,7 +118,9 @@ OLLAMA_SHARED=1       # start ollama-shared, a small proxy the apps reach as htt
 OLLAMA_SHARED_URL=http://host.docker.internal:11434   # the default
 ```
 
-The apps don't change and stay on their internal network; only the proxy can reach the host. Check it with
+The apps don't change and stay on their internal network; only the proxy can reach the host. Because the shared
+server is also your private one, the proxy passes model *use* only (chat, generate, embeddings, listing, pull) and
+answers 403 to anything that deletes, creates, copies or pushes models. Check it with
 `docker compose … exec site-assistant python -c "import urllib.request as u; print(u.urlopen('http://ollama:11434/api/version').read())"`.
 If that times out, the host firewall is blocking containers from port 11434 (with ufw:
 `sudo ufw allow from 172.16.0.0/12 to any port 11434 proto tcp`). The shared server's own settings then apply —
