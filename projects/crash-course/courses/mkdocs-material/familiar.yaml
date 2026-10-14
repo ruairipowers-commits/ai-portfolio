@@ -1,0 +1,253 @@
+course: mkdocs-material
+level: familiar
+version: 1
+title: Material for MkDocs in 15 minutes
+status: draft
+source:
+  page: tech/mkdocs-material.md
+  docs: https://squidfunk.github.io/mkdocs-material/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Material for MkDocs page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    **MkDocs** is a Python static-site generator for documentation. You write pages in Markdown, list the navigation in
+    `mkdocs.yml`, and `mkdocs build` produces a folder of plain HTML. **Material for MkDocs** is the theme most people
+    use with it: it adds a responsive layout, light and dark modes, client-side search, code-block annotations,
+    admonitions (note and warning boxes), tabs, and a blog plugin with posts, categories and archives.
+
+    The output is static files, so it can be hosted anywhere — GitHub Pages, S3, an internal web server — with nothing
+    to run or patch at request time. While you write, `mkdocs serve` gives a live-reloading preview.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    MkDocs appeared in 2014 as a simple alternative to heavier documentation tools. Martin Donath (known as squidfunk)
+    started Material for MkDocs in 2016, and it grew into far more than a theme, adding search, blogging and dozens of
+    authoring features. It has been funded partly through sponsorship, with some features released to sponsors first.
+
+    Today it is one of the most popular ways to build documentation sites for open-source projects and engineering
+    teams, and it is common for internal knowledge bases and technical blogs — including the site this course came from.
+- id: business
+  heading: How it fits business users
+  body: |
+    Business users read the result: a clean, searchable site of documentation, runbooks or a blog. The business value
+    is that docs live next to the code, change in the same pull request as the behaviour they describe, and are
+    published automatically — so they don't drift out of date in a wiki nobody updates.
+
+    For AI systems that matters: model cards, data-source notes, evaluation results and runbooks are part of the
+    control surface, and they need to be readable by people who don't open a terminal.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Engineering and API documentation** kept in the same repo as the code.
+    - **Internal knowledge bases and runbooks.**
+    - **Technical blogs.**
+    - **Project sites** published to GitHub Pages from CI.
+    - **Data catalogues or model cards** rendered from Markdown.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Markdown in, static site out — nothing to run in production | Customising beyond the theme means template overrides |
+    | Built-in search, dark mode, blog, Mermaid | Some features have historically been sponsor-only first |
+    | Lives in the repo and builds in CI | Large sites can build slowly |
+    | Excellent documentation of its own | Python toolchain needed to build, even for a non-Python team |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Material for MkDocs documentation](https://squidfunk.github.io/mkdocs-material/) — the official docs from the
+      project maintainer; start with "Getting started".
+    - [MkDocs documentation](https://www.mkdocs.org/) — the underlying generator.
+    - [Material for MkDocs on GitHub](https://github.com/squidfunk/mkdocs-material) — source and discussions.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below creates a two-file site — a config and one page with a warning box and a Mermaid diagram — and
+    previews it locally with live reload.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"How do you keep docs up to date?"** Docs as code: Markdown in the repo, changed in the same pull request as the
+      code, built and published by CI. Reviewers see doc changes next to behaviour changes.
+    - **"Why a static site?"** Nothing to run or patch in production, cheap to host, fast, and easy to put behind
+      company login if needed.
+    - **"How would you document an AI system?"** Model cards, data-source notes, eval results and runbooks as pages in
+      the same site, with Mermaid diagrams for data flow.
+
+    Pitfall: heavy template overrides. Say you'd stay close to the theme's built-in features.
+project:
+  title: A two-file docs site
+  kind: runnable
+  minutes: 4
+  goal: Build and preview a Material for MkDocs site with live reload.
+  steps:
+  - Run `pip install mkdocs-material`.
+  - In an empty folder, save the first block below as `mkdocs.yml` and the second as `docs/index.md`.
+  - Run `mkdocs serve` and open `http://localhost:8000`.
+  - Edit `docs/index.md`, save, and watch the page reload; toggle dark mode.
+  code: |
+    # mkdocs.yml
+    site_name: Team Docs
+    theme:
+      name: material
+      features: [content.code.copy]
+      palette:
+        - scheme: default
+          toggle: {icon: material/weather-night, name: Dark mode}
+        - scheme: slate
+          toggle: {icon: material/weather-sunny, name: Light mode}
+    markdown_extensions:
+      - admonition
+      - pymdownx.superfences:
+          custom_fences:
+            - name: mermaid
+              class: mermaid
+              format: !!python/name:pymdownx.superfences.fence_code_format
+
+    # docs/index.md
+    # Welcome
+    !!! warning "Read me first"
+        This page is built from Markdown.
+    ```mermaid
+    graph LR; Markdown --> MkDocs --> Site
+    ```
+  language: yaml
+  expected: |
+    A themed page titled "Welcome" with a yellow warning box and a three-box diagram.
+    Saving index.md reloads the browser automatically; the moon icon switches to dark mode.
+  done_when:
+  - The site renders with the warning box and the diagram.
+  - You saw live reload when you edited the page.
+quiz:
+- id: q1
+  prompt: What does Material for MkDocs turn a folder of Markdown files into?
+  options:
+  - A fast, searchable static website
+  - A PDF report only
+  - A database
+  - A mobile app
+  answer: 0
+  explanation: It's a theme and set of plugins for MkDocs.
+  evidence: turns a folder of Markdown files into a fast, searchable static website
+- id: q2
+  prompt: Where is the navigation listed in an MkDocs site?
+  options:
+  - In mkdocs.yml
+  - In a database table
+  - In the HTML by hand
+  - In package.json
+  answer: 0
+  explanation: Pages are Markdown; navigation and settings are in mkdocs.yml.
+  evidence: you write pages in Markdown, list navigation in mkdocs.yml
+- id: q3
+  prompt: Which command builds the site into plain HTML?
+  options:
+  - mkdocs build
+  - mkdocs deploy-db
+  - python -m http.server
+  - npm run build
+  answer: 0
+  explanation: build produces static files; serve gives a live preview.
+  evidence: mkdocs build produces plain HTML
+- id: q4
+  prompt: What does mkdocs serve give you?
+  options:
+  - A live-reloading preview while you write
+  - A production web server
+  - A database console
+  - A spell checker
+  answer: 0
+  explanation: The preview reloads when you save a page.
+  evidence: mkdocs serve gives a live-reloading preview while you write
+- id: q5
+  prompt: Why is static output convenient to host?
+  options:
+  - It can be hosted anywhere with nothing to run or patch at request time
+  - It needs a dedicated application server
+  - It only works on GitHub
+  - It requires a database
+  answer: 0
+  explanation: GitHub Pages, S3 or an internal web server all work.
+  evidence: with nothing to run or patch at request time
+- id: q6
+  prompt: Which features does the theme add?
+  options:
+  - Responsive layout, light and dark modes, client-side search and a blog plugin
+  - A SQL editor
+  - Model training
+  - User authentication
+  answer: 0
+  explanation: It adds much more than styling, including admonitions and tabs.
+  evidence: It adds responsive layout, light and dark modes, client-side search
+- id: q7
+  prompt: Why are docs part of an AI system's control surface?
+  options:
+  - Model cards, data-source notes, eval results and runbooks need to be versioned and readable
+  - Because models read the docs at runtime
+  - They replace testing
+  - They store API keys
+  answer: 0
+  explanation: Reviewers need them, and they should change with the code.
+  evidence: 'model cards, data-source notes, evaluation results and runbooks need to be versioned with the code'
+- id: q8
+  prompt: What does keeping docs in Markdown next to the code mean for changes?
+  options:
+  - The docs change in the same pull request as the behaviour they describe
+  - Docs never change
+  - Docs are updated once a year
+  - Docs are generated by the model
+  answer: 0
+  explanation: Docs and behaviour stay in step through review.
+  evidence: the docs change in the same pull request as the behaviour they describe
+- id: q9
+  prompt: Which diagrams render natively?
+  options:
+  - Mermaid diagrams
+  - Visio files
+  - Photoshop files
+  - CAD drawings
+  answer: 0
+  explanation: Mermaid suits architecture and data-flow pictures.
+  evidence: Mermaid diagrams render natively, which suits architecture and data-flow pictures.
+- id: q10
+  prompt: Which is a con of Material for MkDocs?
+  options:
+  - Customising beyond the theme means template overrides
+  - It has no search
+  - It can't make blogs
+  - It needs a running server in production
+  answer: 0
+  explanation: Stay close to built-in features to keep upgrades easy.
+  evidence: Customizing beyond the theme means template overrides
+- id: q11
+  prompt: What toolchain is needed to build the site?
+  options:
+  - Python, even for a non-Python team
+  - Java
+  - .NET
+  - None at all
+  answer: 0
+  explanation: MkDocs is a Python tool.
+  evidence: Python toolchain needed to build, even for a non-Python team
+- id: q12
+  prompt: Which is a typical use case?
+  options:
+  - Internal knowledge bases and runbooks
+  - A trading engine
+  - Real-time chat
+  - Video streaming
+  answer: 0
+  explanation: Searchable docs for a team are the core use.
+  evidence: Internal knowledge bases and runbooks.
+- id: q13
+  prompt: Who started Material for MkDocs?
+  options:
+  - Martin Donath (squidfunk)
+  - Google
+  - The Python Software Foundation
+  - GitHub
+  answer: 0
+  explanation: He started it in 2016 and it grew well beyond a theme.
+  evidence: Martin Donath (known as squidfunk) started Material for MkDocs in 2016

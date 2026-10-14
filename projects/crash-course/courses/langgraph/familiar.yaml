@@ -1,0 +1,247 @@
+course: langgraph
+level: familiar
+version: 1
+title: LangGraph in 15 minutes
+status: draft
+source:
+  page: tech/langgraph.md
+  docs: https://docs.langchain.com/oss/python/langgraph/overview
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's LangGraph page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    LangGraph is a Python framework for building AI agents as **explicit graphs of steps**. Instead of one big prompt
+    loop where the model decides everything, you draw the workflow:
+
+    - a **state** object that every step reads and updates;
+    - **nodes** — plain functions, some deterministic, some calling a model;
+    - **edges** between them, including **conditional edges** that route on what the model decided.
+
+    The second half is **persistence**. A **checkpointer** saves the state after each step, keyed by a thread ID. That
+    gives you runs that can resume after a failure, memory across turns, and **human-in-the-loop**: a node calls
+    `interrupt()`, the run stops with its state saved, and a later call with `Command(resume=...)` and the same thread
+    ID carries on from exactly that point.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    LangGraph comes from LangChain Inc., the company behind the LangChain library, which became popular in 2023 for
+    chaining model calls and tools. As teams moved from chatbots to agents, the limits of free-running loops showed:
+    agents went off-script, and there was no clean way to pause for a person. LangGraph, released in early 2024, was
+    the answer — make the control flow explicit and the state durable.
+
+    Today it is one of the most widely used agent frameworks for production work, especially where approvals,
+    auditability and long-running processes matter. It is a library, not a hosted service: you choose the model
+    client, the checkpointer backend and where it runs.
+- id: business
+  heading: How it fits business users
+  body: |
+    The common failure in agent projects is not the model — it is an agent that does something nobody approved.
+    LangGraph turns the control flow into something a business owner or risk reviewer can look at: the graph shows
+    which steps can write, and an `interrupt()` in front of a write means it cannot happen without a recorded human
+    answer.
+
+    Checkpoints add the audit trail a compliance reviewer will ask for: the state at every step of every run.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Agents that call tools in a loop** but must follow a defined workflow.
+    - **Approval gates**: pause before any action with side effects and wait for a human decision.
+    - **Long-running processes** that must survive restarts.
+    - **Multi-step pipelines** that mix rules, lookups and model calls in one auditable flow.
+    - **Replaying or inspecting** a past run from its saved checkpoints.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Explicit graph: easy to review which steps can act | More code and concepts than a single prompt loop |
+    | Built-in checkpoints, resume and `interrupt()` | Checkpointer storage is yours to run and secure |
+    | Mixes deterministic steps and LLM steps cleanly | Fast-moving API; upgrades need testing |
+    | Works with any model client, including a mock | Tied to the LangChain ecosystem for adapters and tooling |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [LangGraph documentation](https://docs.langchain.com/oss/python/langgraph/overview) — the official docs from
+      LangChain Inc.
+    - [Interrupts guide](https://docs.langchain.com/oss/python/langgraph/interrupts) — human-in-the-loop in detail.
+    - [LangChain Academy](https://academy.langchain.com/) — free official courses, including an introduction to LangGraph.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below builds a one-node graph with a **mock** model step, so it runs with no API key. You'll compile
+    it, invoke it, and see the state come back with the new message appended.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"Why a graph instead of a prompt loop?"** Control and auditability: you can see and review which steps can act,
+      deterministic steps sit beside model steps, and you know which path a run took.
+    - **"How do you put a human approval in an agent?"** An `interrupt()` in the node before any write; the checkpointer
+      saves state; the run resumes with `Command(resume=...)` on the same thread ID once a person decides. On AWS the
+      same pattern maps to Step Functions' `waitForTaskToken`.
+    - **"What does a checkpointer give you?"** Durable execution, memory across turns, and an audit trail of state per step.
+
+    Pitfall: describing LangGraph as hosted. It's a library; storage, security and deployment are yours.
+project:
+  title: A one-node graph with a mock model
+  kind: runnable
+  minutes: 4
+  goal: Compile and run a minimal LangGraph graph with no API key.
+  steps:
+  - Run `pip install langgraph`.
+  - Save the code below as `hello_graph.py` and run it.
+  - Add a second node that uppercases the last message, connect it between `mock_llm` and `END`, and run again.
+  code: |
+    from langgraph.graph import StateGraph, MessagesState, START, END
+
+    def mock_llm(state: MessagesState):
+        return {"messages": [{"role": "ai", "content": "hello world"}]}
+
+    graph = StateGraph(MessagesState)
+    graph.add_node(mock_llm)
+    graph.add_edge(START, "mock_llm")
+    graph.add_edge("mock_llm", END)
+    graph = graph.compile()
+
+    result = graph.invoke({"messages": [{"role": "user", "content": "hi!"}]})
+    for m in result["messages"]:
+        print(m.type, ":", m.content)
+  language: python
+  expected: |
+    human : hi!
+    ai : hello world
+  done_when:
+  - The script prints both messages.
+  - You added a second node and the edge order made it run after mock_llm.
+quiz:
+- id: q1
+  prompt: How does LangGraph represent an agent?
+  options:
+  - As an explicit graph of steps with saved state
+  - As a single unstructured prompt
+  - As a SQL query
+  - As a spreadsheet macro
+  answer: 0
+  explanation: Nodes, edges and a state object make the control flow explicit.
+  evidence: LangGraph is a Python framework for building agents as explicit graphs of steps
+- id: q2
+  prompt: What is a node in LangGraph?
+  options:
+  - A plain function that reads the state and returns updates
+  - A server in a cluster
+  - A database table
+  - A user account
+  answer: 0
+  explanation: Nodes can be deterministic code or model calls.
+  evidence: write each step as a plain function (a node) that reads the state and returns updates
+- id: q3
+  prompt: What do conditional edges do?
+  options:
+  - Route on what the model decided
+  - Encrypt the state
+  - Delete old runs
+  - Rate-limit API calls
+  answer: 0
+  explanation: The next step depends on the current state, such as the model's choice.
+  evidence: conditional edges that route on what the model decided
+- id: q4
+  prompt: What does a checkpointer do?
+  options:
+  - Writes the graph state after each step, keyed by a thread ID
+  - Checks spelling in prompts
+  - Counts tokens for billing
+  - Compiles Python to C
+  answer: 0
+  explanation: Saved state enables resume, memory and human-in-the-loop.
+  evidence: A checkpointer writes the graph state after each step, keyed by a thread ID.
+- id: q5
+  prompt: How does a node pause a run for a human decision?
+  options:
+  - It calls interrupt()
+  - It raises a generic exception
+  - It sleeps for an hour
+  - It deletes the state
+  answer: 0
+  explanation: The run stops with its state saved until a resume call arrives.
+  evidence: a node calls interrupt(), the run stops with its state saved
+- id: q6
+  prompt: How is an interrupted run continued?
+  options:
+  - A call with Command(resume=...) and the same thread ID
+  - Restarting from scratch
+  - Editing the graph file
+  - It can't be continued
+  answer: 0
+  explanation: The same thread ID picks up from exactly the saved point.
+  evidence: a later call with Command(resume=...) and the same thread ID carries on from that exact point
+- id: q7
+  prompt: According to the course, what is the common failure in agent projects?
+  options:
+  - An agent that does something nobody approved
+  - The model being too slow
+  - Not enough GPUs
+  - Too many tests
+  answer: 0
+  explanation: Control flow, not model quality, is usually the real risk.
+  evidence: 'The common failure in agent projects is not the model; it is an agent that does something nobody approved.'
+- id: q8
+  prompt: Why do checkpoints help a compliance reviewer?
+  options:
+  - They give an audit trail of state per step
+  - They hide what the agent did
+  - They make the agent faster
+  - They remove the need for approvals
+  answer: 0
+  explanation: Reviewers can see what the agent knew and decided at each step.
+  evidence: Checkpoints also give you an audit trail of state per step
+- id: q9
+  prompt: Is LangGraph a hosted service?
+  options:
+  - No, it's a library; you choose the checkpointer, model client and where it runs
+  - Yes, it only runs in LangChain's cloud
+  - Yes, on AWS only
+  - It runs only in the browser
+  answer: 0
+  explanation: Storage, security and deployment are your responsibility.
+  evidence: It is a library, not a hosted service.
+- id: q10
+  prompt: Which is a con of LangGraph?
+  options:
+  - Fast-moving API; upgrades need testing
+  - It can't call tools
+  - It has no persistence
+  - It only works with one model provider
+  answer: 0
+  explanation: Pin versions and test before upgrading.
+  evidence: Fast-moving API; upgrades need testing
+- id: q11
+  prompt: Can LangGraph work with a mock model?
+  options:
+  - Yes, with any model client, including a mock
+  - No, it needs a paid API key
+  - Only with OpenAI
+  - Only with local GPUs
+  answer: 0
+  explanation: Mocks keep tests offline and deterministic.
+  evidence: Works with any model client, including a mock
+- id: q12
+  prompt: Which is a typical use case?
+  options:
+  - Approval gates before any action with side effects
+  - Editing photos
+  - Hosting a static site
+  - Storing files
+  answer: 0
+  explanation: Pausing for a human decision is a core LangGraph pattern.
+  evidence: 'Approval gates: pause before any action with side effects and wait for a human decision.'
+- id: q13
+  prompt: Which company makes LangGraph?
+  options:
+  - LangChain Inc.
+  - Anthropic
+  - Hugging Face
+  - Databricks
+  answer: 0
+  explanation: LangGraph comes from the company behind the LangChain library.
+  evidence: LangGraph comes from LangChain Inc.

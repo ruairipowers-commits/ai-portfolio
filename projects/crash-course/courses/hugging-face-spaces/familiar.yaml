@@ -1,0 +1,240 @@
+course: hugging-face-spaces
+level: familiar
+version: 1
+title: Hugging Face Spaces in 15 minutes
+status: draft
+source:
+  page: tech/hugging-face-spaces.md
+  docs: https://huggingface.co/docs/hub/spaces
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Hugging Face Spaces page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    Hugging Face Spaces hosts small web apps on the Hugging Face Hub. You push a Git repository; Hugging Face builds
+    it and runs the app at a URL — public, or private to you or your organisation.
+
+    A Space is a Git repository whose `README.md` starts with a short YAML header that says how to run it. The common
+    choices are a **Gradio** app or a **Docker** container; with Docker you supply a Dockerfile and can run almost
+    anything that listens on a port, including Streamlit or FastAPI. Spaces start on a free CPU tier and can move to
+    paid hardware, including GPUs. Secrets such as API keys are set in the Space settings and arrive as environment
+    variables.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Hugging Face started in 2016 and became the main public hub for sharing machine-learning models and datasets. It
+    launched Spaces in 2021 so that a model could come with a working demo next to it, and acquired Gradio, the
+    Python library for quick ML demo interfaces, around the same time. Docker Spaces later opened it up to almost any
+    web stack.
+
+    Today Spaces holds a very large number of public demos, from research papers to personal portfolios, and many
+    teams use private Spaces for internal prototypes.
+- id: business
+  heading: How it fits business users
+  body: |
+    Spaces is built for the "show, don't tell" stage of AI work: instead of a slide, a reviewer clicks a link and uses
+    the thing. For a business, that shortens the feedback loop on a prototype dramatically.
+
+    For a financial firm, it is a place for demos on synthetic or public data — not for client data or anything
+    entitled. The good habit is a demo that runs on a mock model by default, so a public link never spends tokens or
+    exposes a key.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Sharing a model or AI demo** with people who won't install anything.
+    - **Portfolio or conference demos** without running servers.
+    - **Internal prototypes** in a private Space or organisation.
+    - **Pairing a demo with a model or dataset** already on the Hub.
+    - **Quick A/B demos** of two prompts or models side by side.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Push a repo, get a URL — no servers to run | Free Spaces sleep when idle; first visit waits for a cold start |
+    | Docker option runs most web stacks | Limited free CPU and memory; heavier apps need paid hardware |
+    | Secrets management built in | Not a fit for confidential data or regulated workloads |
+    | Natural home next to Hub models and datasets | Less control over networking, logging and uptime than your own host |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Hugging Face Spaces documentation](https://huggingface.co/docs/hub/spaces) — the official guide from Hugging Face.
+    - [Docker Spaces](https://huggingface.co/docs/hub/spaces-sdks-docker) — running any container as a Space.
+    - [Gradio documentation](https://www.gradio.app/docs) — the quickest way to a demo UI in Python.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below creates a Gradio Space with two files and no Dockerfile: a README header and a five-line app.
+    You need a free Hugging Face account; the Space builds in a minute or two.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"How would you share an AI prototype with stakeholders?"** A Space on synthetic data, running on a mock or a
+      cheap model by default, real-model runs opt-in through Space secrets, private if it shouldn't be public.
+    - **"What can't it be used for?"** Confidential client data or regulated workloads; you have less control over
+      networking, logging and uptime than on your own host.
+    - **"Gradio or Docker Space?"** Gradio for the fastest model demo; Docker when you need a specific stack such as
+      Streamlit or FastAPI.
+
+    Pitfall: putting an API key in the code of a public Space. Use Space secrets.
+project:
+  title: A Gradio Space in two files
+  kind: runnable
+  minutes: 4
+  goal: Create a Space, push two files, and use the running app at its URL.
+  steps:
+  - On huggingface.co, create a new Space, choose the Gradio SDK and the free CPU hardware.
+  - In the Space's Files tab, edit `README.md` so its header matches the one below, and add `app.py` with the code below.
+  - Wait for the status to change to "Running", then type your name into the app.
+  - Change the greeting text in app.py, commit, and watch the Space rebuild.
+  code: |
+    # README.md header (between --- lines)
+    title: Hello Space
+    sdk: gradio
+    app_file: app.py
+
+    # app.py
+    import gradio as gr
+
+    def greet(name: str) -> str:
+        return f"Hello, {name}!"
+
+    gr.Interface(fn=greet, inputs="text", outputs="text").launch()
+  language: python
+  expected: |
+    The Space shows a text box and a Submit button; entering Ada returns "Hello, Ada!".
+  done_when:
+  - The Space is Running and answers at its public URL.
+  - You can explain where you'd put an API key if the app needed one.
+quiz:
+- id: q1
+  prompt: What does Hugging Face Spaces do?
+  options:
+  - Hosts small web apps on the Hub from a Git repository
+  - Trains models for free
+  - Stores company databases
+  - Sends marketing email
+  answer: 0
+  explanation: Push a repository; Spaces builds and runs the app at a URL.
+  evidence: you push a Git repository and it builds and runs the app at a public (or private) URL
+- id: q2
+  prompt: What tells Hugging Face how to run a Space?
+  options:
+  - The YAML header in the README.md
+  - A phone call
+  - A Kubernetes manifest
+  - The repository name
+  answer: 0
+  explanation: The header sets the SDK, the app file or port, and other options.
+  evidence: A Space is a Git repository on the Hub with a README.md whose YAML header tells Hugging Face how to run it.
+- id: q3
+  prompt: Which two options are the common ways to build a Space?
+  options:
+  - A Gradio app or a Docker container
+  - A WordPress site or a PDF
+  - An Excel macro or a VBA script
+  - A mobile app or a game console
+  answer: 0
+  explanation: Docker lets you run almost anything that listens on a port.
+  evidence: The common choices are a Gradio app or a Docker container
+- id: q4
+  prompt: How do secrets such as API keys reach a Space's app?
+  options:
+  - Set in the Space settings, they arrive as environment variables
+  - Committed in app.py
+  - In the README header
+  - In the Space's URL
+  answer: 0
+  explanation: Never put keys in the code of a public Space.
+  evidence: Secrets (such as model API keys) are set in the Space settings and arrive as environment variables.
+- id: q5
+  prompt: What happens to free Spaces when idle?
+  options:
+  - They go to sleep and restart on the next visit
+  - They are deleted
+  - They are made private
+  - They move to a GPU
+  answer: 0
+  explanation: The first visit after sleeping waits for a cold start.
+  evidence: Free Spaces go to sleep when idle and restart on the next visit.
+- id: q6
+  prompt: What kind of data should a financial firm's public Space use?
+  options:
+  - Synthetic or public data — not client data or anything entitled
+  - Live client portfolios
+  - Internal emails
+  - Any data, as long as the Space is fast
+  answer: 0
+  explanation: Spaces are for demos, not regulated workloads.
+  evidence: For a financial firm it is a place for demos on synthetic or public data — not for client data or anything entitled.
+- id: q7
+  prompt: Why should a demo run on a mock model by default?
+  options:
+  - So a public link never spends tokens or exposes a key
+  - Because mocks are more accurate
+  - Because Spaces can't call APIs
+  - To make the Space build faster
+  answer: 0
+  explanation: Real-model runs can be an opt-in configured through Space secrets.
+  evidence: so a public link never spends tokens or exposes a key
+- id: q8
+  prompt: Which is a con of Spaces?
+  options:
+  - Less control over networking, logging and uptime than your own host
+  - It can't run Python
+  - It can't be private
+  - It needs your own servers
+  answer: 0
+  explanation: Convenience trades away operational control.
+  evidence: Less control over networking, logging and uptime than your own host
+- id: q9
+  prompt: Can a Space use a GPU?
+  options:
+  - Yes, by moving to paid hardware
+  - No, never
+  - Only on weekends
+  - Only for Docker Spaces with no app
+  answer: 0
+  explanation: Spaces start on free CPU and can move to paid hardware including GPUs.
+  evidence: Spaces start on a free CPU tier and can be moved to paid hardware, including GPUs.
+- id: q10
+  prompt: With a Docker Space, which apps can you run?
+  options:
+  - Almost anything that listens on a port, including Streamlit or FastAPI
+  - Only Gradio apps
+  - Only static HTML
+  - Only Jupyter notebooks
+  answer: 0
+  explanation: You supply a Dockerfile; Spaces runs the container.
+  evidence: run almost anything that listens on a port, including Streamlit or FastAPI
+- id: q11
+  prompt: Which is a typical use case?
+  options:
+  - Sharing a model or AI demo with people who won't install anything
+  - Running a bank's core ledger
+  - Storing backups
+  - Hosting a corporate email server
+  answer: 0
+  explanation: A link someone can click is the whole point.
+  evidence: Sharing a model or AI demo with people who won't install anything.
+- id: q12
+  prompt: Is Spaces a fit for confidential data or regulated workloads?
+  options:
+  - No, use your own controlled hosting
+  - Yes, always
+  - Only on free CPU
+  - Only for Gradio apps
+  answer: 0
+  explanation: Use your own controlled hosting for those.
+  evidence: Not a fit for confidential data or regulated workloads
+- id: q13
+  prompt: When did Hugging Face launch Spaces?
+  options:
+  - 2021
+  - 2006
+  - 2012
+  - 2025
+  answer: 0
+  explanation: Spaces launched in 2021 so a model could come with a working demo next to it.
+  evidence: It launched Spaces in 2021 so that a model could come with a working demo next to it

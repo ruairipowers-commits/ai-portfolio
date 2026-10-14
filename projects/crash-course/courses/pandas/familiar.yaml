@@ -1,0 +1,246 @@
+course: pandas
+level: familiar
+version: 1
+title: pandas in 15 minutes
+status: draft
+source:
+  page: tech/pandas.md
+  docs: https://pandas.pydata.org/docs/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's pandas page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    pandas is the standard Python library for working with **tables of data in memory**. It is built around two types:
+
+    - the **DataFrame** — a table with labelled columns and an index (row labels);
+    - the **Series** — one column.
+
+    It reads and writes CSV, Excel, Parquet, JSON and SQL, and covers most of what an analyst does to a table: filter,
+    join, group and aggregate, pivot, handle missing values, and work with dates and time series.
+
+    The rule that makes pandas fast: operations are **vectorised** — they run over whole columns in compiled code. Write
+    `df["total"] = df["price"] * df["qty"]`, not a Python loop over rows. Row-by-row loops are where pandas gets slow.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Wes McKinney started pandas in 2008 while working at AQR Capital Management, an investment firm, because Python
+    lacked a good tool for the financial time-series work he was doing. It was open sourced the following year and became
+    the backbone of data analysis in Python — one reason Python displaced other languages for data work. It is now a
+    community project, fiscally sponsored by NumFOCUS.
+
+    Today almost every Python data and machine-learning library either accepts DataFrames or exchanges data with them.
+    Newer tools such as Polars and DuckDB handle larger data faster, and interoperate with pandas directly.
+- id: business
+  heading: How it fits business users
+  body: |
+    For analysts, pandas is what replaces fragile spreadsheet work: load a vendor file, clean it, join it to reference
+    data, summarise it — in code that can be rerun next month in seconds and reviewed by a colleague.
+
+    That repeatability is the business value. Each cleaning step is explicit, so when a number in a report is questioned,
+    you can show exactly how it was produced.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Exploratory data analysis**: shape, types, summary statistics, missing values.
+    - **Cleaning**: imputing missing values, capping outliers, fixing types.
+    - **Feature preparation** before a scikit-learn model.
+    - **Joining and reshaping** vendor or reference files.
+    - **Quick reports and pivots** in a notebook.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | The common format for Python data and ML libraries | Whole dataset must fit in memory |
+    | Broad I/O: CSV, Excel, Parquet, JSON, SQL | Large, sometimes inconsistent API |
+    | Vectorised column operations are fast | Row-wise loops and `apply` are slow |
+    | Strong support for missing values and time series | Index and copy-versus-view behaviour can surprise |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [pandas documentation](https://pandas.pydata.org/docs/) — the official reference from the pandas project.
+    - [10 minutes to pandas](https://pandas.pydata.org/docs/user_guide/10min.html) — the official quick tour.
+    - [Python for Data Analysis](https://wesmckinney.com/book/) — the book by pandas' creator, free to read online.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below builds a small table of loans, summarises it, and finds the default rate by loan reason with one
+    `groupby` — the single most useful pandas pattern.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"How do you make pandas fast?"** Vectorised column operations instead of loops or `apply`; the right dtypes; and
+      for data larger than memory or heavy aggregation, DuckDB or Polars.
+    - **"How do you handle missing values?"** Look first (`isna().mean()`), then decide per column — drop, impute with
+      median or mode, or flag — and keep each step as code so it's repeatable.
+    - **"What's the difference between a DataFrame and a Series?"** A DataFrame is a table of columns with an index; a
+      Series is one column.
+
+    Pitfall: the "SettingWithCopyWarning". Show you know to use `.loc` and to `.copy()` a slice you intend to change.
+project:
+  title: Default rate by loan reason
+  kind: runnable
+  minutes: 4
+  goal: Build a DataFrame, summarise it, and group and aggregate it.
+  steps:
+  - Run `pip install pandas`.
+  - Save the code below as `hello_pandas.py` and run it.
+  - Add `max_amount=("loan_amount", "max")` to the aggregation and run again.
+  code: |
+    import pandas as pd
+
+    df = pd.DataFrame({
+        "loan_id": [1, 2, 3, 4, 5, 6],
+        "reason": ["HomeImp", "DebtCon", "DebtCon", "HomeImp", "DebtCon", "HomeImp"],
+        "loan_amount": [10_000, 25_000, 18_000, 7_500, 30_000, 12_000],
+        "defaulted": [0, 1, 0, 0, 1, 1],
+    })
+    print(df.describe())
+
+    summary = (df.groupby("reason")
+                 .agg(n_loans=("loan_id", "count"),
+                      avg_amount=("loan_amount", "mean"),
+                      default_rate=("defaulted", "mean"))
+                 .sort_values("default_rate", ascending=False))
+    print(summary)
+  language: python
+  expected: |
+    A table indexed by reason, highest default rate first:
+    DebtCon: n_loans 3, avg_amount 24333.33, default_rate 0.67
+    HomeImp: n_loans 3, avg_amount 9833.33, default_rate 0.33
+  done_when:
+  - The grouped summary matches the expected table.
+  - You can explain why groupby + agg is faster than looping over rows.
+quiz:
+- id: q1
+  prompt: What is a pandas DataFrame?
+  options:
+  - A table with labelled columns and an index
+  - A single number
+  - A chart
+  - A database server
+  answer: 0
+  explanation: A Series is one column; a DataFrame is a table of them.
+  evidence: the DataFrame (a table with labelled columns and an index) and the Series (one column)
+- id: q2
+  prompt: What is a pandas Series?
+  options:
+  - One column
+  - A whole database
+  - A plotting style
+  - A file format
+  answer: 0
+  explanation: DataFrames are made of Series.
+  evidence: 'built around two types: the DataFrame (a table with labelled columns and an index) and the Series (one column)'
+- id: q3
+  prompt: Why is idiomatic pandas fast even though it's called from Python?
+  options:
+  - Operations are vectorised over whole columns and run in compiled code
+  - It runs on a GPU automatically
+  - It caches every result forever
+  - It skips half the rows
+  answer: 0
+  explanation: Column operations avoid Python-level loops.
+  evidence: Operations are vectorized over whole columns and run in compiled code
+- id: q4
+  prompt: Where does pandas get slow?
+  options:
+  - Row-by-row loops
+  - Column arithmetic
+  - groupby with built-in aggregations
+  - Reading Parquet
+  answer: 0
+  explanation: Loops and apply run in Python, one row at a time.
+  evidence: Row-by-row loops are where it gets slow.
+- id: q5
+  prompt: What's a key limit of pandas?
+  options:
+  - The whole dataset lives in memory on one machine
+  - It can't read CSV
+  - It can't join tables
+  - It has no missing-value support
+  answer: 0
+  explanation: For larger data, DuckDB or Polars are often a better fit.
+  evidence: The whole dataset lives in memory on one machine.
+- id: q6
+  prompt: For data larger than RAM, what does the course suggest?
+  options:
+  - DuckDB or Polars, which exchange data with pandas directly
+  - Excel
+  - A bigger monitor
+  - Converting to JSON
+  answer: 0
+  explanation: Both handle larger data and interoperate with pandas.
+  evidence: DuckDB or Polars are often a better fit, and both exchange data with pandas directly
+- id: q7
+  prompt: Which formats can pandas read and write?
+  options:
+  - CSV, Excel, Parquet, JSON and SQL
+  - Only CSV
+  - Only its own binary format
+  - Only images
+  answer: 0
+  explanation: Broad I/O is one of its strengths.
+  evidence: It reads and writes CSV, Excel, Parquet, JSON and SQL
+- id: q8
+  prompt: In AI work, why keep each cleaning step as explicit code?
+  options:
+  - It makes the preparation repeatable and reviewable
+  - It makes the model bigger
+  - It hides the steps from reviewers
+  - It's required by Python
+  answer: 0
+  explanation: Code, unlike spreadsheet edits, can be rerun and reviewed.
+  evidence: Keeping each cleaning step as explicit code (rather than edits in a spreadsheet) makes the preparation repeatable and reviewable.
+- id: q9
+  prompt: Which behaviour can surprise pandas users?
+  options:
+  - Index and copy-versus-view behaviour
+  - Addition of two numbers
+  - Printing a DataFrame
+  - Importing the library
+  answer: 0
+  explanation: Use .loc and .copy() when changing a slice.
+  evidence: Index and copy-versus-view behavior can surprise
+- id: q10
+  prompt: Which is a typical use case?
+  options:
+  - Feature preparation before a scikit-learn model
+  - Hosting a website
+  - Sending email
+  - Running a firewall
+  answer: 0
+  explanation: Most model work starts with a DataFrame.
+  evidence: Feature preparation before a scikit-learn model.
+- id: q11
+  prompt: Who sponsors pandas fiscally?
+  options:
+  - NumFOCUS
+  - Microsoft
+  - Google
+  - The Linux Foundation
+  answer: 0
+  explanation: pandas is a community open-source project under NumFOCUS.
+  evidence: pandas is an open-source Python library, fiscally sponsored by NumFOCUS
+- id: q12
+  prompt: Where did pandas start?
+  options:
+  - At AQR Capital Management, an investment firm
+  - At a video game studio
+  - At NASA
+  - At a university chemistry lab
+  answer: 0
+  explanation: Wes McKinney started it in 2008 for financial time-series work.
+  evidence: Wes McKinney started pandas in 2008 while working at AQR Capital Management, an investment firm
+- id: q13
+  prompt: Which is a pro of pandas?
+  options:
+  - Strong support for missing values and time series
+  - No memory limits
+  - A tiny, perfectly consistent API
+  - Built-in GPU training
+  answer: 0
+  explanation: Missing data and dates are handled well.
+  evidence: Strong support for missing values and time series

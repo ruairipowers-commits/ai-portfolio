@@ -1,0 +1,18 @@
+# Live service image (self-hosted on the EVO-X1 behind Caddy at /crash-course/, or a Hugging Face Docker Space).
+#   docker build -f Dockerfile.space -t crash-course . && docker run -p 7860:7860 -e COURSE_SECRET=… crash-course
+# The learner site, the owner page and the background worker, in one process. Mock models by default: no keys needed.
+# Switch models with COURSE_MODERATOR_MODEL / COURSE_WRITER_MODEL (e.g. local-qwen with OLLAMA_URL). Email goes out
+# through Resend when RESEND_API_KEY is set; otherwise it is written to the outbox folder.
+# Learners, attempts and published level versions live in /app/warehouse: mount a volume there.
+FROM python:3.11-slim
+RUN useradd -m -u 1000 user && install -d -o user -g user /app
+ENV HOME=/home/user PYTHONUNBUFFERED=1
+WORKDIR /app
+COPY --chown=user . .
+RUN pip install --no-cache-dir -e ".[ui]"
+USER user
+RUN mkdir -p warehouse output
+# The signing secret is required in the service: no development default (SEC-01)
+ENV PORTFOLIO_DEMO=1 HOST=0.0.0.0 PORT=7860 COURSE_REQUIRE_SECRETS=1
+EXPOSE 7860
+CMD ["course", "serve"]

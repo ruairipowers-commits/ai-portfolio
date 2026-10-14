@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% block title %}Account · Crash course{% endblock %}{% block wrapclass %}narrow{% endblock %}
+{% block body %}
+<h1>{{ user.name }}</h1>
+<p class="muted">{{ user.email }}</p>
+<h2>What's stored</h2>
+<p>Your email and name, the courses you signed up for, your progress, each quiz attempt (which questions and which options you chose), your feedback and your topic suggestions. Accounts unused for {{ s.privacy.inactive_retention_days }} days are deleted.</p>
+<h2>Delete my data</h2>
+<form method="post" action="{{ R }}/me/delete" class="card">
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <label for="confirm">Type DELETE to remove your account and everything above</label>
+  <input id="confirm" type="text" name="confirm" autocomplete="off">
+  <p><button class="btn bad" type="submit">Delete everything</button></p>
+</form>
+{% endblock %}

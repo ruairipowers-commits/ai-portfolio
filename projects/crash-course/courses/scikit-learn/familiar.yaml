@@ -1,0 +1,242 @@
+course: scikit-learn
+level: familiar
+version: 1
+title: scikit-learn in 15 minutes
+status: draft
+source:
+  page: tech/scikit-learn.md
+  docs: https://scikit-learn.org/stable/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's scikit-learn page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    scikit-learn is the standard Python library for **classical machine learning on tabular data** — the rows and
+    columns of a spreadsheet or a database table. It covers:
+
+    - **supervised learning**: linear and logistic regression, decision trees, random forests, gradient boosting,
+      support vector machines;
+    - **unsupervised learning**: k-means and other clustering, PCA;
+    - **everything around the model**: train/test splitting, scaling and encoding, pipelines, cross-validation,
+      hyperparameter search and evaluation metrics.
+
+    Its superpower is **one consistent API**. Every model is an *estimator*: create it, call `fit` on training data,
+    then `predict` (or `transform`). Swapping a logistic regression for a random forest is usually a one-line change.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    scikit-learn started in 2007 as a Google Summer of Code project, and researchers at INRIA in France turned it into a
+    full library with its first public release in 2010. Its clear API and excellent documentation made it the standard
+    for teaching and practising machine learning in Python. It is an open-source project sponsored by NumFOCUS.
+
+    Deep learning took over images, text and audio, but for structured business data — credit, churn, pricing,
+    operations — classical models from scikit-learn remain the everyday tool, and the baseline every fancier model must beat.
+- id: business
+  heading: How it fits business users
+  body: |
+    For a business, scikit-learn models are often the right answer to "can we predict X from our data?" — which loans
+    will default, which clients will leave. They are fast to build, cheap to run, and **easier to explain** than a neural
+    network: a decision tree can be drawn, and a forest reports which features mattered.
+
+    It also makes evaluation choices explicit, which is where business judgement comes in: is it worse to miss a default
+    or to flag a good loan? That choice sets the metric you tune for.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Classification and regression** on tabular data (credit, churn, pricing).
+    - **Baselines** to compare against more complex models.
+    - **Clustering and dimensionality reduction** for exploration.
+    - **Hyperparameter tuning** with cross-validation.
+    - **Model evaluation**: confusion matrices, precision, recall, ROC curves.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | One consistent `fit` / `predict` API across models | No deep learning or GPU support |
+    | Preprocessing, pipelines, tuning and metrics included | Data must fit in memory on one machine |
+    | Well-documented, with sensible defaults | Categorical data needs explicit encoding |
+    | Interpretable models (trees, linear) are first-class | Large grid searches get slow quickly |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [scikit-learn documentation](https://scikit-learn.org/stable/) — the official docs from the scikit-learn project.
+    - [User guide](https://scikit-learn.org/stable/user_guide.html) — every model and tool, with the reasoning behind them.
+    - [Choosing the right estimator](https://scikit-learn.org/stable/machine_learning_map.html) — the classic flowchart.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below trains a random forest on a built-in dataset and prints precision and recall for each class — the
+    full fit, predict and evaluate loop in a dozen lines.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"Why not just use deep learning?"** For tabular data, classical models are often as good, far cheaper, and easier
+      to explain to a risk committee. Start with a baseline.
+    - **"How do you handle imbalanced labels?"** Stratified splits, class weights, and tune for the metric that matters —
+      recall on defaults, for example — rather than overall accuracy.
+    - **"How do you avoid leakage?"** Split first; fit scalers and encoders inside a pipeline on the training data only.
+    - **"How do you explain a model?"** Plot the tree, report feature importances, show the confusion matrix.
+
+    Pitfall: quoting accuracy on an imbalanced problem. With 5% defaults, "95% accurate" can mean it never catches one.
+project:
+  title: Fit, predict, evaluate
+  kind: runnable
+  minutes: 4
+  goal: Train a random forest and read precision and recall for each class.
+  steps:
+  - Run `pip install scikit-learn`.
+  - Save the code below as `hello_sklearn.py` and run it.
+  - Swap `RandomForestClassifier(...)` for `LogisticRegression(max_iter=5000)` (import it from `sklearn.linear_model`) and compare.
+  code: |
+    from sklearn.datasets import load_breast_cancer
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.metrics import classification_report
+    from sklearn.model_selection import train_test_split
+
+    X, y = load_breast_cancer(return_X_y=True)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.3, stratify=y, random_state=42)
+
+    model = RandomForestClassifier(n_estimators=200, class_weight="balanced", random_state=42)
+    model.fit(X_train, y_train)
+    print(classification_report(y_test, model.predict(X_test)))
+  language: python
+  expected: |
+    A report with precision, recall and f1-score for classes 0 and 1,
+    each in the 0.9s, and an overall accuracy line.
+  done_when:
+  - You read precision and recall for each class.
+  - You swapped the model with a one-line change and compared the reports.
+quiz:
+- id: q1
+  prompt: What is scikit-learn for?
+  options:
+  - Classical machine learning on tabular data
+  - Deep learning on GPUs
+  - Hosting web apps
+  - Storing data
+  answer: 0
+  explanation: Regression, trees, forests, clustering and the tools around them.
+  evidence: scikit-learn is the standard Python library for classical machine learning on tabular data.
+- id: q2
+  prompt: What pattern does every scikit-learn model follow?
+  options:
+  - Create an estimator, call fit on training data, then predict or transform
+  - Write SQL, then export to CSV
+  - Train in the cloud, then download
+  - Define a graph of nodes
+  answer: 0
+  explanation: The consistent API makes swapping models easy.
+  evidence: 'Every model follows the same pattern: create an estimator, call fit on training data, then predict or transform.'
+- id: q3
+  prompt: Why is swapping a logistic regression for a random forest usually easy?
+  options:
+  - The consistent API means it's usually a one-line change
+  - Because both are the same algorithm
+  - Because scikit-learn picks automatically
+  - Because it needs no data
+  answer: 0
+  explanation: Tools like GridSearchCV also work with any estimator.
+  evidence: swapping a logistic regression for a random forest is usually a one-line change
+- id: q4
+  prompt: Is scikit-learn a deep learning library?
+  options:
+  - No; PyTorch, TensorFlow or Keras are the usual choice for that
+  - Yes, its main focus
+  - Only on GPUs
+  - Only for images
+  answer: 0
+  explanation: It runs on the CPU and expects data that fits in memory.
+  evidence: For neural networks on images, text or very large datasets, PyTorch, TensorFlow or Keras are the usual choice
+- id: q5
+  prompt: Why are classical models often preferred for structured-data problems?
+  options:
+  - They are easier to explain — a tree can be plotted and a forest reports feature importances
+  - They are always more accurate than anything else
+  - They need GPUs
+  - They don't need data
+  answer: 0
+  explanation: Explainability matters to risk committees and regulators.
+  evidence: a decision tree can be plotted, and a forest reports feature importances
+- id: q6
+  prompt: How do you handle imbalanced labels in scikit-learn?
+  options:
+  - Class weights, and tune for the metric that matters, such as recall on defaults
+  - Delete the minority class
+  - Use accuracy only
+  - Train on the test set
+  answer: 0
+  explanation: Overall accuracy can hide a model that never catches the rare class.
+  evidence: Class weights handle imbalanced labels
+- id: q7
+  prompt: What does the scoring argument let you do?
+  options:
+  - Tune for the metric that matters, such as recall rather than overall accuracy
+  - Change the dataset
+  - Pick a GPU
+  - Export to Excel
+  answer: 0
+  explanation: Choose the metric that reflects the business cost of errors.
+  evidence: the scoring argument lets you tune for the metric that matters
+- id: q8
+  prompt: Which is a con of scikit-learn?
+  options:
+  - Data must fit in memory on one machine
+  - It has no evaluation metrics
+  - It can't do clustering
+  - Its API differs for every model
+  answer: 0
+  explanation: Very large data needs other tools.
+  evidence: Data must fit in memory on one machine
+- id: q9
+  prompt: What does categorical data need?
+  options:
+  - Explicit encoding
+  - Nothing; it's handled automatically everywhere
+  - A GPU
+  - A database
+  answer: 0
+  explanation: Encode categories (for example one-hot) inside a pipeline.
+  evidence: Categorical data needs explicit encoding
+- id: q10
+  prompt: Which is a typical use case?
+  options:
+  - Baselines to compare against more complex models
+  - Hosting APIs
+  - Rendering PDFs
+  - Sending email
+  answer: 0
+  explanation: Every fancier model should beat a simple baseline.
+  evidence: Baselines to compare against more complex models.
+- id: q11
+  prompt: Which tools does scikit-learn provide around the model?
+  options:
+  - Train/test splitting, pipelines, cross-validation, hyperparameter search and metrics
+  - Only plotting
+  - Only data storage
+  - Only web serving
+  answer: 0
+  explanation: The surrounding pieces matter as much as the model.
+  evidence: train/test splitting, scaling and encoding, pipelines, cross-validation, hyperparameter search and evaluation metrics
+- id: q12
+  prompt: What gets slow quickly?
+  options:
+  - Large grid searches
+  - Importing the library
+  - Printing a report
+  - Splitting data
+  answer: 0
+  explanation: The number of combinations multiplies fast; use randomised search or fewer parameters.
+  evidence: Large grid searches get slow quickly
+- id: q13
+  prompt: Where did scikit-learn start?
+  options:
+  - As a Google Summer of Code project in 2007
+  - At Facebook in 2015
+  - At Microsoft in 2000
+  - At OpenAI in 2020
+  answer: 0
+  explanation: INRIA researchers made the first public release in 2010.
+  evidence: scikit-learn started in 2007 as a Google Summer of Code project

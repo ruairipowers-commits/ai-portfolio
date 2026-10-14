@@ -1,0 +1,236 @@
+course: ollama
+level: familiar
+version: 1
+title: Ollama in 15 minutes
+status: draft
+source:
+  page: tech/ollama.md
+  docs: https://docs.ollama.com/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Ollama page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    Ollama runs **open-weight language models on your own machine**. One install wraps everything that used to be
+    fiddly: downloading the model, using compressed ("quantized") weights that fit in ordinary memory, and an
+    inference runtime.
+
+    - `ollama pull <model>` downloads a model from Ollama's library;
+    - `ollama run <model>` opens a chat in the terminal;
+    - a background server exposes an **HTTP API on `localhost:11434`** for generation, chat and embeddings.
+
+    It runs on CPU and uses a GPU when one is available. The API also has an **OpenAI-compatible endpoint**, so many
+    existing clients can point at it just by changing the base URL. A `Modelfile` lets you pin a system prompt and
+    parameters as a named variant.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Ollama was released in 2023, as capable open-weight models such as Meta's Llama family appeared and people wanted
+    to run them locally without wrestling with research code. It built on llama.cpp, the open-source project that made
+    running quantized models on laptops practical, and added the simple pull-and-run experience that Docker had made
+    familiar for containers.
+
+    Today it is one of the most common ways to run local models — on laptops, home servers and on-premises machines —
+    for development, private workloads and offline demos.
+- id: business
+  heading: How it fits business users
+  body: |
+    For a firm that is cautious about sending research or client data to a third-party API, a local model is the
+    obvious first step: nothing leaves the box. There is also no per-token cost once the hardware is paid for.
+
+    The honest trade-off: small open models on modest hardware are well behind frontier hosted models on harder
+    reasoning. They fit narrower jobs — classification, summarising short text, rewriting queries, embeddings — and
+    the firm now owns uptime, patching and capacity.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Local development and testing** against a real model with no API key or per-token cost.
+    - **Workloads where data must not leave** the machine or network.
+    - **Embeddings** for a small search index.
+    - **Comparing open models** on your own prompts before choosing one.
+    - **Offline demos.**
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Data stays on your hardware | Open local models trail frontier hosted models on hard tasks |
+    | No per-token cost once hardware is paid for | Speed depends heavily on GPU and memory |
+    | One-command install and model pull | You own uptime, patching and capacity |
+    | OpenAI-compatible API eases integration | Model licences vary — check each one for commercial use |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Ollama documentation](https://docs.ollama.com/) — the official docs from Ollama.
+    - [Ollama model library](https://ollama.com/library) — the models you can pull, with sizes and licences.
+    - [Ollama on GitHub](https://github.com/ollama/ollama) — source, releases and the API reference.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below pulls a small model (about 2 GB), chats with it in the terminal, then calls the same model through
+    the local HTTP API with `curl` — the way your own code would.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"When would you run a model locally?"** When data must not leave the network, for development without per-token
+      cost, or for narrow tasks where a small model is good enough. Not for the hardest reasoning tasks.
+    - **"How would you compare a local model with a hosted one?"** Put both behind one model registry as aliases (Ollama's
+      OpenAI-compatible API makes that easy), run the same eval set, compare quality, latency and cost.
+    - **"What do you check before using an open model commercially?"** Its licence — they vary.
+
+    Pitfall: assuming "local" means "free". Hardware, power, patching and someone on call all cost something.
+project:
+  title: A local model in the terminal and over HTTP
+  kind: runnable
+  minutes: 5
+  goal: Pull a small open model, chat with it, and call it through the local API.
+  steps:
+  - Install Ollama from the official site; it starts the local server automatically.
+  - Run `ollama pull llama3.2` (a few minutes on first download).
+  - Run `ollama run llama3.2`, ask a question, then type `/bye`.
+  - Run the curl command below and read the `response` field.
+  code: |
+    curl http://localhost:11434/api/generate -d '{
+      "model": "llama3.2",
+      "prompt": "Summarize in one line: settlement failed due to missing SSI.",
+      "stream": false
+    }'
+  language: bash
+  expected: |
+    A JSON object whose "response" field holds a one-line summary, plus timing fields
+    such as "total_duration" and "eval_count" (tokens generated).
+  done_when:
+  - You got an answer both in the terminal and from the HTTP API.
+  - You can say which port the API listens on and what you'd change to point an OpenAI client at it.
+quiz:
+- id: q1
+  prompt: What does Ollama do?
+  options:
+  - Downloads and runs open-weight language models on your own machine
+  - Hosts models only in its own cloud
+  - Trains models from scratch
+  - Replaces a vector database
+  answer: 0
+  explanation: Local models behind a simple CLI and HTTP API.
+  evidence: Ollama downloads and runs open-weight language models on your own machine
+- id: q2
+  prompt: Which command downloads a model?
+  options:
+  - ollama pull
+  - ollama build
+  - ollama deploy
+  - ollama train
+  answer: 0
+  explanation: pull fetches a model from the library; run opens a chat.
+  evidence: ollama pull fetches a model from its library
+- id: q3
+  prompt: Where does Ollama's local HTTP API listen by default?
+  options:
+  - localhost:11434
+  - localhost:80
+  - localhost:5432
+  - localhost:8501
+  answer: 0
+  explanation: The background server exposes generation, chat and embeddings there.
+  evidence: a background server exposes an HTTP API on localhost:11434 for generation, chat and embeddings
+- id: q4
+  prompt: Why does Ollama's OpenAI-compatible endpoint matter?
+  options:
+  - Many existing clients can point at it with a base-URL change
+  - It makes local models as strong as hosted ones
+  - It sends data to OpenAI
+  - It removes the need for a GPU
+  answer: 0
+  explanation: Easy integration with code written against the OpenAI API.
+  evidence: many existing clients can point at it with a base-URL change
+- id: q5
+  prompt: Does Ollama need a GPU?
+  options:
+  - No; it runs on CPU and uses a GPU when one is available
+  - Yes, always
+  - Only for embeddings
+  - Only on Windows
+  answer: 0
+  explanation: Speed depends heavily on GPU and memory, but CPU works.
+  evidence: It runs on CPU and uses a GPU when one is available.
+- id: q6
+  prompt: What is a Modelfile for?
+  options:
+  - Pinning a system prompt and parameters as a named variant
+  - Storing training data
+  - Configuring the firewall
+  - Listing API keys
+  answer: 0
+  explanation: It creates a reusable named model configuration.
+  evidence: a Modelfile lets you pin a system prompt and parameters as a named variant
+- id: q7
+  prompt: For a firm cautious about sending data to third-party APIs, what is the main appeal of a local model?
+  options:
+  - Nothing leaves the box
+  - It is always more accurate
+  - It needs no hardware
+  - It comes with a support contract
+  answer: 0
+  explanation: Data stays on your hardware.
+  evidence: 'a local model is the obvious first step: nothing leaves the box'
+- id: q8
+  prompt: Which jobs suit small open models on modest hardware?
+  options:
+  - Classification, short summaries, query rewriting and embeddings
+  - The hardest multi-step reasoning tasks
+  - Training frontier models
+  - Real-time video generation
+  answer: 0
+  explanation: They trail frontier hosted models on harder reasoning.
+  evidence: classification, summarization of short text, query rewriting and embeddings
+- id: q9
+  prompt: Which is a con of running models locally with Ollama?
+  options:
+  - You own uptime, patching and capacity
+  - It needs an API key
+  - Data leaves your network
+  - It charges per token
+  answer: 0
+  explanation: Local means operational work is yours.
+  evidence: You own uptime, patching and capacity
+- id: q10
+  prompt: What should you check before using an open model commercially?
+  options:
+  - Its licence, because model licences vary
+  - Its colour scheme
+  - Its file name length
+  - Nothing
+  answer: 0
+  explanation: Some open-weight licences restrict commercial use.
+  evidence: Model licences vary — check each one for commercial use
+- id: q11
+  prompt: How does Ollama make side-by-side evaluation against hosted models straightforward?
+  options:
+  - It slots into a model registry as one more provider alias
+  - It copies hosted models locally
+  - It automatically scores answers
+  - It disables the hosted models
+  answer: 0
+  explanation: The same eval set runs against each alias.
+  evidence: it slots into a model registry as one more provider alias
+- id: q12
+  prompt: Which project did Ollama build on to run quantized models?
+  options:
+  - llama.cpp
+  - TensorFlow Serving
+  - Apache Spark
+  - Kubernetes
+  answer: 0
+  explanation: llama.cpp made running quantized models on laptops practical.
+  evidence: It built on llama.cpp, the open-source project that made running quantized models on laptops practical
+- id: q13
+  prompt: Which is a typical use case?
+  options:
+  - Local development and testing against a real model with no API key or per-token cost
+  - Hosting a public website
+  - Sending email
+  - Managing payroll
+  answer: 0
+  explanation: Developers can test against a real model offline and for free.
+  evidence: Local development and testing against a real model with no API key or per-token cost.

@@ -1,0 +1,252 @@
+course: airflow
+level: familiar
+version: 1
+title: Apache Airflow in 15 minutes
+status: draft
+source:
+  page: tech/airflow.md
+  docs: https://airflow.apache.org/docs/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Airflow page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    Apache Airflow is an open-source **workflow orchestrator**. You describe a pipeline in Python as a DAG — a
+    directed acyclic graph of tasks and the order they must run in — and give it a schedule. Airflow then decides
+    what should run and when, runs it, retries what fails, and shows every run, its logs and its state in a web UI.
+
+    The key idea: Airflow *orchestrates*, it doesn't do the heavy lifting itself. A task usually tells another
+    system to do the work — run dbt, query a warehouse, call an API, call a model — and Airflow records whether
+    that step succeeded and when.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Airflow started inside Airbnb in 2014 as a way to manage a growing tangle of scheduled data jobs, was open
+    sourced soon after, and became a top-level Apache Software Foundation project in 2019. Its big idea at the
+    time was "pipelines as code": instead of clicking jobs together in a GUI, you write them in Python, keep them
+    in git, and review changes like any other code.
+
+    It is now one of the most widely used orchestrators for batch data work. Airflow 3 is the current major
+    version. Managed services run it for you — on AWS it is Amazon MWAA — and newer tools such as Dagster and
+    Prefect compete with it by offering a more data-aware or more Pythonic model.
+- id: business
+  heading: How it fits business users
+  body: |
+    Business users don't open Airflow, but they feel it every morning: the report that is ready by 7 a.m., the
+    vendor file that was loaded and checked overnight, the alert that went to the operations team when a feed was
+    late. Airflow is how a data team makes those promises reliably and proves when something ran.
+
+    For a manager, the value is visibility. The run history answers "did last night's load finish?" and "when did
+    this start failing?" without anyone digging through server logs.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Nightly and intraday batch pipelines** with dependencies between steps.
+    - **Running dbt builds on a schedule** and alerting when a data test fails.
+    - **File and vendor-feed ingestion** with retries when a source is late.
+    - **Time-boxed monitoring jobs**, for example every few minutes during a close window.
+    - **Backfilling history** after a logic change.
+    - **Scheduled AI steps**: compute facts with SQL, check them, then ask a model to explain them.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Pipelines are Python code under version control | Several components to run and upgrade |
+    | Retries, backfills, SLAs and run history built in | Scheduler latency makes it a poor fit for real-time work |
+    | Large set of provider integrations | Passing data between tasks is limited; use external storage |
+    | Managed on AWS (MWAA) and elsewhere | Local development and testing take setup |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Apache Airflow documentation](https://airflow.apache.org/docs/) — the official reference from the Apache
+      Software Foundation. Start with the tutorial and the TaskFlow API pages.
+    - [Airflow core concepts](https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/index.html) — DAGs,
+      tasks, operators and the scheduler explained.
+    - [Astronomer Learn](https://www.astronomer.io/docs/learn/) — free guides from a company that sells managed
+      Airflow; practical and well written.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below runs a two-task DAG on your laptop with `airflow standalone`, which starts every component
+    in one command. One task returns a number, the next one prints it — enough to see a dependency, a run and its
+    logs in the UI.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"What is a DAG?"** A directed acyclic graph: tasks plus the dependencies between them, with no cycles, so
+      there is always a valid order to run them in. In Airflow it is a Python file with a schedule.
+    - **"Does Airflow process the data?"** No — it orchestrates. Tasks call the systems that do the work, and Airflow
+      tracks success, retries and timing. Saying this clearly is the sign of someone who has used it.
+    - **"When would you not use Airflow?"** Real-time or event-by-event processing, where scheduler latency matters;
+      a streaming tool or a queue fits better.
+    - **"How would you add an LLM step?"** As one task among several: compute and check facts first, call the model
+      last, log the call, and let a model outage fail that one task visibly.
+
+    Pitfall: passing large data between tasks through XCom. Say you would write it to storage and pass a reference.
+project:
+  title: Your first DAG
+  kind: runnable
+  minutes: 4
+  goal: Run a two-task DAG and find its run and logs in the Airflow UI.
+  steps:
+  - In a fresh virtual environment, `pip install apache-airflow`, then run `airflow standalone` (it prints an admin password).
+  - Save the code below as `~/airflow/dags/hello_dag.py`.
+  - Open `http://localhost:8080`, sign in, find `hello_dag`, and trigger it.
+  - Open the `report` task's log and find the printed line.
+  code: |
+    from datetime import datetime
+    from airflow.sdk import dag, task   # Airflow 2: from airflow.decorators import dag, task
+
+    @dag(schedule=None, start_date=datetime(2026, 1, 1), catchup=False)
+    def hello_dag():
+        @task
+        def count() -> int:
+            return 3
+
+        @task
+        def report(n: int) -> None:
+            print(f"{n} things found")
+
+        report(count())
+
+    hello_dag()
+  language: python
+  expected: |
+    Both tasks turn green in the grid view.
+    The report task's log contains: 3 things found
+  done_when:
+  - You triggered the DAG and both tasks succeeded.
+  - You can point to where the dependency between the two tasks is declared.
+quiz:
+- id: q1
+  prompt: In Airflow, how do you define a pipeline?
+  options:
+  - In Python, as a directed acyclic graph (DAG) of tasks
+  - In a drag-and-drop canvas only
+  - As a YAML file of shell commands with no dependencies
+  - As a SQL stored procedure
+  answer: 0
+  explanation: Airflow pipelines are DAGs written in Python, kept under version control.
+  evidence: data pipelines that you define in Python as directed acyclic graphs (DAGs)
+- id: q2
+  prompt: What does a DAG file declare?
+  options:
+  - Tasks and their dependencies plus a schedule
+  - Only the database connection strings
+  - The web UI theme
+  - The data itself
+  answer: 0
+  explanation: A DAG declares the tasks, how they depend on each other, and when the pipeline should run.
+  evidence: A DAG is a Python file that declares tasks and their dependencies plus a schedule
+- id: q3
+  prompt: Which statement about Airflow's role is correct?
+  options:
+  - It processes large datasets in memory itself
+  - It orchestrates; tasks call out to the systems that do the work
+  - It replaces the data warehouse
+  - It is a streaming engine for real-time events
+  answer: 1
+  explanation: Airflow coordinates and records work; dbt, warehouses and APIs do the processing.
+  evidence: Airflow orchestrates; it isn't meant to process data itself.
+- id: q4
+  prompt: What is the managed Airflow service on AWS called?
+  options:
+  - AWS Glue
+  - Amazon MWAA
+  - Step Functions
+  - Amazon EMR
+  answer: 1
+  explanation: MWAA is Amazon Managed Workflows for Apache Airflow.
+  evidence: Managed options exist; on AWS it is Amazon MWAA.
+- id: q5
+  prompt: Which features are built into Airflow?
+  options:
+  - Retries, timeouts, backfills and alerting on failure
+  - A vector database and embeddings
+  - Model training on GPUs
+  - A spreadsheet editor
+  answer: 0
+  explanation: Reliability features such as retries, backfills and failure alerts come built in.
+  evidence: Retries, timeouts, backfills and alerting on failure are built in.
+- id: q6
+  prompt: Why is Airflow a poor fit for real-time work?
+  options:
+  - It cannot run Python
+  - Scheduler latency
+  - It has no web UI
+  - It only runs once a day
+  answer: 1
+  explanation: Tasks are picked up by a scheduler, which adds delay; streaming tools suit real-time events better.
+  evidence: Scheduler latency makes it a poor fit for real-time work
+- id: q7
+  prompt: How should larger data move between Airflow tasks?
+  options:
+  - Through XCom, however large it is
+  - Through external storage, passing a reference between tasks
+  - By emailing it between workers
+  - It can't; tasks must not depend on each other
+  answer: 1
+  explanation: Passing data between tasks is limited, so write it to storage and pass a pointer.
+  evidence: Passing data between tasks is limited; use external storage
+- id: q8
+  prompt: What does the TaskFlow API let you do?
+  options:
+  - Write tasks as decorated Python functions and pass small results between them
+  - Stream video between tasks
+  - Replace the scheduler with cron
+  - Run tasks only in the browser
+  answer: 0
+  explanation: The @task decorator turns a function into a task and wires return values into downstream tasks.
+  evidence: The TaskFlow API lets you write tasks as decorated Python functions and pass small results between them.
+- id: q9
+  prompt: In AI work, what is the recommended order inside a scheduled DAG?
+  options:
+  - Call the model first, then compute facts from its answer
+  - Compute the facts with SQL, check them, then call a model to explain or summarize
+  - Skip checks so the model sees raw data
+  - Run the model outside Airflow entirely
+  answer: 1
+  explanation: Facts come from code, are checked, and only then does a model explain them, each step logged.
+  evidence: a DAG computes the facts with SQL, checks them, and only then calls a model to explain or summarize
+- id: q10
+  prompt: Why keep the LLM call as one task among several?
+  options:
+  - So a model outage fails one task visibly instead of silently corrupting a pipeline
+  - Because Airflow can only run one task per DAG
+  - To make the model faster
+  - To avoid logging the call
+  answer: 0
+  explanation: Isolation makes failures visible and retryable.
+  evidence: a model outage fails one task visibly instead of silently corrupting a pipeline
+- id: q11
+  prompt: Which of these is a con of running Airflow yourself?
+  options:
+  - Pipelines can't be version controlled
+  - Several components to run and upgrade
+  - It has no integrations
+  - It can't backfill
+  answer: 1
+  explanation: Scheduler, metadata database, web server and workers all need running and upgrading.
+  evidence: Several components to run and upgrade
+- id: q12
+  prompt: Where did Airflow start?
+  options:
+  - Inside Airbnb
+  - Inside Google
+  - At a university lab
+  - At Amazon Web Services
+  answer: 0
+  explanation: It began at Airbnb in 2014 and later became an Apache Software Foundation project.
+  evidence: Airflow started inside Airbnb in 2014 as a way to manage a growing tangle of scheduled data jobs
+- id: q13
+  prompt: What is a common use for Airflow after a change to pipeline logic?
+  options:
+  - Backfilling historical data
+  - Deleting the run history
+  - Rewriting the DAG in SQL
+  - Disabling retries
+  answer: 0
+  explanation: Backfills rerun past intervals so history reflects the new logic.
+  evidence: Backfilling historical data after a logic change.

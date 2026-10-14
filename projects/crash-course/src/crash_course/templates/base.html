@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Crash course{% endblock %}</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Ccircle cx=%278%27 cy=%278%27 r=%277%27 fill=%27%23546e7a%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="{{ R }}/static/site.css">
+<script src="{{ R }}/static/alpine.min.js" defer></script>
+</head>
+<body class="{{ 'has-bar' if banner else '' }}">
+{{ banner|safe }}
+<header class="top"><div class="wrap">
+  <a class="logo" href="{{ R }}/"><span class="dots"><i style="background:var(--familiar)"></i><i style="background:var(--beginner)"></i><i style="background:var(--intermediate)"></i></span>Crash course</a>
+  <nav class="main">
+    <a href="{{ R }}/catalog">Catalog</a>
+    {% if user %}
+      <a href="{{ R }}/tracker">My tracker</a>
+      <a href="{{ R }}/suggest">Suggest a topic</a>
+      {% if user.is_owner %}<a href="{{ R }}/owner"><b>Owner</b></a>{% endif %}
+      <a href="{{ R }}/me">{{ user.name }}</a>
+      <form method="post" action="{{ R }}/signout"><button type="submit">Sign out</button></form>
+    {% else %}
+      <a href="{{ R }}/signin"><b>Register / sign in</b></a>
+    {% endif %}
+  </nav>
+</div></header>
+<main><div class="wrap {% block wrapclass %}{% endblock %}">
+{% block body %}{% endblock %}
+</div></main>
+<footer><div class="wrap">
+Three depths for every tool: 15 minutes, 1 hour, 4 hours. Quizzes are scored on the server; every course and every
+change is approved by a person before it's published.{% if links.blog_url %} <a href="{{ links.blog_url }}">How it works</a>{% endif %}{% if links.source_url %} · <a href="{{ links.source_url }}">Source</a>{% endif %}
+</div></footer>
+</body></html>

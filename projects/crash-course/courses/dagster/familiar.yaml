@@ -1,0 +1,243 @@
+course: dagster
+level: familiar
+version: 1
+title: Dagster in 15 minutes
+status: draft
+source:
+  page: tech/dagster.md
+  docs: https://docs.dagster.io/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Dagster page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    Dagster is an open-source data orchestrator from Dagster Labs. Like Airflow, it schedules and runs pipelines.
+    Unlike Airflow, you describe a pipeline by the **assets** it produces — a table, a file, a model — rather than
+    by the tasks it runs.
+
+    You write an asset as a Python function decorated with `@asset`, and say which other assets it depends on.
+    Dagster derives the graph from those dependencies, runs it, records metadata and lineage for every
+    materialisation, and runs **asset checks** — tests attached to the asset they test. Jobs and schedules pick
+    which assets to refresh, and a local UI (`dagster dev`) shows the asset graph and the run history.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Dagster was created by Nick Schrock — one of the creators of GraphQL — and open sourced in 2019 by his company,
+    Elementl, later renamed Dagster Labs. The "software-defined assets" model came a few years in and became the
+    centre of the product: data teams think in tables and models, so the orchestrator should too.
+
+    Today it is a common modern alternative to Airflow, especially in teams that use dbt heavily and care about
+    lineage and data quality. A hosted service, Dagster+, adds features on top of the open-source core.
+- id: business
+  heading: How it fits business users
+  body: |
+    Business users care about two questions Dagster is built to answer: "is this table fresh?" and "where did this
+    number come from?" Because every asset records when it was last materialised and what it depends on, a team can
+    answer both from the UI rather than by reading code.
+
+    Asset checks also change the conversation about quality: a broken check can stop the downstream assets from
+    refreshing, so bad data is held back instead of reported after the fact.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Daily data builds** where lineage between tables matters.
+    - **dbt projects orchestrated alongside Python steps.**
+    - **Data quality checks** attached to the asset they test.
+    - **AI pipelines** where an asset check is a precondition for the model step.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Asset-first model matches how data teams think | Heavier install than a cron job |
+    | Lineage and checks built in | Concepts (assets, ops, jobs, resources) take time to learn |
+    | Good local developer experience | Hosted features need Dagster+ |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Dagster documentation](https://docs.dagster.io/) — the official reference from Dagster Labs. Start with the
+      quickstart and the assets concept page.
+    - [Dagster University](https://courses.dagster.io/) — free official courses, including Dagster with dbt.
+    - [Dagster on GitHub](https://github.com/dagster-io/dagster) — the open-source project and examples.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below defines two assets — a raw list of numbers and a summary that depends on it — with an asset
+    check. You'll see the graph in the UI, materialise both, and watch the check pass.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"What's the difference between Dagster and Airflow?"** Airflow models tasks and their order; Dagster models
+      the assets a pipeline produces and derives the order from their dependencies. Dagster has lineage and checks
+      built in; Airflow has the larger ecosystem and install base.
+    - **"What is an asset check?"** A test attached to an asset — nulls, row counts, freshness — that runs when the
+      asset is materialised and can block what depends on it.
+    - **"How does this help an AI pipeline?"** Lineage answers what feeds what the model reads; checks make data
+      quality a precondition for the AI step rather than a report after it.
+
+    Pitfall: describing Dagster as "Airflow with a nicer UI". The asset model is the real difference.
+project:
+  title: Two assets and a check
+  kind: runnable
+  minutes: 4
+  goal: Materialise two dependent assets and see an asset check run in the Dagster UI.
+  steps:
+  - Run `pip install dagster dagster-webserver`.
+  - Save the code below as `hello_assets.py`.
+  - Run `dagster dev -f hello_assets.py` and open `http://localhost:3000`.
+  - In the asset graph, click "Materialize all" and open the run; then look at the check result on `summary`.
+  code: |
+    from dagster import AssetCheckResult, Definitions, asset, asset_check
+
+    @asset
+    def raw_numbers() -> list[int]:
+        return [3, 1, 4, 1, 5]
+
+    @asset
+    def summary(raw_numbers: list[int]) -> dict:
+        return {"count": len(raw_numbers), "total": sum(raw_numbers)}
+
+    @asset_check(asset=summary)
+    def summary_not_empty(summary: dict) -> AssetCheckResult:
+        return AssetCheckResult(passed=summary["count"] > 0)
+
+    defs = Definitions(assets=[raw_numbers, summary], asset_checks=[summary_not_empty])
+  language: python
+  expected: |
+    The graph shows raw_numbers → summary. After materialising, both are green
+    and the summary_not_empty check shows as passed.
+  done_when:
+  - Both assets materialised and the check passed.
+  - You can say where the dependency between the two assets comes from (the function argument).
+quiz:
+- id: q1
+  prompt: How does Dagster describe a pipeline?
+  options:
+  - By the assets it produces, rather than as tasks
+  - As a list of cron lines
+  - As a single SQL file
+  - As a spreadsheet
+  answer: 0
+  explanation: Assets are tables, files or models; Dagster derives the run order from their dependencies.
+  evidence: Dagster schedules and runs data pipelines described as the assets they produce, rather than as tasks.
+- id: q2
+  prompt: Which of these is an example of an asset?
+  options:
+  - A table, a file or a model
+  - A CPU core
+  - A user's password
+  - A browser tab
+  answer: 0
+  explanation: An asset is a durable thing a pipeline produces.
+  evidence: You declare assets (a table, a file, a model)
+- id: q3
+  prompt: What are asset checks?
+  options:
+  - Tests run against the results of an asset
+  - Invoices for compute
+  - Login checks for the UI
+  - Code formatting rules
+  answer: 0
+  explanation: Checks such as nulls or row counts are attached to the asset they test.
+  evidence: runs asset checks (tests) against the results
+- id: q4
+  prompt: Which command starts the local Dagster UI?
+  options:
+  - dagster dev
+  - dagster serve --prod
+  - airflow standalone
+  - dbt docs serve
+  answer: 0
+  explanation: dagster dev shows the asset graph and run history locally.
+  evidence: A local UI (dagster dev) shows the asset graph and run history.
+- id: q5
+  prompt: What does Dagster record when it runs assets?
+  options:
+  - Metadata and lineage
+  - Only the start time
+  - Nothing; it is stateless
+  - The user's browser history
+  answer: 0
+  explanation: Lineage and metadata let you answer where data came from and when it was refreshed.
+  evidence: Dagster derives the graph, runs it, records metadata and lineage
+- id: q6
+  prompt: In AI work, what do asset checks make data quality?
+  options:
+  - A precondition for the AI step rather than a report after it
+  - Optional
+  - The model's job
+  - A monthly report only
+  answer: 0
+  explanation: A failing check can hold back the model step instead of reporting after the fact.
+  evidence: asset checks make quality a precondition for the AI step rather than a report after it
+- id: q7
+  prompt: What question does asset lineage answer for an AI pipeline?
+  options:
+  - What feeds what the model reads
+  - Which model is cheapest
+  - How fast the GPU is
+  - Who wrote the prompt
+  answer: 0
+  explanation: Lineage traces every input back to its source.
+  evidence: Asset lineage answers "what feeds what the model reads"
+- id: q8
+  prompt: Which is a con of Dagster?
+  options:
+  - Concepts (assets, ops, jobs, resources) take time to learn
+  - It has no local UI
+  - It cannot run dbt
+  - It cannot be scheduled
+  answer: 0
+  explanation: The learning curve is real, though the asset model pays it back.
+  evidence: Concepts (assets, ops, jobs, resources) take time to learn
+- id: q9
+  prompt: What needs Dagster+?
+  options:
+  - Hosted features
+  - Running assets locally
+  - Writing asset checks
+  - Using Python
+  answer: 0
+  explanation: The open-source core runs locally; hosted features are in the paid Dagster+ service.
+  evidence: A hosted service, Dagster+, adds features on top of the open-source core.
+- id: q10
+  prompt: What selects which assets to refresh and when?
+  options:
+  - Jobs and schedules
+  - The browser
+  - The database
+  - Git tags
+  answer: 0
+  explanation: Jobs pick assets; schedules run jobs on a timetable.
+  evidence: Jobs and schedules select assets to refresh.
+- id: q11
+  prompt: Which is a typical use case?
+  options:
+  - dbt projects orchestrated alongside Python steps
+  - Hosting a website
+  - Sending SMS alerts
+  - Editing images
+  answer: 0
+  explanation: Dagster is popular with dbt-heavy teams.
+  evidence: dbt projects orchestrated alongside Python steps.
+- id: q12
+  prompt: How does Dagster's model differ from Airflow's?
+  options:
+  - Airflow models tasks and their order; Dagster models the assets and derives the order
+  - They are identical
+  - Dagster can't schedule anything
+  - Airflow has asset checks built in, Dagster doesn't
+  answer: 0
+  explanation: The asset model is the real difference, not the UI.
+  evidence: Airflow models tasks and their order; Dagster models the assets a pipeline produces and derives the order from their dependencies.
+- id: q13
+  prompt: Who created Dagster?
+  options:
+  - Nick Schrock, one of the creators of GraphQL
+  - The Apache Software Foundation
+  - Snowflake
+  - Amazon
+  answer: 0
+  explanation: It was open sourced in 2019 by Elementl, later renamed Dagster Labs.
+  evidence: Dagster was created by Nick Schrock — one of the creators of GraphQL — and open sourced in 2019

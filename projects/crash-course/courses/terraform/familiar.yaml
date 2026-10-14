@@ -1,0 +1,246 @@
+course: terraform
+level: familiar
+version: 1
+title: Terraform in 15 minutes
+status: draft
+source:
+  page: tech/terraform.md
+  docs: https://developer.hashicorp.com/terraform/docs
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Terraform page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    Terraform is **infrastructure as code**: instead of clicking resources together in a cloud console, you describe them
+    in files — an S3 bucket, a database, a container service — and Terraform makes the real world match.
+
+    You write resources in **HCL** (HashiCorp Configuration Language). Terraform works out the order to create them in,
+    calls each provider's API, and records what it built in a **state file**. The workflow is three commands:
+
+    - `terraform init` downloads the providers;
+    - `terraform plan` shows a diff between your code and what exists;
+    - `terraform apply` makes the change.
+
+    The **plan** is the part that matters in a regulated firm: the change is readable and reviewable before anything
+    touches production.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    HashiCorp released Terraform in 2014, when most cloud infrastructure was still set up by hand or with
+    provider-specific templates. Its provider model — one tool, many clouds and services — made it the most widely used
+    infrastructure-as-code tool. In 2023 HashiCorp changed Terraform's licence from open source to the Business Source
+    Licence; the community responded with **OpenTofu**, an open-source fork that stays compatible.
+
+    Today providers exist for AWS, Azure, GCP, Cloudflare, GitHub, Datadog and many more, so one tool and one review
+    process can cover most of an estate.
+- id: business
+  heading: How it fits business users
+  body: |
+    For a business, Terraform turns infrastructure changes into pull requests: someone proposes, the plan shows exactly
+    what will change, a reviewer approves, and the history is in git. That is the change-management story auditors and
+    risk teams want to hear.
+
+    It also helps control cost and risk in experiments: everything an experiment created is in the state file and can be
+    destroyed in one step, and settings like "this bucket's contents can't be deleted" are code, not something someone
+    has to remember to click.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Repeatable environments** (dev, staging, prod) from one set of modules.
+    - **Infrastructure changes through pull-request review**, like application code.
+    - **Detecting drift** between what is declared and what someone changed by hand.
+    - **Reusable reference architectures** packaged as modules.
+    - **Tearing a sandbox down cleanly** with `terraform destroy`.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Plan before apply: changes are visible and reviewable | State files need care — remote storage, locking, and they can contain secrets |
+    | One tool across many clouds and SaaS providers | HCL gets awkward for complex logic (loops, conditionals) |
+    | Large ecosystem of providers and community modules | Provider upgrades occasionally force code changes |
+    | Drift detection against the real environment | Licence changed from open source to BSL; OpenTofu is the community fork |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Terraform documentation](https://developer.hashicorp.com/terraform/docs) — the official docs from HashiCorp.
+    - [Terraform tutorials](https://developer.hashicorp.com/terraform/tutorials) — free official hands-on tutorials.
+    - [OpenTofu documentation](https://opentofu.org/docs/) — the open-source fork.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below needs **no cloud account**: it uses the `local` provider to "create" a file on your laptop, so you
+    can run the full init → plan → apply → destroy cycle and read a real plan, for free.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"Why infrastructure as code?"** Repeatable environments, peer review of changes, an audit trail in git, drift
+      detection, and clean tear-down.
+    - **"What's in the state file and how do you protect it?"** Terraform's record of what it built — it can contain
+      secrets. Store it remotely (for example S3) with locking and encryption, never in git.
+    - **"How would you apply this to an AI system?"** The IAM policy limiting which models a service may invoke and the
+      bucket policy making model outputs immutable become reviewable lines of code.
+    - **"Terraform or OpenTofu?"** Same language and workflow; the difference is the licence and governance.
+
+    Pitfall: running `apply` without reading the plan. Say the plan is reviewed, ideally in the pull request.
+project:
+  title: init, plan, apply, destroy — with no cloud
+  kind: runnable
+  minutes: 4
+  goal: Run Terraform's full workflow and read a plan, using a local file as the "resource".
+  steps:
+  - Install Terraform (or OpenTofu, using `tofu` instead of `terraform`).
+  - Save the code below as `main.tf` in an empty folder.
+  - Run `terraform init`, then `terraform plan` and read it, then `terraform apply` and type yes.
+  - Change the content, run `terraform plan` again to see the diff, then `terraform destroy`.
+  code: |
+    terraform {
+      required_providers {
+        local = { source = "hashicorp/local" }
+      }
+    }
+
+    resource "local_file" "hello" {
+      filename = "${path.module}/hello.txt"
+      content  = "Hello from Terraform\n"
+    }
+  language: hcl
+  expected: |
+    plan: "Plan: 1 to add, 0 to change, 0 to destroy."
+    apply: hello.txt appears with the content.
+    After editing content, plan shows the file will be replaced; destroy removes it.
+  done_when:
+  - You read a plan before applying it.
+  - You saw the plan change after editing the code, and destroyed the resource.
+quiz:
+- id: q1
+  prompt: What does Terraform do?
+  options:
+  - Describes infrastructure as code, shows a plan of changes, then makes them
+  - Monitors application logs
+  - Trains models in the cloud
+  - Hosts websites
+  answer: 0
+  explanation: Code, plan, apply.
+  evidence: Terraform describes cloud infrastructure as code, shows you a plan of what will change, and then makes those changes.
+- id: q2
+  prompt: Which language are Terraform resources written in?
+  options:
+  - HCL (HashiCorp Configuration Language)
+  - Python
+  - SQL
+  - XML
+  answer: 0
+  explanation: HCL describes resources such as buckets, databases and services.
+  evidence: You write resource definitions in HCL (HashiCorp Configuration Language)
+- id: q3
+  prompt: Which command shows a diff between your code and what exists?
+  options:
+  - terraform plan
+  - terraform init
+  - terraform apply
+  - terraform show-me
+  answer: 0
+  explanation: init downloads providers; apply executes the change.
+  evidence: terraform plan shows a diff between the code and what exists
+- id: q4
+  prompt: Why does the plan step matter in a regulated shop?
+  options:
+  - The change is readable and reviewable before anything touches production
+  - It makes changes faster
+  - It skips approvals
+  - It encrypts the cloud account
+  answer: 0
+  explanation: Reviewing the plan is change management.
+  evidence: the change is readable and reviewable before anything touches production
+- id: q5
+  prompt: Where does Terraform record what it built?
+  options:
+  - In a state file
+  - In the cloud console only
+  - In an email
+  - Nowhere
+  answer: 0
+  explanation: State lets Terraform compute diffs and destroy cleanly.
+  evidence: records what it built in a state file
+- id: q6
+  prompt: Why do state files need care?
+  options:
+  - They need remote storage and locking, and they can contain secrets
+  - They are always empty
+  - They are public by design
+  - They expire every day
+  answer: 0
+  explanation: Store state remotely with locking and encryption, never in git.
+  evidence: State files need care — remote storage, locking, and they can contain secrets
+- id: q7
+  prompt: What is OpenTofu?
+  options:
+  - The open-source community fork of Terraform
+  - A cloud provider
+  - A database
+  - A Terraform plugin for Python
+  answer: 0
+  explanation: It followed HashiCorp's licence change to the BSL.
+  evidence: Licence changed from open source to BSL; OpenTofu is the community fork
+- id: q8
+  prompt: In AI systems, what becomes reviewable code instead of console settings?
+  options:
+  - The IAM policy limiting which models a service may invoke and the bucket policy making outputs immutable
+  - The model's weights
+  - The prompts
+  - The GPU drivers
+  answer: 0
+  explanation: Security-relevant settings get reviewed like any other change.
+  evidence: The IAM policy that limits which models a service may invoke, and the bucket policy that makes model outputs immutable, become reviewable lines of code
+- id: q9
+  prompt: How does Terraform help contain the cost of experiments?
+  options:
+  - Everything an experiment created is in the state file and can be destroyed in one step
+  - It negotiates discounts
+  - It turns off the cloud account
+  - It caps the bill automatically
+  answer: 0
+  explanation: terraform destroy cleans up everything it built.
+  evidence: everything an experiment created is in the state file and can be destroyed in one step
+- id: q10
+  prompt: What is drift detection?
+  options:
+  - Finding differences between what is declared and what someone changed by hand
+  - Measuring network latency
+  - Tracking model accuracy over time
+  - Detecting typos in HCL
+  answer: 0
+  explanation: Manual console changes show up as differences in the plan.
+  evidence: Detecting drift between what is declared and what someone changed by hand in the console.
+- id: q11
+  prompt: Which is a con of HCL?
+  options:
+  - It gets awkward for complex logic such as loops and conditionals
+  - It can't describe S3 buckets
+  - It only works on AWS
+  - It has no comments
+  answer: 0
+  explanation: Keep logic simple; use modules.
+  evidence: HCL gets awkward for complex logic (loops, conditionals)
+- id: q12
+  prompt: Which providers exist for Terraform?
+  options:
+  - AWS, Azure, GCP, Cloudflare, GitHub, Datadog and many more
+  - Only AWS
+  - Only on-premises servers
+  - Only Kubernetes
+  answer: 0
+  explanation: One tool and one review process can cover most of an estate.
+  evidence: Providers exist for AWS, Azure, GCP, Cloudflare, GitHub, Datadog and many more
+- id: q13
+  prompt: When did HashiCorp release Terraform?
+  options:
+  - 2014
+  - 1999
+  - 2008
+  - 2022
+  answer: 0
+  explanation: The licence change to BSL came later, in 2023.
+  evidence: HashiCorp released Terraform in 2014

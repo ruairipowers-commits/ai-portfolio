@@ -505,10 +505,34 @@ def on_page_markdown(markdown, page, config, files):
         markdown = markdown.replace("<!-- evidence -->", assistant_corpus.evidence_markdown(page.file.src_uri))
     if "<!-- tech:index -->" in markdown:
         markdown = markdown.replace("<!-- tech:index -->", _tech_index(page.file.src_uri))
+    if page.file.src_uri.startswith("tech/") and page.file.src_uri != "tech/index.md":
+        markdown = _crash_course_box(markdown, page)
     # a post's **Stack:** line names its technologies: link each to its page
     markdown = re.sub(r"(?m)^(\*\*Stack:\*\*)(.*)$",
                       lambda m: m.group(1) + link_tech(m.group(2), page.file.src_uri), markdown)
     return _unlink_private(markdown)
+
+
+_COURSES = Path(__file__).resolve().parents[1] / "projects" / "crash-course" / "courses"
+
+
+def _crash_course_box(markdown: str, page) -> str:
+    """Every technology page that has a crash course gets a "Take the crash course" box above its documentation link:
+    to the live course page when the demos are deployed, otherwise to the crash-course write-up."""
+    slug = Path(page.file.src_uri).stem
+    if "crash-course" not in _cfg["projects"] or access("crash-course", _cfg) == "hidden" \
+            or not (_COURSES / slug / "familiar.yaml").exists():
+        return markdown
+    title = (page.meta or {}).get("title", slug)
+    live = demo_url("crash-course", _cfg)
+    href = f"{live.rstrip('/')}/course/{slug}" if live else posixpath.relpath("personal/posts/crash-course.md",
+                                                                          posixpath.dirname(page.file.src_uri))
+    box = (f'!!! tip "Take the {title} crash course"\n'
+           f"    Learn it at three depths — 15 minutes, 1 hour or 4 hours — with a scored quiz at each level and a "
+           f"tracker that unlocks the next one. [Sign up for the {title} crash course]({href})\n\n")
+    if "\n## Documentation" in markdown:
+        return markdown.replace("\n## Documentation", "\n" + box + "## Documentation", 1)
+    return markdown.rstrip() + "\n\n" + box
 
 
 def _unlink_private(markdown: str) -> str:
