@@ -1,0 +1,246 @@
+course: python
+level: familiar
+version: 1
+title: Python for data and AI in 15 minutes
+status: draft
+source:
+  page: tech/python.md
+  docs: https://docs.python.org/3/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Python page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    Python is a general-purpose programming language, open source and maintained by the Python Software Foundation and
+    its core developers. It is **interpreted** (you run code directly, no compile step), **dynamically typed** (with
+    optional type hints that tools can check), and famously **readable**.
+
+    It ships with a large standard library — `csv`, `json`, `sqlite3`, `pathlib`, `datetime` and more are there before
+    you install anything. But for data and AI work, the real reason to use Python is its **ecosystem**: pandas, Polars,
+    DuckDB, dbt, Airflow, FastAPI, Streamlit, scikit-learn, PyTorch and every major model provider's SDK are
+    Python-first.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Guido van Rossum released Python in 1991, aiming for a language that was easy to read and write. Python 3, a
+    deliberate break to fix old design mistakes, arrived in 2008; the long migration finished when Python 2 reached end
+    of life in 2020.
+
+    Over the 2010s scientific libraries (NumPy, pandas, scikit-learn) and then deep-learning frameworks made Python the
+    default language for data science and machine learning. Today it is one of the most used programming languages in the
+    world, and the language most new AI tools appear in first.
+- id: business
+  heading: How it fits business users
+  body: |
+    For a business, Python is a shared language between analysts and engineers: an analyst's notebook and an engineer's
+    service can use the same libraries and be read by both. That shortens the path from "an analysis worked" to "it runs
+    every day".
+
+    The trade-offs to know: pure-Python loops are slow, so heavy lifting is pushed into SQL engines or compiled libraries,
+    and dependency management needs discipline — pinned versions and virtual environments — or things break silently.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Data pipelines** and glue code between systems.
+    - **Analytics and research notebooks.**
+    - **Web APIs and internal tools** (FastAPI, Streamlit).
+    - **Orchestration code** — Airflow DAGs are Python files.
+    - **Test suites and CI scripts.**
+    - **Calling model provider APIs** and validating their output.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Largest data/ML/LLM library ecosystem | Slow for CPU-bound pure-Python code |
+    | Readable; easy for analysts and engineers to share code | Packaging and environment management take discipline |
+    | Optional type hints catch a class of bugs early | Dynamic typing lets errors reach runtime without tests |
+    | Batteries included (`sqlite3`, `json`, `csv`, `logging`) | Concurrency model (GIL, async) has sharp edges |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Python documentation](https://docs.python.org/3/) — the official docs from the Python Software Foundation.
+    - [The Python Tutorial](https://docs.python.org/3/tutorial/) — the official introduction; read it once end to end.
+    - [Python Packaging User Guide](https://packaging.python.org/) — virtual environments and dependencies done right.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below uses only the standard library: it writes a small CSV of trades, reads it back, and totals
+    notional by desk. Nothing to install beyond Python itself.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"How do you structure Python for an AI feature?"** Let SQL or dbt compute the numbers, use Python to assemble
+      context, call the model through one adapter, and validate the response with a typed schema before anything
+      downstream reads it.
+    - **"Python is slow — how do you cope?"** Push heavy work into vectorised libraries or SQL engines; profile before
+      optimising.
+    - **"How do you keep environments reproducible?"** Virtual environments, pinned versions, a lock file or constraints,
+      and CI that installs from them.
+
+    Pitfall: overclaiming type hints. They help tools and readers; without a checker or Pydantic they don't enforce anything at runtime.
+project:
+  title: Totals by desk with the standard library
+  kind: runnable
+  minutes: 3
+  goal: Write and read a CSV with only the standard library and aggregate a column.
+  steps:
+  - Check your Python version with `python --version` (3.11 or newer is ideal).
+  - Save the code below as `hello_python.py` and run `python hello_python.py`.
+  - Add a fourth trade for a new desk and run it again.
+  code: |
+    import csv
+    from collections import defaultdict
+
+    rows = [("rates", 1_000_000), ("credit", 250_000), ("rates", 500_000)]
+    with open("trades.csv", "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["desk", "notional"])
+        w.writerows(rows)
+
+    totals = defaultdict(float)
+    with open("trades.csv", newline="") as f:
+        for row in csv.DictReader(f):
+            totals[row["desk"]] += float(row["notional"])
+
+    for desk, notional in sorted(totals.items()):
+        print(f"{desk}: {notional:,.0f}")
+  language: python
+  expected: |
+    credit: 250,000
+    rates: 1,500,000
+  done_when:
+  - The totals print as expected.
+  - You can point to the two standard-library modules the script uses.
+quiz:
+- id: q1
+  prompt: Who maintains Python?
+  options:
+  - The Python Software Foundation and its core developers
+  - Google
+  - Oracle
+  - Microsoft alone
+  answer: 0
+  explanation: It is open source and community governed.
+  evidence: Python is an open-source, general-purpose programming language maintained by the Python Software Foundation and its core developers.
+- id: q2
+  prompt: How is Python typed?
+  options:
+  - Dynamically, with optional type hints that tools can check or enforce
+  - Statically, with mandatory types
+  - It has no types
+  - Only through comments
+  answer: 0
+  explanation: mypy can check hints; Pydantic can enforce them at runtime.
+  evidence: dynamically typed (with optional type hints that tools such as mypy and Pydantic can check or enforce)
+- id: q3
+  prompt: What is Python's main strength for a data team, according to the course?
+  options:
+  - The ecosystem around it
+  - Raw loop speed
+  - Its age
+  - Its file size
+  answer: 0
+  explanation: Most data and AI libraries are Python-first.
+  evidence: Its strength for a data team is less the language itself than the ecosystem around it
+- id: q4
+  prompt: Which of these ships in the standard library?
+  options:
+  - sqlite3, json, pathlib and datetime
+  - pandas and NumPy
+  - FastAPI and Streamlit
+  - PyTorch
+  answer: 0
+  explanation: They're there before you install anything.
+  evidence: sqlite3, json, pathlib, datetime and more are there before you install anything
+- id: q5
+  prompt: How do teams cope with slow pure-Python loops?
+  options:
+  - Push heavy lifting into SQL engines or compiled libraries
+  - Write longer loops
+  - Avoid data work
+  - Use more print statements
+  answer: 0
+  explanation: Vectorised libraries and SQL do the heavy work.
+  evidence: heavy lifting is pushed down into SQL engines or compiled libraries
+- id: q6
+  prompt: What does dependency management need?
+  options:
+  - Discipline — pinned versions, virtual environments, a lock file or constraints
+  - Nothing; it always works
+  - A GPU
+  - A paid licence
+  answer: 0
+  explanation: Unpinned environments break silently.
+  evidence: dependency management needs discipline (pinned versions, virtual environments, a lock file or constraints)
+- id: q7
+  prompt: In AI work, what's the recommended pattern?
+  options:
+  - SQL computes numbers, Python assembles context, one adapter calls the model, a typed schema validates the response
+  - The model computes all numbers
+  - Skip validation to save time
+  - Call each provider SDK directly everywhere
+  answer: 0
+  explanation: Each layer does what it's good at, with validation before use.
+  evidence: let SQL or dbt compute the numbers, use Python to assemble context, call the model through one adapter, and validate the response with a typed schema
+- id: q8
+  prompt: Which is a con of Python?
+  options:
+  - The concurrency model (GIL, async) has sharp edges
+  - It has no libraries
+  - It can't read CSV
+  - It can't be used for web APIs
+  answer: 0
+  explanation: Know when to use processes, threads or async.
+  evidence: Concurrency model (GIL, async) has sharp edges
+- id: q9
+  prompt: What lets errors reach runtime without tests?
+  options:
+  - Dynamic typing
+  - The standard library
+  - Virtual environments
+  - Readable syntax
+  answer: 0
+  explanation: Tests and type checkers catch what the language won't.
+  evidence: Dynamic typing lets errors reach runtime without tests
+- id: q10
+  prompt: Which tools are Python files, making orchestration code Python?
+  options:
+  - Airflow DAGs
+  - Dockerfiles
+  - Caddyfiles
+  - GitHub Actions YAML
+  answer: 0
+  explanation: An Airflow DAG is a Python file.
+  evidence: Orchestration code (Airflow DAGs are Python files).
+- id: q11
+  prompt: Where do most new data and AI libraries publish first?
+  options:
+  - As a Python package
+  - As a Java JAR
+  - As a C# NuGet package
+  - As an Excel add-in
+  answer: 0
+  explanation: Python-first is the norm for data and AI tooling.
+  evidence: Most new data and AI libraries publish a Python package before anything else.
+- id: q12
+  prompt: When was Python first released?
+  options:
+  - 1991
+  - 2008
+  - 1975
+  - 2015
+  answer: 0
+  explanation: Guido van Rossum released it in 1991; Python 3 came in 2008.
+  evidence: Guido van Rossum released Python in 1991
+- id: q13
+  prompt: Which is a pro of Python?
+  options:
+  - Readable; easy for analysts and engineers to share code
+  - Fastest language for CPU-bound loops
+  - No packaging needed ever
+  - Compile-time type safety by default
+  answer: 0
+  explanation: A shared language shortens the path from analysis to production.
+  evidence: Readable; easy for analysts and engineers to share code

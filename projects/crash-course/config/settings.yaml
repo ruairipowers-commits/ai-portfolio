@@ -15,7 +15,7 @@ levels:
     minutes: 15
     sections: [concept, history, business, use_cases, pros_cons, resources, hello_world, interview]
     quiz: {questions: 10, pass_pct: 70}
-    project_minutes: 3
+    project_minutes: 4            # a hello world: 3–5 minutes including any install
   beginner:
     order: 2
     label: Beginner

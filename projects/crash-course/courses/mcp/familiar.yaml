@@ -89,14 +89,14 @@ project:
   minutes: 4
   goal: Run a local MCP server and call its tool from the MCP Inspector.
   steps:
-  - Run `pip install "mcp[cli]"` (Node.js is also needed for the Inspector).
+  - Run `pip install "mcp[cli]"` — version 2 or later (Node.js is also needed for the Inspector).
   - Save the code below as `hello_mcp.py`.
   - Run `mcp dev hello_mcp.py`; it starts the Inspector and prints a local URL. Open it and click Connect.
   - In the Tools tab, list tools, pick `add`, enter a=2 and b=3, and run it.
   code: |
-    from mcp.server.fastmcp import FastMCP
+    from mcp.server.mcpserver import MCPServer   # SDK 2.x (1.x called it FastMCP)
 
-    server = FastMCP("my-server")
+    server = MCPServer("my-server")
 
     @server.tool()
     def add(a: int, b: int) -> int:

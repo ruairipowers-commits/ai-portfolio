@@ -1,0 +1,241 @@
+course: pgvector
+level: familiar
+version: 1
+title: pgvector in 15 minutes
+status: draft
+source:
+  page: tech/pgvector.md
+  docs: https://github.com/pgvector/pgvector
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's pgvector page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    An **embedding** is a list of numbers that represents the meaning of a piece of text (or an image): texts with similar
+    meaning get vectors that are close together. Finding "the most similar documents" becomes finding the nearest vectors.
+
+    **pgvector** adds that to PostgreSQL. It is an open-source extension that gives you:
+
+    - a `vector` column type;
+    - distance operators — `<->` for L2 distance, `<=>` for cosine distance, `<#>` for negative inner product;
+    - approximate-nearest-neighbour indexes, **HNSW** and **IVFFlat**.
+
+    Without an index it does exact search; with one it trades a little recall for a lot of speed. And because it lives
+    inside Postgres, a single SQL query can filter on metadata, join other tables and order by similarity.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Andrew Kane released pgvector in 2021, before the generative AI wave made vector search a mainstream need. When
+    retrieval-augmented generation (RAG) took off in 2023, many teams discovered they didn't need a new vector database:
+    the Postgres they already ran could do it. The HNSW index, added in 2023, made it fast enough for large collections.
+
+    Today it is available on the major managed Postgres services, including Amazon RDS and Aurora PostgreSQL, and is one
+    of the most common ways to add vector search to an existing application.
+- id: business
+  heading: How it fits business users
+  body: |
+    For a business, pgvector means search by meaning — "find incidents like this one", "which runbook covers this
+    break?" — without buying and operating another system. Vectors sit next to the metadata and permissions that already
+    exist, so the same database roles, backups and audit apply.
+
+    It is also the retrieval step behind many internal AI assistants: the model answers from the documents pgvector finds,
+    and cites them.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Retrieval-augmented generation** over internal documents.
+    - **Semantic search** over tickets, runbooks or research notes.
+    - **"Find similar"** over past incidents, trades or filings.
+    - **Deduplication and clustering** of text by embedding.
+    - **Adding vector search** to an existing Postgres app without a new system.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | One fewer system: vectors live in the database you run | Index build and memory needs grow with large collections |
+    | Metadata filters, joins and vectors in one SQL query | Filtered approximate search needs care to keep recall |
+    | Postgres roles, backups and transactions apply | Fewer search features than a dedicated search engine (no built-in BM25) |
+    | Available on managed Postgres services | Tuning HNSW/IVFFlat parameters is on you |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [pgvector documentation](https://github.com/pgvector/pgvector) — the official README and source, from the pgvector
+      project.
+    - [PostgreSQL documentation](https://www.postgresql.org/docs/current/) — for the database it extends.
+    - Within the pgvector README, read the **Indexing** and **Filtering** sections next.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below enables pgvector in a throwaway Postgres container, stores two tiny three-dimensional "embeddings",
+    and asks which is nearest to a query vector. Real embeddings have hundreds of dimensions; the SQL is the same.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"How does RAG retrieval work with pgvector?"** Store chunk embeddings with their source, section and metadata;
+      at question time embed the query, filter by metadata in `WHERE`, order by distance, and pass the top chunks — with
+      their IDs — to the model so it can cite them.
+    - **"Why pgvector rather than a dedicated vector database?"** One fewer system: same backups, roles and transactions,
+      and metadata joins in SQL. A dedicated search engine wins on hybrid keyword ranking and very large scale.
+    - **"What must you log?"** Which embedding model produced each vector — vectors from different models aren't comparable.
+
+    Pitfall: filtering after an approximate search and getting too few results. Mention filtered recall as a known issue.
+project:
+  title: Nearest neighbours in Postgres
+  kind: runnable
+  minutes: 5
+  goal: Store vectors in Postgres and find the nearest one to a query.
+  steps:
+  - 'Start Postgres with pgvector: `docker run --rm -e POSTGRES_PASSWORD=pw -p 5432:5432 pgvector/pgvector:pg17`.'
+  - 'In another terminal connect with `psql postgresql://postgres:pw@localhost:5432/postgres`.'
+  - Paste the SQL below.
+  - Change the query vector to `[0.1, 0.8, 0.1]` and run the last statement again.
+  code: |
+    CREATE EXTENSION IF NOT EXISTS vector;
+    CREATE TABLE runbook_chunks (id bigserial PRIMARY KEY, section text, embedding vector(3));
+    INSERT INTO runbook_chunks (section, embedding) VALUES
+      ('Cash breaks',     '[0.9, 0.1, 0.0]'),
+      ('Position breaks', '[0.1, 0.9, 0.0]');
+    SELECT section, embedding <=> '[0.8, 0.2, 0.0]' AS cosine_distance
+    FROM runbook_chunks
+    ORDER BY embedding <=> '[0.8, 0.2, 0.0]'
+    LIMIT 5;
+  language: sql
+  expected: |
+    Cash breaks comes first, with a much smaller cosine distance than Position breaks.
+    With [0.1, 0.8, 0.1], Position breaks comes first.
+  done_when:
+  - The nearest section changed when you changed the query vector.
+  - You can say which operator is cosine distance.
+quiz:
+- id: q1
+  prompt: What is pgvector?
+  options:
+  - A PostgreSQL extension for storing embeddings and searching them by similarity
+  - A separate vector database server
+  - A Python charting library
+  - A model provider
+  answer: 0
+  explanation: It adds vector search to the Postgres you already run.
+  evidence: pgvector is a PostgreSQL extension that stores embeddings in a vector column and searches them by similarity with ordinary SQL.
+- id: q2
+  prompt: Which operator gives cosine distance in pgvector?
+  options:
+  - <=>
+  - <->
+  - <#>
+  - ==
+  answer: 0
+  explanation: <-> is L2 distance and <#> is negative inner product.
+  evidence: <-> for L2 distance, <=> for cosine distance, <#> for negative inner product
+- id: q3
+  prompt: Which approximate-nearest-neighbour indexes does pgvector offer?
+  options:
+  - HNSW and IVFFlat
+  - B-tree and hash only
+  - GIN and GiST only
+  - None
+  answer: 0
+  explanation: Approximate indexes trade a little recall for speed.
+  evidence: approximate-nearest-neighbor indexes (HNSW and IVFFlat)
+- id: q4
+  prompt: What does pgvector do without an index?
+  options:
+  - Exact search
+  - Nothing — it errors
+  - Random sampling
+  - Keyword search
+  answer: 0
+  explanation: Indexes trade a little recall for speed; without one, search is exact.
+  evidence: Without an index it does exact search; with one it trades a little recall for speed.
+- id: q5
+  prompt: Why does living inside Postgres help?
+  options:
+  - A query can filter on metadata, join other tables and order by similarity in one statement
+  - It makes embeddings smaller
+  - It removes the need for embeddings
+  - It trains the model
+  answer: 0
+  explanation: Vectors sit in the same rows as the metadata that describes them.
+  evidence: A query can filter on entity, date or permission columns, join to other tables and order by similarity, all in one statement and one transaction.
+- id: q6
+  prompt: In RAG, what does the app do at question time?
+  options:
+  - Embeds the query, filters by metadata, ranks by distance, and passes the top chunks with IDs to the model
+  - Sends the whole database to the model
+  - Asks the model to guess the documents
+  - Searches only by exact keyword
+  answer: 0
+  explanation: Passing chunk IDs lets the answer cite its sources.
+  evidence: at question time the app embeds the query, filters by metadata in WHERE, ranks by distance and passes the top chunks to the model with their IDs
+- id: q7
+  prompt: Why must you log which embedding model produced each vector?
+  options:
+  - Vectors from different models aren't comparable
+  - It speeds up queries
+  - It's required by SQL
+  - It reduces storage
+  answer: 0
+  explanation: Mixing models silently breaks similarity.
+  evidence: vectors from different models aren't comparable
+- id: q8
+  prompt: Which is a con of pgvector?
+  options:
+  - Fewer search features than a dedicated search engine — no built-in BM25
+  - It can't store metadata
+  - It doesn't support backups
+  - It only runs on Windows
+  answer: 0
+  explanation: Hybrid keyword ranking is stronger in dedicated search engines.
+  evidence: Fewer search features than a dedicated search engine (no built-in BM25)
+- id: q9
+  prompt: What needs care to keep recall?
+  options:
+  - Filtered approximate search
+  - Exact search
+  - Inserting rows
+  - Creating the extension
+  answer: 0
+  explanation: Filters applied around an approximate index can return too few results.
+  evidence: Filtered approximate search needs care to keep recall
+- id: q10
+  prompt: Which managed services offer pgvector?
+  options:
+  - Amazon RDS and Aurora PostgreSQL, among others
+  - Only self-hosted Postgres
+  - Only MySQL services
+  - None
+  answer: 0
+  explanation: It's widely available on managed Postgres.
+  evidence: It is available on the major managed Postgres services, including Amazon RDS and Aurora PostgreSQL.
+- id: q11
+  prompt: Which is a typical use case?
+  options:
+  - '"Find similar" over past incidents, trades or filings'
+  - Hosting a static site
+  - Sending SMS
+  - Building Docker images
+  answer: 0
+  explanation: Similarity search is the core feature.
+  evidence: '"Find similar" over past incidents, trades or filings.'
+- id: q12
+  prompt: What does "one fewer system" mean here?
+  options:
+  - Vectors live in the database you already run
+  - You no longer need a database
+  - You no longer need embeddings
+  - You no longer need backups
+  answer: 0
+  explanation: Same roles, backups and transactions as the rest of your data.
+  evidence: 'One fewer system: vectors live in the database you run'
+- id: q13
+  prompt: Who released pgvector?
+  options:
+  - Andrew Kane, in 2021
+  - Oracle, in 2010
+  - OpenAI, in 2023
+  - Google, in 2018
+  answer: 0
+  explanation: It predates the RAG wave of 2023.
+  evidence: Andrew Kane released pgvector in 2021

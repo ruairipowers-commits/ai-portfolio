@@ -1,0 +1,241 @@
+course: sqlite-fts5
+level: familiar
+version: 1
+title: Full-text search with SQLite FTS5 in 15 minutes
+status: draft
+source:
+  page: tech/sqlite-fts5.md
+  docs: https://sqlite.org/fts5.html
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's SQLite FTS5 page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    FTS5 is SQLite's built-in **full-text search** extension. It keeps an **inverted index** — for every word, the
+    documents that contain it — so finding documents by their words is fast.
+
+    You create it as a **virtual table** listing the columns to index, insert text, and query with `MATCH`. The query
+    language is small: terms, phrases in quotes, `AND` / `OR` / `NOT`, prefix matches (`liquid*`) and `NEAR`. Results are
+    ranked with the built-in **`bm25()`** function — lower is better, and `ORDER BY rank` uses it by default — and
+    `highlight()` and `snippet()` return the matching text with markers. **Tokenizers** decide how text is split:
+    `porter` adds English stemming, `trigram` supports substring search.
+
+    The key limit: it's **keyword** search. It finds the words you typed (or their stems), not paraphrases.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    SQLite has had full-text search extensions since the 2000s; FTS5, the current version, arrived in 2015 with a better
+    design and built-in BM25 ranking. BM25 itself is a ranking formula from information-retrieval research in the 1990s,
+    and still the standard baseline for keyword search engines.
+
+    FTS5 ships with the SQLite source and is compiled into most builds, including the one bundled with most Python
+    distributions — so many apps have full-text search with nothing extra to install. In AI work it is having a revival
+    as the keyword half of hybrid retrieval.
+- id: business
+  heading: How it fits business users
+  body: |
+    For business users, FTS5 is the search box in an internal tool that "just works" on exact terms: a ticker, an ISIN, a
+    fund name, an error code. It is also **explainable** — when someone asks why a document came back, the answer is "it
+    contains these words", not a mystery score from an embedding.
+
+    That makes it a strong partner to semantic search: each catches what the other misses.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Search boxes** in internal tools and desktop apps.
+    - **Searching logs, tickets or notes** stored in SQLite.
+    - **Exact matching** of identifiers, tickers and codes.
+    - **The keyword half of hybrid search** alongside vector search.
+    - **Highlighted snippets** for search results.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Built into SQLite; no extra service | Keyword only — no synonyms or semantic matching |
+    | BM25 ranking, snippets and highlighting included | Query syntax errors on raw user input unless escaped |
+    | Deterministic and explainable results | Tokenizer choice matters and is fixed per table |
+    | Lives in the same file and transaction as the data | Single-writer limits of SQLite apply |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [SQLite FTS5 documentation](https://sqlite.org/fts5.html) — the official reference from the SQLite project.
+    - [sqlite3 in the Python docs](https://docs.python.org/3/library/sqlite3.html) — using SQLite from Python.
+    - [sqlite-vec](https://alexgarcia.xyz/sqlite-vec/) — the vector-search extension FTS5 is often paired with.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below indexes two research notes in an in-memory FTS5 table, searches for a word ranked by BM25, then
+    tries a prefix search and a snippet. Nothing to install beyond Python.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"Why keyword search when you have embeddings?"** Embeddings miss exact identifiers and rare terms — tickers,
+      ISINs, error codes. Running BM25 next to vector search and fusing the rankings (for example with reciprocal rank
+      fusion) usually beats either alone.
+    - **"What's BM25?"** A ranking formula that scores documents by how often the query terms appear, discounted by how
+      common those terms are overall and by document length.
+    - **"Any gotchas with user input?"** Raw input can be invalid FTS5 query syntax; escape or quote it.
+
+    Pitfall: expecting synonyms. "liquidity" won't match "cash crunch" — that's the vector side's job.
+project:
+  title: Search two notes with BM25
+  kind: runnable
+  minutes: 3
+  goal: Create an FTS5 index, search it with ranking, and get a highlighted snippet.
+  steps:
+  - Save the code below as `hello_fts.py` and run it.
+  - Change the query to `"liquid*"` and run again — prefix search still finds note-1.
+  - Change it to `"cash crunch"` and notice nothing matches.
+  code: |
+    import sqlite3
+
+    con = sqlite3.connect(":memory:")
+    con.execute("create virtual table pages using fts5(doc, body)")
+    con.executemany("insert into pages values (?, ?)", [
+        ("note-1", "Liquidity in credit markets tightened in September."),
+        ("note-2", "Equity volatility fell after the rate decision."),
+    ])
+    q = "liquidity"
+    for row in con.execute(
+            "select doc, bm25(pages), snippet(pages, 1, '[', ']', '...', 8) "
+            "from pages where pages match ? order by rank", (q,)):
+        print(row)
+  language: python
+  expected: |
+    ('note-1', <a small negative number>, '[Liquidity] in credit markets tightened in September.')
+  done_when:
+  - The search returns note-1 with the match highlighted.
+  - You saw the paraphrase "cash crunch" return nothing, and can explain why.
+quiz:
+- id: q1
+  prompt: What is FTS5?
+  options:
+  - SQLite's full-text search extension
+  - A vector database
+  - A web framework
+  - A file format for spreadsheets
+  answer: 0
+  explanation: An inverted index you create as a virtual table and query with MATCH.
+  evidence: 'FTS5 is SQLite''s full-text search extension: an inverted index you create as a virtual table and query with MATCH.'
+- id: q2
+  prompt: How do you query an FTS5 table?
+  options:
+  - With MATCH
+  - With LIKE only
+  - With a REST API
+  - With regular expressions only
+  answer: 0
+  explanation: MATCH supports terms, phrases, boolean operators, prefixes and NEAR.
+  evidence: Queries use MATCH with a small query language
+- id: q3
+  prompt: Which function ranks FTS5 results?
+  options:
+  - bm25()
+  - rank_by_ai()
+  - score_text()
+  - cosine()
+  answer: 0
+  explanation: Lower is better; ORDER BY rank uses it by default.
+  evidence: Results can be ranked with the built-in bm25() function (lower is better; ORDER BY rank uses it by default)
+- id: q4
+  prompt: What does the porter tokenizer add?
+  options:
+  - English stemming
+  - Substring search
+  - Translation
+  - Spell checking
+  answer: 0
+  explanation: trigram is the tokenizer for substring search.
+  evidence: porter adds English stemming and trigram supports substring search
+- id: q5
+  prompt: Will FTS5 match paraphrases?
+  options:
+  - No — it's keyword search, not semantic search
+  - Yes, always
+  - Only with the porter tokenizer
+  - Only for short queries
+  answer: 0
+  explanation: It finds the words you typed or their stems.
+  evidence: 'It is keyword search, not semantic search: it finds the words you typed (or their stems), not paraphrases.'
+- id: q6
+  prompt: What does keyword search catch that embeddings can miss?
+  options:
+  - Exact tickers, ISINs, fund names, error codes and rare terms
+  - Synonyms and paraphrases
+  - Images
+  - Tone of voice
+  answer: 0
+  explanation: That's why hybrid retrieval combines both.
+  evidence: 'Keyword search catches what embeddings miss: exact tickers, ISINs, fund names, error codes and rare terms.'
+- id: q7
+  prompt: How are keyword and vector rankings combined in hybrid search?
+  options:
+  - By fusing the two ranked lists, for example with reciprocal rank fusion
+  - By averaging the documents' lengths
+  - By picking one at random
+  - By asking the model to choose
+  answer: 0
+  explanation: Fusion usually retrieves better context than either alone.
+  evidence: fusing the two ranked lists (for example with reciprocal rank fusion)
+- id: q8
+  prompt: Which is a con of FTS5?
+  options:
+  - Query syntax errors on raw user input unless escaped
+  - It needs a separate server
+  - It can't rank results
+  - It can't highlight matches
+  answer: 0
+  explanation: Escape or quote user input.
+  evidence: Query syntax errors on raw user input unless escaped
+- id: q9
+  prompt: What functions return matching text with markers?
+  options:
+  - highlight() and snippet()
+  - mark() and show()
+  - grep() and find()
+  - print() and echo()
+  answer: 0
+  explanation: Useful for search result pages.
+  evidence: helper functions highlight() and snippet() return the matching text with markers
+- id: q10
+  prompt: Why is the BM25 side easy to explain?
+  options:
+  - It is cheap, deterministic and based on the words in the document
+  - It's random
+  - It uses a neural network
+  - It hides the reasons
+  answer: 0
+  explanation: '"It contains these words" is a clear reason a passage was retrieved.'
+  evidence: the BM25 side is cheap, deterministic and easy to explain when someone asks why a passage was retrieved
+- id: q11
+  prompt: Do you need to install FTS5 separately for most Python distributions?
+  options:
+  - No; it's compiled into most builds, including the one bundled with most Python distributions
+  - Yes, always
+  - Only on Windows
+  - Only for prefix search
+  answer: 0
+  explanation: Many apps have full-text search with nothing extra to install.
+  evidence: FTS5 ships with the SQLite source and is compiled into most builds, including the one bundled with most Python distributions.
+- id: q12
+  prompt: What is fixed per table and matters a lot?
+  options:
+  - The tokenizer choice
+  - The number of rows
+  - The table name
+  - The query language
+  answer: 0
+  explanation: Choose it up front; changing it means rebuilding the index.
+  evidence: Tokenizer choice matters and is fixed per table
+- id: q13
+  prompt: When did FTS5, the current version, arrive in SQLite?
+  options:
+  - 2015
+  - 1995
+  - 2005
+  - 2024
+  answer: 0
+  explanation: It brought a better design and built-in BM25 ranking.
+  evidence: FTS5, the current version, arrived in 2015 with a better design and built-in BM25 ranking
