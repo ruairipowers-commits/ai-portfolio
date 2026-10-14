@@ -51,6 +51,7 @@ extra_javascript:
   - assets/home-side.js
   - assets/carousel.js
   - assets/subscribe.js
+  - assets/upcoming.js
 
 hooks:
   - scripts/mkdocs_hooks.py
@@ -74,7 +75,7 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
 
 nav:
-  # Five tabs. Every page keeps its URL; only the menu moved (release notes are in the footer).
+  # Six tabs. Every page keeps its URL; only the menu moved (release notes are in the footer).
   - Start here:
       - Home: index.md
       - 3-minute tour: tour.md
@@ -86,8 +87,9 @@ nav:
       - The standard: blog/governance/
       - How I govern this site: blog/how-i-govern-this-site/
       - "Is our AI behaving?": blog/questions-for-your-ai-team/
+  - Blog: blog/index.md
   - Learn:
-      - Blog: blog/index.md
+      - Crash course: learn/index.md
       - Classes: classes/index.md
       - Technologies: tech/index.md
   - About: about.md

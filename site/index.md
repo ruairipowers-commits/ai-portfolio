@@ -79,10 +79,14 @@ right, measuring the model honestly, and governing it so people can trust it.
     Industry projects for real fund problems (vendor data, end-of-day breaks, trade exceptions, research Q&A), each
     with a live demo and a runnable repo. Plus the console that governs them, and some personal projects.
 
-- :material-book-open-variant: **[Learn](blog/index.md)**
+- :material-post-outline: **[Blog](blog/index.md)**
 
-    The [blog](blog/index.md) behind every project, two MIT [classes](classes/index.md), and a page on every
-    [technology](tech/index.md) used here.
+    New posts most days, the write-up behind every project, and the topics coming next, which you can vote on.
+
+- :material-book-open-variant: **[Learn](learn/index.md)**
+
+    A [crash course](learn/index.md) on any tool here in 15 minutes, an hour or an afternoon, two MIT
+    [classes](classes/index.md), and a page on every [technology](tech/index.md) used here.
 
 - :material-chat-question-outline: **Ask**
 
