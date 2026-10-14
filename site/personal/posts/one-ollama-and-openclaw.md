@@ -116,7 +116,7 @@ roughly 3 billion for each token, so bandwidth stops being the bottleneck. Measu
 | First load | 25 seconds |
 
 That's one run on one prompt, so treat it as a first reading rather than a benchmark. The quality story is more
-interesting than the speed, and it's the subject of [the next post](local-drafts-claude-reviews.md): the code was
+interesting than the speed, and it's the subject of a follow-up post, once I have more than one run: the code was
 right in normal cases, its own tests passed, and a review still found three ways it accepted bad input.
 
 ## What broke along the way
@@ -184,6 +184,6 @@ container it already runs in is the boundary, and the re-run audit comes back cl
 ## What's next
 
 - **Move real work onto the local model** and measure what it saves: the local model drafts, Claude reviews. That's
-  [the next post](local-drafts-claude-reviews.md).
+  a follow-up post, published once it has a month of real runs.
 - **Lock down the sandbox database** the same way: password out of the file, listening on this machine only.
 - **Connect one OpenClaw channel** and give it one scheduled job, then decide whether it earns a second.
