@@ -112,3 +112,29 @@ def scorecard_md(result: dict, judged: list[dict] | None = None) -> str:
     for j in judged or []:
         rows.append(f"| {j['criterion']} (editor) | {j['score']}/5 | {j.get('note', '')} |")
     return "\n".join(rows)
+
+
+AUTO_TAG = "AutoPublished"
+
+
+def gate(post: str | Path, editor: dict, sources_dir: str | Path | None = None,
+         published: list[str] | None = None, min_score: int = 4) -> dict:
+    """The auto-publish decision, made by code: every code check passes, every editor criterion scores at least
+    `min_score` and the editor calls it publishable, the post is tagged AutoPublished, and its disclosure says it
+    went out without the owner's review. Anything else → hold it as a draft pull request for the owner (HITL-02)."""
+    r = review(post, sources_dir, published)
+    meta, _ = _split(Path(post).read_text())
+    reasons = [f"code check failed: {c['criterion']} ({c['detail']})" for c in r["checks"] if not c["passed"]]
+    crit = editor.get("criteria") or []
+    if len(crit) < 5:
+        reasons.append("editor review incomplete (needs five scored criteria)")
+    reasons += [f"editor: {c.get('criterion')} scored {c.get('score')} (< {min_score}): {c.get('note', '')}"
+                for c in crit if not isinstance(c.get("score"), int) or c["score"] < min_score]
+    if editor.get("publishable") is not True:
+        reasons.append("editor did not mark it publishable")
+    if AUTO_TAG not in (meta.get("tags") or []):
+        reasons.append(f"front matter tags must include {AUTO_TAG}")
+    if "without my review" not in Path(post).read_text().lower():
+        reasons.append("disclosure must say it was published without my review")
+    return {"publish": not reasons, "reasons": reasons, "review": r,
+            "editor_min": min((c["score"] for c in crit if isinstance(c.get("score"), int)), default=None)}

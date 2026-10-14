@@ -7,6 +7,19 @@ hide: [navigation]
 
 The big changes to this portfolio, newest first. Each project's repository has the detail in its commit history.
 
+## 15 October 2026
+
+**A new post most days, and you choose what's next.** The [Blog](../blog/index.md) now shows the **upcoming topics**
+my scout agent found, and you can vote on them (one vote per topic per day, anonymous). My picks go first, then the
+most-voted. Each day a local model on my own server drafts a post from the top topic, Claude reviews and edits it, and
+it publishes automatically, tagged **AutoPublished**, only if every code check passes and an independent editor scores
+it 4 or more on everything. Anything else waits for me. I'm measuring what this saves against Claude writing the posts
+itself, and will publish the numbers.
+
+**Learn is now its own tab.** **Blog** has its own tab. **[Learn](../learn/index.md)** holds the
+[crash course](../personal/posts/crash-course.md) (any tool on this site in 15 minutes, an hour or an afternoon), the
+classes and the technology pages.
+
 ## 7 October 2026
 
 **A new personal project: the [launch tracker](../personal/posts/launch-tracker.md).** Every launch to space from

@@ -30,6 +30,8 @@ This file governs all AI agents acting as developers on this repository (Claude,
 - **Strict governance compliance:** Every project must map every control (`python scripts/check_governance.py` must pass).
 - **Offline & reproducible:** Everything must run offline with a mock model; never claim an execution result you did not run.
 - **Safety barrier:** Do not push to GitHub, merge to `main`, or publish repos without explicit approval in the conversation.
+  One standing exception (Ruairi, 14 October 2026): the `daily-post` skill, run by its scheduled task, may merge its
+  own post pull request when `editorial gate` passes, and nothing else. A held post is never merged by an agent.
 
 ---
 

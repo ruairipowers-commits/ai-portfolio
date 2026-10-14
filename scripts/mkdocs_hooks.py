@@ -386,6 +386,37 @@ LIKE_BOX = ('\n\n<div class="post-like" data-like><span class="post-like__q">Was
             '<button type="submit" class="md-button">Send</button></form></div>\n')
 
 
+def _routing_results() -> str:
+    """The local-drafts comparison table, computed from the committed run log (editorial-agents/metrics), so the
+    metrics post's numbers always come from code."""
+    import importlib.util
+    path = Path(__file__).resolve().parents[1] / "projects" / "editorial-agents" / "src" / "editorial" / "routing.py"
+    spec = importlib.util.spec_from_file_location("editorial_routing", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return "\n\n" + mod.table_md() + "\n\n"
+
+
+def _upcoming_box() -> str:
+    """Blog → Upcoming topics: the live editorial queue with reader votes (assets/upcoming.js). The editorial service's
+    URL is its live demo URL; without the demos (local preview) the box says it's offline."""
+    url = demo_url("editorial-agents", _cfg).rstrip("/") if "editorial-agents" in _cfg["projects"] else ""
+    return ('\n\n<div class="upcoming" data-upcoming data-max="6" data-editorial="' + _html.escape(url) + '">'
+            '<p class="upcoming__head">Upcoming topics: vote for what I write next</p>'
+            '<p class="upcoming__how">A scout agent finds these every morning. My picks go first, then the most-voted. '
+            'Each day the top one becomes a post: a local model drafts it, Claude reviews it, and it publishes tagged '
+            '<em>AutoPublished</em> only if every check passes. One vote per topic per day; votes are anonymous.</p>'
+            '<div data-upcoming-list><p class="ideas__empty">Loading…</p></div></div>\n')
+
+
+def _learn_crash_course(page_uri: str) -> str:
+    """Learn → the crash course: a button to the live course site (when the demos are deployed) and the write-up."""
+    up = "../" * page_uri.count("/")
+    app = demo_url("crash-course", _cfg) if "crash-course" in _cfg["projects"] else ""
+    start = (f'<a class="md-button md-button--primary" href="{_html.escape(app)}">Start a course</a> ' if app else "")
+    return (f'\n\n<p>{start}<a class="md-button" href="{up}personal/crash-course/">How the courses are built</a></p>\n')
+
+
 def _subscribe_box() -> str:
     """"Get new posts by email": every post, or only posts for the roles the reader picks (portfolio.yaml audiences)."""
     roles = "".join(f'<label class="subscribe__role"><input type="checkbox" name="roles" value="{_html.escape(r)}"> '
@@ -489,6 +520,12 @@ def on_page_markdown(markdown, page, config, files):
         tag = f"<!-- projects:{tier} -->"
         if tag in markdown:
             markdown = markdown.replace(tag, _table(tier, page.file.src_uri))
+    if "<!-- routing:results -->" in markdown:
+        markdown = markdown.replace("<!-- routing:results -->", _routing_results())
+    if "<!-- topics:upcoming -->" in markdown:
+        markdown = markdown.replace("<!-- topics:upcoming -->", _upcoming_box())
+    if "<!-- learn:crash-course -->" in markdown:
+        markdown = markdown.replace("<!-- learn:crash-course -->", _learn_crash_course(page.file.src_uri))
     if "<!-- subscribe -->" in markdown:
         markdown = markdown.replace("<!-- subscribe -->", _subscribe_box())
     if "<!-- tour:projects -->" in markdown:
