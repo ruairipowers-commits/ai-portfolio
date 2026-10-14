@@ -3,6 +3,24 @@
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
 (or delete them) as they're done. Last updated 14 October 2026.
 
+## 000000. Shared Ollama hardening + two posts (14 October 2026, branch `agent/claude-evo-ollama-openclaw`)
+
+The EVO-X1 now runs one ROCm Ollama (host compose in the separate `infra-setups` repo, `evo-x1-server`), shared by
+the demos (`OLLAMA_SHARED=1`) and OpenClaw. The `ollama-shared` proxy now passes model use only (chat, generate,
+embeddings, tags, show, version, ps, pull, /v1 equivalents); delete/create/copy/push/blobs get 403 (tested against
+a stand-in upstream with a real Caddy). Posts: `personal/posts/one-ollama-and-openclaw.md` (published on merge) and
+`personal/posts/local-drafts-claude-reviews.md` (`draft: true`).
+
+- [ ] **Publish the metrics post** once the results table has a month of real routed runs (local draft → Claude
+      review), with the baseline logged the same way. Numbers today: one task (qwen3-coder:30b, 24.6 tok/s, 2,034
+      tokens in 82.6 s; review found 3 lenient-input defects its own tests missed).
+- [ ] **Build the routing:** weekly-post first draft on the local model; editor reviews + PR stay with Claude; log
+      one row per run (fields in the post).
+- [ ] **`private-local-ai.md` is now out of date** (it says the Ask button's Ollama is kept separate on purpose, and
+      OpenClaw is "not yet part of the private path"). Suggested edit for Ruairi, not made: a short "Update, October
+      2026" pointing to the new post.
+- [ ] **infra-setups commit** (Ruairi, from the EVO-X1; the Claude GitHub app has no access to that repo).
+
 ## 00000. Crash course (new personal project, built 14 October 2026)
 
 `projects/crash-course` + `site/personal/posts/crash-course.md` + a "Take the crash course" box on every tech page
