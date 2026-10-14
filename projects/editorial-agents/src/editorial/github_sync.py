@@ -1,7 +1,8 @@
 """Close the loop from the blog repo, read-only and unauthenticated (the repo is public; the host holds no GitHub
 write credentials, NFR-1).
 
-A draft post's pull request carries `Topic: <id>` in its body and the label `draft-post`.
+A post's pull request carries `Topic: <id>` in its body and the label `draft-post` (waiting for the owner) or
+`auto-published` (the daily writer merged it after every check passed).
   open PR      → topic drafted
   merged PR    → topic published
   closed, not merged → topic dismissed (the owner dropped it)
@@ -15,6 +16,7 @@ from .config import repo
 from .sources import http_get
 from .store import Store
 
+LABELS = {"draft-post", "auto-published"}
 TOPIC = re.compile(r"(?im)^\s*Topic:\s*`?([0-9a-f]{16})`?")
 
 
@@ -23,7 +25,7 @@ def sync(store: Store, get=http_get) -> dict:
                          headers={"Accept": "application/vnd.github+json"}))
     changed = {}
     for pr in prs:
-        if not any(lb.get("name") == "draft-post" for lb in pr.get("labels", [])):
+        if not any(lb.get("name") in LABELS for lb in pr.get("labels", [])):
             continue
         m = TOPIC.search(pr.get("body") or "")
         if not m or not store.topic(m.group(1)):

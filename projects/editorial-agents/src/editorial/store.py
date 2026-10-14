@@ -1,14 +1,15 @@
 """SQLite store: candidate topics (one row each, with status), owner actions, runs.
 
 Topic status: candidate → queued (in the top N) → picked / dismissed by the owner → drafted (a draft PR exists) →
-published (merged). Also: escalated (failed the injection screen), expired (too old), similar (too close to a
+published (merged). Readers vote on queued topics (one vote per anonymous visitor per topic per day); votes order the
+queue after the owner's picks, so the most-wanted topic is written next. Also: escalated (failed the injection screen), expired (too old), similar (too close to a
 published post or a better queue topic). Every owner action is a row in `actions` (HITL-02).
 """
 from __future__ import annotations
 
 import json
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from .config import data_dir
@@ -25,6 +26,8 @@ create table if not exists actions (ts text not null, topic_id text not null, ac
 create table if not exists runs (ts text not null, kind text not null, status text, detail text);
 create table if not exists used_links (nonce text primary key, ts text not null);
 create table if not exists kv (key text primary key, value text, ts text);
+create table if not exists topic_votes (topic_id text not null, visitor text not null, day text not null,
+  ts text not null, primary key (topic_id, visitor, day));
 """
 OPEN = ("candidate", "queued", "picked")          # still eligible for the queue
 
@@ -92,9 +95,30 @@ class Store:
         self.execute(f"update topics set {', '.join(sets)} where id = ?", (*vals, tid))
 
     def queue(self) -> list[dict]:
-        """The live queue: picked topics first (the owner chose them), then queued, by rank."""
+        """The live queue: picked topics first (the owner chose them), then by readers' votes, then by rank."""
         rows = self.topics(("picked", "queued"))
-        return sorted(rows, key=lambda r: (r["status"] != "picked", r.get("rank") or 9999))
+        votes = self.vote_counts()
+        for r in rows:
+            r["votes"] = votes.get(r["id"], 0)
+        return sorted(rows, key=lambda r: (r["status"] != "picked", -r["votes"], r.get("rank") or 9999))
+
+    # ---- reader votes
+    def vote(self, tid: str, visitor: str) -> bool:
+        """One vote per visitor per topic per day. True if this one counted."""
+        ts = now()
+        with self._conn() as c:
+            cur = c.execute("insert or ignore into topic_votes values (?,?,?,?)", (tid, visitor, ts[:10], ts))
+            return cur.rowcount == 1
+
+    def vote_counts(self, since: str = "") -> dict[str, int]:
+        """Votes per topic; with `since`, only those cast after that time (e.g. since the last owner email)."""
+        rows = self.query("select topic_id, count(*) n from topic_votes where ts > ? group by topic_id", (since,))
+        return {r["topic_id"]: r["n"] for r in rows}
+
+    def votes_by(self, visitor: str, minutes: int = 60) -> int:
+        since = datetime.now(timezone.utc) - timedelta(minutes=minutes)
+        return self.query("select count(*) n from topic_votes where visitor = ? and ts >= ?",
+                          (visitor, since.isoformat(timespec="seconds")))[0]["n"]
 
     # ---- owner actions, runs
     def action(self, tid: str, action: str, actor: str, detail: dict | None = None) -> None:

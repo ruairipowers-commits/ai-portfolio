@@ -102,14 +102,10 @@ logged with the same fields.
 
 ## Results so far
 
-| Task type | Runs | First-pass checks | Claude rewrote | Claude written tokens vs. baseline | My edit time vs. baseline |
-|---|---|---|---|---|---|
-| Code (one function) | 1 | Tests passed; 3 defects in review | No | Not yet measured | Not yet measured |
-| Weekly post | 0 | — | — | — | — |
-| Project boilerplate | 0 | — | — | — | — |
+<!-- routing:results -->
 
-I'm not putting an expected saving in this table. The honest answer before measuring is that it depends on how
-often the review sends a draft back, and that's exactly what I don't know yet.
+These numbers are generated from the run log every time the site builds, so they move as runs are added, including
+the runs where the local draft lost.
 
 ## Where I won't route to the local model
 
