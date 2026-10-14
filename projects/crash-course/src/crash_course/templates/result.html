@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% block title %}Result · {{ c.title }} · Crash course{% endblock %}{% block wrapclass %}narrow{% endblock %}
+{% block body %}
+<p class="small muted"><a href="{{ R }}/learn/{{ c.slug }}/{{ r.level }}">{{ c.title }} · {{ label }}</a></p>
+<div class="card">
+  <div class="score {{ 'done' if r.passed }}">{{ r.score }}/{{ r.total }}</div>
+  <p class="lead" style="margin:6px 0 0">{{ r.pct }}% — {% if r.passed %}<b>passed</b> (pass mark {{ r.pass_pct }}%).{% else %}not passed yet (pass mark {{ r.pass_pct }}%). Read the notes below and try again.{% endif %}</p>
+  {% if r.level_complete %}<p class="note" style="margin-top:12px"><b>{{ label }} level complete.</b> {% if nxt and nxt_unlocked %}The {{ s.levels[nxt].label }} level is now unlocked.{% endif %}</p>
+  {% elif r.passed and r.part == 'final' %}<p class="small muted">Mark the project done on the level page to complete the level.</p>{% endif %}
+  <p class="check-row" style="margin-top:12px">
+    <a class="btn" href="{{ R }}/quiz/{{ c.slug }}/{{ r.level }}?part={{ r.part }}">Try again</a>
+    <a class="btn ghost" href="{{ R }}/learn/{{ c.slug }}/{{ r.level }}">Back to the material</a>
+    <a class="btn ghost" href="{{ R }}/tracker#c-{{ c.slug }}">My tracker</a>
+  </p>
+</div>
+<h2>Your answers</h2>
+{% for it in r.results %}
+<div class="result-item {{ 'ok' if it.correct else 'no' }}">
+  <p style="margin:0"><b>{{ '✓' if it.correct else '✗' }}</b> {{ it.prompt }}</p>
+  {% if it.explanation %}<p class="small" style="margin:4px 0 0">{{ it.explanation }}</p>{% endif %}
+</div>
+{% endfor %}
+{% endblock %}

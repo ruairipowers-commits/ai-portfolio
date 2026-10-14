@@ -1,0 +1,249 @@
+course: pydantic
+level: familiar
+version: 1
+title: Pydantic in 15 minutes
+status: draft
+source:
+  page: tech/pydantic.md
+  docs: https://pydantic.dev/docs/validation/latest/get-started/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Pydantic page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    Pydantic checks that data has the shape you expect, using ordinary Python type hints. You declare a **model** — a
+    class that inherits from `BaseModel`, with a type for each field — and then create instances from a dict or JSON.
+
+    - If the data fits, you get a typed object (Pydantic converts where it's allowed: the string `"1"` to an integer, a
+      timestamp string to a `datetime`).
+    - If it doesn't, it raises a `ValidationError` listing **each failing field** and why.
+
+    Models serialise back out with `model_dump()`, and can produce a **JSON Schema** of themselves — which is exactly
+    what you hand to a language model when you want structured output.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Samuel Colvin released Pydantic in 2017, when type hints were still new in Python and mostly used by editors. Using
+    them at runtime to validate data turned out to be very popular, and FastAPI (2018) built its whole design on it.
+    Pydantic 2, released in 2023, moved the core validation logic into Rust, making it fast enough to validate every
+    request or record.
+
+    Today it is one of the most downloaded Python libraries, and the usual guard on structured output from language
+    models.
+- id: business
+  heading: How it fits business users
+  body: |
+    For a business, Pydantic is a quiet but important control: data from an API, a vendor feed or a model is checked
+    against an agreed contract **before** anything uses it. A bad record is rejected with a precise reason instead of
+    corrupting a report.
+
+    In AI work this matters most. A model returns text; your systems need a fixed shape. Field constraints also catch a
+    class of hallucinations — an invented category, a score of 11 out of 10 — before they reach a person.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Validating API request and response bodies.**
+    - **Parsing configuration files** and environment settings.
+    - **Checking records from a vendor feed** before they enter a pipeline.
+    - **Typed contracts between services.**
+    - **Publishing a JSON Schema** that other tools or models can follow.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Schemas come straight from type hints | Lax-mode coercion can hide bad input unless you choose strict |
+    | Clear, field-level error messages | Major-version migrations have required code changes |
+    | Fast core, fine for high volumes | Valid shape does not mean correct content |
+    | JSON Schema output for models and APIs | Complex validators can become business logic in disguise |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Pydantic documentation](https://pydantic.dev/docs/validation/latest/get-started/) — the official docs from
+      Pydantic Services Inc.
+    - Within the docs, read **Models**, **Fields** (constraints) and **Strict mode** next.
+    - [FastAPI documentation](https://fastapi.tiangolo.com/) — the best-known framework built on Pydantic.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below validates two "model outputs" against a `VendorMemo` model: one passes, one fails with a precise
+    error for each bad field. That is the exact pattern used to guard LLM output.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"How do you make LLM output safe to use downstream?"** Define the expected output as a Pydantic model, give the
+      provider its JSON Schema, validate what comes back, and reject or retry anything that fails — never pass it on.
+      Log failures as a control metric.
+    - **"Does validation mean the answer is right?"** No. A valid shape is not correct content; you still need evals
+      and checks against source data.
+    - **"Strict or lax?"** Strict where silent conversion could hide bad input (money, IDs); lax is fine for friendly
+      config parsing.
+
+    Pitfall: business rules buried in complex validators. Keep validators about shape; put rules in visible code.
+project:
+  title: Guard a model's output
+  kind: runnable
+  minutes: 4
+  goal: Validate one good and one bad JSON output against a Pydantic model.
+  steps:
+  - Run `pip install pydantic`.
+  - Save the code below as `hello_pydantic.py` and run it.
+  - Read the error and match each line to a field constraint.
+  - Print `VendorMemo.model_json_schema()` to see what you would give a model.
+  code: |
+    from typing import Literal
+    from pydantic import BaseModel, Field, ValidationError
+
+    class VendorMemo(BaseModel):
+        vendor: str
+        recommendation: Literal["proceed", "hold", "reject"]
+        score: int = Field(ge=0, le=10)
+
+    good = VendorMemo.model_validate_json('{"vendor": "Acme Data", "recommendation": "proceed", "score": 7}')
+    print(good.model_dump())
+
+    try:
+        VendorMemo.model_validate_json('{"vendor": "X", "recommendation": "buy", "score": 11}')
+    except ValidationError as e:
+        print(e)
+  language: python
+  expected: |
+    {'vendor': 'Acme Data', 'recommendation': 'proceed', 'score': 7}
+    2 validation errors for VendorMemo
+    recommendation: Input should be 'proceed', 'hold' or 'reject'
+    score: Input should be less than or equal to 10
+  done_when:
+  - The good output validates and the bad one fails with two field errors.
+  - You can explain which constraint caught the invented "buy" category.
+quiz:
+- id: q1
+  prompt: What does Pydantic validate data against?
+  options:
+  - Classes defined with type hints
+  - Regular expressions only
+  - A database schema
+  - A spreadsheet template
+  answer: 0
+  explanation: Models inherit from BaseModel with a type for each field.
+  evidence: Pydantic validates Python data against classes defined with type hints
+- id: q2
+  prompt: What does Pydantic raise when data doesn't match?
+  options:
+  - A ValidationError listing each failing field
+  - A silent warning
+  - A KeyError with no details
+  - Nothing; it fixes the data
+  answer: 0
+  explanation: Field-level errors make failures easy to diagnose.
+  evidence: it raises a ValidationError listing each failing field
+- id: q3
+  prompt: How do you serialise a Pydantic model back out?
+  options:
+  - model_dump()
+  - to_excel()
+  - serialize_all()
+  - print_json_now()
+  answer: 0
+  explanation: model_dump() returns a dict; models can also produce a JSON Schema.
+  evidence: Models serialize back out with model_dump() and can generate a JSON Schema of themselves.
+- id: q4
+  prompt: In AI work, where does Pydantic sit?
+  options:
+  - As the gate between a model's text and the code that needs a fixed shape
+  - Inside the model's weights
+  - In the GPU driver
+  - In the browser only
+  answer: 0
+  explanation: Validate what comes back; reject or retry anything that fails.
+  evidence: 'Pydantic is the usual gate between the two'
+- id: q5
+  prompt: What happens to model output that fails validation?
+  options:
+  - It is rejected or retried, never passed on
+  - It is passed on with a warning
+  - It is silently fixed
+  - It is stored as correct
+  answer: 0
+  explanation: Only validated data reaches downstream code.
+  evidence: Anything that fails validation is rejected or retried, never passed on.
+- id: q6
+  prompt: Which hallucinations can field constraints catch?
+  options:
+  - An invented category or a score of 11 out of 10
+  - A subtly wrong but valid fact
+  - A plausible but false citation text
+  - Every possible mistake
+  answer: 0
+  explanation: Enums, ranges and required fields catch shape-level errors, not every factual one.
+  evidence: an invented category, a score of 11 out of 10
+- id: q7
+  prompt: Does a valid shape mean correct content?
+  options:
+  - No, shape and correctness are different things
+  - Yes, always
+  - Only for integers
+  - Only in strict mode
+  answer: 0
+  explanation: Validation checks shape; evals and source checks test correctness.
+  evidence: Valid shape does not mean correct content
+- id: q8
+  prompt: Which is a con of lax mode?
+  options:
+  - Coercion can hide bad input unless you choose strict
+  - It can't validate strings
+  - It's much slower than strict
+  - It has no error messages
+  answer: 0
+  explanation: Silent conversion can mask problems in sensitive fields.
+  evidence: Lax-mode coercion can hide bad input unless you choose strict
+- id: q9
+  prompt: Why is Pydantic fast enough to validate every request or record?
+  options:
+  - Its core validation logic is written in Rust
+  - It skips validation for large inputs
+  - It uses a GPU
+  - It caches every input
+  answer: 0
+  explanation: Pydantic 2 moved the core into Rust.
+  evidence: Pydantic's core validation logic is written in Rust
+- id: q10
+  prompt: Which well-known framework builds on Pydantic?
+  options:
+  - FastAPI
+  - Django REST, exclusively
+  - React
+  - Spring
+  answer: 0
+  explanation: FastAPI uses Pydantic models for request and response validation.
+  evidence: Many libraries build on it, including FastAPI.
+- id: q11
+  prompt: Which is a typical use case?
+  options:
+  - Checking records from a vendor feed before they enter a pipeline
+  - Rendering web pages
+  - Training models
+  - Managing Docker images
+  answer: 0
+  explanation: Validate at the boundary, before data spreads.
+  evidence: Checking records from a vendor feed before they enter a pipeline.
+- id: q12
+  prompt: Why is Pydantic validation easy to test with a mock model?
+  options:
+  - Because validation is deterministic
+  - Because mocks are always valid
+  - Because it needs a network
+  - Because it's random
+  answer: 0
+  explanation: The same input always gives the same result, so it can be logged as a control.
+  evidence: Because validation is deterministic, it is easy to test with a mock model
+- id: q13
+  prompt: Who released Pydantic?
+  options:
+  - Samuel Colvin, in 2017
+  - Guido van Rossum, in 1991
+  - Google, in 2015
+  - The PSF, in 2008
+  answer: 0
+  explanation: Pydantic 2 with a Rust core followed in 2023.
+  evidence: Samuel Colvin released Pydantic in 2017

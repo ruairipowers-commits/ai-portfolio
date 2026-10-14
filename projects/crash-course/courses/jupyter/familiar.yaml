@@ -1,0 +1,239 @@
+course: jupyter
+level: familiar
+version: 1
+title: Jupyter and Google Colab in 15 minutes
+status: draft
+source:
+  page: tech/jupyter.md
+  docs: https://docs.jupyter.org/en/latest/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Jupyter and Google Colab page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    A **notebook** is a document that mixes code, its results, charts and written notes. It is a list of **cells**;
+    each cell is either code or Markdown. When you run a code cell, a **kernel** — usually Python — executes it and
+    the output (a number, a table, a chart) is saved in the notebook right under the code.
+
+    **Project Jupyter** defines the notebook format (`.ipynb`) and the tools to run it; **JupyterLab** is the main
+    browser-based editor. **Google Colab** is Google's hosted notebook service: it opens the same `.ipynb` files and
+    runs them on a Google-managed machine with common libraries preinstalled — and GPUs on some tiers — with nothing
+    to install.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Jupyter grew out of IPython, an interactive Python shell started in 2001, which added a browser notebook around
+    2011. In 2014 the language-neutral parts became Project Jupyter — the name nods to Julia, Python and R. Google
+    opened Colab to the public in 2017, which made notebooks with free compute available to anyone with a browser.
+
+    Today notebooks are the standard tool for exploratory data analysis, teaching, and model development, and most
+    data-science courses are delivered as notebooks.
+- id: business
+  heading: How it fits business users
+  body: |
+    A notebook is a good way to hand someone an analysis *with its reasoning*: the data checks, the chart, and the
+    paragraph explaining the decision all sit together. Colab makes it easy to share: a reader can open and rerun a
+    notebook without installing anything.
+
+    The caution for a business: a notebook is a record of exploration, not production software. Once an approach
+    settles, the code that matters should move into a tested package.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Exploratory data analysis** and charts.
+    - **Training and comparing models** step by step.
+    - **Course work and tutorials.**
+    - **Sharing an analysis** with its results and reasoning in one file.
+    - **GPU work without local hardware**, with Colab.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Code, output and notes in one shareable file | Out-of-order execution and hidden state |
+    | Fast feedback for exploration and charts | `.ipynb` JSON is awkward to diff and review |
+    | Colab needs no install and offers GPUs | Colab sessions time out and storage is temporary |
+    | Colab opens public GitHub notebooks directly | Not a substitute for tested, packaged code |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Jupyter documentation](https://docs.jupyter.org/en/latest/) — the official docs from Project Jupyter.
+    - [JupyterLab documentation](https://jupyterlab.readthedocs.io/en/stable/) — the editor in detail.
+    - [Colab FAQ](https://research.google.com/colaboratory/faq.html) — the official Colab guide from Google, including
+      limits and GPU tiers.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below works in Colab (no install) or in JupyterLab. You'll run three cells, see a table and a chart
+    appear under the code, and then deliberately run cells out of order to see the hidden-state problem for yourself.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"How do you use notebooks?"** For exploration, model comparison and explaining a decision. Then the code that
+      matters moves into a package with tests, and the notebook stays as the record of how the approach was chosen.
+    - **"What's wrong with notebooks in production?"** Out-of-order execution and hidden state make results hard to
+      reproduce; JSON diffs are hard to review. "Restart and run all" before sharing is the minimum habit.
+    - **"How would you share an analysis with someone who can't install Python?"** Open it in Colab from GitHub; they
+      run their own copy and the original never changes.
+
+    Pitfall: saying a notebook "is" the model pipeline. Interviewers want to hear how you'd productionise it.
+project:
+  title: Three cells and a chart
+  kind: runnable
+  minutes: 4
+  goal: Run a notebook that builds a table and a chart, then see what out-of-order execution does.
+  steps:
+  - Open a new notebook in Colab (colab.research.google.com) or run `pip install jupyterlab` and `jupyter lab`.
+  - Put each of the three blocks below in its own code cell and run them top to bottom.
+  - Change the first cell to `n = 10`, but run only the third cell. Note that the chart doesn't change.
+  - Use "Restart and run all" and see the chart update.
+  code: |
+    # cell 1
+    n = 5
+
+    # cell 2
+    import pandas as pd
+    df = pd.DataFrame({"x": range(n), "y": [i * i for i in range(n)]})
+    df
+
+    # cell 3
+    df.plot(x="x", y="y", title="Squares")
+  language: python
+  expected: |
+    Cell 2 shows a 5-row table (y = 0, 1, 4, 9, 16); cell 3 shows a line chart.
+    After changing n and running only cell 3, the chart still has 5 points until you rerun everything.
+  done_when:
+  - You saw the table and chart saved under the cells.
+  - You can explain why the chart didn't change when you ran only cell 3.
+quiz:
+- id: q1
+  prompt: What does a notebook mix in one document?
+  options:
+  - Code, results, charts and written notes
+  - Only code
+  - Only charts
+  - Emails and calendar invites
+  answer: 0
+  explanation: That combination is what makes notebooks good for exploration and explanation.
+  evidence: Jupyter notebooks mix code, results, charts and written notes in one document
+- id: q2
+  prompt: What does a code cell run against?
+  options:
+  - A kernel — usually Python
+  - A database server
+  - The operating system's shell only
+  - A web browser's JavaScript engine
+  answer: 0
+  explanation: The kernel executes the code and the output is saved under the cell.
+  evidence: Code cells run against a kernel — usually Python
+- id: q3
+  prompt: What is JupyterLab?
+  options:
+  - The main browser-based editor for notebooks
+  - A cloud GPU provider
+  - A Python package manager
+  - A database
+  answer: 0
+  explanation: A notebook in JupyterLab is a list of cells, each code or Markdown.
+  evidence: JupyterLab is the main interface
+- id: q4
+  prompt: What does Google Colab need from you?
+  options:
+  - Only a Google account and a browser
+  - A local GPU
+  - A paid licence for every notebook
+  - A Linux server
+  answer: 0
+  explanation: It runs on a Google-managed machine with common libraries preinstalled.
+  evidence: It needs only a Google account and a browser.
+- id: q5
+  prompt: When a visitor opens a public GitHub notebook in Colab and changes it, what happens to the original?
+  options:
+  - It never changes unless they save a copy elsewhere
+  - It is overwritten
+  - It is deleted
+  - It becomes private
+  answer: 0
+  explanation: Each visitor runs their own copy, which makes Colab a safe read-only viewer.
+  evidence: the original in GitHub never changes unless they save a copy elsewhere
+- id: q6
+  prompt: Why are notebooks weaker as production code?
+  options:
+  - Cells can run out of order, hidden state builds up, and JSON diffs are hard to review
+  - They can't run Python
+  - They can't show charts
+  - They are always slow
+  answer: 0
+  explanation: Reproducibility and review suffer, so production code moves into tested packages.
+  evidence: cells can run out of order, hidden state builds up, and JSON diffs are hard to review
+- id: q7
+  prompt: In AI work, what usually happens once an approach settles?
+  options:
+  - The code that matters moves into a package with tests; the notebook stays as the record
+  - The notebook is deployed to production as is
+  - The notebook is deleted
+  - The model is retrained in Excel
+  answer: 0
+  explanation: The notebook documents how the model was chosen; the package runs it.
+  evidence: the code that matters usually moves into a package with tests
+- id: q8
+  prompt: What file format do Jupyter notebooks use?
+  options:
+  - .ipynb
+  - .docx
+  - .pdf
+  - .xlsx
+  answer: 0
+  explanation: Project Jupyter defines the .ipynb notebook format.
+  evidence: defines the notebook format (.ipynb) and the tools to run it
+- id: q9
+  prompt: Which is a con of Colab?
+  options:
+  - Sessions time out and storage is temporary
+  - It needs installing on every laptop
+  - It can't open .ipynb files
+  - It has no GPUs on any tier
+  answer: 0
+  explanation: Save work and outputs elsewhere; the machine is temporary.
+  evidence: Colab sessions time out and storage is temporary
+- id: q10
+  prompt: Which is a typical use case for notebooks?
+  options:
+  - Exploratory data analysis and charts
+  - Hosting a public API
+  - Running a company's payroll
+  - Serving a static website
+  answer: 0
+  explanation: Fast feedback makes notebooks ideal for exploration.
+  evidence: Exploratory data analysis and charts.
+- id: q11
+  prompt: What should you do before sharing a notebook, to avoid hidden-state surprises?
+  options:
+  - Restart and run all
+  - Delete all outputs and send it
+  - Run only the last cell
+  - Convert it to a PDF first
+  answer: 0
+  explanation: A clean top-to-bottom run proves the results reproduce.
+  evidence: Restart and run all" before sharing is the minimum habit.
+- id: q12
+  prompt: What did Project Jupyter grow out of?
+  options:
+  - IPython, an interactive Python shell
+  - Microsoft Excel
+  - The R language's IDE
+  - Google Docs
+  answer: 0
+  explanation: IPython added a browser notebook; the language-neutral parts became Jupyter in 2014.
+  evidence: Jupyter grew out of IPython, an interactive Python shell started in 2001
+- id: q13
+  prompt: What does Colab offer on some tiers that helps with model training?
+  options:
+  - GPUs
+  - Unlimited storage forever
+  - A private data centre
+  - Free API keys for every model
+  answer: 0
+  explanation: GPU access without local hardware is a major Colab draw.
+  evidence: offers GPUs on some tiers

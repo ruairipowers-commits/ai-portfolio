@@ -1,0 +1,245 @@
+course: mcp
+level: familiar
+version: 1
+title: The Model Context Protocol (MCP) in 15 minutes
+status: draft
+source:
+  page: tech/mcp.md
+  docs: https://modelcontextprotocol.io/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's MCP page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    The Model Context Protocol (MCP) is an open standard for connecting AI applications to tools and data. You write
+    an **MCP server** once — say, one that can look up a trade or create a ticket — and any MCP-capable application can
+    discover it and call it. Think of it as a common plug between AI apps and the systems they need.
+
+    There are three participants. The **host** is the AI application (an IDE, a chat app, your own agent). The host
+    creates one **client** per connection, and each client talks to one **server**. A server exposes three kinds of
+    things: **tools** (functions the model can call), **resources** (data the application can read) and **prompts**
+    (reusable templates). Messages are JSON-RPC 2.0, over one of two transports: **stdio** for a local child process,
+    or **Streamable HTTP** for remote servers.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Anthropic introduced MCP as an open standard in November 2024. Before it, every AI application wired up tools in
+    its own way, so the same integration was rebuilt for each app. MCP proposed one protocol for all of them. Through
+    2025 it was adopted widely — by other AI labs, IDEs and developer tools — and it is now developed as an open
+    project with a public specification and official SDKs in several languages, including TypeScript and Python.
+
+    Today it is the usual way to give an AI assistant or agent access to internal systems, from databases and ticketing
+    tools to design apps.
+- id: business
+  heading: How it fits business users
+  body: |
+    For a business, MCP turns "connect our AI tools to system X" from a project per tool into one server that many tools
+    can use. It also makes the tool boundary reviewable: the list of tools and each tool's input schema can be
+    versioned, tested and signed off on their own.
+
+    The point to be clear on with a risk team: MCP defines *how* tools are called, not *whether* the model should call
+    them. Approvals, rate limits and logging still belong in the host or the server.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **A fixed, reviewed set of tools** for an agent instead of ad-hoc function code.
+    - **Wrapping an internal system once** (a database, a ticketing API) and reusing it across clients.
+    - **Tools in a different language or process** from the agent.
+    - **Letting developer tools such as IDEs** reach internal context.
+    - **Schema-checked tool calls**, with each tool's inputs described in JSON Schema.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | One tool server works with many clients | Another process and protocol to run and debug |
+    | Tool interfaces are explicit and schema-checked | The protocol is still evolving between versions |
+    | Language-neutral: tools need not be in Python | Security of what a tool does is still on you |
+    | Stdio needs no network for local use | Third-party servers need the same vetting as any dependency |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Model Context Protocol documentation](https://modelcontextprotocol.io/) — the official site, with the
+      specification and guides.
+    - [TypeScript SDK server guide](https://ts.sdk.modelcontextprotocol.io/documents/server.html) — building a server.
+    - [Python SDK on GitHub](https://github.com/modelcontextprotocol/python-sdk) — the official Python SDK and examples.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below is a one-tool MCP server in Python over stdio, tested with the official **MCP Inspector** — a
+    small web UI that connects to your server, lists its tools and lets you call them. No AI model or key needed.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"What problem does MCP solve?"** Every AI app used to wire tools up its own way; MCP is one protocol, so a tool
+      server is written once and reused by many clients.
+    - **"Host, client, server?"** The host is the AI app; it makes one client per connection; each client talks to one
+      server, which exposes tools, resources and prompts.
+    - **"Is an MCP server safe by default?"** No. The schema checks inputs, but what a tool does — and whether the
+      model should call it — needs approvals, least privilege, rate limits and logging. Vet third-party servers like
+      any dependency.
+    - **"Stdio or HTTP?"** Stdio for a local process with no network; Streamable HTTP for remote servers with standard
+      authentication. The protocol layer is the same.
+
+    Pitfall: confusing MCP with a model or an agent framework. It's the plumbing between them and tools.
+project:
+  title: A one-tool MCP server
+  kind: runnable
+  minutes: 4
+  goal: Run a local MCP server and call its tool from the MCP Inspector.
+  steps:
+  - Run `pip install "mcp[cli]"` — version 2 or later (Node.js is also needed for the Inspector).
+  - Save the code below as `hello_mcp.py`.
+  - Run `mcp dev hello_mcp.py`; it starts the Inspector and prints a local URL. Open it and click Connect.
+  - In the Tools tab, list tools, pick `add`, enter a=2 and b=3, and run it.
+  code: |
+    from mcp.server.mcpserver import MCPServer   # SDK 2.x (1.x called it FastMCP)
+
+    server = MCPServer("my-server")
+
+    @server.tool()
+    def add(a: int, b: int) -> int:
+        """Add two numbers."""
+        return a + b
+
+    if __name__ == "__main__":
+        server.run()          # stdio by default
+  language: python
+  expected: |
+    The Inspector lists one tool, add, with inputs a and b (integers).
+    Calling it with 2 and 3 returns 5.
+  done_when:
+  - You called the tool from the Inspector and got 5.
+  - You can point to where the tool's input schema comes from (the type hints).
+quiz:
+- id: q1
+  prompt: What is MCP?
+  options:
+  - An open standard for connecting AI applications to tools and data
+  - A large language model
+  - A vector database
+  - A cloud hosting service
+  answer: 0
+  explanation: You write a server once and any MCP-capable client can discover and call it.
+  evidence: MCP is an open standard for connecting AI applications to tools and data
+- id: q2
+  prompt: In MCP, what is the host?
+  options:
+  - The AI application, such as an IDE, chat app or your own agent
+  - The machine the database runs on
+  - The DNS provider
+  - The model's training cluster
+  answer: 0
+  explanation: The host creates one client per connection.
+  evidence: A host is the AI application (an IDE, a chat app, your own agent).
+- id: q3
+  prompt: How many servers does each MCP client talk to?
+  options:
+  - One
+  - All of them at once
+  - None
+  - Exactly three
+  answer: 0
+  explanation: One client per connection, one server per client.
+  evidence: each client talks to one server
+- id: q4
+  prompt: Which three kinds of things do MCP servers expose?
+  options:
+  - Tools, resources and prompts
+  - Tables, views and indexes
+  - Users, groups and roles
+  - Images, videos and audio
+  answer: 0
+  explanation: Tools are callable functions; resources are readable data; prompts are templates.
+  evidence: 'Servers expose three kinds of things: tools (functions the model can call), resources (data the application can read) and prompts (reusable templates).'
+- id: q5
+  prompt: What message format does MCP use?
+  options:
+  - JSON-RPC 2.0
+  - SOAP
+  - CSV
+  - GraphQL
+  answer: 0
+  explanation: The same JSON-RPC layer runs over both transports.
+  evidence: Messages are JSON-RPC 2.0, over one of two transports
+- id: q6
+  prompt: What does the stdio transport do?
+  options:
+  - Runs the server as a local child process over standard input and output, with no network
+  - Serves remote clients over HTTPS
+  - Sends messages by email
+  - Writes messages to a database
+  answer: 0
+  explanation: Stdio is for local servers; Streamable HTTP is for remote ones.
+  evidence: Stdio runs the server as a local child process and talks over standard input and output, with no network involved.
+- id: q7
+  prompt: Does MCP decide what the model is allowed to do with tools?
+  options:
+  - No — approval, rate limits and logging still belong in the host or the server
+  - Yes, it blocks all risky actions automatically
+  - Yes, it requires a human for every call
+  - It disables tools by default
+  answer: 0
+  explanation: MCP defines how tools are called, not whether they should be.
+  evidence: approval, rate limits and logging still belong in the host or the server
+- id: q8
+  prompt: How are tool inputs validated in MCP?
+  options:
+  - Each tool's input schema is enforced before your code runs
+  - They aren't validated
+  - The model checks them
+  - By a regular expression in the prompt
+  answer: 0
+  explanation: Inputs are described with JSON Schema, so calls are checked.
+  evidence: each tool's input schema is enforced before your code runs
+- id: q9
+  prompt: Which is a con of MCP?
+  options:
+  - The protocol is still evolving between versions
+  - It only works in Python
+  - It requires a GPU
+  - It can't run locally
+  answer: 0
+  explanation: Expect changes between spec versions and pin SDK versions.
+  evidence: The protocol is still evolving between versions
+- id: q10
+  prompt: How should third-party MCP servers be treated?
+  options:
+  - With the same vetting as any dependency
+  - As fully trusted
+  - As read-only by definition
+  - As part of the model
+  answer: 0
+  explanation: A server can do anything its code does; review it like any library.
+  evidence: Third-party servers need the same vetting as any dependency
+- id: q11
+  prompt: Which is a typical use case?
+  options:
+  - Wrapping an internal system once and reusing it across clients
+  - Training a model from scratch
+  - Rendering a website
+  - Storing backups
+  answer: 0
+  explanation: One server, many clients, is the core benefit.
+  evidence: Wrapping an internal system (a database, a ticketing API) once and reusing it across clients.
+- id: q12
+  prompt: Do MCP tools have to be written in Python?
+  options:
+  - No, MCP is language-neutral
+  - Yes, always
+  - Only in Java
+  - Only in Rust
+  answer: 0
+  explanation: Official SDKs exist in several languages, including TypeScript and Python.
+  evidence: 'Language-neutral: tools need not be in Python'
+- id: q13
+  prompt: Who introduced MCP, and when?
+  options:
+  - Anthropic, in November 2024
+  - Google, in 2015
+  - Microsoft, in 2010
+  - The W3C, in 2000
+  answer: 0
+  explanation: It was introduced as an open standard and adopted widely through 2025.
+  evidence: Anthropic introduced MCP as an open standard in November 2024.

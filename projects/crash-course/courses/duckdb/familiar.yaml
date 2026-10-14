@@ -1,0 +1,241 @@
+course: duckdb
+level: familiar
+version: 1
+title: DuckDB in 15 minutes
+status: draft
+source:
+  page: tech/duckdb.md
+  docs: https://duckdb.org/docs/current/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's DuckDB page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    DuckDB is an analytical SQL database that runs **inside your program**. You don't install or run a database
+    server: you `pip install duckdb`, import it, and query. A database is a single file, or just memory. People
+    often call it "SQLite for analytics".
+
+    It is **columnar** and built for analytical queries — scans, joins and aggregations over many rows — rather than
+    many small transactions. And it reads CSV, Parquet and JSON files directly, so a lot of work needs no load step
+    at all: `select * from 'trades.parquet'` just works. In Python it exchanges data with pandas, Polars and Arrow
+    efficiently.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    DuckDB began at the CWI research institute in Amsterdam, the same institute where Python was created, and its
+    first release came in 2019. Its authors noticed that data scientists were moving data out of databases into
+    pandas because databases were awkward to embed, and built an analytical engine that lives in-process instead.
+    It reached version 1.0 in 2024. The project is stewarded by the non-profit DuckDB Foundation, with development led
+    by DuckDB Labs.
+
+    Today it is a common tool for local analytics, notebooks, data-quality checks, and as a development and CI target
+    for dbt projects that run on a cloud warehouse in production.
+- id: business
+  heading: How it fits business users
+  body: |
+    For analysts, DuckDB means answering a question about a 2 GB vendor file in seconds on a laptop, with SQL, without
+    asking for a warehouse account. For a data team, it means tests and pipelines that run offline and in CI with no
+    infrastructure, so results are reproducible.
+
+    The boundary to respect: it is not a shared, multi-user database. One process writes at a time.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Local analytics on files** without standing up a warehouse.
+    - **A dev and CI target for dbt** projects that run on a cloud warehouse in production.
+    - **Ad-hoc profiling and quality checks** on vendor files.
+    - **Analytical SQL embedded** inside an application or notebook.
+    - **Converting between CSV, JSON and Parquet.**
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Zero infrastructure: a pip install and a file | Single writer; not built for concurrent transactional workloads |
+    | Fast columnar execution for analytical queries | Not a shared, networked database for many users |
+    | Queries CSV/Parquet/JSON in place | Some SQL and extension behaviour differs from Postgres |
+    | Works well as a dbt dev/CI target | Datasets larger than one machine need a different engine |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [DuckDB documentation](https://duckdb.org/docs/current/) — the official reference from the DuckDB Foundation.
+    - [DuckDB Python API](https://duckdb.org/docs/current/clients/python/overview) — using it from Python and pandas.
+    - [DuckDB SQL introduction](https://duckdb.org/docs/current/sql/introduction) — the SQL dialect and its extras.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below writes a small CSV and queries it directly with SQL from Python — no server, no load step —
+    then saves the result as Parquet and queries that too.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"DuckDB or Postgres?"** DuckDB for analytical queries, local work, files and CI — in-process, single writer.
+      Postgres for a shared, multi-user, transactional database, or when you need extensions like pgvector.
+    - **"Why columnar?"** Analytical queries read a few columns over many rows; storing by column reads less data
+      and compresses better.
+    - **"How would you use it in an AI pipeline?"** Profile and score data in SQL, test it, and pass the model a small
+      tested result instead of raw rows; because it is one file, the whole pipeline runs offline in CI.
+
+    Pitfall: suggesting it as the back end for a multi-user web app. Know the single-writer limit.
+project:
+  title: SQL over a CSV with no server
+  kind: runnable
+  minutes: 4
+  goal: Query a CSV file in place with SQL, then write and read Parquet.
+  steps:
+  - Run `pip install duckdb`.
+  - Save the code below as `hello_duck.py` and run `python hello_duck.py`.
+  - Add a `where price > 10` clause to the first query and run again.
+  code: |
+    import duckdb, pathlib
+
+    pathlib.Path("sample.csv").write_text("vendor,price\nacme,12.5\nacme,9.0\nzeta,20.0\n")
+
+    con = duckdb.connect()                       # in memory
+    print(con.sql("""
+        select vendor, count(*) as n_rows, avg(price) as avg_price
+        from read_csv_auto('sample.csv')
+        group by vendor order by vendor
+    """).fetchall())
+
+    con.sql("copy (select * from 'sample.csv') to 'sample.parquet' (format parquet)")
+    print(con.sql("select count(*) from 'sample.parquet'").fetchone())
+  language: python
+  expected: |
+    [('acme', 2, 10.75), ('zeta', 1, 20.0)]
+    (3,)
+  done_when:
+  - Both queries print the expected results.
+  - You can explain why there was no "load the data" step.
+quiz:
+- id: q1
+  prompt: How does DuckDB run?
+  options:
+  - In-process — a library you import, not a server you run
+  - As a separate server you connect to over the network
+  - Only in the cloud
+  - As a browser extension
+  answer: 0
+  explanation: There are no users, servers or network setup to manage.
+  evidence: 'DuckDB is an in-process analytical SQL database: a library you import, not a server you run.'
+- id: q2
+  prompt: What kind of queries is DuckDB designed for?
+  options:
+  - Analytical queries — scans, joins and aggregations over many rows
+  - Many small concurrent transactions from web users
+  - Full-text search only
+  - Graph traversal only
+  answer: 0
+  explanation: It is a columnar engine for analytics.
+  evidence: 'designed for analytical queries — scans, joins and aggregations over many rows'
+- id: q3
+  prompt: Which file formats can DuckDB read directly?
+  options:
+  - CSV, Parquet and JSON
+  - Only its own format
+  - Only Excel
+  - Only XML
+  answer: 0
+  explanation: Often there is no load step at all.
+  evidence: It reads CSV, Parquet and JSON directly
+- id: q4
+  prompt: Where can a DuckDB database be stored?
+  options:
+  - In a single file or in memory
+  - Only in S3
+  - Only in a cluster of servers
+  - Only in Postgres
+  answer: 0
+  explanation: A file or memory — no server needed.
+  evidence: stores a database in a single file or in memory
+- id: q5
+  prompt: What is DuckDB's main limit for multi-user apps?
+  options:
+  - One process writes at a time
+  - It can't read files
+  - It has no SQL
+  - It only stores ten rows
+  answer: 0
+  explanation: For concurrent writers or pgvector, Postgres is the better fit.
+  evidence: One process writes at a time
+- id: q6
+  prompt: When is PostgreSQL the better fit than DuckDB?
+  options:
+  - For concurrent writers, row-level updates under load, or extensions like pgvector
+  - For querying a local Parquet file
+  - For a quick notebook analysis
+  - For converting CSV to Parquet
+  answer: 0
+  explanation: Postgres is a shared transactional database; DuckDB is in-process analytics.
+  evidence: for concurrent writers, row-level updates under load, or extensions like pgvector, PostgreSQL is the better fit
+- id: q7
+  prompt: How is DuckDB useful before data reaches a model?
+  options:
+  - Profile a sample, compute scores in SQL, and pass the model a small tested result
+  - It trains the model
+  - It replaces the model
+  - It stores the prompts
+  answer: 0
+  explanation: The model gets checked aggregates instead of raw rows.
+  evidence: pass the model a small, tested result instead of raw rows
+- id: q8
+  prompt: Why does DuckDB keep evals reproducible?
+  options:
+  - A whole pipeline can run offline in CI because it is a single file with no server
+  - It randomises results
+  - It calls the model for you
+  - It needs a cloud account
+  answer: 0
+  explanation: No infrastructure means the same pipeline runs the same way in CI.
+  evidence: a whole pipeline — data, transformations and audit tables — can run offline in CI with a mock model
+- id: q9
+  prompt: Which is a typical use case?
+  options:
+  - A dev and CI target for dbt projects that run on a cloud warehouse in production
+  - Hosting a public website
+  - Sending email
+  - Managing passwords
+  answer: 0
+  explanation: The same dbt project runs locally on DuckDB and in production elsewhere.
+  evidence: A dev and CI target for dbt projects that run on a cloud warehouse in production.
+- id: q10
+  prompt: Which libraries does DuckDB exchange data with in Python?
+  options:
+  - pandas, Polars and Arrow
+  - React and Vue
+  - Spring and Hibernate
+  - Kafka and RabbitMQ
+  answer: 0
+  explanation: It exchanges data without copying everything through Python objects.
+  evidence: it exchanges data with pandas, Polars and Arrow
+- id: q11
+  prompt: Which is a con of DuckDB?
+  options:
+  - Datasets larger than one machine need a different engine
+  - It requires a server
+  - It can't run SQL
+  - It needs a licence fee
+  answer: 0
+  explanation: It is fast on one machine, but not a distributed engine.
+  evidence: Datasets larger than one machine need a different engine
+- id: q12
+  prompt: Who stewards the DuckDB project?
+  options:
+  - The non-profit DuckDB Foundation, with development led by DuckDB Labs
+  - Oracle
+  - The Apache Software Foundation
+  - Snowflake
+  answer: 0
+  explanation: A foundation holds the project; DuckDB Labs leads development.
+  evidence: The project is stewarded by the non-profit DuckDB Foundation, with development led by DuckDB Labs.
+- id: q13
+  prompt: Where did DuckDB begin?
+  options:
+  - At the CWI research institute in Amsterdam
+  - At Google
+  - At Facebook
+  - At Microsoft Research
+  answer: 0
+  explanation: It came out of CWI, with a first release in 2019.
+  evidence: DuckDB began at the CWI research institute in Amsterdam

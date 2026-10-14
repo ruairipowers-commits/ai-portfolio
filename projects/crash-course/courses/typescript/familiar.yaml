@@ -1,0 +1,239 @@
+course: typescript
+level: familiar
+version: 1
+title: TypeScript in 15 minutes
+status: draft
+source:
+  page: tech/typescript.md
+  docs: https://www.typescriptlang.org/docs/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's TypeScript page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    TypeScript is **JavaScript with a static type system**. You add type annotations, interfaces and generics to
+    JavaScript; the compiler, `tsc`, checks them and emits ordinary JavaScript that runs in Node.js or a browser.
+
+    The important subtlety: **types are erased at runtime**. They are a development-time safety net — they catch
+    mistakes before the code runs and power editor features like autocomplete and safe refactoring — but they don't check
+    data that arrives from outside while the program runs. At those boundaries you still validate, typically with a
+    library such as **Zod**, much as you would use Pydantic in Python.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Microsoft released TypeScript in 2012, led by Anders Hejlsberg, who had earlier designed C#. JavaScript applications
+    were getting big, and large teams needed types to manage them. Because TypeScript is a superset of JavaScript,
+    teams could adopt it gradually, file by file.
+
+    Today it is the default for much of the JavaScript world: front-end frameworks, Node.js services, developer tools,
+    and many protocol SDKs — including the official SDK for the Model Context Protocol — are TypeScript-first.
+- id: business
+  heading: How it fits business users
+  body: |
+    For a Python-centric data team, the reason to touch TypeScript is usually **ecosystem fit**: the front end, a browser
+    extension, or a tool server whose reference SDK is TypeScript. Writing that piece in the language its ecosystem uses
+    is usually less work than fighting a port.
+
+    The cost: a second language and toolchain for the team to maintain, and npm dependency trees that grow deep quickly.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Web front ends and dashboards.**
+    - **Node.js services** and serverless functions.
+    - **MCP servers** and other tool integrations whose reference SDK is TypeScript.
+    - **Browser extensions and developer tooling.**
+    - **Shared type definitions** between a front end and an API.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Catches type errors before runtime | Types vanish at runtime; boundaries still need validation |
+    | First-class editor support (autocomplete, refactoring) | Build step and `tsconfig` settings add setup |
+    | Huge npm ecosystem; reference SDK for many protocols | npm dependency trees get deep quickly |
+    | Same language across browser and server | A second language and toolchain for a Python data team |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [TypeScript documentation](https://www.typescriptlang.org/docs/) — the official docs from Microsoft.
+    - [The TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/intro.html) — the official guide; read it
+      after the five-minute intros.
+    - [TypeScript playground](https://www.typescriptlang.org/play) — try code in the browser and see the emitted JavaScript.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below defines an interface for a reconciliation break, compiles it with `tsc`, and runs it with Node.js.
+    Then you'll introduce a deliberate type error and watch the compiler catch it before anything runs.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"Why would a Python data team write TypeScript?"** Ecosystem fit — a UI, an extension, or an MCP tool server whose
+      reference SDK is TypeScript — rather than porting an SDK.
+    - **"Do TypeScript types protect you at runtime?"** No; they're erased. Validate data at boundaries with a library such
+      as Zod.
+    - **"Why do types help with AI tools?"** Static types on tool inputs make the tool contract explicit, which helps when
+      a model is choosing which tool to call.
+
+    Pitfall: `any` everywhere. Say you'd keep `strict` mode on.
+project:
+  title: A typed function, compiled and run
+  kind: runnable
+  minutes: 4
+  goal: Compile a typed TypeScript file, run it, and see the compiler catch a type error.
+  steps:
+  - Install Node.js (it includes npm).
+  - Save the code below as `break.ts`.
+  - Run `npx -y -p typescript tsc break.ts && node break.js`.
+  - 'Change `actual: 985` to `actual: "985"`, compile again, and read the error.'
+  code: |
+    interface Break {
+      account: string;
+      expected: number;
+      actual: number;
+    }
+
+    function difference(b: Break): number {
+      return b.actual - b.expected;
+    }
+
+    const b: Break = { account: "FUND-01", expected: 1000, actual: 985 };
+    console.log(`${b.account}: ${difference(b)}`);
+  language: typescript
+  expected: |
+    FUND-01: -15
+    After the edit, tsc reports: Type 'string' is not assignable to type 'number'.
+  done_when:
+  - 'The compiled program prints FUND-01: -15.'
+  - You saw the compiler reject the string before the program ran.
+quiz:
+- id: q1
+  prompt: What is TypeScript?
+  options:
+  - JavaScript with a static type system, compiled to plain JavaScript
+  - A Python framework
+  - A database query language
+  - A new browser
+  answer: 0
+  explanation: tsc checks types and emits ordinary JavaScript.
+  evidence: TypeScript is JavaScript with a static type system, compiled to plain JavaScript
+- id: q2
+  prompt: Who develops TypeScript?
+  options:
+  - Microsoft
+  - Google
+  - Mozilla
+  - Oracle
+  answer: 0
+  explanation: It is open source and developed by Microsoft.
+  evidence: TypeScript is an open-source language developed by Microsoft.
+- id: q3
+  prompt: What is the TypeScript compiler called?
+  options:
+  - tsc
+  - node
+  - npm
+  - tsrun
+  answer: 0
+  explanation: tsc checks types and emits JavaScript.
+  evidence: the compiler (tsc) checks them and emits ordinary JavaScript
+- id: q4
+  prompt: Do TypeScript types exist at runtime?
+  options:
+  - No; they are erased — a development-time safety net
+  - Yes, they validate every value
+  - Only in browsers
+  - Only in Node.js
+  answer: 0
+  explanation: Validate external data at boundaries.
+  evidence: Types are erased at runtime, so they are a development-time safety net rather than a runtime guarantee.
+- id: q5
+  prompt: What still needs a library such as Zod?
+  options:
+  - Runtime validation at boundaries where data arrives from outside
+  - Compiling TypeScript
+  - Running Node.js
+  - Writing interfaces
+  answer: 0
+  explanation: Much as Pydantic does in Python.
+  evidence: Runtime validation still needs a library (for example Zod) at boundaries where data arrives from outside
+- id: q6
+  prompt: Why might a Python-centric data team write TypeScript?
+  options:
+  - Ecosystem fit — many front ends, tools and protocol SDKs are TypeScript-first
+  - It's faster than Python for data analysis
+  - It replaces SQL
+  - It's required by Python
+  answer: 0
+  explanation: Using the ecosystem's language is less work than porting.
+  evidence: the reason to touch TypeScript is usually ecosystem fit
+- id: q7
+  prompt: Which protocol has an official TypeScript SDK, according to the course?
+  options:
+  - The Model Context Protocol
+  - SMTP
+  - FTP
+  - SNMP
+  answer: 0
+  explanation: A tool server written in TypeScript can serve Python agents over stdio.
+  evidence: The Model Context Protocol has an official TypeScript SDK
+- id: q8
+  prompt: Why do static types help when a model chooses a tool?
+  options:
+  - They make the tool contract explicit
+  - They make the model smarter
+  - They remove the need for tools
+  - They speed up the GPU
+  answer: 0
+  explanation: Clear input types describe what each tool expects.
+  evidence: Static types on tool inputs make the tool contract explicit
+- id: q9
+  prompt: Which is a con of TypeScript?
+  options:
+  - The build step and tsconfig settings add setup
+  - It has no editor support
+  - It can't run on servers
+  - It has no package ecosystem
+  answer: 0
+  explanation: There's a compile step JavaScript alone doesn't need.
+  evidence: Build step and tsconfig settings add setup
+- id: q10
+  prompt: What happens to npm dependency trees?
+  options:
+  - They get deep quickly
+  - They're always flat
+  - They're forbidden
+  - They're auto-deleted
+  answer: 0
+  explanation: Review and pin dependencies.
+  evidence: npm dependency trees get deep quickly
+- id: q11
+  prompt: Which is a pro of TypeScript?
+  options:
+  - First-class editor support such as autocomplete and refactoring
+  - No compile step
+  - Runtime type enforcement
+  - Smaller than JavaScript in every case
+  answer: 0
+  explanation: Types power the editor.
+  evidence: First-class editor support (autocomplete, refactoring)
+- id: q12
+  prompt: Which is a typical use case?
+  options:
+  - Shared type definitions between a front end and an API
+  - Training neural networks
+  - Running SQL warehouses
+  - Editing spreadsheets
+  answer: 0
+  explanation: One type definition keeps both sides in step.
+  evidence: Shared type definitions between a front end and an API.
+- id: q13
+  prompt: When did Microsoft release TypeScript?
+  options:
+  - 2012
+  - 1995
+  - 2005
+  - 2020
+  answer: 0
+  explanation: Anders Hejlsberg, who designed C#, led it.
+  evidence: Microsoft released TypeScript in 2012, led by Anders Hejlsberg

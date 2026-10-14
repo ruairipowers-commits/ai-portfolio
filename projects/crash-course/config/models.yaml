@@ -1,0 +1,79 @@
+# MODEL-01 Model registry. Code only ever references ALIASES.
+# Roles: the moderator assesses a suggested topic (small, cheap); the writer drafts a level (strong, long output);
+# the reviser proposes edits from feedback. To migrate: point course-candidate at the new model, run
+#   course eval --alias course-candidate
+# and, if the gate passes, `course promote course-writer <model>` (or course-moderator).
+# Pricing is USD per million tokens; a model with null pricing is refused unless cost.allow_unpriced_models=true.
+
+aliases:
+  course-writer: mock-writer
+  course-moderator: mock-moderator
+  course-reviser: mock-writer
+  course-fallback: mock-writer
+  course-candidate: mock-moderator
+
+models:
+  mock-writer:             # deterministic offline writer: builds levels from the source page's own structure
+    provider: mock
+    model_id: mock-writer-v1
+    input_per_mtok: 1.00   # simulated, so the cost report has numbers to show
+    output_per_mtok: 5.00
+    deprecation_date: null
+    approved: true
+
+  mock-moderator:          # deterministic offline moderator: keyword + pattern heuristics, same schema as a model
+    provider: mock
+    model_id: mock-moderator-v1
+    input_per_mtok: 0.25
+    output_per_mtok: 1.25
+    deprecation_date: null
+    approved: true
+
+  local-qwen:              # local open model on the EVO-X1 through Ollama ($0 per token)
+    provider: ollama
+    model_id: qwen3:14b    # override with OLLAMA_MODEL
+    input_per_mtok: 0.0
+    output_per_mtok: 0.0
+    deprecation_date: null
+    approved: true
+
+  local-gemma:
+    provider: ollama
+    model_id: gemma4:e4b
+    input_per_mtok: 0.0
+    output_per_mtok: 0.0
+    deprecation_date: null
+    approved: true
+
+  claude-sonnet:
+    provider: anthropic
+    model_id: claude-sonnet-5-5
+    input_per_mtok: null   # fill from anthropic.com/pricing before use (COST-01 refuses unpriced models)
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true         # SEC-05: only approved models can be resolved
+
+  claude-haiku:
+    provider: anthropic
+    model_id: claude-haiku-5-5
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true
+
+  openai-default:
+    provider: openai
+    model_id: "SET-CURRENT-OPENAI-MODEL-ID"
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: false        # flip after review of provider terms
+
+  bedrock-claude:
+    provider: bedrock
+    model_id: "SET-BEDROCK-MODEL-OR-INFERENCE-PROFILE-ID"
+    region: us-east-1
+    input_per_mtok: null
+    output_per_mtok: null
+    deprecation_date: null
+    approved: true

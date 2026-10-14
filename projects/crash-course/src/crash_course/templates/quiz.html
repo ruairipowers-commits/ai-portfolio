@@ -1,0 +1,27 @@
+{% extends "base.html" %}{% block title %}Quiz · {{ c.title }} · Crash course{% endblock %}{% block wrapclass %}narrow{% endblock %}
+{% block body %}
+<p class="small muted"><a href="{{ R }}/learn/{{ c.slug }}/{{ a.level }}">{{ c.title }} · {{ label }}</a></p>
+<h1>{{ 'Module check' if a.part != 'final' else ('Final test' if a.level == 'intermediate' else 'Quiz') }}</h1>
+<p class="muted">{{ a.questions|length }} questions · pass mark {{ a.pass_pct }}% · retry as often as you like.</p>
+<form method="post" action="{{ R }}/quiz/submit" class="card" x-data="{i: 0, n: {{ a.questions|length }}, ans: {}}">
+  <input type="hidden" name="token" value="{{ a.token }}">
+  <div class="dots" aria-hidden="true">{% for q in a.questions %}<b :class="{a: ans['{{ q.id }}'] !== undefined, c: i == {{ loop.index0 }}}"></b>{% endfor %}</div>
+  {% for q in a.questions %}
+  <fieldset class="qf" style="border:0;padding:0;margin:14px 0 0" x-show="i == {{ loop.index0 }}" {{ 'x-cloak' if not loop.first }}>
+    <legend class="small muted">Question {{ loop.index }} of {{ a.questions|length }}</legend>
+    <p class="q">{{ q.prompt }}</p>
+    {% for o in q.options %}
+    <label class="opt" :class="ans['{{ q.id }}'] === {{ loop.index0 }} && 'sel'"><input type="radio" name="a_{{ q.id }}" value="{{ loop.index0 }}" @change="ans['{{ q.id }}'] = {{ loop.index0 }}"> <span>{{ o }}</span></label>
+    {% endfor %}
+  </fieldset>
+  {% endfor %}
+  <div class="qnav">
+    <button class="btn ghost" type="button" @click="i--" :disabled="i == 0">Back</button>
+    <span class="small muted" x-text="Object.keys(ans).length + ' of ' + n + ' answered'"></span>
+    <button class="btn" type="button" @click="i++" x-show="i < n - 1">Next</button>
+    <button class="btn ok" type="submit" x-show="i == n - 1" x-cloak>Submit answers</button>
+  </div>
+  <noscript><p><button class="btn ok" type="submit">Submit answers</button></p></noscript>
+</form>
+<noscript><style>.qf{display:block !important}</style></noscript>
+{% endblock %}
