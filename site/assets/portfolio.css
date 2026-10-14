@@ -252,3 +252,10 @@
 .site-footer__credit { margin: .2rem 0; }
 
 .md-typeset .gallery__access { margin: .4rem 0 0; font-size: .64rem; color: var(--md-default-fg-color--light); }
+
+/* Blog → Upcoming topics (assets/upcoming.js): the live editorial queue, with reader votes */
+.md-typeset .upcoming { margin: .4rem 0 1.6rem; padding: .9rem 1.1rem .3rem; border-radius: .3rem; background: var(--md-code-bg-color); }
+.md-typeset .upcoming__head { margin: 0 0 .2rem; font-weight: 700; }
+.md-typeset .upcoming__how { margin: 0 0 .4rem; font-size: .72rem; color: var(--md-default-fg-color--light); }
+.md-typeset .upcoming .idea { border-bottom-color: var(--md-default-fg-color--lightest); }
+.md-typeset .upcoming__sum { font-size: .74rem; margin-top: .15rem; }

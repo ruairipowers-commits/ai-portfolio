@@ -1,0 +1,160 @@
+"""Local drafts, Claude reviews: the comparison log.
+
+Every routed post run appends one row to `metrics/routing-runs.jsonl` (committed with the post, so the numbers are
+public and auditable). Two arms:
+
+  claude-only   Claude writes the draft from the sources; the same checks and editor review follow.
+  local-review  A local model on the owner's server writes the draft; Claude reviews and edits it.
+
+What's measured, and how (code, not the model, computes every number):
+
+  claude_written_chars  claude-only: the whole final post plus Claude's notes (the research brief).
+                        local-review: Claude's notes (the brief and the review) plus the text Claude changed between
+                        the local draft and the final post (word-level diff: inserted and replaced words).
+  claude_read_chars     every file Claude read for the run (sources, drafts) — `--read`.
+  local_seconds         wall-clock time of the local model call, measured around it.
+  tokens                estimated as characters ÷ 4 (labelled as an estimate everywhere it's shown). Claude's exact
+                        token counts aren't visible to a scheduled task, so the estimate is applied identically to
+                        both arms; the comparison between arms is what matters.
+
+`table_md()` renders the summary the metrics post shows at build time (`<!-- routing:results -->`).
+Standard library only, so the site build can import it.
+"""
+from __future__ import annotations
+
+import difflib
+import json
+import re
+import statistics
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+LOG = ROOT / "metrics" / "routing-runs.jsonl"
+CHARS_PER_TOKEN = 4
+ARMS = ("claude-only", "local-review")
+
+
+def _words(text: str) -> list[str]:
+    return re.findall(r"\S+", text)
+
+
+def changed_chars(before: str, after: str) -> int:
+    """Characters of `after` that aren't carried over from `before`: inserted and replaced words (plus a space each)."""
+    a, b = _words(before), _words(after)
+    n = 0
+    for op, _, _, j1, j2 in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
+        if op in ("insert", "replace"):
+            n += sum(len(w) + 1 for w in b[j1:j2])
+    return n
+
+
+def _read(path: str | Path | None) -> str:
+    return Path(path).read_text() if path else ""
+
+
+def tokens(chars: int) -> int:
+    return round(chars / CHARS_PER_TOKEN)
+
+
+def record(arm: str, topic_id: str, slug: str, final: str | Path, *, local_draft: str | Path | None = None,
+           review_notes: str | Path | list | None = None, read: list[str | Path] | None = None, local_model: str = "",
+           local_seconds: float = 0.0, checks_first_pass: bool = False, defects: int = 0, rewritten: bool = False,
+           editor_min: int | None = None, published: bool = False, note: str = "", log: Path | None = None,
+           now: datetime | None = None) -> dict:
+    log = log or LOG
+    if arm not in ARMS:
+        raise ValueError(f"arm must be one of {ARMS}")
+    notes = review_notes if isinstance(review_notes, list) else ([review_notes] if review_notes else [])
+    final_t, local_t = _read(final), _read(local_draft)
+    notes_t = "".join(_read(n) for n in notes)
+    if arm == "local-review" and not local_t:
+        raise ValueError("local-review needs --local-draft (what the local model wrote)")
+    written = len(notes_t) + (changed_chars(local_t, final_t) if arm == "local-review" else len(final_t))
+    read_chars = sum(len(_read(p)) for p in (read or []))
+    row = {"ts": (now or datetime.now(timezone.utc)).isoformat(timespec="seconds"), "arm": arm,
+           "topic_id": topic_id, "slug": slug, "local_model": local_model if arm == "local-review" else "",
+           "local_seconds": round(local_seconds, 1) if arm == "local-review" else 0.0,
+           "local_chars": len(local_t), "final_chars": len(final_t), "claude_written_chars": written,
+           "claude_read_chars": read_chars, "claude_written_tokens_est": tokens(written),
+           "claude_read_tokens_est": tokens(read_chars), "checks_first_pass": bool(checks_first_pass),
+           "defects": int(defects), "rewritten": bool(rewritten), "editor_min": editor_min,
+           "published": bool(published), "note": note}
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with log.open("a") as f:
+        f.write(json.dumps(row) + "\n")
+    return row
+
+
+def load(log: Path | None = None) -> list[dict]:
+    log = log or LOG
+    if not log.exists():
+        return []
+    return [json.loads(ln) for ln in log.read_text().splitlines() if ln.strip()]
+
+
+def _mean(xs: list[float]) -> float | None:
+    return statistics.fmean(xs) if xs else None
+
+
+def summary(rows: list[dict]) -> dict:
+    out: dict = {}
+    for arm in ARMS:
+        r = [x for x in rows if x["arm"] == arm]
+        if not r:
+            continue
+        ed = [x["editor_min"] for x in r if x.get("editor_min") is not None]
+        loc = [x["local_seconds"] for x in r if x.get("local_seconds")]
+        out[arm] = {"runs": len(r), "written_tok": _mean([x["claude_written_tokens_est"] for x in r]),
+                    "read_tok": _mean([x["claude_read_tokens_est"] for x in r]), "local_s": _mean(loc),
+                    "first_pass": sum(x["checks_first_pass"] for x in r), "defects": _mean([x["defects"] for x in r]),
+                    "rewritten": sum(x["rewritten"] for x in r), "editor_min": _mean(ed),
+                    "published": sum(x["published"] for x in r)}
+    # paired: the same topic run both ways → how much less Claude wrote with a local draft
+    by_topic: dict[str, dict] = {}
+    for x in rows:
+        by_topic.setdefault(x["topic_id"], {})[x["arm"]] = x
+    cuts = [1 - p["local-review"]["claude_written_chars"] / p["claude-only"]["claude_written_chars"]
+            for p in by_topic.values() if len(p) == 2 and p["claude-only"]["claude_written_chars"]]
+    out["paired"] = {"topics": len(cuts), "median_cut": statistics.median(cuts) if cuts else None,
+                     "min_cut": min(cuts) if cuts else None, "max_cut": max(cuts) if cuts else None}
+    return out
+
+
+def _fmt(v, kind: str = "n") -> str:
+    if v is None:
+        return "—"
+    if kind == "s":
+        return f"{v:.0f} s"
+    if kind == "1":
+        return f"{v:.1f}"
+    return f"{v:,.0f}"
+
+
+def table_md(rows: list[dict] | None = None) -> str:
+    rows = load() if rows is None else rows
+    if not rows:
+        return "*No routed runs logged yet.*"
+    s = summary(rows)
+    label = {"claude-only": "Claude writes, Claude reviews", "local-review": "Local model drafts, Claude reviews"}
+    head = ("| | Runs | Claude-written tokens (est.) | Claude-read tokens (est.) | Local model time | "
+            "Checks passed first time | Defects found in review | Rewritten by Claude | Editor's lowest score |\n"
+            "|---|---|---|---|---|---|---|---|---|")
+    lines = [head]
+    for arm in ARMS:
+        if arm not in s:
+            continue
+        a = s[arm]
+        lines.append(f"| {label[arm]} | {a['runs']} | {_fmt(a['written_tok'])} | {_fmt(a['read_tok'])} | "
+                     f"{_fmt(a['local_s'], 's') if arm == 'local-review' else '—'} | {a['first_pass']} of {a['runs']} | "
+                     f"{_fmt(a['defects'], '1')} | {a['rewritten']} of {a['runs']} | {_fmt(a['editor_min'], '1')} / 5 |")
+    p = s["paired"]
+    foot = []
+    if p["topics"]:
+        foot.append(f"On the {p['topics']} topic{'s' if p['topics'] != 1 else ''} run both ways, a local draft cut what "
+                    f"Claude had to write by a median of **{p['median_cut']:.0%}** (range {p['min_cut']:.0%} to "
+                    f"{p['max_cut']:.0%}).")
+    foot.append(f"Means per run. Tokens are estimated as characters ÷ {CHARS_PER_TOKEN}, the same way for both arms; "
+                f"the log is [`metrics/routing-runs.jsonl`](https://github.com/{{{{GITHUB_OWNER}}}}/ai-portfolio/blob/"
+                f"main/projects/editorial-agents/metrics/routing-runs.jsonl).")
+    return "\n".join(lines) + "\n\n" + " ".join(foot)

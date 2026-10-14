@@ -21,10 +21,13 @@ queue:
 schedule:                    # times in America/New_York; the service's own scheduler runs these
   timezone: America/New_York
   scout: "05:40"             # daily refill and re-rank
-  digest_weekday: mon        # EDITORIAL_DIGEST_DAY — the ranked list emailed to the owner
-  digest_time: "07:10"
+  digest_weekday: daily      # EDITORIAL_DIGEST_DAY — the ranked list (with readers' votes) emailed to the owner:
+                             # "daily", or a weekday (mon…sun). Daily, so it arrives before the daily writer runs
+  digest_time: "06:10"
   github_sync_minutes: 30    # mark topics drafted / published from the blog repo's pull requests (public API)
-  writer: "weekly, Thursday 06:00"   # informational: the writer runs as a scheduled Claude task, not here
+  writer: "daily, ~10:00"    # informational: the daily-post skill runs as a scheduled Claude task, not here
+votes:
+  per_hour: 30               # a visitor's votes per hour across all topics (one per topic per day counts)
 
 links:
   ttl_days: 14               # pick / dismiss links in the email expire
