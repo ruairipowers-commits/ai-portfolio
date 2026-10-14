@@ -382,7 +382,8 @@ def send(to: list[str], subject: str, text: str, html: str) -> None:
     host, port = os.environ["SMTP_HOST"], int(os.getenv("SMTP_PORT", "587"))
     user, pw = os.environ["SMTP_USER"], os.environ["SMTP_PASSWORD"]
     msg = EmailMessage()
-    msg["From"], msg["To"], msg["Subject"] = os.getenv("SMTP_FROM") or user, ", ".join(to), subject
+    from .subscribers import mail_from  # here, not at the top: subscribers may import digest
+    msg["From"], msg["To"], msg["Subject"] = mail_from(), ", ".join(to), subject
     msg["Message-ID"], msg["Date"] = make_msgid(domain="site-assistant"), formatdate()
     msg.set_content(text)
     msg.add_alternative(html, subtype="html")

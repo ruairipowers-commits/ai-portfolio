@@ -145,6 +145,7 @@ demo:
   - SMTP_USER
   - SMTP_PASSWORD
   - SMTP_FROM
+  - EDITORIAL_MAIL_FROM
 
 links:
   repo: ""

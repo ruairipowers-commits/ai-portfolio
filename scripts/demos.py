@@ -144,7 +144,7 @@ def render_selfhost(out: Path, c: dict) -> list[Path]:
                            if any(x["slug"] == "site-assistant" for x in items) else {}),
                         # governance alert emails (console Settings page); empty = kept in the console's outbox only
                         **{k: "${%s:-}" % k for k in ("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD", "SMTP_FROM",
-                                                      "GOVERNANCE_ALERT_EMAIL")}})
+                                                      "GOVERNANCE_MAIL_FROM", "GOVERNANCE_ALERT_EMAIL")}})
             svc["volumes"] = ["console-data:/app/warehouse"]   # live history survives restarts and rebuilds
         services[a["slug"]] = svc
     if any("ollama" in a["needs"] for a in items):
