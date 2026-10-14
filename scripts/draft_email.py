@@ -19,6 +19,7 @@ import ssl
 import sys
 import urllib.parse
 from email.message import EmailMessage
+from email.utils import formataddr, parseaddr
 from pathlib import Path
 
 
@@ -70,7 +71,7 @@ def send(subject: str, text: str, page: str) -> None:
     to = os.environ.get("ALERT_EMAIL") or os.environ.get("SMTP_FROM") or ""
     msg = EmailMessage()
     msg["Subject"], msg["To"] = subject, to
-    msg["From"] = os.environ.get("SMTP_FROM") or os.environ["SMTP_USER"]
+    msg["From"] = mail_from()
     msg.set_content(text)
     msg.add_alternative(page, subtype="html")
     port = int(os.environ.get("SMTP_PORT") or 587)
@@ -81,6 +82,20 @@ def send(subject: str, text: str, page: str) -> None:
             s.starttls(context=ctx)
         s.login(os.environ["SMTP_USER"], os.environ["SMTP_PASSWORD"])
         s.send_message(msg)
+
+
+def mail_from() -> str:
+    """The From line. DRAFT_MAIL_FROM wins: this app's own sender, so its mail can be filtered on its own.
+    Otherwise the shared SMTP_FROM / MAIL_FROM address is used under this app's name ("Weekly draft post").
+    """
+    own = (os.getenv("DRAFT_MAIL_FROM") or "").strip()
+    if own:
+        return own
+    for k in ('SMTP_FROM', 'MAIL_FROM'):
+        addr = parseaddr(os.getenv(k) or "")[1]
+        if "@" in addr:
+            return formataddr(('Weekly draft post', addr))
+    return os.environ["SMTP_USER"]
 
 
 def main(argv: list[str]) -> int:

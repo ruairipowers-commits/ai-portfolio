@@ -14,6 +14,7 @@ import os
 import re
 import time
 import warnings
+from email.utils import formataddr, parseaddr
 from pathlib import Path
 
 from . import telemetry
@@ -79,15 +80,23 @@ def send(conn, to: str, kind: str, subject: str, text: str) -> str:
     return status
 
 
-def sender() -> str:
-    """The From line. COURSE_MAIL_FROM wins, so this app keeps its own display name when the deploy .env shares one
-    MAIL_FROM (and one Resend key) across several apps; MAIL_FROM is the fallback."""
-    return (os.getenv("COURSE_MAIL_FROM") or os.getenv("MAIL_FROM") or "Crash course <courses@example.com>").strip()
+def mail_from() -> str:
+    """The From line. COURSE_MAIL_FROM wins: this app's own sender, so its mail can be filtered on its own.
+    Otherwise the shared MAIL_FROM / SMTP_FROM address is used under this app's name ("Crash course").
+    """
+    own = (os.getenv("COURSE_MAIL_FROM") or "").strip()
+    if own:
+        return own
+    for k in ('MAIL_FROM', 'SMTP_FROM'):
+        addr = parseaddr(os.getenv(k) or "")[1]
+        if "@" in addr:
+            return formataddr(('Crash course', addr))
+    return "Crash course <courses@example.com>"
 
 
 def _resend(to: str, subject: str, text: str) -> str:
     import httpx
-    body = {"from": sender(), "to": [to], "subject": subject,
+    body = {"from": mail_from(), "to": [to], "subject": subject,
             "text": text}
     try:
         r = httpx.post("https://api.resend.com/emails", json=body, timeout=15,

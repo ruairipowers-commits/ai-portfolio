@@ -132,7 +132,7 @@ def _send_link(to: str, link: str) -> None:
     if os.getenv("RESEND_API_KEY"):
         httpx.post("https://api.resend.com/emails", timeout=15,
                    headers={"Authorization": f"Bearer {os.environ['RESEND_API_KEY']}"},
-                   json={"from": os.getenv("MAIL_FROM", "Lil'Helper <helper@example.com>"), "to": [to],
+                   json={"from": outputs.mail_from(), "to": [to],
                          "subject": "Your Lil'Helper sign-in link", "html": html})
     else:
         d = work_root() / "output" / "outbox"
