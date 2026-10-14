@@ -3,6 +3,19 @@
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
 (or delete them) as they're done. Last updated 7 October 2026.
 
+## 00000. One Ollama on the EVO-X1 (14 October 2026, branch `agent/claude-shared-ollama`)
+
+The demo stack ran its own CPU Ollama (`ai-portfolio-demos-ollama-1`, 7 GB loaded) next to the host's ROCm
+`ollama-server`. `scripts/demos.py render selfhost` now also renders `ollama-shared`, a Caddy proxy that answers as
+`ollama` on the internal network and forwards to the host's Ollama; `.env` picks one (`OLLAMA_BUNDLED` /
+`OLLAMA_SHARED`, replica counts, so the installed `update.sh` is unchanged). Default unchanged (bundled).
+
+- [ ] On the EVO-X1 after merge: set `OLLAMA_BUNDLED=0`, `OLLAMA_SHARED=1` in `deploy/selfhost/.env`, let
+      `update.sh` deploy, run the README check, then `docker volume rm ai-portfolio-demos_ollama-models`.
+- [ ] Not run here: a live stack (no Docker daemon in the sandbox). Checked: render, `docker compose config` in both
+      modes, deploy guard (15 services OK both ways), `caddy validate` on the proxy config and a request through it
+      to a stand-in upstream (Host rewritten), selfhost script tests, governance check.
+
 ## 0000. Launch tracker (new personal project, built 7 October 2026)
 
 `projects/launch-tracker` + `site/personal/posts/launch-tracker.md` + tech pages (Prefect, Plotly). Every launch from

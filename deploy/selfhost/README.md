@@ -108,6 +108,25 @@ Then `docker compose … up -d ollama` and check `docker compose … logs ollama
 GPU. If it doesn't, delete the override and stay on CPU. The iGPU shares system memory: the amount it may use is set
 in the BIOS (UMA frame buffer) and by the kernel. Run `siteassist bench` before and after to see the difference.
 
+**Use the machine's own Ollama.** If the host already runs an Ollama server (for example the ROCm build on the
+EVO-X1, published on port 11434), the stack can use it instead of starting a second one, so every model is
+downloaded and held in memory once. In `.env`:
+
+```bash
+OLLAMA_BUNDLED=0      # don't start the stack's own ollama
+OLLAMA_SHARED=1       # start ollama-shared, a small proxy the apps reach as http://ollama:11434
+OLLAMA_SHARED_URL=http://host.docker.internal:11434   # the default
+```
+
+The apps don't change and stay on their internal network; only the proxy can reach the host. Check it with
+`docker compose … exec site-assistant python -c "import urllib.request as u; print(u.urlopen('http://ollama:11434/api/version').read())"`.
+If that times out, the host firewall is blocking containers from port 11434 (with ufw:
+`sudo ufw allow from 172.16.0.0/12 to any port 11434 proto tcp`). The shared server's own settings then apply —
+its keep-alive, how many models it holds, and memory — not `OLLAMA_MEM_LIMIT` / `OLLAMA_CPUS` here. Once it works,
+`docker volume rm ai-portfolio-demos_ollama-models` frees the old copies (re-created empty if you switch back).
+On first start the assistant asks the shared server to download `OLLAMA_MODEL` if it doesn't have it, so the
+model lands once, in the host's store. The daily maintenance report then reads the version from host port 11434.
+
 **Owner pages.** `https://demos.<your-domain>/site-assistant/stats?token=<ASSISTANT_ADMIN_TOKEN>` shows the last
 14 days, every search and question, and a button that sends the daily engagement email now. The email also goes
 out by itself every day at 07:00 New York time. Add `CF_*` and `GITHUB_TRAFFIC_TOKEN` to `.env` to include
