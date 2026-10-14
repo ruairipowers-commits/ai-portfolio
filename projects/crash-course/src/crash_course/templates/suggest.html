@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% block title %}Suggest a topic · Crash course{% endblock %}{% block wrapclass %}narrow{% endblock %}
+{% block body %}
+<h1>Suggest a topic</h1>
+<p class="lead">A tool, language, framework or professional skill you'd like a crash course on.</p>
+<form method="post" action="{{ R }}/suggest" class="card">
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <label for="topic">Topic</label>
+  <input id="topic" type="text" name="topic" maxlength="{{ s.moderation.max_chars }}" required value="{{ topic or '' }}" placeholder="e.g. Kubernetes, Power BI, prompt engineering">
+  <p><button class="btn" type="submit">Suggest it</button></p>
+  <p class="muted small">Every suggestion is screened, assessed by an AI reviewer and then approved or declined by a person. Nothing is created until it's approved. Up to {{ s.moderation.per_learner_per_day }} suggestions a day.</p>
+</form>
+{% endblock %}

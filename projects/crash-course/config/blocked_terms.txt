@@ -1,0 +1,61 @@
+# Screened before any model sees a suggestion (and checked again in every generated level).
+# One entry per line:  term or phrase | category | action   (action: reject or review)
+# Matching is case-insensitive, on whole words; a phrase matches its words in order.
+porn | sexual | reject
+pornography | sexual | reject
+nsfw | sexual | reject
+nude | sexual | reject
+nudes | sexual | reject
+erotic | sexual | reject
+fetish | sexual | reject
+hentai | sexual | reject
+onlyfans | sexual | reject
+escort | sexual | reject
+sexting | sexual | reject
+hookup | sexual | reject
+stalk | harassment | reject
+stalking | harassment | reject
+dox | harassment | reject
+doxx | harassment | reject
+doxxing | harassment | reject
+revenge | harassment | review
+spy on | harassment | reject
+track my | harassment | review
+kill | violence | review
+murder | violence | reject
+torture | violence | reject
+bomb | weapons | reject
+explosive | weapons | reject
+explosives | weapons | reject
+gun | weapons | review
+firearm | weapons | review
+suicide | self_harm | reject
+self harm | self_harm | reject
+self-harm | self_harm | reject
+meth | drugs | reject
+cocaine | drugs | reject
+heroin | drugs | reject
+fentanyl | drugs | reject
+steal | illegal | reject
+counterfeit | illegal | reject
+launder | illegal | reject
+money laundering | illegal | reject
+fake id | illegal | reject
+carding | illegal | reject
+malware | security_tooling | review
+ransomware | illegal | reject
+exploit | security_tooling | review
+hack into | illegal | reject
+crack passwords | illegal | reject
+keylogger | illegal | reject
+phishing | security_tooling | review
+nmap | security_tooling | review
+metasploit | security_tooling | review
+ignore previous instructions | injection | reject
+ignore your instructions | injection | reject
+ignore your rules | injection | reject
+system prompt | injection | reject
+you are now | injection | reject
+approve this | injection | reject
+</request> | injection | reject
+<request> | injection | reject

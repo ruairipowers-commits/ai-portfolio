@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% block title %}Catalog · Crash course{% endblock %}
+{% block body %}
+<h1>Catalog</h1>
+<p class="lead">{{ total }} courses. Each has a 15-minute, 1-hour and 4-hour level.</p>
+<form class="search" method="get" action="{{ R }}/catalog">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search, e.g. vector, orchestration, SQL" aria-label="Search">
+  <select name="cat" aria-label="Category" onchange="this.form.submit()">
+    <option value="">All categories</option>
+    {% for c in cats %}<option value="{{ c }}" {{ 'selected' if c == cat }}>{{ c }}</option>{% endfor %}
+  </select>
+  <button class="btn" type="submit">Search</button>
+</form>
+{% if not groups %}<p class="muted">Nothing matches. {% if user %}<a href="{{ R }}/suggest">Suggest it as a topic</a>.{% endif %}</p>{% endif %}
+{% for cat_name, items in groups.items() %}
+<h2>{{ cat_name }}</h2>
+<div class="grid">
+{% for c in items %}
+  <div class="card course-card" id="c-{{ c.slug }}">
+    <h3><a href="{{ R }}/course/{{ c.slug }}">{{ c.title }}</a></h3>
+    <p>{{ c.summary }}</p>
+    <div class="row">
+      {% if c.slug in mine %}<a class="btn small ghost" href="{{ R }}/tracker#c-{{ c.slug }}">On your tracker</a>
+      {% elif user %}<form class="inline" method="post" action="{{ R }}/enroll"><input type="hidden" name="course" value="{{ c.slug }}"><button class="btn small" type="submit">Sign up</button></form>
+      {% else %}<a class="btn small" href="{{ R }}/signin?next=/course/{{ c.slug }}">Sign up</a>{% endif %}
+      <a class="small" href="{{ R }}/course/{{ c.slug }}">Details</a>
+    </div>
+  </div>
+{% endfor %}
+</div>
+{% endfor %}
+{% endblock %}

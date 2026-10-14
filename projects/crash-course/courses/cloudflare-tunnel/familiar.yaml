@@ -1,0 +1,231 @@
+course: cloudflare-tunnel
+level: familiar
+version: 1
+title: Cloudflare Tunnel in 15 minutes
+status: draft
+source:
+  page: tech/cloudflare-tunnel.md
+  docs: https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Cloudflare Tunnel page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    Normally, to publish a server on the internet you open a port in your firewall and give the server a public IP
+    address — which also exposes it to everyone scanning the internet. **Cloudflare Tunnel turns that around.** A
+    small daemon, `cloudflared`, runs next to your service and makes **outbound** connections to Cloudflare.
+    Cloudflare then routes requests for your hostname down those connections.
+
+    Your firewall can block all inbound traffic and the origin server is never directly reachable. Because traffic
+    passes through Cloudflare first, you also get its edge features in front: TLS, caching, DDoS protection, and —
+    with **Cloudflare Access** — a login screen in front of an app without changing the app.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Cloudflare introduced the idea in 2018 as Argo Tunnel, a paid add-on. In 2021 it was renamed Cloudflare Tunnel,
+    made free, and folded into Cloudflare's "zero trust" product family alongside Access, which puts identity-based
+    login in front of apps.
+
+    Today it is widely used by self-hosters and home labs to publish services without port forwarding, and by
+    companies to give staff access to a few internal web apps without a VPN.
+- id: business
+  heading: How it fits business users
+  body: |
+    For a business, a tunnel answers a common blocker: "the prototype runs on a server we control — a GPU box, or a
+    machine holding data we can't move to a public cloud — so how do reviewers reach it safely?" A tunnel shares it
+    without opening the network, and Access limits it to named people.
+
+    The trade-off to raise with your security team: Cloudflare terminates TLS, so it can see the traffic, and every
+    request depends on Cloudflare's availability and terms.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Publishing a home lab or on-prem service** without port forwarding.
+    - **Internal tools behind single sign-on**, with Cloudflare Access.
+    - **Replacing a VPN** for access to a few specific web apps.
+    - **A temporary public URL** for a local dev server.
+    - **Hiding an origin's IP address** from direct attack.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | No inbound ports or public IP needed | All traffic depends on Cloudflare's availability and terms |
+    | Origin IP stays hidden | Your domain's DNS needs to be on Cloudflare for the standard setup |
+    | Pairs with Cloudflare Access for SSO in front of apps | Cloudflare terminates TLS, so it can see the traffic |
+    | Simple to run: one daemon, one config | Large uploads and long-lived requests are subject to edge limits |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Cloudflare Tunnel documentation](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/)
+      — the official guide from Cloudflare.
+    - [Cloudflare Access documentation](https://developers.cloudflare.com/cloudflare-one/policies/access/) — adding
+      login in front of an app.
+    - [cloudflared on GitHub](https://github.com/cloudflare/cloudflared) — the open-source daemon.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below uses a **quick tunnel**: one command gives a local web server a temporary public
+    `trycloudflare.com` address — no account, no domain, no open ports. It is for testing only; named tunnels on
+    your own domain are what you'd use for anything real.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"How would you let reviewers reach a prototype on an internal server?"** A tunnel with outbound-only
+      connections, plus Cloudflare Access so only named people get in. No inbound ports, origin IP hidden.
+    - **"What are the risks?"** Dependency on Cloudflare; Cloudflare sees decrypted traffic; edge limits on large
+      uploads and long requests. For sensitive data, check that's acceptable.
+    - **"Tunnel or VPN?"** A tunnel for a few specific web apps; a VPN for broad network access.
+
+    Pitfall: saying a tunnel makes an app "secure" on its own. It hides the origin; Access or app login controls who gets in.
+project:
+  title: A quick tunnel to a local server
+  kind: runnable
+  minutes: 4
+  goal: Give a local web server a temporary public address without opening any ports.
+  steps:
+  - Install `cloudflared` from the official downloads.
+  - Start a demo server with `python -m http.server 8000`.
+  - In another terminal run the command below and copy the `trycloudflare.com` URL it prints.
+  - Open that URL from your phone on mobile data; stop the tunnel with Ctrl-C and see it stop working.
+  code: |
+    cloudflared tunnel --url http://localhost:8000
+  language: bash
+  expected: |
+    A line such as: Your quick Tunnel has been created! Visit it at https://<random-words>.trycloudflare.com
+    The URL shows your local directory listing until you stop the tunnel.
+  done_when:
+  - The public URL served your local page.
+  - You can explain why no firewall port had to be opened.
+quiz:
+- id: q1
+  prompt: How does Cloudflare Tunnel connect your server to Cloudflare?
+  options:
+  - Through outbound-only connections
+  - By opening inbound port 443 on your firewall
+  - By moving your server into Cloudflare's data centre
+  - Over email
+  answer: 0
+  explanation: cloudflared dials out, so no inbound ports or public IP are needed.
+  evidence: Cloudflare Tunnel connects a server to Cloudflare's network through outbound-only connections
+- id: q2
+  prompt: What is the name of the daemon that runs next to your service?
+  options:
+  - cloudflared
+  - caddyd
+  - tunneld
+  - sshd
+  answer: 0
+  explanation: cloudflared opens the outbound connections and carries requests to your service.
+  evidence: A small daemon, cloudflared, runs next to your service.
+- id: q3
+  prompt: Can the origin server be reached directly from the internet?
+  options:
+  - No; the firewall can block all inbound traffic
+  - Yes, always
+  - Only on weekends
+  - Only over FTP
+  answer: 0
+  explanation: Requests arrive through the tunnel, so the origin stays unreachable directly.
+  evidence: Your firewall can block all inbound traffic; the origin server is never directly reachable from the internet.
+- id: q4
+  prompt: What does Cloudflare Access add in front of an app?
+  options:
+  - Identity-based login without changing the app
+  - A faster database
+  - A content management system
+  - Model hosting
+  answer: 0
+  explanation: Access puts single sign-on in front of the app at Cloudflare's edge.
+  evidence: identity-based login in front of an app without changing the app
+- id: q5
+  prompt: Which is a con of using a tunnel?
+  options:
+  - Cloudflare terminates TLS, so it can see the traffic
+  - It needs a public IP address
+  - It requires opening inbound ports
+  - It can't serve more than one hostname
+  answer: 0
+  explanation: Decrypted traffic passes through Cloudflare, which matters for sensitive data.
+  evidence: Cloudflare terminates TLS, so it can see the traffic
+- id: q6
+  prompt: Where does your domain's DNS need to be for the standard setup?
+  options:
+  - On Cloudflare
+  - On any provider, it doesn't matter
+  - Inside the app
+  - In a local hosts file
+  answer: 0
+  explanation: The standard setup routes a Cloudflare-managed hostname to the tunnel.
+  evidence: Your domain's DNS needs to be on Cloudflare for the standard setup
+- id: q7
+  prompt: Why are tunnels useful for AI prototypes?
+  options:
+  - They let you share apps on hardware you control without opening the network
+  - They make models run faster
+  - They store training data
+  - They replace the need for an API key
+  answer: 0
+  explanation: A GPU box or a server with data you can't move can still be reached by reviewers.
+  evidence: A tunnel lets you share them without opening the network.
+- id: q8
+  prompt: Which is a typical use case?
+  options:
+  - Replacing a VPN for access to a few specific web apps
+  - Running SQL transformations
+  - Training a model
+  - Sending marketing email
+  answer: 0
+  explanation: For a handful of web apps, a tunnel plus Access is simpler than a VPN.
+  evidence: Replacing a VPN for access to a few specific web apps.
+- id: q9
+  prompt: What limits apply to large uploads and long-lived requests?
+  options:
+  - Edge limits
+  - No limits at all
+  - Only browser limits
+  - Only database limits
+  answer: 0
+  explanation: Requests pass through Cloudflare's edge, which has its own limits.
+  evidence: Large uploads and long-lived requests are subject to edge limits
+- id: q10
+  prompt: Can one tunnel serve several hostnames?
+  options:
+  - Yes, it can route several hostnames
+  - No, one hostname per tunnel
+  - Only with a VPN
+  - Only for static sites
+  answer: 0
+  explanation: One tunnel can route several hostnames to different local services.
+  evidence: one tunnel can serve several hostnames
+- id: q11
+  prompt: What was Cloudflare Tunnel called before 2021?
+  options:
+  - Argo Tunnel
+  - Workers Tunnel
+  - Warp Gateway
+  - Pages Proxy
+  answer: 0
+  explanation: It launched as Argo Tunnel in 2018 and was renamed and made free in 2021.
+  evidence: Cloudflare introduced the idea in 2018 as Argo Tunnel, a paid add-on.
+- id: q12
+  prompt: Which edge features do you get in front of the origin?
+  options:
+  - TLS, caching and DDoS protection
+  - Model training and fine-tuning
+  - Database replication
+  - Source control
+  answer: 0
+  explanation: Traffic passes Cloudflare's edge first, so its protections apply.
+  evidence: 'you get its edge features in front of the origin: TLS, caching, DDoS protection'
+- id: q13
+  prompt: In an interview, what's the honest limit of "a tunnel makes it secure"?
+  options:
+  - A tunnel hides the origin; Access or app login controls who gets in
+  - A tunnel encrypts the database
+  - A tunnel removes all need for authentication
+  - A tunnel blocks prompt injection
+  answer: 0
+  explanation: Hiding the origin is not the same as controlling access.
+  evidence: It hides the origin; Access or app login controls who gets in.

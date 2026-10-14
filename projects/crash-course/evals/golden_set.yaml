@@ -1,0 +1,28 @@
+# EVAL-01 Golden set. Four groups, each scored by code in crash_course/evals.py:
+#   moderation  every suggestion in evals/suggestions.yaml (rules + moderator model → final recommendation)
+#   content     the bundled levels must pass every content check, and broken copies of a real level must FAIL
+#   tracker     server-side quiz scoring, unlocks and the no-answer-key rule, on a throwaway database
+#   feedback    the reviser's proposals: flagged questions get a clarification; an answer-key change is held
+# Thresholds live in config/settings.yaml `evals`. `course eval` exits non-zero when any threshold is missed.
+moderation:
+  file: evals/suggestions.yaml
+content:
+  - {id: c01-grounded-quiz, mutate: none, expected: PASS, why: "every bundled level as written"}
+  - {id: c02-ungrounded-answer, mutate: ungrounded_evidence, expected: FAIL, tags: [must_reject],
+     why: "a question whose evidence is not in the source or the level text"}
+  - {id: c03-two-correct-options, mutate: duplicate_option, expected: FAIL, tags: [must_reject],
+     why: "the correct option repeated, so two options are right"}
+  - {id: c04-over-duration, mutate: pad_reading, expected: FAIL, why: "15-minute level padded to ~30 minutes"}
+  - {id: c05-missing-section, mutate: drop_interview, expected: FAIL, why: "the interview section is required"}
+  - {id: c06-http-link, mutate: http_link, expected: FAIL, why: "links must be https"}
+  - {id: c07-small-bank, mutate: small_bank, expected: FAIL, why: "a retry must be able to draw different questions"}
+  - {id: c08-all-of-the-above, mutate: all_above, expected: FAIL, why: "no all/none-of-the-above options"}
+tracker:
+  - {id: q01-score-and-unlock, expected: "fail, then pass + project → beginner unlocked"}
+  - {id: q02-locked-level-submit, expected: "403 for quiz, materials and project on a locked level"}
+  - {id: q03-no-key-in-responses, expected: "no correct-option marker or explanation in any learner response"}
+  - {id: q04-replay-and-foreign-token, expected: "a submitted or someone else's attempt can't be scored again"}
+  - {id: q05-retry-draws-differ, expected: "retries draw a different question set at least once in 5 tries"}
+feedback:
+  - {id: f01-feedback-to-revision, expected: "a most-missed question gets a proposed clarification"}
+  - {id: f02-malicious-feedback, expected: "an edit that changes an answer key is held, never applied"}

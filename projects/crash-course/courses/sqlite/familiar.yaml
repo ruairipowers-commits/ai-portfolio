@@ -1,0 +1,238 @@
+course: sqlite
+level: familiar
+version: 1
+title: SQLite in 15 minutes
+status: draft
+source:
+  page: tech/sqlite.md
+  docs: https://sqlite.org/docs.html
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's SQLite page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    SQLite is a small SQL database engine that keeps an **entire database in one ordinary file**. There is no server:
+    your application opens the file and runs SQL against it in-process. No install, no network port, no users to
+    manage. Python includes it in the standard library as `sqlite3`.
+
+    Don't let "small" fool you. It supports transactions, indexes, views, triggers, JSON functions and **virtual tables**
+    — which is how extensions such as **FTS5** (full-text search) and **sqlite-vec** (vector search) plug in. With
+    write-ahead logging (WAL) it handles many readers alongside one writer well.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    D. Richard Hipp created SQLite in 2000 and released it into the public domain. Its design goal was a database that
+    needed no administration and could be embedded anywhere. It succeeded beyond anyone's expectations: SQLite is built
+    into every major phone operating system and web browser, and is often described as the most widely deployed database
+    engine in the world.
+
+    It is also enjoying a second life in AI and web tooling, as a single-file home for application state, search indexes
+    and audit logs.
+- id: business
+  heading: How it fits business users
+  body: |
+    For a business, SQLite means a tool or demo that needs **no database infrastructure**: copy one file and you have the
+    exact state — useful for reproducible evals, offline tools and shipping a dataset with its indexes.
+
+    The limits follow from the design: one writer at a time, no built-in access control beyond file permissions, and no
+    network access for remote clients. When several services must write concurrently, PostgreSQL is the usual next step.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Application storage** for single-node tools and services.
+    - **Local caches** and offline-first apps.
+    - **Test fixtures and CI databases.**
+    - **Shipping a dataset** with its indexes as one file.
+    - **Audit and event logs** for small deployments.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | No server; the database is one file | One writer at a time |
+    | In Python's standard library | No users, roles or network access built in |
+    | Extensions add full-text and vector search | Fewer data types and ALTER TABLE options than Postgres |
+    | Easy to copy, back up and ship with tests | Not suited to many concurrent writers across hosts |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [SQLite documentation](https://sqlite.org/docs.html) — the official docs from the SQLite project.
+    - [Appropriate uses for SQLite](https://sqlite.org/whentouse.html) — the project's own honest guide to when to use it
+      and when not to.
+    - [sqlite3 in the Python docs](https://docs.python.org/3/library/sqlite3.html) — the built-in module.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below uses only Python's standard library: it creates a database file, logs two "model call" events,
+    and counts them by kind. Then you'll open the same file from the `sqlite3` command line to see it really is just a file.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"When would you choose SQLite over Postgres?"** Single-node tools, demos, CI, offline apps and shipping data —
+      no infrastructure, one file. Postgres when many services write concurrently or you need roles and network access.
+    - **"How does SQLite help an AI system?"** Documents, chunk metadata, a keyword index (FTS5), a vector index
+      (sqlite-vec), agent state and the audit log in one file, so evals are reproducible and permission filters are just
+      SQL `WHERE` clauses.
+    - **"What's WAL?"** Write-ahead logging: readers don't block the writer, so many readers and one writer coexist well.
+
+    Pitfall: "SQLite is a toy". It's the most deployed database there is; the limit is concurrent writers, not quality.
+project:
+  title: A one-file event log
+  kind: runnable
+  minutes: 3
+  goal: Create a SQLite database with the standard library and query it.
+  steps:
+  - Save the code below as `hello_sqlite.py` and run it (no install needed).
+  - Run it a second time and notice the counts grow — the data persisted in `app.db`.
+  - 'Optional: open it with `sqlite3 app.db` and run `select * from events;`.'
+  code: |
+    import sqlite3
+
+    con = sqlite3.connect("app.db")
+    con.execute("create table if not exists events (ts text, kind text, detail text)")
+    con.executemany("insert into events values (datetime('now'), ?, ?)",
+                    [("model_call", "memo drafted"), ("approval", "memo approved")])
+    con.commit()
+    for row in con.execute("select kind, count(*) from events group by kind order by kind"):
+        print(row)
+    con.close()
+  language: python
+  expected: |
+    ('approval', 1)
+    ('model_call', 1)
+    (2 and 2 the second time you run it)
+  done_when:
+  - The counts print and grow on the second run.
+  - You can explain where the data lives.
+quiz:
+- id: q1
+  prompt: Where does SQLite keep an entire database?
+  options:
+  - In one ordinary file
+  - On a dedicated server
+  - In the cloud only
+  - In browser cookies
+  answer: 0
+  explanation: The application opens the file and runs SQL in-process.
+  evidence: SQLite is a small, embedded SQL database engine that keeps an entire database in one ordinary file.
+- id: q2
+  prompt: What do you need to install to use SQLite from Python?
+  options:
+  - Nothing — it's in the standard library as sqlite3
+  - A database server
+  - A Docker image
+  - A paid driver
+  answer: 0
+  explanation: There's no install, network port or user management.
+  evidence: Python includes it in the standard library as sqlite3.
+- id: q3
+  prompt: How do extensions such as FTS5 and sqlite-vec plug in?
+  options:
+  - Through virtual tables
+  - Through a separate server
+  - Through browser plugins
+  - They can't
+  answer: 0
+  explanation: Virtual tables let extensions add full-text and vector search.
+  evidence: virtual tables, which is how extensions such as FTS5 (full-text search) and sqlite-vec (vector search) plug in
+- id: q4
+  prompt: What does write-ahead logging (WAL) help with?
+  options:
+  - Many readers alongside one writer
+  - Many concurrent writers across hosts
+  - Network access
+  - User management
+  answer: 0
+  explanation: Readers don't block the writer.
+  evidence: With write-ahead logging (WAL) it handles many readers alongside one writer well.
+- id: q5
+  prompt: What is SQLite's main concurrency limit?
+  options:
+  - One writer at a time
+  - One reader at a time
+  - It can't handle transactions
+  - It can't index tables
+  answer: 0
+  explanation: For many concurrent writers, Postgres is the next step.
+  evidence: one writer at a time
+- id: q6
+  prompt: When is PostgreSQL the usual next step?
+  options:
+  - When several services need to write concurrently
+  - When you need a single-file database
+  - When you want no server
+  - When writing tests
+  answer: 0
+  explanation: Postgres is built for concurrent multi-user writes.
+  evidence: When several services need to write concurrently, PostgreSQL is the usual next step.
+- id: q7
+  prompt: Why does SQLite make AI demos and evals reproducible?
+  options:
+  - Copy the file and you have the exact state
+  - It randomises data
+  - It calls the model for you
+  - It needs no data
+  answer: 0
+  explanation: Documents, indexes, state and logs live in one file.
+  evidence: copy the file and you have the exact state
+- id: q8
+  prompt: How do permission filters work in a SQLite-based retrieval stack?
+  options:
+  - As SQL WHERE clauses in the same query as retrieval
+  - Through a separate auth server
+  - They can't be applied
+  - Through the model's prompt
+  answer: 0
+  explanation: Access control and retrieval use the same query.
+  evidence: lets permission filters run as SQL WHERE clauses in the same query as retrieval
+- id: q9
+  prompt: What access control does SQLite have built in?
+  options:
+  - None beyond file permissions — no users, roles or network access
+  - Full role-based access control
+  - Row-level security
+  - OAuth
+  answer: 0
+  explanation: Anyone who can read the file can read the data.
+  evidence: no built-in access control beyond file permissions
+- id: q10
+  prompt: Which is a typical use case?
+  options:
+  - Test fixtures and CI databases
+  - A bank's multi-region core ledger
+  - Streaming video
+  - Email delivery
+  answer: 0
+  explanation: Zero setup makes it ideal for tests.
+  evidence: Test fixtures and CI databases.
+- id: q11
+  prompt: Which is a con of SQLite compared with Postgres?
+  options:
+  - Fewer data types and ALTER TABLE options
+  - It can't run SQL
+  - It needs a server
+  - It has no transactions
+  answer: 0
+  explanation: Schema changes are more limited.
+  evidence: Fewer data types and ALTER TABLE options than Postgres
+- id: q12
+  prompt: Who created SQLite?
+  options:
+  - D. Richard Hipp, in 2000
+  - Oracle, in 1979
+  - Google, in 2008
+  - Michael Stonebraker, in 1986
+  answer: 0
+  explanation: He released it into the public domain.
+  evidence: D. Richard Hipp created SQLite in 2000 and released it into the public domain.
+- id: q13
+  prompt: What licence is SQLite under?
+  options:
+  - Public domain
+  - AGPL
+  - Proprietary only
+  - GPL v2
+  answer: 0
+  explanation: It is a C library in the public domain.
+  evidence: SQLite is a C library, in the public domain, that implements a transactional SQL database without a server.

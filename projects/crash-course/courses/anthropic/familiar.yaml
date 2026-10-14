@@ -1,0 +1,248 @@
+course: anthropic
+level: familiar
+version: 1
+title: The Claude API in 15 minutes
+status: draft
+source:
+  page: tech/anthropic.md
+  docs: https://platform.claude.com/docs/en/home
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Anthropic Claude API page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    The Claude API is how software talks to Anthropic's Claude models over HTTP. Instead of typing into a chat
+    window, your code sends a request — a list of messages, optionally a system prompt and some tool definitions —
+    and gets the model's reply back as structured content blocks. Official SDKs for Python, TypeScript and other
+    languages wrap the HTTP calls.
+
+    The centre of it is the **Messages API**. Around it sit features you will hear about: *tool use* (the model asks
+    your code to call a function you defined), *structured outputs*, vision and file inputs, extended thinking and
+    web search. Anthropic offers several Claude models at different points on the capability, speed and cost curve,
+    so one application can use a stronger model for hard reasoning and a smaller one for high-volume work.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Anthropic was founded in 2021 as an AI safety and research company, and released the first Claude models in
+    2023. Since then the API has grown from plain text completion into a platform for building agents: tool use,
+    long inputs, structured outputs and managed agents for longer-running tasks.
+
+    Claude models are available directly from Anthropic and through cloud platforms — Amazon Bedrock, Google Cloud
+    and Microsoft Foundry. That matters in regulated firms, where data policy often requires model calls to stay
+    inside an existing cloud account and contract.
+- id: business
+  heading: How it fits business users
+  body: |
+    For a business, the API is the difference between "people use a chatbot" and "a workflow uses a model": a
+    research note summarised the moment it arrives, fields extracted from a contract into a system of record, an
+    agent that looks up data and proposes an action for a person to approve.
+
+    In a regulated firm the important questions are less about the model and more about the path: where does the
+    data go, which model version answered, what did it cost, and was the output checked? A thin internal wrapper
+    that every team uses answers those in one place.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Drafting and summarising** documents from structured inputs.
+    - **Extraction**: pulling fields from unstructured text into a fixed schema.
+    - **Agents** that call tools to look up data and propose actions.
+    - **Question answering** over retrieved documents, with citations.
+    - **Code generation and review.**
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Well-documented tool use, long inputs and structured outputs | Hosted API: data leaves your network unless you use a cloud route |
+    | Range of models to trade cost against capability | Model IDs and versions change; pin and re-test |
+    | Also available through Bedrock, Google Cloud and Microsoft Foundry | Per-token cost needs monitoring at volume |
+    | Official SDKs in many languages | Rate limits need handling in batch workloads |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Claude API documentation](https://platform.claude.com/docs/en/home) — the official reference from Anthropic.
+    - [Quickstart](https://platform.claude.com/docs/en/get-started) — your first call in a few minutes.
+    - Within the docs, read the **tool use** and **prompt engineering** guides next; they cover most of what you
+      need for real applications.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below makes one call to the Messages API and prints the reply. It needs an API key from the Claude
+    Console; the call costs a fraction of a cent. If you can't get a key, read the code and the expected output —
+    the shape of the request and response is the thing to learn.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"How would you call an LLM from production code?"** Through a small internal wrapper: approved model
+      aliases (not raw model IDs scattered in code), token and cost logging, retries and a fallback, and output
+      validated against a schema before anything uses it.
+    - **"What is tool use?"** The model returns a structured request to call a function you defined; your code runs
+      it and sends the result back. The model never executes anything itself.
+    - **"How do you keep data inside the firm's controls?"** Use a cloud route such as Bedrock under existing IAM and
+      logging, minimise what you send, and check the provider's retention terms.
+    - **"What changes when a model version is retired?"** Pin versions, keep an eval set, re-test the new model
+      against it before switching.
+
+    Pitfall: talking only about prompts. Interviewers for applied roles care about cost, logging, validation and
+    what happens when the model is wrong.
+project:
+  title: Your first Messages API call
+  kind: runnable
+  minutes: 4
+  goal: Send one message to Claude from Python and print the text of the reply.
+  steps:
+  - Run `pip install anthropic`.
+  - Create an API key in the Claude Console and set it with `export ANTHROPIC_API_KEY=...`.
+  - Save the code below as `hello_claude.py` and run `python hello_claude.py`.
+  - Change the request to ask for exactly two bullets and run it again.
+  code: |
+    import anthropic
+
+    client = anthropic.Anthropic()          # reads ANTHROPIC_API_KEY
+    message = client.messages.create(
+        model="claude-opus-5-5",
+        max_tokens=300,
+        messages=[{"role": "user", "content": "Explain what an API is in three short bullets."}],
+    )
+    for block in message.content:
+        if block.type == "text":
+            print(block.text)
+    print(message.usage)                     # input and output tokens: what you pay for
+  language: python
+  expected: |
+    Three short bullets explaining an API, then a usage line with input and output token counts.
+  done_when:
+  - You got a reply and can find the token counts in the output.
+  - You can explain what the messages list and max_tokens are for.
+quiz:
+- id: q1
+  prompt: What is the core interface of the Claude API?
+  options:
+  - The Messages API
+  - The Embeddings API
+  - A SQL endpoint
+  - A web-scraping API
+  answer: 0
+  explanation: You send a list of messages and get the model's response back as content blocks.
+  evidence: 'The core is the Messages API: you send a list of messages'
+- id: q2
+  prompt: How does the Messages API return the model's response?
+  options:
+  - As content blocks
+  - As a single HTML page
+  - As an image
+  - As a CSV file
+  answer: 0
+  explanation: The response is a list of content blocks, such as text blocks or tool-use requests.
+  evidence: get back the model's response as content blocks
+- id: q3
+  prompt: What is tool use?
+  options:
+  - The model returns a structured request to call a function you defined
+  - The model runs shell commands on your server directly
+  - A way to install the SDK
+  - A billing feature
+  answer: 0
+  explanation: Your code decides whether and how to run the function; the model only asks.
+  evidence: tool use (the model returns a structured request to call a function you defined)
+- id: q4
+  prompt: Why does Anthropic offer several Claude models?
+  options:
+  - To trade capability, speed and cost — a larger model for hard reasoning, a smaller one for volume
+  - Because each model only speaks one language
+  - Because each model only works with one SDK
+  - To support different operating systems
+  answer: 0
+  explanation: The same code can route hard tasks to a stronger model and high-volume work to a smaller one.
+  evidence: the same code can use a larger model for hard reasoning and a smaller one for high-volume work
+- id: q5
+  prompt: Through which cloud platforms are Claude models available besides Anthropic directly?
+  options:
+  - Amazon Bedrock, Google Cloud and Microsoft Foundry
+  - Only Amazon Bedrock
+  - None; Anthropic only
+  - Only on-premises servers
+  answer: 0
+  explanation: The cloud routes matter when data policy requires staying inside an existing cloud account.
+  evidence: through cloud platforms including Amazon Bedrock, Google Cloud and Microsoft Foundry
+- id: q6
+  prompt: Why might a firm call Claude through a cloud platform rather than directly?
+  options:
+  - Its data policy requires staying inside an existing cloud account
+  - Because direct calls are not possible
+  - Because cloud platforms make the model smarter
+  - To avoid validating outputs
+  answer: 0
+  explanation: Staying inside the existing cloud keeps IAM, logging and contracts in one place.
+  evidence: which matters when a firm's data policy requires staying inside an existing cloud account
+- id: q7
+  prompt: For a regulated firm, which questions matter most about using a model?
+  options:
+  - Where the data goes, which model version answered, what it cost, and whether the output was checked
+  - Only which model is newest
+  - Only how fast it types
+  - Whether it has a dark mode
+  answer: 0
+  explanation: The path and controls matter more than the model itself.
+  evidence: where the data goes, which model version answered, what it cost, and whether the output was checked
+- id: q8
+  prompt: What does a thin internal wrapper around the model API typically do?
+  options:
+  - Maps approved aliases to providers and models, logs tokens and cost, and validates output
+  - Trains a new model
+  - Hides the API key in the prompt
+  - Removes the need for an API key
+  answer: 0
+  explanation: The wrapper keeps governance answers in one place and makes switching routes easy.
+  evidence: a registry that maps an approved alias to a provider and model ID, logs tokens and cost, and validates the output
+- id: q9
+  prompt: Which of these is a con of the hosted API?
+  options:
+  - Data leaves your network unless you use a cloud route
+  - It has no documentation
+  - It cannot return structured output
+  - It only works in Python
+  answer: 0
+  explanation: A hosted API means data is sent to the provider, so routes and terms matter.
+  evidence: 'Hosted API: data leaves your network unless you use a cloud route'
+- id: q10
+  prompt: What should you do because model IDs and versions change?
+  options:
+  - Pin them and re-test before switching
+  - Always use whichever is newest without testing
+  - Hard-code a different ID in every file
+  - Avoid logging which model answered
+  answer: 0
+  explanation: Pinning plus an eval set lets you switch deliberately.
+  evidence: Model IDs and versions change; pin and re-test
+- id: q11
+  prompt: Which is a typical use case for the Claude API?
+  options:
+  - Extracting fields from unstructured text into a fixed schema
+  - Replacing the company's network firewall
+  - Storing files long term
+  - Running a relational database
+  answer: 0
+  explanation: Extraction into a schema is one of the most common production uses.
+  evidence: Extracting fields from unstructured text into a fixed schema.
+- id: q12
+  prompt: What needs handling in batch workloads?
+  options:
+  - Rate limits
+  - Screen resolution
+  - Font licences
+  - Keyboard layouts
+  answer: 0
+  explanation: Large batches hit rate limits, so add retries, backoff and pacing.
+  evidence: Rate limits need handling in batch workloads
+- id: q13
+  prompt: Which environment variable does the Python SDK read for the key by default?
+  options:
+  - ANTHROPIC_API_KEY
+  - CLAUDE_TOKEN
+  - OPENAI_API_KEY
+  - AWS_SECRET
+  answer: 0
+  explanation: Set ANTHROPIC_API_KEY and the client picks it up; keep keys out of code.
+  evidence: Install with pip install anthropic, set ANTHROPIC_API_KEY
