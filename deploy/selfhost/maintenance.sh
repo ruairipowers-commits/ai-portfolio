@@ -226,6 +226,12 @@ maintenance_main() {
   if [ "$have_docker" = 1 ] && [ -f "$compose_file" ]; then
     ollama_version="$(timeout 60 "${COMPOSE[@]}" exec -T ollama ollama --version 2>/dev/null |
                       grep -oE '[0-9]+\.[0-9]+\.[0-9]+[A-Za-z0-9.+-]*' | tail -1 || true)"
+    # OLLAMA_SHARED=1: no bundled container — ask the machine's own Ollama (host port 11434) instead
+    if [ -z "$ollama_version" ] && command -v curl >/dev/null; then
+      ollama_version="$(curl -fsS -m 10 http://127.0.0.1:11434/api/version 2>/dev/null |
+                        grep -oE '[0-9]+\.[0-9]+\.[0-9]+[A-Za-z0-9.+-]*' | head -1 || true)"
+      [ -n "$ollama_version" ] && ollama_version="$ollama_version (host)"
+    fi
   fi
   echo "ollama ${ollama_version:-not running}, model ${OLLAMA_MODEL:-unset}; docker ${docker_version:-unavailable}"
 
