@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% block title %}Register or sign in · Crash course{% endblock %}{% block wrapclass %}narrow{% endblock %}
+{% block body %}
+<h1>Register or sign in</h1>
+<p class="lead">Enter your email and we'll send a one-time sign-in link. New here? That registers you.</p>
+<form method="post" action="{{ R }}/signin" class="card">
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <input type="hidden" name="next" value="{{ next }}">
+  <label for="email">Email</label><input id="email" type="email" name="email" required maxlength="254" value="{{ email or '' }}" autocomplete="email">
+  <label for="name">Name to show <span class="muted small">(optional)</span></label><input id="name" type="text" name="name" maxlength="40" value="{{ name or '' }}">
+  {% if invite_only %}<label for="invite">Invite code</label><input id="invite" type="text" name="invite" maxlength="64">{% endif %}
+  <p><button class="btn" type="submit">Send my link</button></p>
+  <p class="muted small">We store your email to sign you in and to tell you about your suggestions — nothing else. You can delete everything from your account page.</p>
+</form>
+{% endblock %}

@@ -1,0 +1,242 @@
+course: bedrock
+level: familiar
+version: 1
+title: Amazon Bedrock in 15 minutes
+status: draft
+source:
+  page: tech/bedrock.md
+  docs: https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Amazon Bedrock page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    Amazon Bedrock is AWS's managed service for calling foundation models. It gives you **one API** to models from
+    Amazon and from other providers — including Anthropic and OpenAI — and it runs inside your AWS account's
+    security, logging and billing.
+
+    You call models through the `bedrock-runtime` endpoint with the AWS SDK. The **Converse API** is the
+    recommended, model-neutral interface: the same request shape works across models, so switching providers is
+    mostly a change of model ID. Around the models, Bedrock adds managed pieces such as **Knowledge Bases** for
+    retrieval and options for customising models.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    AWS announced Bedrock in 2023 and made it generally available later that year, as its answer to a simple
+    customer question: "how do we use these new models without sending data to a new vendor outside our cloud?"
+    The model line-up has grown steadily since, and features like Knowledge Bases, guardrails and agents have been
+    added around it.
+
+    Today it is the usual production route for firms that already run on AWS: the risk team keeps its existing
+    controls — IAM policies on who can invoke which model, AWS audit logging — with one bill and one contract.
+- id: business
+  heading: How it fits business users
+  body: |
+    Business users never see Bedrock, but it is often what makes an AI project *approvable*. A security review
+    that already covers AWS can extend to model calls in Bedrock far more easily than to a new vendor with its own
+    keys, contract and data terms.
+
+    It also gives the business flexibility: because the Converse API is model-neutral, a team can compare a cheaper
+    model against a stronger one on the same task and choose on evidence.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Calling Claude or other models** from AWS workloads without a separate vendor key.
+    - **Swapping models** behind one API for cost or capability tests.
+    - **Managed retrieval (RAG)** over documents in S3 with Knowledge Bases.
+    - **Model calls from ECS, Lambda or Step Functions** using IAM roles.
+    - **Keeping AI usage inside an existing cloud security review.**
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Models from several providers behind one API | Model and feature availability varies by region |
+    | IAM, logging and billing through your AWS account | New models can reach Bedrock later than the provider's own API |
+    | No separate vendor keys to manage | Managed features (e.g. Knowledge Bases) add AWS lock-in |
+    | Converse API makes model swaps cheap | Model access and quotas need setting up per account |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Amazon Bedrock documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html) — the
+      official user guide from Amazon Web Services.
+    - [Get started with the API](https://docs.aws.amazon.com/bedrock/latest/userguide/getting-started-api.html) —
+      credentials, model access and a first call.
+    - Within the guide, read the **Converse API** and **Knowledge Bases** chapters next.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below calls a model through the Converse API with boto3. It needs an AWS account with model access
+    enabled in one region; if you don't have that, read the code and expected output — the request shape is the
+    lesson, and it is the same for every model on Bedrock.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"Why Bedrock instead of calling the model vendor directly?"** Governance: IAM on who can invoke which
+      model, AWS logging of every call, one bill and contract, no new vendor keys. The trade-off: new models can
+      arrive later, and availability varies by region.
+    - **"What is the Converse API?"** Bedrock's model-neutral interface; the same request works across models, so
+      a swap is mostly a model ID change.
+    - **"How would you move a prototype to production on Bedrock?"** Keep the code behind a model registry with
+      aliases; the AWS deployment points the alias at a Bedrock model ID; re-run the evals before switching.
+
+    Pitfall: assuming every model and feature is in every region. Check availability before promising a design.
+project:
+  title: One call through the Converse API
+  kind: runnable
+  minutes: 4
+  goal: Call a model on Bedrock from Python and print the reply.
+  steps:
+  - Make sure your AWS credentials work (`aws sts get-caller-identity`) and that model access is enabled for a model in us-east-1.
+  - Run `pip install boto3`.
+  - Save the code below as `hello_bedrock.py`, set `MODEL_ID` to a model you have access to, and run it.
+  - Swap `MODEL_ID` for a different provider's model and run it again — nothing else changes.
+  code: |
+    import boto3
+
+    MODEL_ID = "anthropic.claude-opus-4-7"   # any model your account can use
+    client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    response = client.converse(
+        modelId=MODEL_ID,
+        messages=[{"role": "user", "content": [{"text": "Explain what Bedrock is in one sentence."}]}],
+    )
+    print(response["output"]["message"]["content"][0]["text"])
+    print(response["usage"])                 # input and output tokens
+  language: python
+  expected: |
+    One sentence about Bedrock, then a usage line with input and output token counts.
+  done_when:
+  - The call returns text (or you can explain which permission or model-access setting blocked it).
+  - You changed the model ID and the rest of the code stayed the same.
+quiz:
+- id: q1
+  prompt: What does Amazon Bedrock give you?
+  options:
+  - One API to foundation models from several providers, inside your AWS account
+  - A GPU cluster you manage yourself
+  - A vector database only
+  - A chat app for employees
+  answer: 0
+  explanation: Bedrock hosts models from Amazon and other providers behind one API with AWS security and billing.
+  evidence: gives one API to foundation models from several providers, inside your AWS account's security and billing
+- id: q2
+  prompt: Which interface is Bedrock's recommended, model-neutral API?
+  options:
+  - The Converse API
+  - The Messages API
+  - The Completions API
+  - The Embeddings API
+  answer: 0
+  explanation: The same Converse request shape works across models.
+  evidence: The Converse API is the recommended, model-neutral interface
+- id: q3
+  prompt: With the Converse API, what mostly changes when you switch providers?
+  options:
+  - The model ID
+  - The whole request format
+  - The programming language
+  - The AWS account
+  answer: 0
+  explanation: Because the request shape is shared, switching is mostly a change of model ID.
+  evidence: switching providers is mostly a change of model ID
+- id: q4
+  prompt: How is access to Bedrock models controlled?
+  options:
+  - With IAM, like any other AWS service
+  - With a password in the prompt
+  - With a separate vendor key per model
+  - It isn't controlled
+  answer: 0
+  explanation: IAM policies decide who can invoke which model.
+  evidence: Access is controlled with IAM like any other AWS service
+- id: q5
+  prompt: For an investment firm already on AWS, what is the main draw of Bedrock?
+  options:
+  - Governance — calls stay under existing IAM roles, network controls and audit tooling
+  - It is always the cheapest option
+  - It always gets new models first
+  - It needs no setup at all
+  answer: 0
+  explanation: Existing controls, one bill and one contract make AI use easier to approve.
+  evidence: the main draw is governance
+- id: q6
+  prompt: What does Bedrock Knowledge Bases provide?
+  options:
+  - Managed retrieval over documents
+  - A code editor
+  - A billing dashboard
+  - Model training from scratch
+  answer: 0
+  explanation: Knowledge Bases handles chunking, embedding and retrieval for RAG over documents in S3.
+  evidence: Managed retrieval (RAG) over documents in S3 with Knowledge Bases.
+- id: q7
+  prompt: Which is a con of Bedrock?
+  options:
+  - Model and feature availability varies by region
+  - It has no IAM integration
+  - It only hosts Amazon models
+  - It can't be called from Python
+  answer: 0
+  explanation: Check region availability before you design around a model or feature.
+  evidence: Model and feature availability varies by region
+- id: q8
+  prompt: How can new models arrive on Bedrock compared with the provider's own API?
+  options:
+  - Sometimes later
+  - Always earlier
+  - Never
+  - Only on weekends
+  answer: 0
+  explanation: There can be a delay between a provider's launch and Bedrock availability.
+  evidence: New models can reach Bedrock later than the provider's own API
+- id: q9
+  prompt: In AI work, how is Bedrock often used for a pipeline built against a mock or a direct API?
+  options:
+  - As the production route — the alias in a model registry points at a Bedrock model ID
+  - As a replacement for the pipeline's code
+  - Only for local testing
+  - As the source of training data
+  answer: 0
+  explanation: The code stays the same behind the registry; only the alias mapping changes.
+  evidence: the AWS deployment points the alias at a Bedrock model ID
+- id: q10
+  prompt: Which endpoint do you call models through with the AWS SDK?
+  options:
+  - bedrock-runtime
+  - s3-runtime
+  - lambda-models
+  - sagemaker-chat
+  answer: 0
+  explanation: The bedrock-runtime client sends Converse and invoke requests.
+  evidence: You call them through the bedrock-runtime endpoint with the AWS SDK.
+- id: q11
+  prompt: Which provider-compatible APIs does Bedrock also offer for existing code?
+  options:
+  - Anthropic Messages and OpenAI Chat Completions
+  - Only GraphQL
+  - FTP and SMTP
+  - None
+  answer: 0
+  explanation: Compatible APIs let code written against those vendors run on Bedrock with fewer changes.
+  evidence: Bedrock also offers provider-compatible APIs (Anthropic Messages, OpenAI Chat Completions)
+- id: q12
+  prompt: What still needs setting up per account before calling models?
+  options:
+  - Model access and quotas
+  - A new email domain
+  - A Kubernetes cluster
+  - A separate vendor contract per model
+  answer: 0
+  explanation: You request model access and check quotas in each account and region.
+  evidence: Model access and quotas need setting up per account
+- id: q13
+  prompt: What do managed features like Knowledge Bases add, according to the trade-offs?
+  options:
+  - AWS lock-in
+  - Zero cost
+  - Offline operation
+  - Support for every region
+  answer: 0
+  explanation: Managed convenience comes with dependence on AWS-specific features.
+  evidence: Managed features (e.g. Knowledge Bases) add AWS lock-in

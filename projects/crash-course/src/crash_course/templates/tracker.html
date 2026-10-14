@@ -1,0 +1,43 @@
+{% extends "base.html" %}{% block title %}My tracker · Crash course{% endblock %}
+{% block body %}
+<h1>My tracker</h1>
+<p class="lead">Your courses and levels. Pass a level's quiz and mark its project done to unlock the next one.</p>
+{% if not courses %}
+<div class="card"><p>You haven't signed up for a course yet.</p><p><a class="btn" href="{{ R }}/catalog">Choose a course</a></p></div>
+{% endif %}
+{% for t in courses %}{% set c = t.course %}
+<div class="card track" id="c-{{ c.slug }}">
+  <div class="track-head">
+    <h2 style="margin:0"><a href="{{ R }}/course/{{ c.slug }}" style="color:inherit;text-decoration:none">{{ c.title }}</a></h2>
+    <span class="small muted">{{ t.done }} of 3 levels complete</span>
+  </div>
+  <div class="bar" style="margin-top:8px" aria-hidden="true"><i style="width:{{ (t.done / 3 * 100)|round }}%"></i></div>
+  <div class="levels">
+  {% for lv in t.levels %}
+    <div class="level lv-{{ lv.name }} {{ 'locked' if lv.state == 'locked' }}">
+      <h4>{{ lv.label }} <span class="muted" style="font-weight:400">· {{ lv.minutes|dur }}</span></h4>
+      <span class="pill st-{{ lv.state }}">{{ {'locked':'Locked','unlocked':'In progress','complete':'Complete','preparing':'Being prepared'}[lv.state] }}</span>
+      {% if lv.state in ('unlocked', 'complete') %}
+        <div class="meta" style="margin-top:6px">
+          Quiz: {% if lv.quiz_passed %}<span class="done">passed</span>{% else %}not passed{% endif %}{% if lv.attempts %} · best {{ lv.best }}% · {{ lv.attempts }} attempt{{ 's' if lv.attempts != 1 }}{% endif %}<br>
+          {% if lv.parts > 1 %}Checks passed: {{ lv.parts_passed }} of {{ lv.parts }}<br>{% endif %}
+          Project: {% if lv.project_done %}<span class="done">done</span>{% else %}not yet{% endif %}
+        </div>
+        <a class="btn small" href="{{ R }}/learn/{{ c.slug }}/{{ lv.name }}">{{ 'Review materials' if lv.state == 'complete' else 'Open materials' }}</a>
+      {% elif lv.state == 'preparing' %}
+        <p class="meta">Unlocked. The material is being written and reviewed; it will appear here once it's approved.</p>
+      {% else %}
+        <p class="meta">Unlocks after the {{ s.levels[LEVELS[loop.index0 - 1]].label }} level.</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+  </div>
+</div>
+{% endfor %}
+<h2>Want another course?</h2>
+<p><a class="btn ghost" href="{{ R }}/catalog">Browse the catalog</a> <a class="btn ghost" href="{{ R }}/suggest">Suggest a topic</a></p>
+{% if suggestions %}
+<h3>Your suggestions</h3>
+<ul>{% for g in suggestions %}<li>{{ g.text }} — <span class="muted">{{ {'pending':'with the reviewer','approved':'approved','rejected':'declined'}[g.status] }}</span>{% if g.course_slug %} · <a href="{{ R }}/course/{{ g.course_slug }}">course page</a>{% endif %}</li>{% endfor %}</ul>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,247 @@
+course: dbt
+level: familiar
+version: 1
+title: dbt in 15 minutes
+status: draft
+source:
+  page: tech/dbt.md
+  docs: https://docs.getdbt.com/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's dbt page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    dbt (data build tool) turns a folder of SQL `select` statements into a tested, versioned set of tables and views
+    in your warehouse, built in the right order.
+
+    Each **model** is one `select`. When a model needs another, it says so with `{{ ref('other_model') }}`, and dbt
+    works out the dependency graph and the build order from those references. It then materialises each model as a
+    table or a view, records lineage, and runs **tests** — `not_null`, `unique`, `accepted_values`,
+    `relationships` and your own SQL — that fail the build when the data breaks an assumption.
+
+    dbt doesn't store or compute anything itself. An **adapter** connects it to a database, so the same project can
+    run on DuckDB on a laptop and on Postgres, Snowflake or Athena in production.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    dbt was created in 2016 at Fishtown Analytics, a small analytics consultancy, which renamed itself dbt Labs in
+    2020. It popularised the idea of **analytics engineering**: applying software practices — version control, code
+    review, testing, documentation — to the SQL that builds a company's reporting tables.
+
+    Today it is the default transformation layer in a large share of modern data stacks. dbt Core is open source;
+    dbt Labs also sells a hosted platform with scheduling and an IDE.
+- id: business
+  heading: How it fits business users
+  body: |
+    Business users meet dbt through its results: the reporting tables their dashboards read, and the confidence that
+    those numbers were tested before they arrived. dbt also generates documentation and lineage, so an analyst or an
+    auditor can see where a column comes from and what checks it passed.
+
+    For a manager, dbt makes data logic reviewable: a change to how "active client" is defined is a pull request
+    someone approves, not an edit in a BI tool nobody can see.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Staging, intermediate and reporting layers** in a warehouse.
+    - **Data-quality checks** that block bad data from reaching consumers.
+    - **Documenting columns and lineage** for analysts and auditors.
+    - **Porting the same transformations** between a local engine and a cloud warehouse.
+    - **Incremental models** for large, append-heavy tables.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Transformations are plain SQL under version control | Jinja templating can make SQL hard to read |
+    | Built-in tests act as a data-quality gate | Not an orchestrator; scheduling lives elsewhere |
+    | Same project runs on many warehouses via adapters | Adapters differ in SQL dialect and feature support |
+    | Lineage and docs generated from the project | Large projects need conventions or they sprawl |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [dbt documentation](https://docs.getdbt.com/) — the official reference from dbt Labs.
+    - [dbt Learn](https://learn.getdbt.com/) — free official courses; "dbt Fundamentals" is the standard start.
+    - [dbt-duckdb](https://github.com/duckdb/dbt-duckdb) — the adapter that lets you learn on a laptop with no server.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below builds two models on DuckDB — no database server needed — and runs a test on them with a
+    single `dbt build`. You'll see the build order come from the `ref()`, and the test pass.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"What does `ref()` do?"** It declares a dependency on another model. dbt builds the graph from those
+      references, so it knows the build order and can show lineage — and it resolves to the right schema per
+      environment.
+    - **"How do you stop bad data reaching a dashboard?"** Tests in the build — generic tests plus custom SQL — so a
+      failure stops downstream models. `dbt build` runs models and tests together in dependency order.
+    - **"Is dbt an orchestrator?"** No. Something else schedules it (Airflow, Dagster, cron or dbt's own platform).
+    - **"Where does dbt fit in an AI workflow?"** Before the model: compute and test the numbers in SQL, and only
+      pass tested results to the LLM, so every figure in the output traces to a tested model.
+
+    Pitfall: Jinja-heavy SQL nobody can read. Mention you'd keep macros few and models plain.
+project:
+  title: Two models and a test on DuckDB
+  kind: runnable
+  minutes: 4
+  goal: Run dbt build on a tiny project and see models built in dependency order with a test.
+  steps:
+  - Run `pip install dbt-duckdb`, then `dbt init hello_dbt` and choose duckdb when asked.
+  - In `hello_dbt/models/`, replace the examples with the three files shown below.
+  - From the `hello_dbt` folder run `dbt build`.
+  - Change `trades.sql` so one row has a null `account_id`, run `dbt build` again, and watch the test fail.
+  code: |
+    -- models/trades.sql
+    select * from (values ('A1', 100), ('A1', -40), ('B2', 25)) as t(account_id, quantity)
+
+    -- models/positions.sql
+    select account_id, sum(quantity) as quantity
+    from {{ ref('trades') }}
+    group by account_id
+
+    # models/schema.yml
+    version: 2
+    models:
+      - name: positions
+        columns:
+          - name: account_id
+            tests: [not_null, unique]
+  language: sql
+  expected: |
+    dbt builds trades, then positions, then runs 2 tests: "Completed successfully", PASS=4.
+    After adding a null account_id, the not_null test fails and the run reports an error.
+  done_when:
+  - dbt build completed with every model and test passing.
+  - You broke the data on purpose and saw the test stop the build.
+quiz:
+- id: q1
+  prompt: What is a dbt model?
+  options:
+  - A SQL select statement that dbt materialises as a table or view
+  - A machine-learning model
+  - A Python class
+  - A dashboard
+  answer: 0
+  explanation: Each model is one select; dbt builds it into the warehouse.
+  evidence: You write each model as a select statement
+- id: q2
+  prompt: How does one dbt model reference another?
+  options:
+  - With ref()
+  - With an import statement
+  - By copying its SQL
+  - With a foreign key
+  answer: 0
+  explanation: ref() declares the dependency; dbt works out the build order and lineage from it.
+  evidence: reference upstream models with {{ ref('...') }}, and dbt works out the build order
+- id: q3
+  prompt: Does dbt store or compute data itself?
+  options:
+  - No; an adapter connects it to a database that does
+  - Yes, it has its own storage engine
+  - Only for small tables
+  - Only in the cloud
+  answer: 0
+  explanation: The warehouse does the work; dbt compiles and orchestrates the SQL.
+  evidence: dbt itself doesn't store or compute anything; an adapter connects it to a database.
+- id: q4
+  prompt: Which of these is a built-in generic test?
+  options:
+  - not_null
+  - is_profitable
+  - has_dashboard
+  - spell_check
+  answer: 0
+  explanation: Generic tests include not_null, unique, accepted_values and relationships.
+  evidence: generic tests (not_null, unique, accepted_values, relationships) and custom SQL tests fail the build when data breaks an assumption
+- id: q5
+  prompt: How can the same dbt project run on DuckDB locally and on a cloud warehouse in production?
+  options:
+  - By switching the target in profiles.yml
+  - By rewriting every model
+  - By installing a different version of dbt
+  - It can't
+  answer: 0
+  explanation: Adapters and targets let one project run on several engines.
+  evidence: by switching the target in profiles.yml
+- id: q6
+  prompt: Is dbt an orchestrator?
+  options:
+  - No; scheduling lives elsewhere
+  - Yes, it replaces Airflow
+  - Yes, but only for streaming
+  - Only in dbt Core
+  answer: 0
+  explanation: Airflow, Dagster, cron or a hosted platform schedules dbt runs.
+  evidence: Not an orchestrator; scheduling lives elsewhere
+- id: q7
+  prompt: In AI work, when is dbt useful?
+  options:
+  - Before the model is called — compute and test the numbers, then hand results to the LLM
+  - After the model, to fix its arithmetic
+  - Only to store prompts
+  - It has no role in AI work
+  answer: 0
+  explanation: The model never sees data that failed the gate, and figures trace to tested SQL.
+  evidence: dbt is useful before the model is called.
+- id: q8
+  prompt: What happens to the AI step when a dbt test fails?
+  options:
+  - It becomes a hard stop; the model never sees data that didn't pass the gate
+  - The model is asked to fix the data
+  - Nothing; the test is advisory
+  - The test is deleted
+  answer: 0
+  explanation: A failed test blocks the pipeline before any model call.
+  evidence: A failed dbt test becomes a hard stop
+- id: q9
+  prompt: Which is a con of dbt?
+  options:
+  - Jinja templating can make SQL hard to read
+  - It can't run tests
+  - It only works on one database
+  - It has no lineage
+  answer: 0
+  explanation: Heavy macro use hurts readability; keep models plain.
+  evidence: Jinja templating can make SQL hard to read
+- id: q10
+  prompt: What does dbt build do?
+  options:
+  - Runs models and their tests in dependency order
+  - Only compiles SQL without running it
+  - Deploys a website
+  - Trains a model
+  answer: 0
+  explanation: build combines run and test, in graph order.
+  evidence: runs models and their tests in dependency order
+- id: q11
+  prompt: Where do configuration and tests live in a dbt project?
+  options:
+  - In YAML files alongside the SQL
+  - In a separate database table
+  - In the BI tool
+  - In environment variables only
+  answer: 0
+  explanation: Config and tests go through the same code review and Git history as the SQL.
+  evidence: Configuration and tests live alongside the SQL in YAML files
+- id: q12
+  prompt: What idea did dbt popularise?
+  options:
+  - Analytics engineering — software practices applied to SQL transformations
+  - Serverless computing
+  - Microservices
+  - No-code dashboards
+  answer: 0
+  explanation: Version control, review, tests and docs for the SQL that builds reporting tables.
+  evidence: 'It popularised the idea of analytics engineering: applying software practices'
+- id: q13
+  prompt: Which is a typical use case for incremental models?
+  options:
+  - Large, append-heavy tables
+  - Tiny lookup tables
+  - Images
+  - Email templates
+  answer: 0
+  explanation: Incremental models process only new rows instead of rebuilding everything.
+  evidence: Incremental models for large, append-heavy tables.

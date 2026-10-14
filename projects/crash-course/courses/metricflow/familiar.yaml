@@ -1,0 +1,246 @@
+course: metricflow
+level: familiar
+version: 1
+title: MetricFlow and the semantic layer in 15 minutes
+status: draft
+source:
+  page: tech/metricflow.md
+  docs: https://docs.getdbt.com/docs/build/about-metricflow
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's MetricFlow page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    Ask three teams for "revenue last quarter by region" and you can get three different numbers: each wrote its own
+    SQL, with its own joins and filters. A **semantic layer** fixes that by defining each metric once, in one place,
+    and generating the SQL for whatever slice someone asks for.
+
+    **MetricFlow** is the open-source engine behind the dbt Semantic Layer, maintained by dbt Labs. You describe:
+
+    - **semantic models** — which table, its **entities** (keys), **dimensions** (things to group by) and **measures**
+      (things to aggregate);
+    - **metrics** built from them — simple aggregates, ratios, derived expressions.
+
+    At query time you ask for metrics and group-bys, and MetricFlow plans the joins through the entities and emits SQL
+    for your warehouse. It is a definitions-and-compiler layer, not a database.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    MetricFlow was built by Transform, a start-up focused on metrics, and became part of dbt Labs when dbt Labs acquired
+    Transform in 2023. It now powers the dbt Semantic Layer, so metric definitions live in the same project — and the
+    same Git history — as the dbt models they're built on.
+
+    Semantic layers have become a hot topic again because of AI: they give a language model a safe, governed way to get
+    numbers instead of writing its own SQL.
+- id: business
+  heading: How it fits business users
+  body: |
+    For business users the promise is simple: one definition of "revenue" or "active users", shared by every dashboard,
+    notebook and API. When the definition changes, it changes everywhere, through a reviewed pull request.
+
+    It also lets people who don't write SQL ask for governed metrics safely — they pick a metric and a dimension, and
+    the join logic is already correct.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **One definition of a key metric** shared by dashboards, notebooks and APIs.
+    - **Ratios across tables** (spend per query) without hand-writing the join each time.
+    - **Governed self-service** for people who don't write SQL.
+    - **Grounding AI answers**: a model asks for a named metric and gets rows plus the exact SQL.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Metrics defined once, in Git, next to the models | Another YAML vocabulary to learn |
+    | Correct joins across tables via entities | Python API is less documented than the CLI |
+    | Same definitions across warehouses | Hosted Semantic Layer APIs need dbt Cloud |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [About MetricFlow](https://docs.getdbt.com/docs/build/about-metricflow) — the official introduction from dbt Labs.
+    - [Semantic models](https://docs.getdbt.com/docs/build/semantic-models) — entities, dimensions and measures.
+    - [Metrics overview](https://docs.getdbt.com/docs/build/metrics-overview) — simple, ratio and derived metrics.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below is **illustrative**: a semantic model and two metrics for a tiny `orders` table, and the command
+    that would compile a query to SQL. Read it to see how a metric request becomes SQL; running it needs a dbt project
+    with the `dbt-metricflow` package installed.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"What is a semantic layer and why have one?"** Metrics defined once and compiled to SQL on demand, so every
+      consumer gets the same number. It moves join and filter logic out of every dashboard and into reviewed code.
+    - **"Entities, dimensions, measures?"** Entities are keys used for joins, dimensions are what you group by,
+      measures are what you aggregate; metrics are built from measures.
+    - **"How does it help with LLMs?"** It is the cleanest way to stop a model inventing numbers: the model or the code
+      around it requests a named metric, gets rows and the exact SQL, and the SQL is logged for audit.
+
+    Pitfall: calling MetricFlow a database. It compiles SQL; the warehouse runs it.
+project:
+  title: From metric request to SQL
+  kind: illustrative
+  minutes: 4
+  goal: See how a semantic model and metric definitions turn a metric request into SQL.
+  steps:
+  - Read the semantic model below and name its entity, its dimension and its measures.
+  - Read the two metrics; note that average order value is a ratio of two measures.
+  - Read the mf query command; write down the SQL you would expect it to produce. The --explain flag prints the SQL it generates instead of running it.
+  - Compare with "What you should see".
+  code: |
+    semantic_models:
+      - name: orders
+        model: ref('orders')
+        defaults: {agg_time_dimension: ordered_at}
+        entities:   [{name: order_id, type: primary}]
+        dimensions: [{name: region, type: categorical},
+                     {name: ordered_at, type: time, type_params: {time_granularity: day}}]
+        measures:   [{name: revenue, agg: sum, expr: amount},
+                     {name: order_count, agg: count, expr: order_id}]
+    metrics:
+      - {name: revenue, type: simple, type_params: {measure: revenue}}
+      - name: average_order_value
+        type: ratio
+        type_params: {numerator: revenue, denominator: order_count}
+
+    # mf query --metrics revenue,average_order_value --group-by order_id__region --explain
+  language: yaml
+  expected: |
+    SQL that selects region, sum(amount) as revenue, and sum(amount) / count(order_id)
+    as average_order_value from the orders table, grouped by region.
+  done_when:
+  - You identified the entity, dimension and measures.
+  - Your expected SQL matched the shape above.
+quiz:
+- id: q1
+  prompt: What does MetricFlow do?
+  options:
+  - Turns metric definitions into correct SQL for whatever slice someone asks for
+  - Stores data in its own database
+  - Trains machine-learning models
+  - Draws charts
+  answer: 0
+  explanation: Define metrics once; MetricFlow compiles queries for them.
+  evidence: MetricFlow turns metric definitions written next to your dbt models into correct SQL for whatever slice someone asks for.
+- id: q2
+  prompt: Which product does MetricFlow power?
+  options:
+  - The dbt Semantic Layer
+  - Tableau Prep
+  - Excel Power Query
+  - Snowflake Cortex
+  answer: 0
+  explanation: It is the open-source engine behind the dbt Semantic Layer.
+  evidence: MetricFlow is the open-source engine behind the dbt Semantic Layer, maintained by dbt Labs.
+- id: q3
+  prompt: In a semantic model, what are entities?
+  options:
+  - Keys used to plan joins
+  - Charts
+  - User accounts
+  - Warehouses
+  answer: 0
+  explanation: MetricFlow plans joins through entities.
+  evidence: its entities (keys), dimensions and measures
+- id: q4
+  prompt: Is MetricFlow a database?
+  options:
+  - No; it is a definitions-and-compiler layer and the SQL runs on your warehouse
+  - Yes, a columnar database
+  - Yes, a graph database
+  - Yes, an in-memory cache
+  answer: 0
+  explanation: The SQL runs on DuckDB, Snowflake, BigQuery and others through the dbt adapter.
+  evidence: It is a definitions-and-compiler layer, not a database.
+- id: q5
+  prompt: Which metric types can you build from measures?
+  options:
+  - Simple aggregates, ratios and derived expressions
+  - Only counts
+  - Only sums
+  - Only percentages of total
+  answer: 0
+  explanation: Ratios such as spend per query are a common use.
+  evidence: 'simple aggregates, ratios, derived expressions'
+- id: q6
+  prompt: Why is a semantic layer useful for AI?
+  options:
+  - It stops a model inventing numbers — it asks for a named metric and gets rows plus the exact SQL
+  - It makes the model write better SQL
+  - It replaces the model
+  - It stores prompts
+  answer: 0
+  explanation: The SQL behind every number can be logged and audited.
+  evidence: A semantic layer is the cleanest way to stop a model inventing numbers
+- id: q7
+  prompt: How can natural-language questions resolve to metrics without a prompt doing the mapping?
+  options:
+  - By binding each metric to a concept in an ontology
+  - By asking the user to write SQL
+  - By guessing from table names
+  - By storing every answer in a cache
+  answer: 0
+  explanation: Concepts give a governed path from words to metrics.
+  evidence: Binding each metric to a concept in an ontology lets natural-language questions resolve to metrics
+- id: q8
+  prompt: Which is a con of MetricFlow?
+  options:
+  - Another YAML vocabulary to learn
+  - It can't compute ratios
+  - It only works on one warehouse
+  - It has no CLI
+  answer: 0
+  explanation: Semantic models and metrics have their own YAML structure.
+  evidence: Another YAML vocabulary to learn
+- id: q9
+  prompt: What needs dbt Cloud?
+  options:
+  - The hosted Semantic Layer APIs
+  - Running mf query locally
+  - Writing metric YAML
+  - Using DuckDB
+  answer: 0
+  explanation: The open-source engine runs locally; hosted APIs are a dbt Cloud feature.
+  evidence: Hosted Semantic Layer APIs need dbt Cloud
+- id: q10
+  prompt: Which is a typical use case?
+  options:
+  - One definition of "revenue" shared by dashboards, notebooks and APIs
+  - Hosting a website
+  - Sending email alerts
+  - Managing secrets
+  answer: 0
+  explanation: Consistency of definitions is the main point.
+  evidence: One definition of "revenue" or "active users" shared by dashboards, notebooks and APIs.
+- id: q11
+  prompt: Where do MetricFlow metric definitions live?
+  options:
+  - In Git, next to the dbt models
+  - In a BI tool's settings
+  - In a spreadsheet
+  - In the warehouse's system tables
+  answer: 0
+  explanation: Definitions change through reviewed pull requests.
+  evidence: Metrics defined once, in Git, next to the models
+- id: q12
+  prompt: What does the --explain flag on mf query show?
+  options:
+  - The SQL it generates
+  - A chart
+  - The user's permissions
+  - The model's prompt
+  answer: 0
+  explanation: Seeing the SQL is how you check and audit a metric query.
+  evidence: The --explain flag prints the SQL it generates instead of running it.
+- id: q13
+  prompt: Which company built MetricFlow before dbt Labs acquired it?
+  options:
+  - Transform
+  - Fivetran
+  - Looker
+  - Snowflake
+  answer: 0
+  explanation: dbt Labs acquired Transform in 2023.
+  evidence: MetricFlow was built by Transform, a start-up focused on metrics

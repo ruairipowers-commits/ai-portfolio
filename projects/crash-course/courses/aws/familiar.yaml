@@ -1,0 +1,243 @@
+course: aws
+level: familiar
+version: 1
+title: AWS for AI workloads in 15 minutes
+status: draft
+source:
+  page: tech/aws.md
+  docs: https://docs.aws.amazon.com/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's AWS page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    Amazon Web Services (AWS) rents you computing building blocks — storage, databases, compute, messaging,
+    security — as managed services you pay for by use. You don't learn "AWS" as one thing; you learn a handful of
+    services and how they fit together.
+
+    For an AI workload, the map is short:
+
+    - **Store** raw data, documents and audit records in **S3**; lock records that must not change with **Object Lock**.
+    - **Query** files in S3 with **Athena**; catalogue them with **Glue**.
+    - **Run** apps and agents in containers on **ECS Fargate** or **App Runner**, and small event-driven steps in **Lambda**.
+    - **Keep state** in **RDS** or **Aurora Serverless** (Postgres).
+    - **Orchestrate** with **MWAA** (managed Airflow) or **Step Functions**.
+    - **Call models** through **Bedrock**; keep keys in **Secrets Manager**; watch everything in **CloudWatch**
+      and **AWS Budgets**.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    AWS launched its first public services in 2006 — S3 for storage and EC2 for virtual servers — and turned
+    "rent a server by the hour" into the default way to run software. Over time the catalogue shifted from raw
+    servers to managed services: databases that patch themselves, serverless functions, containers without hosts.
+
+    Today it is the largest cloud provider, and in financial services it is often already the approved place to run
+    workloads. That is why an AI project's production path usually maps to AWS services the security team has
+    already reviewed, with Bedrock as the model route.
+- id: business
+  heading: How it fits business users
+  body: |
+    Business users see AWS indirectly: in the app's uptime, in a monthly bill, and in the answers the risk team
+    can give. Choosing managed services moves work from your team to AWS — backups, patching, scaling — at the cost
+    of some lock-in and a bill that needs watching.
+
+    For a firm, the governance story is the selling point: one identity system (IAM) controls who can do what,
+    logging records it, and storage features like Object Lock make records provably unaltered.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Landing zone for data and documents** in S3, with SQL over it via Athena.
+    - **Hosting an internal AI web app** on App Runner or ECS Fargate.
+    - **Scheduled pipelines** on MWAA, and **human approval steps** in Step Functions.
+    - **Immutable audit trails** of what a model was asked and answered, with S3 Object Lock.
+    - **Alerts and notifications** with SNS and SES.
+    - **Cost backstops** with AWS Budgets next to in-app limits.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Managed services take over backups, patching and scaling | Many services and options; easy to over-build |
+    | One identity and logging system (IAM, CloudWatch) across everything | Bucket policies and IAM interact in ways that make access mistakes easy |
+    | Often already approved by a firm's security team | Costs grow quietly (logs, idle environments, minimum charges) |
+    | Pay per use, with serverless options at zero idle cost | Lock-in to AWS-specific managed features |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [AWS documentation](https://docs.aws.amazon.com/) — the official reference from Amazon Web Services.
+    - [AWS Skill Builder](https://skillbuilder.aws/) — free official courses, including Cloud Practitioner
+      Essentials, the usual first step.
+    - [AWS Well-Architected Framework](https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html) —
+      how AWS itself says to design secure, reliable, cost-aware systems.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below is **illustrative** so you don't need an account or a card: it maps one small AI app onto the
+    services above, then shows the two commands you would run to create a bucket and upload a file. If you do have
+    an AWS account, run them — S3 at this size costs effectively nothing.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"How would you deploy this AI app on AWS?"** Walk the map: S3 for inputs and audit, the app in a container
+      on ECS Fargate, Postgres on RDS for state, Bedrock for models with IAM roles instead of keys, Secrets Manager
+      for anything else, CloudWatch and Budgets for operations.
+    - **"How do you make audit records tamper-proof?"** S3 Object Lock in WORM mode with a retention period.
+    - **"Lambda or containers for an agent?"** Containers for long or heavy model calls; Lambda for small glue steps
+      — it has time limits and cold starts.
+    - **"How do you stop costs surprising you?"** Budgets with alerts, cost tags, in-app spend caps, and watching
+      log retention.
+
+    Pitfall: listing services without saying *why* each one is there. Tie every service to a requirement.
+project:
+  title: Map one AI app onto AWS
+  kind: illustrative
+  minutes: 4
+  goal: Choose an AWS service for each part of a small AI app, and see the commands that create its storage.
+  steps:
+  - 'Take this app: a web page where analysts upload a PDF, a model summarises it, and every summary is kept for audit.'
+  - Write down one AWS service for each job — uploads, the web app, the model call, the audit record, the alert when spend is high.
+  - Compare with the answer in "What you should see".
+  - 'Optional, with an account: run the two commands below to create a bucket and upload a file.'
+  code: |
+    aws s3 mb s3://my-first-ai-bucket-12345
+    aws s3 cp note.pdf s3://my-first-ai-bucket-12345/inbox/note.pdf
+  language: bash
+  expected: |
+    Uploads: S3. Web app: App Runner or ECS Fargate. Model call: Bedrock (IAM role, no key).
+    Audit record: S3 with Object Lock. Spend alert: AWS Budgets.
+    The commands print "make_bucket: ..." and "upload: ./note.pdf to s3://..."
+  done_when:
+  - You chose a service for each of the five jobs and can say why.
+  - You can explain what Object Lock adds that a normal bucket doesn't.
+quiz:
+- id: q1
+  prompt: What is Amazon S3?
+  options:
+  - Object storage for files of any size in buckets
+  - A relational database
+  - A container orchestrator
+  - A model hosting service
+  answer: 0
+  explanation: S3 stores files in buckets addressed by key; most other AWS data services read from it.
+  evidence: 'Amazon S3 is object storage: files of any size in buckets, addressed by key.'
+- id: q2
+  prompt: What does S3 Object Lock provide?
+  options:
+  - Write-once-read-many storage, so objects cannot be overwritten or deleted during retention
+  - Faster downloads
+  - Automatic encryption keys rotation
+  - A SQL interface
+  answer: 0
+  explanation: WORM retention makes records provably unaltered — useful for audit trails of model calls.
+  evidence: Object Lock stores objects in write-once-read-many (WORM) mode for a retention period
+- id: q3
+  prompt: What does Amazon Athena do?
+  options:
+  - Runs SQL directly over files in S3 with no cluster to manage
+  - Hosts web apps
+  - Sends email
+  - Stores secrets
+  answer: 0
+  explanation: Athena is serverless SQL over S3, billed per query.
+  evidence: Athena runs SQL directly over files in S3, with no cluster to manage.
+- id: q4
+  prompt: Why is Lambda a poor fit for long or heavy model calls?
+  options:
+  - Execution time limits and cold starts
+  - It cannot call HTTP APIs
+  - It has no logging
+  - It only runs Java
+  answer: 0
+  explanation: Lambda suits small glue steps; long agents belong in containers.
+  evidence: execution time limits and cold starts make it a poor fit for long or heavy model calls
+- id: q5
+  prompt: What does ECS on Fargate let you do?
+  options:
+  - Run Docker containers without managing servers
+  - Query S3 with SQL
+  - Send SMS messages
+  - Train models
+  answer: 0
+  explanation: Fargate runs containers; you scale by task count instead of patching instances.
+  evidence: ECS on Fargate runs Docker containers without managing servers.
+- id: q6
+  prompt: Which service runs Apache Airflow for you?
+  options:
+  - Amazon MWAA
+  - AWS Glue
+  - Amazon SNS
+  - AWS AppConfig
+  answer: 0
+  explanation: MWAA is Managed Workflows for Apache Airflow; existing DAGs move over largely unchanged.
+  evidence: Amazon Managed Workflows for Apache Airflow runs Airflow without operating the scheduler and workers yourself.
+- id: q7
+  prompt: Which Step Functions pattern supports a human approval step?
+  options:
+  - waitForTaskToken, which pauses a workflow until a callback arrives
+  - Parallel fan-out
+  - Cron scheduling
+  - Dead-letter queues
+  answer: 0
+  explanation: The workflow waits durably until the approver's callback returns.
+  evidence: Its waitForTaskToken pattern pauses a workflow until a callback arrives
+- id: q8
+  prompt: Where should model provider API keys live on AWS?
+  options:
+  - Secrets Manager
+  - In the container image
+  - In the S3 bucket name
+  - In CloudWatch logs
+  answer: 0
+  explanation: Secrets Manager keeps keys out of code, images and environment files, with IAM access control.
+  evidence: Model provider keys belong here
+- id: q9
+  prompt: What is AWS AppConfig suited to in an AI app?
+  options:
+  - A kill switch that turns a workflow off without a redeploy
+  - Storing documents
+  - Sending alerts by SMS
+  - Hosting models
+  answer: 0
+  explanation: Validated, staged config changes can switch a workflow off quickly.
+  evidence: 'it suits a kill switch: a workflow can be turned off without a redeploy'
+- id: q10
+  prompt: Why is AWS Budgets a backstop rather than a real-time stop?
+  options:
+  - Billing data lags
+  - It only works monthly
+  - It can't send alerts
+  - It only covers S3
+  answer: 0
+  explanation: Use in-app cost limits for hard stops; Budgets alerts before the invoice.
+  evidence: billing data lags, so it is a backstop, not a real-time stop
+- id: q11
+  prompt: Which is a con of S3 that the course warns about?
+  options:
+  - Bucket policies and IAM interact in ways that make access mistakes easy
+  - It is very expensive for small files
+  - It can't store PDFs
+  - It has no API
+  answer: 0
+  explanation: Access mistakes are the classic S3 failure, so review policies carefully.
+  evidence: bucket policies and IAM interact in ways that make access mistakes easy
+- id: q12
+  prompt: What does CloudWatch collect?
+  options:
+  - Logs, metrics and alarms across AWS services
+  - Model weights
+  - User passwords
+  - Container images
+  answer: 0
+  explanation: CloudWatch is where latency, errors and usage metrics are graphed and alarmed.
+  evidence: Amazon CloudWatch collects logs, metrics and alarms across AWS services.
+- id: q13
+  prompt: Which two services did AWS launch first, in 2006?
+  options:
+  - S3 and EC2
+  - Lambda and Bedrock
+  - RDS and Athena
+  - SNS and SES
+  answer: 0
+  explanation: Storage and virtual servers came first; managed services followed.
+  evidence: AWS launched its first public services in 2006 — S3 for storage and EC2 for virtual servers

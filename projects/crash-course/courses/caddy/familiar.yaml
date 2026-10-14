@@ -1,0 +1,232 @@
+course: caddy
+level: familiar
+version: 1
+title: Caddy in 15 minutes
+status: draft
+source:
+  page: tech/caddy.md
+  docs: https://caddyserver.com/docs/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Caddy page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    Caddy is a web server and **reverse proxy**: it sits in front of your apps, receives every request, and
+    passes it to the right app — while handling HTTPS for you. A reverse proxy is the "front door" of a set of web
+    services; the apps behind it can be simple and listen on local ports.
+
+    Two things make Caddy stand out. First, **automatic HTTPS**: for a public domain name it gets a TLS certificate
+    from a certificate authority, installs it and renews it, with no extra tools. Second, its config file, the
+    **Caddyfile**, is short — a complete reverse-proxy setup is often three lines.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Caddy was first released in 2015 by Matt Holt, written in Go, at a time when getting HTTPS right meant buying
+    certificates and remembering to renew them by hand. Free, automated certificates had just become possible, and
+    Caddy was built to make HTTPS the default rather than an extra step. Caddy 2, a rewrite with a JSON config and
+    an admin API, followed in 2020.
+
+    Today it is a popular choice for small teams, self-hosters and internal tools, often next to Docker. Nginx and
+    cloud load balancers remain more common in large estates.
+- id: business
+  heading: How it fits business users
+  body: |
+    Business users notice a reverse proxy only when it is missing: an app that shows a browser security warning,
+    five different addresses to remember, or a tool anyone on the internet could reach. Caddy gives several apps one
+    tidy front door with working HTTPS, and is the natural place to add login, logging and limits.
+
+    For a manager reviewing risk, the short config is a feature: the whole front door can be read in a minute.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **One entry point for several internal apps**, routed by hostname or path.
+    - **Terminating TLS** in front of an app server such as Streamlit or FastAPI.
+    - **Serving a static site.**
+    - **Security headers, compression and access logs** in one place.
+    - **Simple authentication** in front of an internal tool.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Automatic certificate issuance and renewal | Smaller ecosystem and fewer how-to answers than Nginx |
+    | Caddyfile is short and easy to review | Advanced features need plugins compiled into a custom build |
+    | Single binary, sensible secure defaults | Two config formats (Caddyfile and JSON) can confuse at first |
+    | WebSockets and HTTP/2 work out of the box | Less familiar to many ops teams |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Caddy documentation](https://caddyserver.com/docs/) — the official reference from the Caddy project.
+    - [Caddyfile tutorial](https://caddyserver.com/docs/caddyfile-tutorial) — the config format step by step.
+    - [Caddy community forum](https://caddy.community/) — where most real-world questions are answered.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below proxies `localhost:8080` to a tiny Python web server on port 8000. No domain or certificate
+    is needed — Caddy only fetches certificates for real public names, so local testing stays simple.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"What is a reverse proxy and why use one?"** It receives requests and forwards them to the right backend.
+      It gives several apps one entry point and is where you put TLS, authentication, rate limits, upload size
+      limits and request logs.
+    - **"Why Caddy over Nginx?"** Automatic HTTPS and a config short enough to review at a glance; Nginx has the
+      bigger ecosystem and is more familiar to most ops teams.
+    - **"Why does a reverse proxy matter for AI apps?"** It is where you put authentication before anyone reaches
+      an endpoint that spends model tokens.
+
+    Pitfall: forgetting WebSockets. Streamlit uses them; say you'd check the proxy passes them (Caddy does by default).
+project:
+  title: Proxy a local app through Caddy
+  kind: runnable
+  minutes: 4
+  goal: Put Caddy in front of a local web server and reach it through the proxy.
+  steps:
+  - Install Caddy from the official download page or your package manager.
+  - In one terminal, start a demo app with `python -m http.server 8000`.
+  - Save the config below as `Caddyfile` in an empty folder.
+  - In that folder run `caddy run --config Caddyfile`, then open `http://localhost:8080`.
+  code: |
+    :8080 {
+        reverse_proxy localhost:8000
+        header X-Served-By "caddy"
+    }
+  language: text
+  expected: |
+    The directory listing from the Python server, served at port 8080.
+    Your browser's network tab shows the response header X-Served-By: caddy.
+  done_when:
+  - Port 8080 shows the app that is really running on port 8000.
+  - You can point to the line that would change to add a second app.
+quiz:
+- id: q1
+  prompt: What is Caddy?
+  options:
+  - A web server and reverse proxy with automatic HTTPS
+  - A container runtime
+  - A database
+  - A JavaScript framework
+  answer: 0
+  explanation: Caddy serves sites and proxies to apps, getting and renewing certificates itself.
+  evidence: Caddy is a web server and reverse proxy that obtains and renews TLS certificates automatically
+- id: q2
+  prompt: What is Caddy's configuration file called?
+  options:
+  - The Caddyfile
+  - nginx.conf
+  - docker-compose.yml
+  - caddy.ini
+  answer: 0
+  explanation: The Caddyfile maps site addresses to handlers.
+  evidence: Its configuration, the Caddyfile, maps site addresses to handlers
+- id: q3
+  prompt: What does automatic HTTPS mean in Caddy?
+  options:
+  - For a public domain name it requests, installs and renews a certificate without extra tooling
+  - It encrypts the database
+  - It removes the need for a domain name
+  - It disables HTTP entirely
+  answer: 0
+  explanation: Caddy handles the certificate lifecycle for public names.
+  evidence: for a public domain name it requests a certificate from a certificate authority, installs it and renews it without any extra tooling
+- id: q4
+  prompt: How long is a complete reverse-proxy config in Caddy, often?
+  options:
+  - About three lines
+  - Several hundred lines
+  - It needs a JSON file of at least 50 keys
+  - It can't be done in a file
+  answer: 0
+  explanation: Short configs are one of Caddy's main selling points.
+  evidence: A complete reverse-proxy config is often three lines.
+- id: q5
+  prompt: Why does a reverse proxy matter for AI demos and internal tools?
+  options:
+  - It gives them one front door where you put logging, rate limits and authentication
+  - It makes the models more accurate
+  - It stores the model weights
+  - It replaces the need for an API
+  answer: 0
+  explanation: The front door is where cross-cutting controls belong, before anyone reaches a token-spending endpoint.
+  evidence: A reverse proxy gives them one front door, which is where you want cross-cutting controls
+- id: q6
+  prompt: Which controls belong at the proxy for an app that spends model tokens?
+  options:
+  - Authentication before anyone reaches the endpoint
+  - Model fine-tuning
+  - Prompt templates
+  - Vector indexing
+  answer: 0
+  explanation: Stop unauthenticated users before they cost you money.
+  evidence: authentication before anyone reaches an endpoint that spends model tokens
+- id: q7
+  prompt: Does Caddy's reverse_proxy handle WebSockets, which Streamlit uses?
+  options:
+  - Yes, without extra configuration
+  - No, never
+  - Only with a paid plugin
+  - Only for static files
+  answer: 0
+  explanation: WebSockets pass through by default.
+  evidence: Caddy's reverse_proxy handles them without extra configuration.
+- id: q8
+  prompt: Which is a con of Caddy?
+  options:
+  - Smaller ecosystem and fewer how-to answers than Nginx
+  - It can't serve static sites
+  - It has no HTTPS support
+  - It only runs on Windows
+  answer: 0
+  explanation: Nginx has more community material and is more familiar to ops teams.
+  evidence: Smaller ecosystem and fewer how-to answers than Nginx
+- id: q9
+  prompt: How do you add advanced features that aren't built in?
+  options:
+  - Plugins compiled into a custom build
+  - Editing the Python source at runtime
+  - Uploading a JAR file
+  - They can't be added
+  answer: 0
+  explanation: Caddy is a single Go binary, so extra modules are compiled in.
+  evidence: Advanced features need plugins compiled into a custom build
+- id: q10
+  prompt: What does Caddy ship as?
+  options:
+  - A single Go binary
+  - A Python package with many dependencies
+  - A browser extension
+  - A Docker image only
+  answer: 0
+  explanation: One binary with sensible secure defaults makes it easy to deploy.
+  evidence: Caddy is a single Go binary.
+- id: q11
+  prompt: Which is a typical use case for Caddy?
+  options:
+  - Terminating TLS in front of an app server like Streamlit or FastAPI
+  - Training a model
+  - Running SQL transformations
+  - Storing secrets
+  answer: 0
+  explanation: The app speaks plain HTTP locally; Caddy handles TLS in front.
+  evidence: Terminating TLS in front of an app server (Streamlit, FastAPI, a dashboard).
+- id: q12
+  prompt: Which two configuration formats does Caddy have?
+  options:
+  - The Caddyfile and a JSON config
+  - YAML and TOML
+  - XML and INI
+  - Only environment variables
+  answer: 0
+  explanation: Most setups use the Caddyfile; the JSON config and admin API are there for runtime changes.
+  evidence: Two config formats (Caddyfile and JSON) can confuse at first
+- id: q13
+  prompt: When was Caddy first released?
+  options:
+  - 2015
+  - 1995
+  - 2005
+  - 2024
+  answer: 0
+  explanation: Matt Holt released it in 2015; Caddy 2 followed in 2020.
+  evidence: Caddy was first released in 2015 by Matt Holt, written in Go
