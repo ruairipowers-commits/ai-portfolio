@@ -41,5 +41,6 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          DRAFT_MAIL_FROM: ${{ vars.DRAFT_MAIL_FROM }}   # optional own sender (repo variable)
           ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
         run: python3 scripts/draft_email.py "$POST_PATH"

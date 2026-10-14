@@ -7,7 +7,7 @@ import re
 import smtplib
 import ssl
 from email.message import EmailMessage
-from email.utils import formatdate, make_msgid
+from email.utils import formataddr, formatdate, make_msgid, parseaddr
 
 from .config import data_dir
 
@@ -16,10 +16,24 @@ def configured() -> bool:
     return all(os.getenv(k) for k in ("SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD"))
 
 
+def mail_from() -> str:
+    """The From line. EDITORIAL_MAIL_FROM wins: this app's own sender, so its mail can be filtered on its own.
+    Otherwise the shared SMTP_FROM / MAIL_FROM address is used under this app's name ("Editorial agents").
+    """
+    own = (os.getenv("EDITORIAL_MAIL_FROM") or "").strip()
+    if own:
+        return own
+    for k in ('SMTP_FROM', 'MAIL_FROM'):
+        addr = parseaddr(os.getenv(k) or "")[1]
+        if "@" in addr:
+            return formataddr(('Editorial agents', addr))
+    return os.getenv("SMTP_USER") or "editorial-agents@localhost"
+
+
 def send(to: list[str], subject: str, text: str, html: str) -> str:
     """Returns 'sent', 'written' (outbox file) or raises."""
     msg = EmailMessage()
-    msg["From"] = os.getenv("SMTP_FROM") or os.getenv("SMTP_USER") or "editorial-agents@localhost"
+    msg["From"] = mail_from()
     msg["To"], msg["Subject"] = ", ".join(to), subject
     msg["Message-ID"], msg["Date"] = make_msgid(domain="editorial-agents"), formatdate()
     msg.set_content(text)

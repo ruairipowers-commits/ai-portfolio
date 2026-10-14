@@ -20,7 +20,7 @@ import smtplib
 import ssl
 import threading
 from email.message import EmailMessage
-from email.utils import formatdate, make_msgid
+from email.utils import formataddr, formatdate, make_msgid, parseaddr
 from html import escape
 
 SEVERITY_COLOR = {"low": "#607d8b", "medium": "#b26a00", "high": "#c62828", "critical": "#7b1fa2"}
@@ -83,12 +83,26 @@ def incident_email(inc: dict, rule: dict, wf_name: str, owner: str, url: str, sh
     return {"subject": subject, "text": text, "html": html}
 
 
+def mail_from() -> str:
+    """The From line. GOVERNANCE_MAIL_FROM wins: this app's own sender, so its mail can be filtered on its own.
+    Otherwise the shared SMTP_FROM / MAIL_FROM address is used under this app's name ("Governance console").
+    """
+    own = (os.getenv("GOVERNANCE_MAIL_FROM") or "").strip()
+    if own:
+        return own
+    for k in ('SMTP_FROM', 'MAIL_FROM'):
+        addr = parseaddr(os.getenv(k) or "")[1]
+        if "@" in addr:
+            return formataddr(('Governance console', addr))
+    return os.getenv("SMTP_USER") or "governance-console@localhost"
+
+
 def send_email(recipients: list[str], subject: str, text: str, html: str) -> None:
     """Send through SMTP (STARTTLS on 587, implicit TLS on 465). Raises on failure."""
     host, port = os.environ["SMTP_HOST"], int(os.getenv("SMTP_PORT", "587"))
     user, pw = os.environ["SMTP_USER"], os.environ["SMTP_PASSWORD"]
     msg = EmailMessage()
-    msg["From"], msg["To"], msg["Subject"] = os.getenv("SMTP_FROM") or user, ", ".join(recipients), subject
+    msg["From"], msg["To"], msg["Subject"] = mail_from(), ", ".join(recipients), subject
     msg["Message-ID"] = make_msgid(domain="governance-console")
     msg["Date"] = formatdate(localtime=False)
     msg.set_content(text)

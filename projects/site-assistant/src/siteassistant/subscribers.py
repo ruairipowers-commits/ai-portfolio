@@ -26,7 +26,7 @@ import smtplib
 import ssl
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
-from email.utils import formatdate, make_msgid
+from email.utils import formataddr, formatdate, make_msgid, parseaddr
 
 from . import telemetry
 
@@ -228,10 +228,24 @@ def notify(store, pages: dict, site_url: str, max_posts: int = 2) -> list[str]:
     return new
 
 
+def mail_from() -> str:
+    """The From line. ASSISTANT_MAIL_FROM wins: this app's own sender, so its mail can be filtered on its own.
+    Otherwise the shared SMTP_FROM / MAIL_FROM address is used under this app's name ("Site assistant").
+    """
+    own = (os.getenv("ASSISTANT_MAIL_FROM") or "").strip()
+    if own:
+        return own
+    for k in ('SMTP_FROM', 'MAIL_FROM'):
+        addr = parseaddr(os.getenv(k) or "")[1]
+        if "@" in addr:
+            return formataddr(('Site assistant', addr))
+    return os.getenv("SMTP_USER") or "blog@localhost"
+
+
 def send(to: str, subject: str, text: str, page: str, unsubscribe_url: str | None = None) -> str:
     """One message to one person (never a shared To/Cc list). Offline: written to warehouse/outbox."""
     msg = EmailMessage()
-    msg["From"] = os.getenv("SMTP_FROM") or os.getenv("SMTP_USER") or "blog@localhost"
+    msg["From"] = mail_from()
     msg["To"], msg["Subject"] = to, subject
     msg["Message-ID"], msg["Date"] = make_msgid(domain="site-assistant"), formatdate()
     if unsubscribe_url:
