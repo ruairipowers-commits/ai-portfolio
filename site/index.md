@@ -85,8 +85,12 @@ right, measuring the model honestly, and governing it so people can trust it.
 
 - :material-book-open-variant: **[Learn](learn/index.md)**
 
-    A [crash course](learn/index.md) on any tool here in 15 minutes, an hour or an afternoon, two MIT
-    [classes](classes/index.md), and a page on every [technology](tech/index.md) used here.
+    A [crash course](learn/index.md) on any tool here in 15 minutes, an hour or an afternoon, and two MIT
+    [classes](classes/index.md).
+
+- :material-tools: **[Technologies](tech/index.md)**
+
+    A page on every tool used here: what it is, why I chose it, and which projects use it.
 
 - :material-chat-question-outline: **Ask**
 
