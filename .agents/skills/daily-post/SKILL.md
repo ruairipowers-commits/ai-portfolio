@@ -1,14 +1,13 @@
 ---
 name: daily-post
-description: Daily blog post from the top of the editorial queue — a local model on the EVO-X1 drafts it, Claude reviews and edits it, code gates it, and it auto-publishes tagged AutoPublished (or waits as a draft PR). Logs the local-vs-Claude comparison. Used by the daily scheduled task.
+description: Daily blog post from the top of the editorial queue — a local model on the EVO-X1 drafts it, Claude reviews and edits it, code gates it, and it opens a pull request for Ruairi to merge (ready-to-publish or needs-work), tagged AutoPublished. Logs the local-vs-Claude comparison. Used by the daily scheduled task.
 ---
 
-# Daily post: local draft → Claude review → code gate → publish or hold
+# Daily post: local draft → Claude review → code gate → pull request for Ruairi
 
 You are the **reviewer**, not the writer. A local model on Ruairi's EVO-X1 writes the first draft; you research,
-brief it, review and edit its draft, and a separate **editor** subagent scores the result. **Code decides** whether it
-publishes (`editorial gate`). Ruairi asked for this to publish without his review when every check passes; when
-anything fails, it waits for him as a draft pull request.
+brief it, review and edit its draft, and a separate **editor** subagent scores the result. **Code decides** whether it's
+ready (`editorial gate`). Either way it arrives as a pull request: **Ruairi merges every post**, and you never merge.
 
 Read first: `CLAUDE.md`, `factory/style-guide.md`, `projects/editorial-agents/prompts/local-writer.v1.md` (the local
 model's brief), `projects/editorial-agents/prompts/editor.v1.md` (the editor's rubric). Standing rule: never say or
@@ -59,8 +58,8 @@ Setup: `pip install -q -e projects/editorial-agents`. Work in `drafts/<slug>/` (
   `AutoPublished`), `audience` (two to five roles from `portfolio.yaml` `audiences`, quoting any with a comma),
   `section: AI insight`.
 - Last line, in italics, exactly: *Drafted with AI agents: a local model on my own server wrote the first draft from
-  a topic my scout found, Claude reviewed and edited it, and it was published automatically after passing every
-  check, without my review.*
+  a topic my scout found, Claude reviewed and edited it, it passed every automated check, and I approved it for
+  publishing.*
 
 ## 5. Check, edit once, gate
 
@@ -102,7 +101,7 @@ editorial routing log --arm claude-only --topic <id> --slug <slug> --final draft
 
 Both arms count the brief as Claude's writing, so the comparison is like for like.
 
-## 8. Publish or hold
+## 8. Open the pull request
 
 Branch `auto/<slug>` from `main`. Commit `site/blog/posts/<slug>.md` and
 `projects/editorial-agents/metrics/routing-runs.jsonl`, with the usual `Co-Authored-By` trailer. Push. Open the PR with
@@ -120,15 +119,13 @@ Local model: <model> · <seconds> s · defects found in review: <n> · rewritten
 Gate: PUBLISH | HOLD — <reasons if held>
 ```
 
-- **Gate said PUBLISH:** label `auto-published` (create it if missing), then merge it yourself:
-  `gh api -X PUT repos/{owner}/ai-portfolio/pulls/<n>/merge -f merge_method=squash`. The site deploys from `main`.
-- **Gate said HOLD:** change the post's last line to *Drafted with AI agents from a topic my scout found, then edited
-  and approved by me.*, remove `AutoPublished` from its tags, commit that, label the PR `draft-post` **and**
-  `needs-work`, and leave it open. Never merge it. The `draft-post` workflow emails Ruairi.
+- **Gate said PUBLISH:** label the PR `draft-post` **and** `ready-to-publish` (create labels if missing). The
+  `draft-post` workflow emails Ruairi; merging publishes it.
+- **Gate said HOLD:** label the PR `draft-post` **and** `needs-work`, with the gate's reasons at the top of the body.
 
-Never push to `main` directly, never merge a held PR, never change files other than the post and the run log.
+Never merge any PR, never push to `main` directly, never change files other than the post and the run log.
 
 ## 9. Finish
 
-Final message: the topic and its votes, the PR link, PUBLISHED or HELD (and why), the local model's time and the
+Final message: the topic and its votes, the PR link, READY or HELD (and why), the local model's time and the
 review's defect count, whether the comparison arm ran, and anything left out for lack of a source.
