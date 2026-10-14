@@ -3,7 +3,7 @@
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
 (or delete them) as they're done. Last updated 14 October 2026.
 
-## 0000000. Daily auto-published posts + votes + Blog/Learn tabs (15 October 2026, PR #24, `agent/claude-daily-post`)
+## 0000000. Daily auto-published posts + votes + Blog/Learn tabs (14 October 2026, PR #24, `agent/claude-daily-post`)
 
 Built: reader votes on the editorial queue (blog page), daily owner email with votes, `editorial gate` (code decides
 auto-publish), `editorial routing` comparison log rendered into the metrics post, `.agents/skills/daily-post`, Blog
