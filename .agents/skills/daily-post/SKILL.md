@@ -36,14 +36,19 @@ Setup: `pip install -q -e projects/editorial-agents`. Work in `drafts/<slug>/` (
 
 ## 3. Local draft (the EVO-X1)
 
-- Prompt = `local-writer.v1.md` with `{brief}` replaced by the brief's text. Keep it under ~2,500 words in total:
-  the server's context window is 8,192 tokens and the answer needs room.
-- Time it: `date +%s.%N > drafts/<slug>/t0`, then call `mcp__remote-devices__evo-x1__ollama_generate` with
-  `model: gpt-oss:20b`, `temperature: 0.4`, the prompt; then `date +%s.%N > drafts/<slug>/t1`.
-  If gpt-oss:20b fails or returns nothing, retry once with `qwen3-coder:30b` and note it.
-- Save the response **exactly as returned** to `drafts/<slug>/local.md`. Never touch it up: the comparison measures
-  what you change.
-- If the EVO-X1 tools are missing or the call fails twice: the computer is off or unreachable. Stop, open nothing,
+- Prompt = `local-writer.v1.md` with `{brief}` replaced by the brief's text. Save it to `drafts/<slug>/prompt.txt`
+  and send exactly that. Keep it under ~2,000 words: the request's context window is 8,192 tokens and the answer
+  (plus the model's reasoning) needs room.
+- Start a background job: `mcp__remote-devices__evo-x1__ollama_job_start` with `model: gpt-oss:20b`,
+  `temperature: 0.4`, `think: low`, `num_ctx: 8192`, `label: <slug>`, and the prompt. It returns a `job_id` at once.
+  (Never use `ollama_generate` for a draft: the desktop app gives a tool call ~60 s and a draft takes longer.)
+- Poll `mcp__remote-devices__evo-x1__ollama_job_result` with the `job_id` and `wait_seconds: 40` until `status` is
+  `done` (a draft usually takes two to four calls). `error` or `lost`: start once more; if
+  gpt-oss:20b fails again, try `qwen3-coder:30b` once (without `think`) and note it.
+- Save `response` **exactly as returned** to `drafts/<slug>/local.md` and the whole result JSON to
+  `drafts/<slug>/local-metrics.json` (it carries Ollama's exact token counts and timings). Never touch the draft up:
+  the comparison measures what you change.
+- If the EVO-X1 tools are missing or every attempt fails: the computer is off or unreachable. Stop, open nothing,
   and report it. Don't write the draft yourself in its place.
 
 ## 4. Review and edit (you)
@@ -84,10 +89,10 @@ a separate editor subagent on it (`drafts/<slug>/editor-claude.json`). It is **n
 After the gate decision, so `--published` is true only if it really publishes. From the repo root:
 
 ```bash
-T=$(python3 -c "print(float(open('drafts/<slug>/t1').read())-float(open('drafts/<slug>/t0').read()))")
 editorial routing log --arm local-review --topic <id> --slug <slug> --final site/blog/posts/<slug>.md \
   --local-draft drafts/<slug>/local.md --review drafts/<slug>/brief.md drafts/<slug>/review.md \
-  --read drafts/<slug>/sources/*.txt drafts/<slug>/local.md --local-model <model used> --local-seconds "$T" \
+  --sent drafts/<slug>/prompt.txt --local-metrics drafts/<slug>/local-metrics.json \
+  --read drafts/<slug>/sources/*.txt drafts/<slug>/local.md --local-model <model used> \
   --defects <n> --editor-min <lowest final editor score> [--checks-first-pass] [--rewritten] [--published]
 ```
 
@@ -99,7 +104,8 @@ editorial routing log --arm claude-only --topic <id> --slug <slug> --final draft
   --editor-min <its lowest editor score> [--checks-first-pass]
 ```
 
-Both arms count the brief as Claude's writing, so the comparison is like for like.
+Both arms count the brief as Claude's writing, and the local arm also counts the prompt Claude sends to the EVO-X1
+(`--sent`), so the comparison is like for like.
 
 ## 8. Open the pull request
 
