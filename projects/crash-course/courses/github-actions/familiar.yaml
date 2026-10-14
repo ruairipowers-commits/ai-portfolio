@@ -1,0 +1,246 @@
+course: github-actions
+level: familiar
+version: 1
+title: GitHub Actions in 15 minutes
+status: draft
+source:
+  page: tech/github-actions.md
+  docs: https://docs.github.com/en/actions
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's GitHub Actions page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    GitHub Actions is CI/CD built into GitHub: it runs build, test and deploy **workflows** straight from your
+    repository when something happens — a push, a pull request, a schedule, or a manual click.
+
+    A workflow is a YAML file in `.github/workflows/`. It names the **events** that trigger it and lists **jobs**.
+    Each job runs on a **runner** — a GitHub-hosted virtual machine or your own machine — as a sequence of **steps**.
+    A step is either a shell command or a reusable **action** published by GitHub or the community, such as
+    `actions/checkout` (get the code) or `actions/setup-python`.
+
+    Because the workflow lives next to the code, it is versioned and reviewed like everything else, and its results
+    show up on the pull request.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    For years, CI on GitHub meant connecting a separate service such as Travis CI or Jenkins. GitHub announced
+    Actions in 2018, the year Microsoft acquired GitHub, and launched it with full CI/CD support in 2019. Having CI
+    in the same place as the code, with a marketplace of reusable actions, made it the default for a large share of
+    open-source projects within a few years.
+
+    Today it runs tests, builds packages and containers, publishes documentation sites to GitHub Pages, and handles
+    deployments for projects of every size.
+- id: business
+  heading: How it fits business users
+  body: |
+    Business users see CI as reliability and as a rule: "nothing reaches production unless the checks passed".
+    Branch protection can require a green workflow run before a pull request is merged, which turns a team's quality
+    standard into something enforced rather than remembered.
+
+    For AI work the rule matters even more: if an evaluation or a guardrail test regresses, the merge is blocked —
+    the same discipline you'd apply to a pricing library.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Unit tests and linters** on every pull request.
+    - **Building and publishing** container images or Python packages.
+    - **Building a documentation site** and publishing it to GitHub Pages.
+    - **Scheduled jobs** such as nightly data checks or dependency updates.
+    - **Gated deployment**: deploy only after tests pass on the main branch.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | No separate CI server; config lives in the repo | Ties your delivery pipeline to GitHub |
+    | Large marketplace of reusable actions | Third-party actions are a supply-chain risk — pin them to a commit SHA |
+    | Self-hosted runners for private networks | YAML workflows get hard to debug as they grow |
+    | Results integrate with PRs and branch protection | Hosted-runner minutes and storage are metered on private repos |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [GitHub Actions documentation](https://docs.github.com/en/actions) — the official reference from GitHub.
+    - [Workflow syntax](https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions) —
+      every key in a workflow file.
+    - [GitHub Marketplace: Actions](https://github.com/marketplace?type=actions) — reusable actions, to use with care.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below adds a workflow that runs a tiny Python test on every push, then breaks the test on purpose so
+    you can see a red run and its log. You need a GitHub account and a repository you can push to.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"How would you set up CI for an AI project?"** Run the whole pipeline offline against a mock model on every
+      change: schema validation of model output, data-quality tests, and a small eval set with a pass threshold.
+      Block the merge if anything regresses.
+    - **"Do real model calls run in CI?"** Not by default — cost, flakiness and secrets. Put them in a separately
+      triggered workflow, with keys held in repository secrets.
+    - **"What's the supply-chain risk?"** Third-party actions run with access to your workflow; pin them to a commit
+      SHA rather than a moving tag, and limit the token's permissions.
+    - **"When would you use a self-hosted runner?"** When a job must reach machines inside a private network.
+
+    Pitfall: secrets in workflow files or logs. Use encrypted secrets and never echo them.
+project:
+  title: Your first workflow
+  kind: runnable
+  minutes: 4
+  goal: Add a workflow that runs tests on every push, and see a passing and a failing run.
+  steps:
+  - 'In a repository, add `test_math.py` containing `def test_add(): assert 1 + 1 == 2`.'
+  - Save the workflow below as `.github/workflows/ci.yml`, commit and push.
+  - Open the repository's Actions tab and watch the run go green.
+  - Change the test to `assert 1 + 1 == 3`, push, and read the failing step's log.
+  code: |
+    name: ci
+    on: [push, pull_request]
+    jobs:
+      test:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-python@v5
+            with:
+              python-version: "3.12"
+          - run: pip install pytest
+          - run: pytest -q
+  language: yaml
+  expected: |
+    First run: green, with "1 passed" in the pytest step.
+    Second run: red, with "assert 2 == 3" in the failing step's log.
+  done_when:
+  - You saw one green and one red run in the Actions tab.
+  - You can say which event triggered the run and where that is declared.
+quiz:
+- id: q1
+  prompt: Where does a GitHub Actions workflow file live?
+  options:
+  - In .github/workflows/
+  - In the repository's wiki
+  - In a separate CI server
+  - In the README
+  answer: 0
+  explanation: Workflows are YAML files in the repository, versioned with the code.
+  evidence: A workflow is a YAML file in .github/workflows/.
+- id: q2
+  prompt: What runs a job?
+  options:
+  - A runner — a GitHub-hosted VM or your own machine
+  - The browser
+  - A database
+  - The pull request author's laptop, always
+  answer: 0
+  explanation: Runners can be hosted by GitHub or self-hosted.
+  evidence: each job runs on a runner (a GitHub-hosted VM or your own machine)
+- id: q3
+  prompt: What is a step in a job?
+  options:
+  - A shell command or a reusable action
+  - A database table
+  - A branch
+  - A pull request comment
+  answer: 0
+  explanation: Steps run in order; actions such as actions/checkout are reusable building blocks.
+  evidence: shell commands or reusable "actions" published by GitHub and the community
+- id: q4
+  prompt: How can CI results gate a merge?
+  options:
+  - Branch protection can require a green run before merge
+  - They can't; CI is advisory only
+  - By deleting the branch
+  - By emailing the reviewer
+  answer: 0
+  explanation: Required checks turn the quality standard into an enforced rule.
+  evidence: branch protection can require a green run before merge
+- id: q5
+  prompt: Why use a self-hosted runner?
+  options:
+  - So a job can execute inside your own network
+  - To get free GitHub-hosted minutes
+  - To avoid writing YAML
+  - To make tests pass
+  answer: 0
+  explanation: Useful when a deploy step must reach a machine that isn't on the public internet.
+  evidence: Self-hosted runners let a job execute inside your own network
+- id: q6
+  prompt: How should third-party actions be referenced to reduce supply-chain risk?
+  options:
+  - Pinned to a commit SHA
+  - By the latest tag only
+  - By copying them into comments
+  - It doesn't matter
+  answer: 0
+  explanation: A SHA can't move under you the way a tag can.
+  evidence: pin them to a commit SHA
+- id: q7
+  prompt: What does the AI CI pattern in this course run on every change?
+  options:
+  - The whole pipeline offline against a mock model, with schema checks, data tests and a small eval set
+  - Real model calls on every push
+  - Only a spell check
+  - Nothing until release day
+  answer: 0
+  explanation: Offline runs are cheap, deterministic and keep keys out of CI.
+  evidence: run the whole pipeline offline against a mock model on every change
+- id: q8
+  prompt: Why do real model calls generally stay out of default CI?
+  options:
+  - Cost, flakiness and secrets
+  - Models can't be called from Linux
+  - GitHub forbids HTTP calls
+  - They are always free
+  answer: 0
+  explanation: Put live calls in a separately triggered workflow with keys in repository secrets.
+  evidence: Real model calls generally stay out of default CI (cost, flakiness, secrets)
+- id: q9
+  prompt: What happens if an eval or guardrail test regresses in this pattern?
+  options:
+  - The merge is blocked
+  - The test is skipped
+  - The model is retrained automatically
+  - The workflow deletes the repository
+  answer: 0
+  explanation: The same discipline you would apply to a pricing library.
+  evidence: If the eval or a guardrail test regresses, the merge is blocked
+- id: q10
+  prompt: Which is a con of GitHub Actions?
+  options:
+  - YAML workflows get hard to debug as they grow
+  - It can't run tests
+  - It needs a separate CI server
+  - It has no marketplace
+  answer: 0
+  explanation: Keep workflows small and move logic into scripts you can run locally.
+  evidence: YAML workflows get hard to debug as they grow
+- id: q11
+  prompt: What is metered on private repositories?
+  options:
+  - Hosted-runner minutes and storage
+  - The number of branches
+  - The number of commits
+  - README length
+  answer: 0
+  explanation: Public repositories get free hosted minutes; private ones are metered.
+  evidence: Hosted-runner minutes and storage are metered on private repos
+- id: q12
+  prompt: Which is a typical use case?
+  options:
+  - Building a static documentation site and publishing it to GitHub Pages
+  - Hosting a production database
+  - Running a chat app for staff
+  - Storing large media files
+  answer: 0
+  explanation: Building and publishing docs on push is a classic workflow.
+  evidence: Building a static documentation site and publishing it to GitHub Pages.
+- id: q13
+  prompt: When did GitHub launch Actions with full CI/CD support?
+  options:
+  - 2019
+  - 2008
+  - 2014
+  - 2024
+  answer: 0
+  explanation: Announced in 2018, it launched with CI/CD in 2019.
+  evidence: GitHub announced Actions in 2018, the year Microsoft acquired GitHub, and launched it with full CI/CD support in 2019.

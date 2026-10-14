@@ -1,0 +1,41 @@
+{% extends "base.html" %}{% block title %}Owner decision · Crash course{% endblock %}{% block wrapclass %}narrow{% endblock %}
+{% block body %}
+{% if kind == 'suggestion' %}{% set a = row.assessment %}
+<h1>Suggestion #{{ row.id }}: {{ 'approve' if decision == 'approve' else 'reject' }}?</h1>
+<div class="card">
+  <p class="q">“{{ row.text }}”</p>
+  <p>Agent assessment: <span class="pill {{ 'st-complete' if a.verdict == 'approve-recommended' else ('st-preparing' if a.verdict == 'needs-review' else 'st-locked') }}">{{ a.verdict }}</span>
+  {% if a.categories %}<span class="small muted">{{ a.categories|join(', ') }}</span>{% endif %}</p>
+  <ul class="small">{% for r in a.reasons %}<li>{{ r }}</li>{% endfor %}</ul>
+  {% if a.duplicate_of %}<p class="small">Close to the existing course <a href="{{ R }}/course/{{ a.duplicate_of }}">{{ a.duplicate_of }}</a>.</p>{% endif %}
+  <p class="small muted">Status: {{ row.status }}{% if row.decided_by %} — decided by {{ row.decided_by }}{% endif %}</p>
+</div>
+{% if row.status == 'pending' %}
+<form method="post" action="{{ R }}/owner/decide" class="card" style="margin-top:14px">
+  {% for k, v in {'k': kind, 'r': ref, 'd': decision, 'e': e, 'sig': sig}.items() %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+  {% if decision == 'approve' %}
+  <label for="title">Course title</label><input id="title" type="text" name="title" maxlength="80" value="{{ a.proposed_title or row.text }}">
+  <label for="docs">Official documentation (https) — the course is grounded in it</label><input id="docs" type="url" name="docs" value="{{ a.official_docs }}" placeholder="https://…">
+  <label for="notes">Source notes for the writer (optional): key facts, scope, what to leave out</label><textarea id="notes" name="notes" maxlength="4000"></textarea>
+  {% if a.proposed_outline %}<p class="small muted">Proposed outline: {{ a.proposed_outline|join(' · ') }}</p>{% endif %}
+  <p><button class="btn ok" type="submit">Approve and create the course</button></p>
+  {% else %}
+  <label for="notes">Note (optional, not sent to the learner)</label><textarea id="notes" name="notes" maxlength="500"></textarea>
+  <p><button class="btn bad" type="submit">Reject</button></p>
+  {% endif %}
+</form>
+{% endif %}
+{% else %}
+<h1>{{ ref }}: {{ decision }}?</h1>
+{% if lv %}
+<div class="card"><p>{{ lv.title }} — {{ lv.status }} v{{ lv.version }}, written by {{ lv.provenance.written_by }}.</p>
+<p><a href="{{ preview }}">Open the preview</a> (with content-check results and the answer key).</p></div>
+{% if lv.status == 'draft' %}
+<form method="post" action="{{ R }}/owner/decide" class="card" style="margin-top:14px">
+  {% for k, v in {'k': kind, 'r': ref, 'd': decision, 'e': e, 'sig': sig}.items() %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+  {% if decision != 'publish' %}<label for="notes">Why (optional)</label><textarea id="notes" name="notes" maxlength="300"></textarea>{% endif %}
+  <p><button class="btn {{ 'ok' if decision == 'publish' else 'bad' }}" type="submit">{{ 'Publish this level' if decision == 'publish' else 'Reject this draft' }}</button></p>
+</form>{% endif %}
+{% else %}<p>No draft found.</p>{% endif %}
+{% endif %}
+{% endblock %}

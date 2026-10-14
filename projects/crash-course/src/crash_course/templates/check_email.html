@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% block wrapclass %}narrow{% endblock %}
+{% block body %}
+<h1>Check your email</h1>
+<p class="lead">If the address is right, a sign-in link is on its way. It works once and expires in {{ s.registration.magic_link_minutes }} minutes.</p>
+{% if link %}<div class="note"><b>Offline demo:</b> no email is sent here, so this is your link: <a id="dev-link" href="{{ link }}">sign in</a></div>{% endif %}
+{% endblock %}

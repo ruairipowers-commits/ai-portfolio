@@ -1,0 +1,244 @@
+course: docker
+level: familiar
+version: 1
+title: Docker in 15 minutes
+status: draft
+source:
+  page: tech/docker.md
+  docs: https://docs.docker.com/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Docker page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    Docker packages an application and everything it needs — the OS libraries, the language runtime, your code and
+    the command that starts it — into an **image**. A running copy of an image is a **container**. Because the image
+    carries its own dependencies, it runs the same way on a laptop, a home server or a cloud service.
+
+    Three words cover most of it:
+
+    - a **Dockerfile** lists the steps to build an image;
+    - `docker build` produces the image and `docker run` starts a container from it;
+    - a **registry** (Docker Hub, GitHub Container Registry, Amazon ECR) stores images so they can be pulled wherever
+      they need to run.
+
+    **Docker Compose** describes several containers that work together — an app, a database, a scheduler — in one
+    file, so `docker compose up` starts the whole stack.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Linux had container features for years, but they were hard to use. Docker, released as open source in 2013 by a
+    company then called dotCloud, made them simple: one file to describe an environment, one command to run it, and
+    a shared place to publish images. Within a few years the image format was standardised through the Open
+    Container Initiative, so images built with Docker run on other runtimes too.
+
+    Today the container image is the standard unit of deployment. Kubernetes, AWS ECS Fargate and App Runner,
+    Google Cloud Run and Hugging Face Spaces all take one as their input.
+- id: business
+  heading: How it fits business users
+  body: |
+    Business users never touch Docker, but they benefit from what it removes: "it works on my machine" surprises,
+    slow hand-built servers, and test environments that don't match production. One image moves unchanged through
+    test, staging and production, so what was approved is what runs.
+
+    For a risk or audit team it adds precision: an image tag records exactly which code and dependencies produced a
+    set of results.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Reproducible dev environments**: "works on my machine" becomes "works in the image".
+    - **Multi-service stacks locally** with Docker Compose.
+    - **One artifact through test, staging and production.**
+    - **Isolating apps** from each other on a shared server.
+    - **Pinning system libraries** that Python packages depend on.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Same artifact runs everywhere | Images get large without care (multi-stage builds, slim bases) |
+    | Compose makes multi-service stacks one command | Docker Desktop requires a paid licence for larger companies |
+    | Standard input to every managed container platform | Base images need regular patching for CVEs |
+    | Clean isolation between apps on one host | Persistent data needs explicit volumes or it is lost on rebuild |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Docker documentation](https://docs.docker.com/) — the official reference from Docker, Inc. Start with "Get
+      started".
+    - [Dockerfile reference](https://docs.docker.com/reference/dockerfile/) — every instruction explained.
+    - [Compose file reference](https://docs.docker.com/reference/compose-file/) — for multi-container stacks.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below builds an image for a three-line Python web server and runs it. You'll write a Dockerfile,
+    build, run, and then prove the container is isolated from your machine.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"Image vs container?"** An image is the built, read-only package; a container is a running instance of it.
+      Many containers can run from one image.
+    - **"How would you containerise an AI app safely?"** Slim base image, pinned dependencies, run as a non-root
+      user, only the files it needs, and API keys passed as environment variables at runtime — never baked into the
+      image.
+    - **"Where does data live?"** Not in the container. Containers are disposable; data goes in volumes or a database,
+      otherwise it is lost on rebuild.
+    - **"Why does Docker help evals?"** An image tag pins exactly which code produced which results.
+
+    Pitfall: secrets in the Dockerfile or the image. Anyone who pulls the image can read them.
+project:
+  title: Build and run your first image
+  kind: runnable
+  minutes: 4
+  goal: Write a Dockerfile, build an image and run a container you can reach in the browser.
+  steps:
+  - Install Docker (Docker Desktop or Docker Engine) and check `docker --version`.
+  - In an empty folder, create `index.html` containing `<h1>Hello from a container</h1>`.
+  - Save the Dockerfile below in the same folder.
+  - Run `docker build -t hello-docker .` then `docker run --rm -p 8080:8000 hello-docker`.
+  - Open `http://localhost:8080`, then stop the container with Ctrl-C.
+  code: |
+    FROM python:3.12-slim
+    WORKDIR /app
+    COPY index.html .
+    USER nobody
+    EXPOSE 8000
+    CMD ["python", "-m", "http.server", "8000"]
+  language: dockerfile
+  expected: |
+    docker build ends with "naming to docker.io/library/hello-docker".
+    The browser at localhost:8080 shows "Hello from a container".
+  done_when:
+  - The page loads from the container.
+  - You can explain what -p 8080:8000 maps, and why USER nobody is there.
+quiz:
+- id: q1
+  prompt: What does a Docker image contain?
+  options:
+  - An application and everything it needs to run
+  - Only the source code
+  - Only the database
+  - A virtual machine's BIOS
+  answer: 0
+  explanation: The image carries its dependencies, so it runs the same way anywhere.
+  evidence: Docker packages an application and everything it needs into a container image
+- id: q2
+  prompt: What does a Dockerfile do?
+  options:
+  - Lists the steps to build an image
+  - Stores container logs
+  - Configures DNS
+  - Holds API keys
+  answer: 0
+  explanation: Base layer, packages, code and the start command.
+  evidence: A Dockerfile lists the steps to build an image
+- id: q3
+  prompt: Which command starts a container from an image?
+  options:
+  - docker run
+  - docker build
+  - docker push
+  - docker compose down
+  answer: 0
+  explanation: build makes the image; run starts a container from it.
+  evidence: docker build produces the image; docker run starts a container from it.
+- id: q4
+  prompt: What does Docker Compose describe?
+  options:
+  - Several containers that work together in one file
+  - A single shell command
+  - A Kubernetes cluster
+  - A cloud billing account
+  answer: 0
+  explanation: Compose starts an app, database and scheduler together with docker compose up.
+  evidence: Docker Compose describes several containers that work together
+- id: q5
+  prompt: Where are images pushed so they can be pulled elsewhere?
+  options:
+  - A registry such as Docker Hub or Amazon ECR
+  - A CSV file
+  - The browser cache
+  - An email attachment
+  answer: 0
+  explanation: Registries store and distribute images.
+  evidence: Images are pushed to a registry (Docker Hub, GitHub Container Registry, Amazon ECR)
+- id: q6
+  prompt: How should model API keys reach a container?
+  options:
+  - As environment variables at runtime, not in the image
+  - Baked into the image
+  - In the Dockerfile as comments
+  - In the image name
+  answer: 0
+  explanation: Anyone who pulls an image can read what's inside it.
+  evidence: receives model API keys as environment variables at runtime rather than in the image
+- id: q7
+  prompt: What happens to persistent data without explicit volumes?
+  options:
+  - It is lost on rebuild
+  - It is backed up automatically
+  - It moves to the cloud
+  - It becomes read-only
+  answer: 0
+  explanation: Containers are disposable; data belongs in volumes or a database.
+  evidence: Persistent data needs explicit volumes or it is lost on rebuild
+- id: q8
+  prompt: Why do AI apps benefit especially from images?
+  options:
+  - They often have awkward dependencies such as native libraries and specific Python versions
+  - Images make models more accurate
+  - Images remove the need for testing
+  - Images include free GPUs
+  answer: 0
+  explanation: Baking dependencies in removes a whole class of deployment surprises.
+  evidence: AI apps often have awkward dependencies — native libraries for PDF parsing, database extensions such as vector search, specific Python versions.
+- id: q9
+  prompt: For evaluation work, what does an image tag give you?
+  options:
+  - A precise record of which code produced which results
+  - Faster model inference
+  - A cheaper API bill
+  - Automatic labels for data
+  answer: 0
+  explanation: Pin the image and you can reproduce or explain a result later.
+  evidence: an image tag is a precise record of which code produced which results
+- id: q10
+  prompt: Which is a con of Docker?
+  options:
+  - Base images need regular patching for CVEs
+  - It can't run Python
+  - It only works on Windows
+  - It has no networking
+  answer: 0
+  explanation: Old base images carry known vulnerabilities, so rebuild on patched bases.
+  evidence: Base images need regular patching for CVEs
+- id: q11
+  prompt: Which AWS services take a container image as their unit of deployment?
+  options:
+  - ECS Fargate and App Runner
+  - S3 and Athena
+  - SNS and SES
+  - Glue and Budgets
+  answer: 0
+  explanation: Most managed container services start from an image.
+  evidence: The image is the unit of deployment for most managed container services, including ECS Fargate and App Runner on AWS.
+- id: q12
+  prompt: Which security habit should a container follow?
+  options:
+  - Run as a non-root user and hold only the files it needs
+  - Run as root for convenience
+  - Include the whole home directory
+  - Disable all logging
+  answer: 0
+  explanation: Least privilege inside the container limits the damage if it is compromised.
+  evidence: the container runs as a non-root user, holds only the files it needs
+- id: q13
+  prompt: What is the difference between an image and a container?
+  options:
+  - An image is the built package; a container is a running instance of it
+  - They are the same thing
+  - A container builds images
+  - An image is a running process
+  answer: 0
+  explanation: Many containers can run from one image.
+  evidence: A running copy of an image is a container.

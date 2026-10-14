@@ -1,0 +1,242 @@
+course: chartjs
+level: familiar
+version: 1
+title: Chart.js in 15 minutes
+status: draft
+source:
+  page: tech/chartjs.md
+  docs: https://www.chartjs.org/docs/latest/getting-started/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Chart.js page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    Chart.js is an open-source JavaScript library that draws common charts — bar, line, pie, doughnut, scatter and
+    more — onto an HTML `<canvas>` element. You describe the chart as a **configuration object**: a type, the data
+    (labels and datasets) and options such as axes, legends and tooltips. Chart.js handles layout, scaling, hover
+    tooltips and animation.
+
+    It needs no framework and no build step. That makes it a natural fit for server-rendered pages: the server
+    writes the HTML and the numbers, and a few lines of script draw the chart in the browser.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Chart.js was first released in 2013 as a small, simple alternative to heavyweight charting libraries, and it is
+    now maintained by a community of open-source contributors. Major versions have modernised it — it is
+    tree-shakeable when installed from npm, and plugins extend it — but the core idea is unchanged: a usable chart
+    from a few lines of configuration.
+
+    It is one of the most widely used JavaScript charting libraries, common in admin panels, internal dashboards and
+    reports where a full BI tool would be overkill.
+- id: business
+  heading: How it fits business users
+  body: |
+    Business users see the charts, not the library: model calls per day, cost per model, open exceptions by status.
+    What Chart.js gives a team is speed — a dashboard page the risk or operations team will actually open, built on
+    top of whatever API holds the numbers, without buying or running a separate BI tool.
+
+    The limit to keep in mind: it is for clear standard charts. Heavy cross-filtering or bespoke visuals are better
+    served by a BI tool or a lower-level library.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Operational dashboards** on server-rendered HTML.
+    - **Small charts in internal tools** without adopting a front-end framework.
+    - **Time series** of counts, costs or latencies.
+    - **Share-of-total and status breakdowns.**
+    - **Charts embedded in static reports.**
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Few lines of code for a usable chart | Canvas output needs extra work for accessibility |
+    | No framework or build step required | Less flexible than lower-level libraries for custom visuals |
+    | Works with server-rendered pages | Very large datasets need decimation or aggregation first |
+    | Sensible defaults for tooltips and legends | Interactive cross-filtering is up to you |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Chart.js documentation](https://www.chartjs.org/docs/latest/getting-started/) — the official getting-started
+      guide from the Chart.js project.
+    - [Chart.js samples](https://www.chartjs.org/docs/latest/samples/information.html) — a working example of every
+      chart type with its config.
+    - [Chart.js on GitHub](https://github.com/chartjs/Chart.js) — releases, issues and the plugin ecosystem.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below is one HTML file you open in a browser: a canvas, the library from a CDN, and a bar chart of
+    model calls per weekday. Nothing to install.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"How would you add a chart to a server-rendered app?"** Render the data into the page (or fetch it from a
+      JSON endpoint), add a `<canvas>`, and create a `new Chart(...)` with a type, data and options. No build step.
+    - **"What are the trade-offs of canvas charts?"** Light and fast, but the chart is an image to a screen reader;
+      add a text alternative or a data table. Very large series need aggregation first.
+    - **"Chart.js or a BI tool?"** Chart.js for a few standard charts inside your own app; a BI tool when users need
+      to slice data themselves.
+
+    Pitfall: pushing hundreds of thousands of raw points to the browser. Aggregate on the server.
+project:
+  title: A bar chart in one HTML file
+  kind: runnable
+  minutes: 3
+  goal: Draw a labelled bar chart from a config object and change it by editing the data.
+  steps:
+  - Save the code below as `chart.html`.
+  - Open it in a browser; hover a bar to see the tooltip.
+  - Change `type` to `"line"` and reload.
+  - Add a second dataset (for example "Errors") and reload.
+  code: |
+    <canvas id="myChart" aria-label="Model calls per day" role="img"></canvas>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      new Chart(document.getElementById("myChart"), {
+        type: "bar",
+        data: {
+          labels: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+          datasets: [{ label: "Model calls", data: [120, 190, 30, 50, 20], borderWidth: 1 }]
+        },
+        options: { scales: { y: { beginAtZero: true } } }
+      });
+    </script>
+  language: html
+  expected: |
+    A five-bar chart titled by its legend "Model calls"; hovering Tue shows 190.
+    After the edit, the same data appears as a line.
+  done_when:
+  - The chart renders and the tooltip shows values.
+  - You changed the chart type and added a dataset by editing only the config.
+quiz:
+- id: q1
+  prompt: Where does Chart.js draw its charts?
+  options:
+  - Onto an HTML canvas element
+  - Into a PDF file
+  - Into SVG files on the server
+  - Into the terminal
+  answer: 0
+  explanation: Charts are drawn on a canvas, which keeps them light.
+  evidence: Chart.js is a JavaScript library that draws common charts — bar, line, pie and others — onto an HTML <canvas> from a configuration object.
+- id: q2
+  prompt: What do you pass to new Chart(...)?
+  options:
+  - A chart type, the data and options
+  - A SQL query
+  - A CSV file path
+  - A Python dataframe
+  answer: 0
+  explanation: The configuration object describes the type, labels and datasets, and options such as axes.
+  evidence: create a new Chart(...) with a chart type, the data (labels and datasets) and options such as axes, legends and tooltips
+- id: q3
+  prompt: What does Chart.js handle for you?
+  options:
+  - Layout, scaling, hover tooltips and animation
+  - Database queries
+  - User authentication
+  - Server-side caching
+  answer: 0
+  explanation: You describe the chart; the library does the drawing details.
+  evidence: It handles layout, scaling, hover tooltips and animation.
+- id: q4
+  prompt: Why does Chart.js fit server-rendered pages well?
+  options:
+  - It is plain JavaScript with no framework requirement
+  - It requires React
+  - It needs a webpack build
+  - It only works in Node.js
+  answer: 0
+  explanation: The server writes HTML and data; a few lines of script draw the chart.
+  evidence: Because it is plain JavaScript with no framework requirement, it fits well into server-rendered pages
+- id: q5
+  prompt: What is the accessibility drawback of canvas charts?
+  options:
+  - They are images in the page, less accessible to screen readers unless you add text alternatives
+  - They can't show colours
+  - They don't work on phones
+  - They can't have labels
+  answer: 0
+  explanation: Add a text alternative or a data table for screen-reader users.
+  evidence: which keeps them light but less accessible to screen readers unless you add text alternatives
+- id: q6
+  prompt: What should you do with very large datasets before charting them?
+  options:
+  - Decimate or aggregate them first
+  - Send every row to the browser
+  - Convert them to images
+  - Split them across many canvases
+  answer: 0
+  explanation: Aggregating on the server keeps the browser responsive.
+  evidence: Very large datasets need decimation or aggregation first
+- id: q7
+  prompt: In AI governance, which numbers suit a Chart.js dashboard?
+  options:
+  - Model calls per day, cost per model, validation failures and human overrides
+  - Model weights
+  - Raw prompts and customer documents
+  - Encryption keys
+  answer: 0
+  explanation: Aggregated operational numbers belong on a dashboard the risk or operations team opens.
+  evidence: 'model calls per day, cost per model, validation failures, human overrides, escalations'
+- id: q8
+  prompt: Which is a con of Chart.js?
+  options:
+  - Interactive cross-filtering is up to you
+  - It needs a paid licence
+  - It can't draw line charts
+  - It requires a build pipeline
+  answer: 0
+  explanation: It draws charts; slicing across charts is your code's job.
+  evidence: Interactive cross-filtering is up to you
+- id: q9
+  prompt: How can you load Chart.js into a page?
+  options:
+  - From npm or a CDN
+  - Only by compiling it from source
+  - Only through a Python package
+  - Only from a browser extension
+  answer: 0
+  explanation: A CDN script tag is enough for a quick page; npm suits app builds.
+  evidence: load the library (from npm or a CDN)
+- id: q10
+  prompt: Which is a typical use case?
+  options:
+  - Time series of counts, costs or latencies
+  - Training neural networks
+  - Managing user accounts
+  - Running database migrations
+  answer: 0
+  explanation: Standard time series are exactly what it does well.
+  evidence: Time series of counts, costs or latencies.
+- id: q11
+  prompt: Compared with lower-level libraries, Chart.js is…
+  options:
+  - Less flexible for custom visuals
+  - More flexible for any visual
+  - Only for 3D charts
+  - Only for maps
+  answer: 0
+  explanation: The trade-off for its simplicity is less control over bespoke visuals.
+  evidence: Less flexible than lower-level libraries for custom visuals
+- id: q12
+  prompt: When was Chart.js first released?
+  options:
+  - 2013
+  - 1999
+  - 2023
+  - 2005
+  answer: 0
+  explanation: It began in 2013 and is now maintained by open-source contributors.
+  evidence: Chart.js was first released in 2013 as a small, simple alternative to heavyweight charting libraries
+- id: q13
+  prompt: When is a BI tool a better choice than Chart.js?
+  options:
+  - When users need to slice data themselves
+  - When you need one simple bar chart in your app
+  - When you have no data
+  - When the page is server-rendered
+  answer: 0
+  explanation: Chart.js is for a few standard charts inside your app; self-service slicing is BI territory.
+  evidence: a BI tool when users need to slice data themselves

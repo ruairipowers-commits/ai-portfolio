@@ -1,0 +1,115 @@
+# Crash course settings. Every behaviour is a key here; nothing below needs a code change.
+use_case: crash-course
+risk_tier: medium            # HITL-01: public user input + teaching content people rely on + learner emails
+owner: Ruairi Powers
+
+# ---------------------------------------------------------------- the three levels
+# minutes: the time budget the content checker enforces (reading at reading_wpm + quiz + project estimate).
+# sections: ids every level file must contain, in order. quiz: questions drawn per attempt and the pass mark.
+reading_wpm: 220
+seconds_per_question: 30
+levels:
+  familiar:
+    order: 1
+    label: Familiar
+    minutes: 15
+    sections: [concept, history, business, use_cases, pros_cons, resources, hello_world, interview]
+    quiz: {questions: 10, pass_pct: 70}
+    project_minutes: 3
+  beginner:
+    order: 2
+    label: Beginner
+    minutes: 60
+    sections: [recap, core_terms, setup, guided_project, mistakes, cheat_sheet, interview, next_steps]
+    quiz: {questions: 15, pass_pct: 70}
+    project_minutes: 30
+  intermediate:
+    order: 3
+    label: Intermediate
+    minutes: 240
+    sections: [modules, production, alternatives, in_portfolio, capstone, interview, further_learning]
+    modules: {min: 4, max: 5, check_questions: 5, check_pass_pct: 80}
+    quiz: {questions: 25, pass_pct: 75}          # the final test
+    project_minutes: 90
+
+# A level is complete when every required quiz has been passed at least once AND its project is marked done.
+# Completing a level unlocks the next one. Retries are unlimited; best score and every attempt are kept.
+completion: {require_quiz_pass: true, require_project: true}
+
+quizzes:
+  bank_min_extra: 2          # a bank must hold at least questions + this, so a retry is a different draw
+  generated_bank_factor: 2   # the writer is asked for 2 × questions for generated levels
+  shuffle_options: true
+  attempt_ttl_minutes: 240   # an unsubmitted attempt expires; a new one is drawn
+  show_explanations: wrong_only   # after submit: explanations for wrong answers only (never the full key up front)
+
+# ---------------------------------------------------------------- content checks (OBS-02, EVAL-02)
+checks:
+  evidence_min_words: 5      # each question cites a span of the source page or of the level text, verbatim
+  answer_overlap_min: 1      # the correct option shares at least this many content words with its evidence
+  max_option_words: 30
+  options: {min: 3, max: 5}
+  allowed_link_schemes: [https]
+  banned_terms_file: config/blocked_terms.txt
+
+# ---------------------------------------------------------------- topic suggestions (SEC-02, HITL-02)
+moderation:
+  max_chars: 200
+  min_chars: 3
+  per_learner_per_day: 3
+  reject_categories: [sexual, hate, harassment, violence, self_harm, illegal, personal_data, injection]
+  review_categories: [weapons, drugs, security_tooling, medical, financial_advice]
+  duplicate_threshold: 0.5   # token Jaccard with an existing course slug/title/alias → needs-review, duplicate_of
+  model_alias: course-moderator
+  max_output_tokens: 600
+
+approvals:
+  owner_email_env: COURSE_OWNER_EMAIL
+  link_ttl_days: 7
+  notify_suggester: true
+
+# ---------------------------------------------------------------- building generated levels (MODEL-*, COST-01)
+build:
+  writer_alias: course-writer
+  fallback_alias: course-fallback
+  max_output_tokens: 12000
+  regenerate_on_fail: 1      # one retry with the failed checks in the prompt, then flagged for the owner
+  on_demand: true            # draft Beginner / Intermediate the first time any learner unlocks them
+
+revisions:
+  reviser_alias: course-reviser
+  min_feedback: 3            # feedback items on a level before a revision is proposed
+  missed_question_pct: 60    # a question missed by at least this share of attempts (min 5) is flagged
+  min_attempts: 5
+
+# ---------------------------------------------------------------- learners (DATA-03, OBS-03)
+registration:
+  open: true                 # anyone with an email; false = invite codes only
+  invite_codes_env: COURSE_INVITE_CODES
+  magic_link_minutes: 30
+  session_days: 30
+  feedback_per_day: 20
+privacy:
+  inactive_retention_days: 365
+  store_answers: true        # answers per attempt, for item statistics (no free text in answers)
+
+cost:
+  max_usd_per_build: 0.50
+  max_usd_per_assessment: 0.005
+  max_usd_per_revision: 0.10
+  max_input_tokens_per_call: 24000
+  monthly_alert_usd: 10
+  reviewer: Ruairi Powers
+  allow_unpriced_models: false
+
+evals:                       # EVAL-02 gate: `course eval` fails if any of these is missed
+  moderation_accuracy_min: 0.90       # final recommendation matches the label
+  must_reject_recall_min: 1.00        # every abusive / explicit / injection / personal-data case rejected
+  false_reject_max: 0.10              # legitimate topics recommended for rejection
+  duplicate_accuracy_min: 1.00        # labelled duplicates point at the right course
+  content_pass_min: 1.00              # bundled levels passing every check, and broken copies caught
+  tracker_pass_min: 1.00
+  feedback_pass_min: 1.00
+
+server:
+  port: 8810

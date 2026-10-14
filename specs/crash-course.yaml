@@ -1,7 +1,7 @@
 slug: crash-course
 title: 'Crash course: learn any tool in 15 minutes, 1 hour or 4 hours, with scored quizzes, unlocked levels, a
   tracker, and new topics reviewed by an agent and approved by me before a course exists'
-status: planned
+status: spec-approved
 domain: learning and enablement (technology onboarding); anyone preparing to use, evaluate or interview on a tool
 use_case: >
   A learner registers, picks a course from a catalog seeded from the 38 technology pages on this site (or suggests a
@@ -36,43 +36,44 @@ risk_rationale: 'public, user-generated input (topic suggestions, feedback) that
   my approval; quiz answer keys never leave the server; content claims are checked against the source page; the
   model never scores a quiz or unlocks a level'
 
-levels:                      # the three formats; durations are targets the content checker enforces by word/step count
+levels:                      # the three formats; config/settings.yaml holds the enforced budgets and section ids
   familiar:                  # 15 minutes — Ruairi's outline
     duration: 15 min
-    sections: [concept (high level), history and how it is used today, how it fits business users, key use cases,
-      pros and cons, key resources for further learning (official docs first), hello-world example project (runnable
-      or illustrative, with expected output), 10-question quiz, how to discuss it well in interviews]
-    quiz: {questions: 10, pass: 70%}
-    project: hello world (self-attested)
+    sections: ['concept (high level)', 'history and how it is used today', 'how it fits business users',
+      'key use cases', 'pros and cons', 'key resources for further learning (official docs first)',
+      'hello-world example project (runnable or illustrative, with expected output)', '10-question quiz',
+      'how to discuss it well in interviews']
+    quiz: {questions: 10, pass: '70%'}
+    project: 'hello world (self-attested)'
   beginner:                  # 1 hour — proposed
     duration: 60 min
     sections:
-      - recap of Familiar in 5 bullets (2 min)
-      - mental model and the 10 core terms, each with a one-line definition and an example (10 min)
-      - setup checklist (local or free tier, versions pinned, "you are ready when …") (5 min)
-      - guided project (30 min): a small real task in 5–7 steps, each with what to do, why, a checkpoint and the
-        expected output; "done when" criteria and a stretch goal
-      - common mistakes and how to debug them (5 min)
-      - one-page cheat sheet (commands, syntax or settings you will use daily)
-      - 15-question quiz mixing concept and "what does this code or config do" questions (8 min)
-      - interview prep: 5 beginner questions with what a good answer includes
-    quiz: {questions: 15, pass: 70%}
-    project: guided project (self-attested, with the "done when" checklist)
+      - 'recap of Familiar in 5 bullets (2 min)'
+      - 'mental model and the 10 core terms, each with a one-line definition and an example (10 min)'
+      - 'setup checklist (local or free tier, versions pinned, "you are ready when …") (5 min)'
+      - 'guided project (30 min): a small real task in 5–7 steps, each with what to do, why, a checkpoint and the
+        expected output; "done when" criteria and a stretch goal'
+      - 'common mistakes and how to debug them (5 min)'
+      - 'one-page cheat sheet (commands, syntax or settings you will use daily)'
+      - '15-question quiz mixing concept and "what does this code or config do" questions (8 min)'
+      - 'interview prep: 5 beginner questions with what a good answer includes'
+    quiz: {questions: 15, pass: '70%'}
+    project: 'guided project (self-attested, with the "done when" checklist)'
   intermediate:              # 4 hours — proposed
     duration: 240 min
     sections:
-      - 4–5 deep-dive modules on the core pieces (about 30–40 min each), each with concept, internals or how it
-        works under the hood, a worked example, a hands-on exercise and a 5-question module check (scored, pass 80%)
-      - production concerns: performance, cost, security and governance (linked to the controls in this portfolio)
-      - how it compares to alternatives (table) and when not to use it
-      - how this portfolio uses it (links to the projects and posts that use the tool)
-      - capstone project (60–90 min) with a requirements list, a self-check rubric and extension ideas
-      - final test: 25 questions across all modules, including scenario questions (scored, pass 75%)
-      - interview prep: scenario and design questions ("how would you…") with what a strong answer covers and red
-        flags interviewers listen for
-      - further learning: advanced docs, specs, talks, communities
-    quiz: {module_checks: 5 questions each, final: 25 questions, pass: 75%}
-    project: capstone (self-attested against the rubric)
+      - '4–5 deep-dive modules on the core pieces (about 30–40 min each), each with concept, internals or how it
+        works under the hood, a worked example, a hands-on exercise and a 5-question module check (scored, pass 80%)'
+      - 'production concerns: performance, cost, security and governance (linked to the controls in this portfolio)'
+      - 'how it compares to alternatives (table) and when not to use it'
+      - 'how this portfolio uses it (links to the projects and posts that use the tool)'
+      - 'capstone project (60–90 min) with a requirements list, a self-check rubric and extension ideas'
+      - 'final test: 25 questions across all modules, including scenario questions (scored, pass 75%)'
+      - 'interview prep: scenario and design questions ("how would you…") with what a strong answer covers and red
+        flags interviewers listen for'
+      - 'further learning: advanced docs, specs, talks, communities'
+    quiz: {module_checks: 5 questions each, final: 25 questions, pass: '75%'}
+    project: 'capstone (self-attested against the rubric)'
   completion_rule: 'a level is complete when its quiz (and, for Intermediate, every module check and the final) has
     been passed at least once AND the project is marked done; completing a level unlocks the next level''s materials
     and links on the tracker. Retries unlimited; best score and attempt history kept'
@@ -82,8 +83,8 @@ config:                      # config/settings.yaml — every setting is a key
     portfolio"); include/exclude per tech; category order'
   levels: 'durations, section lists, quiz sizes and pass marks per level (above); question types allowed
     (single-choice, multi-select, true/false, code-reading)'
-  quizzes: 'questions drawn per attempt from a larger bank (default bank = 2× quiz size) and shuffled, so retries are
-    not identical; feedback on a wrong answer shows the explanation and the source section, never the full key'
+  quizzes: 'questions drawn per attempt from a larger bank (at least quiz size + 2; generated levels ask for 2× quiz
+    size) and shuffled, so retries are not identical; feedback on a wrong answer shows the explanation and the source section, never the full key'
   moderation: 'blocklist file, categories rejected outright (sexual/explicit, hate, harassment, violence, self-harm,
     illegal activity, personal data about a real person), categories needing a closer look (weapons, drugs, security
     tooling: allowed only as defensive/educational and only with my approval), duplicate threshold vs the catalog'

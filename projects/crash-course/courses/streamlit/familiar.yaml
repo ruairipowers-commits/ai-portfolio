@@ -1,0 +1,250 @@
+course: streamlit
+level: familiar
+version: 1
+title: Streamlit in 15 minutes
+status: draft
+source:
+  page: tech/streamlit.md
+  docs: https://docs.streamlit.io/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Streamlit page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    Streamlit is an open-source Python framework that turns a data script into an interactive web app. You write
+    an ordinary Python file, call functions like `st.title`, `st.slider` and `st.dataframe`, and run it with
+    `streamlit run app.py`. A local server starts and the app opens in your browser. There is no HTML, CSS or
+    JavaScript to write.
+
+    The one thing to understand before anything else is the **rerun model**: every time someone moves a slider
+    or clicks a button, Streamlit runs your whole script again from top to bottom. That is what makes it simple
+    (the page is always just "what the script prints"), and it is also why you cache slow work and keep values
+    you need between reruns in `st.session_state`.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Streamlit was released as open source in 2019 by a small start-up of the same name, built by people who had
+    spent years writing one-off tools for machine learning teams. The pitch was simple: data scientists already
+    write Python, so let the script be the app. Snowflake acquired the company in 2022 and maintains the
+    framework today; it is still free and open source, and Snowflake also offers it inside its own platform.
+
+    Today it is one of the most common ways to put a quick front end on a model, a query or a report. You will
+    see it in internal tools, proofs of concept, model demos, and human review screens for AI pipelines.
+- id: business
+  heading: How it fits business users
+  body: |
+    Business users rarely write Streamlit, but they use what it produces: a link to an app where they can pick a
+    date range, upload a file, read a model's answer next to its evidence, and click approve or reject. For a
+    data team it shortens the gap between "the analysis works in my notebook" and "the operations team can use it
+    on Monday", without waiting for a front-end engineer.
+
+    It suits internal tools and demos for a team. It is not the right choice for a customer-facing product with
+    thousands of concurrent users or a pixel-perfect brand design.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Internal data apps** over a model, query or report, with filters and downloads.
+    - **Demo front ends** so reviewers can run a pipeline without a terminal.
+    - **Human review screens**: show the model's output and the source side by side, collect an approve or reject.
+    - **Lightweight dashboards** for an operations team.
+    - **Prototypes** that may later move to a dedicated front end once the workflow is proven.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | A working app from a short Python script | Full-script reruns need caching discipline as apps grow |
+    | No front-end skills needed | Limited control over layout and look |
+    | Easy for data teams to maintain | Not designed for many concurrent public users |
+    | Apps can be tested headless | Multi-step flows and state get awkward in complex apps |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Streamlit documentation](https://docs.streamlit.io/) — the official reference, from Snowflake Inc.
+    - [Basic concepts](https://docs.streamlit.io/get-started/fundamentals/main-concepts) — the rerun model, in
+      the docs' own words. Read this first.
+    - [Streamlit gallery](https://streamlit.io/gallery) — real apps with source code, good for ideas.
+    - [Streamlit community forum](https://discuss.streamlit.io/) — answers to most "why does my app do X" questions.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below is the smallest useful app: a title, a slider and a text box. It takes about three
+    minutes and shows the rerun model in action — every time you move the slider, the whole script runs again
+    and the page updates.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    Interviewers want to hear that you know what it is for, how it works, and where it stops being the right
+    tool.
+
+    - **"What is Streamlit and when would you use it?"** A strong answer: a Python framework for turning data
+      scripts into internal web apps; good for demos, review screens and team tools; not for high-traffic,
+      customer-facing products.
+    - **"How does Streamlit handle interaction?"** Say the words *rerun model*: every widget interaction reruns
+      the script; expensive work goes behind `@st.cache_data` or `@st.cache_resource`; values that must survive
+      reruns live in `st.session_state`.
+    - **"How would you use it in an AI workflow?"** Describe a review screen: input on the left, model output and
+      evidence on the right, an approve/reject button that writes to an audit table.
+    - **"What are its limits?"** Layout control, concurrency, and complex multi-step state.
+
+    Pitfall to avoid: calling it a dashboarding tool only. It is a general app framework that happens to be
+    great for dashboards.
+project:
+  title: Your first Streamlit app
+  kind: runnable
+  minutes: 4
+  goal: Run a three-widget app and see the whole script rerun when you interact with it.
+  steps:
+  - Install it with `pip install streamlit`.
+  - Save the code below as `app.py`.
+  - Run `streamlit run app.py`; your browser opens at `http://localhost:8501`.
+  - Move the slider and type your name; watch the page update.
+  - Add `st.write("Rerun!")` at the top, save, and notice it prints on every interaction.
+  code: |
+    import streamlit as st
+
+    st.title("Hello")
+    x = st.slider("Pick a number", 0, 100)
+    st.write(f"You selected: {x}")
+
+    st.text_input("Your name", key="name")
+    st.write(f"Hello, {st.session_state.name}")
+  language: python
+  expected: |
+    A page titled "Hello" with a slider. Moving it to 42 shows "You selected: 42".
+    Typing Ada in the name box shows "Hello, Ada".
+  done_when:
+  - The app opens in your browser and the slider changes the text.
+  - You can explain why the "Rerun!" line prints every time you touch a widget.
+quiz:
+- id: q1
+  prompt: What does Streamlit turn a Python script into?
+  options:
+  - An interactive web app
+  - A compiled desktop executable
+  - A REST API with OpenAPI docs
+  - A Jupyter notebook
+  answer: 0
+  explanation: Streamlit turns a Python script into a web app you open in the browser, with no HTML or JavaScript.
+  evidence: Streamlit turns a Python script into an interactive web app, with no HTML or JavaScript.
+- id: q2
+  prompt: What happens when a user interacts with a widget in a Streamlit app?
+  options:
+  - Only the widget's callback function runs
+  - Streamlit reruns the whole script from top to bottom
+  - The browser updates the widget without contacting the server
+  - The app restarts the server process
+  answer: 1
+  explanation: This is the rerun model — every interaction reruns the whole script, which is why caching matters.
+  evidence: whenever a user interacts with a widget, Streamlit reruns the whole script from top to bottom
+- id: q3
+  prompt: Where should values that must persist between reruns be kept?
+  options:
+  - In a global variable at the top of the script
+  - In st.session_state
+  - In the browser's local storage
+  - In st.cache_resource
+  answer: 1
+  explanation: Globals are reset on every rerun; st.session_state is designed to hold values across reruns.
+  evidence: values that must persist between reruns live in st.session_state
+- id: q4
+  prompt: How do you keep expensive work, like loading a large dataset, out of the rerun loop?
+  options:
+  - Put it in a separate thread
+  - Use caching with @st.cache_data or @st.cache_resource
+  - Move it into the widget's label
+  - Call st.stop() before it runs
+  answer: 1
+  explanation: Caching decorators store the result so the work is not repeated on every rerun.
+  evidence: 'Expensive work is kept out of that loop with caching (@st.cache_data, @st.cache_resource)'
+- id: q5
+  prompt: Which command starts a Streamlit app saved as app.py?
+  options:
+  - python app.py --serve
+  - streamlit run app.py
+  - flask run app.py
+  - st.launch("app.py")
+  answer: 1
+  explanation: You run apps with the streamlit command; a local server starts and the browser opens.
+  evidence: run it with streamlit run app.py; a local server starts and the app opens in the browser
+- id: q6
+  prompt: Which company maintains Streamlit today?
+  options:
+  - Databricks
+  - Snowflake
+  - Microsoft
+  - Hugging Face
+  answer: 1
+  explanation: Streamlit is an open-source framework maintained by Snowflake, which acquired the company in 2022.
+  evidence: Streamlit is an open-source Python framework maintained by Snowflake.
+- id: q7
+  prompt: Which kind of application is Streamlit built for?
+  options:
+  - High-traffic, highly customized public web front ends
+  - Internal tools and demos
+  - Mobile apps for app stores
+  - Real-time multiplayer games
+  answer: 1
+  explanation: It is designed for internal tools and demos, not high-traffic customer-facing sites.
+  evidence: It is built for internal tools and demos rather than high-traffic, highly customized web front ends.
+- id: q8
+  prompt: In AI work, which screen is Streamlit a quick way to build?
+  options:
+  - A place where a person sees the input, model output and evidence side by side and decides
+  - A GPU monitoring console for training clusters
+  - A replacement for the model provider's API
+  - A load balancer for model endpoints
+  answer: 0
+  explanation: Human review screens are a common AI use — the person sees the evidence and approves or rejects.
+  evidence: a place where a person sees the input, the model output and the evidence side by side and makes a decision
+- id: q9
+  prompt: Which of these is a con of Streamlit?
+  options:
+  - It needs strong front-end skills
+  - Limited control over layout and look
+  - It can only display static images
+  - It cannot be tested
+  answer: 1
+  explanation: You trade fine control over layout and styling for speed of building.
+  evidence: Limited control over layout and look
+- id: q10
+  prompt: How can Streamlit apps be tested without opening a browser?
+  options:
+  - They can't; testing needs a person
+  - Headless, with streamlit.testing
+  - Only by taking screenshots
+  - By exporting the app to HTML first
+  answer: 1
+  explanation: Streamlit ships a testing API so apps can be run and checked headless, for example in CI.
+  evidence: Apps can be tested headless with streamlit.testing.
+- id: q11
+  prompt: Why is Streamlit useful for adversarial testing of an AI pipeline?
+  options:
+  - It encrypts the model's prompts
+  - A reviewer can edit untrusted text in an input box and rerun the pipeline, making failure cases visible
+  - It blocks prompt injection automatically
+  - It generates test cases on its own
+  answer: 1
+  explanation: An input box plus a rerun lets non-engineers try to break the pipeline and see what happens.
+  evidence: an input box where a reviewer edits untrusted text and reruns the pipeline makes failure cases visible to non-engineers
+- id: q12
+  prompt: In an interview, which answer best shows you understand Streamlit's limits?
+  options:
+  - It replaces every front-end framework
+  - It is weak at complex multi-step state and many concurrent public users
+  - It only works with pandas
+  - It can't show charts
+  answer: 1
+  explanation: Complex state and concurrency are the honest limits worth naming.
+  evidence: Multi-step state handling gets awkward in complex flows
+- id: q13
+  prompt: What do widget callbacks do in Streamlit's execution order?
+  options:
+  - They run after the rest of the script
+  - They run before the rest of the script
+  - They run in the browser only
+  - They never run during a rerun
+  answer: 1
+  explanation: Callbacks run first, so state they set is visible to the rerun that follows.
+  evidence: Widget callbacks run before the rest of the script.

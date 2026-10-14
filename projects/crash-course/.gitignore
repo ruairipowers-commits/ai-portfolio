@@ -1,0 +1,6 @@
+warehouse/
+output/
+__pycache__/
+*.egg-info/
+.env
+portfolio_links.json
