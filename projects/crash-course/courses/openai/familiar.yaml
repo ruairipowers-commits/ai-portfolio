@@ -1,0 +1,238 @@
+course: openai
+level: familiar
+version: 1
+title: The OpenAI API in 15 minutes
+status: draft
+source:
+  page: tech/openai.md
+  docs: https://developers.openai.com/api/docs
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's OpenAI API page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    The OpenAI API is how software talks to OpenAI's GPT models over HTTP, with official SDKs for Python, JavaScript
+    and other languages.
+
+    For new work the main entry point is the **Responses API**: you send input — text, images, earlier turns, tool
+    definitions — to a named model and get a response back, with `output_text` as the convenient plain-text view.
+    Around it, the platform covers **tool and function calling**, **structured outputs** (responses constrained to a
+    JSON Schema you supply), **embeddings**, and other modalities such as images and audio. Authentication is an API
+    key, usually read from the `OPENAI_API_KEY` environment variable.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    OpenAI opened its API in 2020 with GPT-3, which made large language models available to ordinary developers for
+    the first time. ChatGPT, launched at the end of 2022, brought them to everyone else, and the API grew alongside it:
+    chat models, function calling, embeddings, structured outputs, and in 2025 the Responses API as the main interface
+    for agent-style work.
+
+    Today it is one of the most widely used model APIs, with very broad third-party support. OpenAI models are also
+    offered through some cloud platforms; Amazon Bedrock, for example, lists OpenAI models.
+- id: business
+  heading: How it fits business users
+  body: |
+    For a business, the API is how a model becomes part of a workflow rather than a chat window: drafting from
+    structured data, extracting fields, routing incoming requests, powering search.
+
+    Most firms end up with more than one model provider — for cost, capability or resilience. The practical pattern is
+    to keep every provider behind one internal interface, so switching or comparing them is a configuration change,
+    and governance (logging, cost, validation) is the same whoever produced the answer.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Summarising and drafting** from structured inputs.
+    - **Extracting entities and fields** into JSON.
+    - **Tool-calling agents** that look up data before answering.
+    - **Embeddings** for semantic search.
+    - **Classification and routing** of incoming text.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Broad model range and modalities | Hosted API: data leaves your network |
+    | Structured outputs against a JSON Schema | Model names and defaults change; pin and re-test |
+    | Mature SDKs and wide third-party support | Per-token cost needs monitoring at volume |
+    | Embeddings and generation from one provider | Rate limits and quotas need handling in batch jobs |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [OpenAI API documentation](https://developers.openai.com/api/docs) — the official reference from OpenAI.
+    - [Developer quickstart](https://developers.openai.com/api/docs/quickstart) — your first call.
+    - Within the docs, read the **structured outputs** and **function calling** guides next.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below makes one Responses API call and prints `output_text`. It needs an API key; the call costs a
+    fraction of a cent. Without a key, read the code and the expected output — the request shape is the lesson.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"How would you support more than one model provider?"** One internal interface: an alias such as `memo-drafter`
+      maps to a provider and model ID in config; every call logs tokens and cost; output is validated the same way
+      regardless of provider.
+    - **"Do structured outputs mean the answer is right?"** No. They reduce parsing failures, but a valid shape is not a
+      correct answer — you still validate on your side and evaluate quality.
+    - **"What do you do when a model is renamed or retired?"** Pin model names, keep an eval set, re-test before switching.
+
+    Pitfall: calling the SDK directly from business logic everywhere. Interviewers like hearing about the wrapper.
+project:
+  title: Your first Responses API call
+  kind: runnable
+  minutes: 4
+  goal: Send one request to the Responses API and print the plain-text output.
+  steps:
+  - Run `pip install openai`.
+  - Create an API key on the OpenAI platform and set it with `export OPENAI_API_KEY=...`.
+  - Save the code below as `hello_openai.py`, set `MODEL` to a current model name from the docs, and run it.
+  - Ask for exactly two bullets instead, and run again.
+  code: |
+    from openai import OpenAI
+
+    MODEL = "gpt-6-astra"            # any current model name from the docs
+    client = OpenAI()                # reads OPENAI_API_KEY
+    response = client.responses.create(
+        model=MODEL,
+        input="Explain what an API is in three short bullets.",
+    )
+    print(response.output_text)
+    print(response.usage)            # input and output tokens
+  language: python
+  expected: |
+    Three short bullets explaining an API, then a usage line with input and output token counts.
+  done_when:
+  - You got a reply and found the token counts.
+  - You can explain what output_text is a shortcut for.
+quiz:
+- id: q1
+  prompt: What is the main entry point of the OpenAI API for new work?
+  options:
+  - The Responses API
+  - The Fax API
+  - The Database API
+  - The Billing API
+  answer: 0
+  explanation: You send input to a named model and get a response, with output_text as the plain-text view.
+  evidence: The main entry point for new work is the Responses API
+- id: q2
+  prompt: What is output_text?
+  options:
+  - The convenient plain-text view of a response
+  - The model's training data
+  - A log file
+  - The API key
+  answer: 0
+  explanation: It saves you walking the response's structure for simple text.
+  evidence: with output_text as the convenient plain-text view
+- id: q3
+  prompt: What are structured outputs?
+  options:
+  - Responses constrained to a JSON Schema you supply
+  - Responses printed in bold
+  - Responses saved as PDFs
+  - Responses in multiple languages
+  answer: 0
+  explanation: They reduce parsing failures, but you still validate correctness.
+  evidence: structured outputs (responses constrained to a JSON Schema you supply)
+- id: q4
+  prompt: Where is the API key usually read from?
+  options:
+  - The OPENAI_API_KEY environment variable
+  - The prompt text
+  - A cookie
+  - The model name
+  answer: 0
+  explanation: Keep keys out of code; set them in the environment or a secret manager.
+  evidence: Authentication is an API key, usually read from the OPENAI_API_KEY environment variable.
+- id: q5
+  prompt: Does a valid structured-output shape mean the answer is correct?
+  options:
+  - No — a valid shape is not a correct answer, so you still validate on your side
+  - Yes, always
+  - Only for short answers
+  - Only with embeddings
+  answer: 0
+  explanation: Schema validity and correctness are different things.
+  evidence: a valid shape is not a correct answer
+- id: q6
+  prompt: Why do most firms end up with more than one model provider?
+  options:
+  - For cost, capability or resilience
+  - Because each provider only supports one language
+  - Because it's required by law
+  - To avoid logging
+  answer: 0
+  explanation: Different models suit different jobs, and a second provider helps during outages.
+  evidence: Most firms end up with more than one model provider, for cost, capability or resilience.
+- id: q7
+  prompt: In the recommended pattern, what does an alias such as memo-drafter map to?
+  options:
+  - A provider and model ID in config
+  - A user's email address
+  - A database table
+  - A server's IP address
+  answer: 0
+  explanation: Code uses the alias; config decides which model answers.
+  evidence: an alias such as memo-drafter maps to a provider and model ID in config
+- id: q8
+  prompt: Which is a con of the OpenAI API?
+  options:
+  - Model names and defaults change; pin and re-test
+  - It has no SDKs
+  - It can't do embeddings
+  - It only accepts images
+  answer: 0
+  explanation: Pin models and keep an eval set for switches.
+  evidence: Model names and defaults change; pin and re-test
+- id: q9
+  prompt: Which is a typical use case?
+  options:
+  - Classification and routing of incoming text
+  - Hosting a web server
+  - Storing files
+  - Replacing a firewall
+  answer: 0
+  explanation: Routing requests by type is a common production use.
+  evidence: Classification and routing of incoming text.
+- id: q10
+  prompt: What needs handling in batch jobs?
+  options:
+  - Rate limits and quotas
+  - Screen sizes
+  - Fonts
+  - Keyboard shortcuts
+  answer: 0
+  explanation: Add pacing, retries and backoff for large batches.
+  evidence: Rate limits and quotas need handling in batch jobs
+- id: q11
+  prompt: Which cloud platform lists OpenAI models, according to the course?
+  options:
+  - Amazon Bedrock
+  - GitHub Pages
+  - Cloudflare Tunnel
+  - Hugging Face Spaces only
+  answer: 0
+  explanation: Bedrock lists OpenAI models and an OpenAI-compatible Chat Completions API.
+  evidence: Amazon Bedrock, for example, lists OpenAI models
+- id: q12
+  prompt: When did OpenAI open its API to developers?
+  options:
+  - 2020, with GPT-3
+  - 2010
+  - 2016
+  - 2025
+  answer: 0
+  explanation: ChatGPT came later, at the end of 2022.
+  evidence: OpenAI opened its API in 2020 with GPT-3
+- id: q13
+  prompt: What does the platform let a model do with tool definitions?
+  options:
+  - Call tools and functions you define
+  - Install software on your laptop
+  - Change your firewall
+  - Approve its own outputs
+  answer: 0
+  explanation: With tool calling, the model can ask to call tools and functions you define, so an agent can look up data before answering.
+  evidence: The platform also covers tool and function calling

@@ -1,0 +1,244 @@
+course: oxigraph
+level: familiar
+version: 1
+title: Knowledge graphs with Oxigraph and SHACL in 15 minutes
+status: draft
+source:
+  page: tech/oxigraph.md
+  docs: https://pyoxigraph.readthedocs.io/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Oxigraph and SHACL page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    A **knowledge graph** stores facts as connections. In **RDF**, the W3C standard for this, every fact is a
+    **triple**: subject, predicate, object — "Dataset 42 *has vendor* Acme". Things are named with web-style
+    identifiers (IRIs), so facts from different sources join on shared names.
+
+    The pieces fit together like this:
+
+    - **OWL and SKOS** describe the classes, properties and controlled vocabularies — the **ontology**;
+    - **SPARQL** is the query language;
+    - **Oxigraph** is a small, open-source RDF store written in Rust, with Python bindings (`pyoxigraph`); like DuckDB
+      it runs in-process and stores to a folder;
+    - **SHACL** is the W3C language for saying what *valid* graph data looks like — "every dataset has exactly one
+      vendor", "a contract ends after it starts" — checked in Python with `pyshacl`.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    RDF came out of the W3C's "semantic web" work around 1999; SPARQL became a W3C standard in 2008 and SHACL in 2017.
+    For years these standards were used mostly in libraries, life sciences and government data. Oxigraph is a newer,
+    lightweight implementation that makes the stack easy to embed, without running a graph database server.
+
+    Interest has grown again with AI. Knowledge graphs give a model facts with stable identifiers it can cite, and
+    capture relationships that tables model badly — which dataset covers which companies, what depends on what.
+- id: business
+  heading: How it fits business users
+  body: |
+    For a business, a knowledge graph answers connected questions: "which of our datasets cover this company?", "what
+    breaks if this vendor goes away?". Because identifiers are shared, data from a catalogue, a vendor list and reference
+    data can be linked without one giant table.
+
+    SHACL does for a graph what data tests do for tables: nothing malformed reaches the layer people — or a model — read
+    from.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Knowledge graphs** that link catalogue entities, organisations and reference data.
+    - **Data catalogues and lineage** with typed relationships.
+    - **Validating graph data before it's published**, with SHACL as a quality gate.
+    - **Grounding AI answers** in facts with stable, citable identifiers.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Standards-based; IRIs join data across sources | RDF tooling has a learning curve |
+    | Embedded, no server, fast enough for millions of triples | Single-node; large graphs need Neptune, GraphDB or similar |
+    | SHACL gives declarative, testable data rules | SHACL error reports are verbose |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [pyoxigraph documentation](https://pyoxigraph.readthedocs.io/) — the official Python bindings for Oxigraph.
+    - [SHACL (W3C)](https://www.w3.org/TR/shacl/) — the standard for validating graph data.
+    - [SPARQL 1.1 Query Language (W3C)](https://www.w3.org/TR/sparql11-query/) — the query language.
+    - [pySHACL](https://github.com/RDFLib/pySHACL) — SHACL validation in Python.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below loads three triples into an in-memory Oxigraph store and asks a SPARQL question about them. It's
+    the smallest end-to-end loop: facts in, a query, an answer out.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"Why a graph instead of tables?"** For relationships tables model badly (coverage, dependencies, hierarchies)
+      and for joining data from different sources on shared identifiers.
+    - **"What is SHACL for?"** Declarative rules for valid graph data; a failing validation stops the graph being
+      published, the same role dbt tests play for tables.
+    - **"How does a graph help an LLM?"** The model gets facts with stable IRIs it can cite, and questions can be answered
+      by SPARQL rather than by the model's memory.
+    - **"When would Oxigraph not be enough?"** Very large or shared graphs — a server such as Neptune or GraphDB.
+
+    Pitfall: building an elaborate ontology before you have a question to answer. Start from the questions.
+project:
+  title: Three triples and a SPARQL query
+  kind: runnable
+  minutes: 4
+  goal: Load facts into an in-memory RDF store and answer a question with SPARQL.
+  steps:
+  - Run `pip install pyoxigraph`.
+  - Save the code below as `hello_graph.py` and run it.
+  - Add a fourth triple saying Dataset 2 also has vendor Acme, and run again.
+  code: |
+    import pyoxigraph as ox
+
+    store = ox.Store()                      # in memory
+    store.load(b"""
+    @prefix ex: <https://example.com/> .
+    ex:dataset1 ex:hasVendor ex:acme ; ex:name "Satellite parking counts" .
+    ex:acme ex:name "Acme Data" .
+    """, format=ox.RdfFormat.TURTLE)
+
+    q = """PREFIX ex: <https://example.com/>
+    SELECT ?dataset ?vendor WHERE {
+      ?d ex:hasVendor ?v . ?d ex:name ?dataset . ?v ex:name ?vendor }"""
+    for row in store.query(q):
+        print(row["dataset"].value, "->", row["vendor"].value)
+  language: python
+  expected: |
+    Satellite parking counts -> Acme Data
+  done_when:
+  - The query prints the dataset and its vendor.
+  - You can name the subject, predicate and object of one triple you wrote.
+quiz:
+- id: q1
+  prompt: How does RDF store facts?
+  options:
+  - As triples — subject, predicate, object
+  - As rows and columns only
+  - As key-value pairs without names
+  - As images
+  answer: 0
+  explanation: Triples with web-style identifiers let data from different sources join.
+  evidence: RDF stores facts as triples (subject, predicate, object) with web-style identifiers
+- id: q2
+  prompt: Why do data from different sources join easily in RDF?
+  options:
+  - They join on shared IRIs
+  - They are stored in one spreadsheet
+  - A model merges them
+  - They don't join at all
+  answer: 0
+  explanation: Shared identifiers are the joining key.
+  evidence: data from different sources joins on shared IRIs
+- id: q3
+  prompt: What is SPARQL?
+  options:
+  - The query language for RDF
+  - A Python web framework
+  - A container runtime
+  - A spreadsheet formula language
+  answer: 0
+  explanation: SPARQL queries graphs the way SQL queries tables.
+  evidence: SPARQL is the query language.
+- id: q4
+  prompt: What is Oxigraph?
+  options:
+  - An open-source RDF store written in Rust with Python bindings
+  - A hosted SaaS graph database only
+  - A charting library
+  - A machine-learning framework
+  answer: 0
+  explanation: It runs in-process and stores to a folder, like DuckDB.
+  evidence: Oxigraph is an open-source RDF store written in Rust with Python bindings
+- id: q5
+  prompt: What does SHACL do?
+  options:
+  - States what valid graph data looks like, so it can be checked
+  - Queries graphs
+  - Draws graphs as pictures
+  - Compresses triples
+  answer: 0
+  explanation: Shapes express rules such as "every dataset has exactly one vendor".
+  evidence: SHACL is the W3C language for saying what valid graph data looks like.
+- id: q6
+  prompt: Which is an example of a SHACL rule?
+  options:
+  - Every dataset has exactly one vendor
+  - Every chart is blue
+  - Every user has a password
+  - Every file is under 1 MB
+  answer: 0
+  explanation: SHACL shapes describe constraints on graph data.
+  evidence: every dataset has exactly one vendor
+- id: q7
+  prompt: In AI work, what role does SHACL play for a graph?
+  options:
+  - The same role dbt tests play for tables — nothing malformed reaches the layer the model reads
+  - It writes prompts
+  - It trains the model
+  - It hosts the API
+  answer: 0
+  explanation: Validation is a quality gate before publishing.
+  evidence: SHACL plays the role dbt tests play for tables
+- id: q8
+  prompt: What does a graph give a model, according to the course?
+  options:
+  - Facts with stable identifiers it can cite
+  - More GPU memory
+  - A larger context window
+  - Faster tokenisation
+  answer: 0
+  explanation: Stable IRIs make answers traceable.
+  evidence: A graph gives a model facts with stable identifiers it can cite
+- id: q9
+  prompt: What describes the classes, properties and controlled vocabularies?
+  options:
+  - OWL and SKOS — the ontology
+  - CSS and HTML
+  - YAML and TOML
+  - Docker and Compose
+  answer: 0
+  explanation: The ontology defines meaning; the data follows it.
+  evidence: OWL and SKOS describe the classes, properties and controlled vocabularies (the ontology).
+- id: q10
+  prompt: Which is a con of Oxigraph?
+  options:
+  - Single-node; large graphs need Neptune, GraphDB or similar
+  - It has no query language
+  - It needs a cluster to start
+  - It can't be used from Python
+  answer: 0
+  explanation: Embedded stores suit modest graphs on one machine.
+  evidence: Single-node; large graphs need Neptune, GraphDB or similar
+- id: q11
+  prompt: Which is a con of SHACL?
+  options:
+  - Its error reports are verbose
+  - It can't express any rules
+  - It only works in Java
+  - It requires a GPU
+  answer: 0
+  explanation: Reports are detailed but long; summarise them for reviewers.
+  evidence: SHACL error reports are verbose
+- id: q12
+  prompt: Which is a typical use case?
+  options:
+  - Data catalogues and lineage with typed relationships
+  - Video editing
+  - Sending email
+  - Hosting a blog
+  answer: 0
+  explanation: Typed relationships are where graphs shine.
+  evidence: Data catalogs and lineage with typed relationships.
+- id: q13
+  prompt: When did SHACL become a W3C standard?
+  options:
+  - 2017
+  - 1990
+  - 2001
+  - 2024
+  answer: 0
+  explanation: RDF dates from around 1999, SPARQL from 2008, SHACL from 2017.
+  evidence: SPARQL became a W3C standard in 2008 and SHACL in 2017
