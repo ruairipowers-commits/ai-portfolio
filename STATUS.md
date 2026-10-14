@@ -3,6 +3,18 @@
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
 (or delete them) as they're done. Last updated 14 October 2026.
 
+## 00000a. Every app has its own email sender (14 October 2026)
+
+So mail from each project can be filtered on its own. Each app reads its own setting first; if that is empty it uses the
+shared `SMTP_FROM` / `MAIL_FROM` address under its own name (e.g. `Daily puzzle <shared@…>`), so filtering by sender
+name works even before any of these are set.
+
+- [ ] **Deploy `.env` on the EVO-X1** (addresses on the Resend-verified domain; the name in front is free):
+      `GOVERNANCE_MAIL_FROM`, `ASSISTANT_MAIL_FROM`, `EDITORIAL_MAIL_FROM`, `PUZZLE_MAIL_FROM`, `COURSE_MAIL_FROM`,
+      `HELPER_MAIL_FROM` (Lil'Helper's own server `.env`), then `git pull && ./update.sh --force`.
+- [ ] **GitHub repository variables** (Settings → Secrets and variables → Actions → Variables): `UPTIME_MAIL_FROM`,
+      `DRAFT_MAIL_FROM`. Not secrets: a sender address isn't sensitive.
+
 ## 000000. Shared Ollama hardening + two posts (14 October 2026, branch `agent/claude-evo-ollama-openclaw`)
 
 The EVO-X1 now runs one ROCm Ollama (host compose in the separate `infra-setups` repo, `evo-x1-server`), shared by
@@ -40,7 +52,8 @@ hello-world projects run by hand, governance / image-deps / security checks, liv
       `docker compose exec crash-course course publish --all --reviewer "Ruairi Powers"`.
 - [ ] **Demo host:** `git pull && ./update.sh` builds `Dockerfile.space` (`/crash-course/`, 1g, `egress: true`, volume
       `/app/warehouse`). Set in the deploy `.env`: `COURSE_SECRET` (`openssl rand -hex 32`), `COURSE_OWNER_EMAIL`
-      (your email; signing in with it opens `/owner`), `COURSE_PUBLIC_URL`, `RESEND_API_KEY`, `MAIL_FROM`.
+      (your email; signing in with it opens `/owner`), `COURSE_PUBLIC_URL`, `RESEND_API_KEY` (shared), and
+      `COURSE_MAIL_FROM` (e.g. `Crash course <courses@your-domain>`; falls back to the shared `MAIL_FROM`).
 - [ ] **Real writer model:** `COURSE_WRITER_MODEL=local-qwen` on the EVO-X1. The offline mock writes fill-the-gap
       Beginner/Intermediate levels, which are fine for testing the flow but are not courses. Draft one with
       `course build dbt beginner`, read it in the preview, and only then promote.

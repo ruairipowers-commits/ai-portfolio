@@ -10,6 +10,7 @@ import datetime as dt
 import hashlib
 import os
 import re
+from email.utils import formataddr, parseaddr
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -128,6 +129,20 @@ def email_html(h: Household, rec: dict, links: dict, notes: dict | None = None) 
     return env.get_template("email.html").render(**week_context(h, rec, notes), links=links)
 
 
+def mail_from() -> str:
+    """The From line. HELPER_MAIL_FROM wins: this app's own sender, so its mail can be filtered on its own.
+    Otherwise the shared MAIL_FROM / SMTP_FROM address is used under this app's name ("Lil'Helper").
+    """
+    own = (os.getenv("HELPER_MAIL_FROM") or "").strip()
+    if own:
+        return own
+    for k in ('MAIL_FROM', 'SMTP_FROM'):
+        addr = parseaddr(os.getenv(k) or "")[1]
+        if "@" in addr:
+            return formataddr(("Lil'Helper", addr))
+    return "Lil'Helper <helper@example.com>"
+
+
 def send_week_email(h: Household, rec: dict, links: dict, notes: dict | None = None) -> list[str]:
     telemetry.require_enabled("email")
     cfg = (h.raw.get("outputs") or {}).get("email", {})
@@ -140,7 +155,7 @@ def send_week_email(h: Household, rec: dict, links: dict, notes: dict | None = N
             import httpx
             r = httpx.post("https://api.resend.com/emails", timeout=15,
                            headers={"Authorization": f"Bearer {os.environ['RESEND_API_KEY']}"},
-                           json={"from": os.getenv("MAIL_FROM", "Lil'Helper <helper@example.com>"), "to": [addr],
+                           json={"from": mail_from(), "to": [addr],
                                  "subject": subject, "html": html})
             out.append("sent" if r.status_code < 300 else f"failed {r.status_code}")
         else:

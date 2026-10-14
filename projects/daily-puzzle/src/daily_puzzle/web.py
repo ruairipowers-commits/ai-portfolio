@@ -90,9 +90,11 @@ def mail_mode() -> str:
     """One line for the operator: is email actually going out, and from where."""
     if not os.getenv("RESEND_API_KEY"):
         return "OFF — RESEND_API_KEY isn't set in this container, so emails are only written to output/outbox/."
-    frm = os.getenv("MAIL_FROM", "")
-    if not frm:
-        return "Resend key set, but MAIL_FROM is empty (a placeholder sender is used and Resend will refuse it)."
+    from .mailer import mail_from
+    frm = mail_from()
+    if frm.endswith("@example.com>"):
+        return ("Resend key set, but neither PUZZLE_MAIL_FROM nor MAIL_FROM is set (a placeholder sender is used and "
+                "Resend will refuse it).")
     return f"Sending through Resend as {frm}. The sender's domain must be verified in Resend."
 
 

@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import os
 import re
+from email.utils import formataddr, parseaddr
 from pathlib import Path
 
 from sqlalchemy import select
@@ -51,9 +52,23 @@ def send(conn, to: str, kind: str, subject: str, text: str, unsubscribe_url: str
     return status
 
 
+def mail_from() -> str:
+    """The From line. PUZZLE_MAIL_FROM wins: this app's own sender, so its mail can be filtered on its own.
+    Otherwise the shared MAIL_FROM / SMTP_FROM address is used under this app's name ("Daily puzzle").
+    """
+    own = (os.getenv("PUZZLE_MAIL_FROM") or "").strip()
+    if own:
+        return own
+    for k in ('MAIL_FROM', 'SMTP_FROM'):
+        addr = parseaddr(os.getenv(k) or "")[1]
+        if "@" in addr:
+            return formataddr(('Daily puzzle', addr))
+    return "Daily puzzle <puzzle@example.com>"
+
+
 def _resend(to, subject, text, unsub) -> tuple[str, str | None]:
     import httpx
-    body = {"from": os.getenv("MAIL_FROM", "Daily puzzle <puzzle@example.com>"), "to": [to], "subject": subject,
+    body = {"from": mail_from(), "to": [to], "subject": subject,
             "text": text}
     if unsub:
         body["headers"] = {"List-Unsubscribe": f"<{unsub}>", "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"}

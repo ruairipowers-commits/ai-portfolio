@@ -35,5 +35,6 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          UPTIME_MAIL_FROM: ${{ vars.UPTIME_MAIL_FROM }}   # optional own sender (repo variable)
           ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
         run: python3 scripts/uptime.py --email /tmp/uptime.txt
