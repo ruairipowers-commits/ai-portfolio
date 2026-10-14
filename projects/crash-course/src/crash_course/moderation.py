@@ -135,6 +135,12 @@ def suggest(conn, s: Settings, learner_id: int, text: str) -> dict:
     return one(conn, "SELECT * FROM suggestions WHERE id=?", sid)
 
 
+def approvable(a: Assessment, s: Settings) -> bool:
+    """Defence in depth for HITL-02: a topic flagged in a reject category (explicit, hate, harassment, violence,
+    self-harm, illegal, personal data, injection) can't be approved by anyone, so a misclick can't publish it."""
+    return not (a.verdict == "reject-recommended" and set(a.categories) & set(s["moderation"]["reject_categories"]))
+
+
 def slugify(title: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:40] or "course"
 
@@ -152,6 +158,9 @@ def decide(conn, s: Settings, sid: int, decision: str, actor: str, title: str = 
     a = Assessment.model_validate_json(row["assessment"])
     telemetry.require_enabled("approve", actor=actor)
     slug = None
+    if decision == "approve" and not approvable(a, s):
+        raise ValueError("this topic was flagged " + ", ".join(sorted(set(a.categories) & set(s["moderation"]["reject_categories"])))
+                         + " and can't be approved; reject it or ask the learner to suggest it differently")
     if decision == "approve":
         if docs and not docs.startswith("https://"):
             raise ValueError("docs link must be https")

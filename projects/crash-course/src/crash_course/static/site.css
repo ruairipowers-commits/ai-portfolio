@@ -118,3 +118,12 @@ footer { color: var(--muted); font-size: 13px; padding: 24px 0 40px; border-top:
 [x-cloak] { display: none !important; }
 body.has-bar { padding-top: 88px; }
 body.has-bar { padding-top: 88px; }
+
+/* owner page */
+.tbl { width: 100%; border-collapse: collapse; font-size: 15px; }
+.tbl th, .tbl td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl th { font-size: 13px; color: var(--muted); font-weight: 600; }
+.tbl tr:last-child td { border-bottom: 0; }
+.tbl .actions { white-space: nowrap; }
+.tbl .actions form { display: inline; margin: 0; }
+details summary { cursor: pointer; color: var(--link); margin: 6px 0; }

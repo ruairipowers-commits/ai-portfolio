@@ -14,6 +14,7 @@ import hashlib
 import re
 
 from .catalog import FRONT, norm, plain
+from .checks import STOP
 
 # ---------------------------------------------------------------- moderator
 KNOWN = {
@@ -119,7 +120,8 @@ def cloze(source_md: str, prefix: str, n: int, seed: str, extra_text: str = "") 
                 return out
             low = sent.lower()
             cands = [w for w in dict.fromkeys(_words(low)) if low.count(w) == 1 and (sent, w) not in used
-                     and re.search(rf"(?<![\w./_-]){re.escape(w)}(?![\w/_-])", low)]
+                     and w not in STOP
+                     and re.search(rf"(?<![\w./_-]){re.escape(w)}(?![\w/_-]|\.\w)", low)]
             if len(cands) <= rnd:
                 continue
             w = cands[(rnd * 3 + i) % len(cands)]
@@ -176,10 +178,15 @@ def writer(req: dict) -> dict:
         "in_portfolio": in_pf, "capstone": f"Extend the {title} project into something you would show a colleague.",
         "further_learning": docs_line,
     }
-    sections = [{"id": s["id"], "heading": s["id"].replace("_", " ").capitalize(), "body": body.get(s["id"], what)}
+    filler = (f"{title} is covered here from its official documentation ({docs or 'see the docs'}) and the owner's "
+              f"notes. This part of the {level} level explains how {title} is used in practice, what to watch for, "
+              f"and how it compares with the alternatives a team would consider.")
+    sections = [{"id": s["id"], "heading": s["id"].replace("_", " ").capitalize(),
+                 "body": b if len((b := body.get(s["id"], what) or "").strip()) >= 40 else (b + "\n\n" + filler).strip()}
                 for s in req["sections"]]
     n = req["quiz_questions"]
-    quiz = cloze(md, "q", n, c["slug"] + level)
+    level_text = "\n\n".join(x["body"] for x in sections)
+    quiz = cloze(md, "q", n, c["slug"] + level, extra_text=level_text)
     modules = []
     if level == "intermediate":
         for i, (mid, mtitle, text) in enumerate([("m1", f"How {title} works", what), ("m2", "Where it is used", uses),

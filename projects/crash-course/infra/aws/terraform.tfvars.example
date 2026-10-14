@@ -1,0 +1,5 @@
+region                   = "us-east-1"
+approved_model_arns      = ["arn:aws:bedrock:us-east-1::foundation-model/SET-APPROVED-MODEL-ID"]
+ses_identity_arn         = "arn:aws:ses:us-east-1:123456789012:identity/example.com"
+published_retention_days = 365
+log_retention_days       = 365

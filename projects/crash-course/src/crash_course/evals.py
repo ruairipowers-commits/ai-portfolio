@@ -21,7 +21,7 @@ from pathlib import Path
 import yaml
 
 from . import catalog, checks, moderation
-from .config import LEVELS, Settings, root
+from .config import LEVELS, Settings, data_dir, root
 from .store import connect
 
 
@@ -129,6 +129,12 @@ def eval_content(s: Settings) -> dict:
             rep = checks.check_level(_mutate(sample, case["mutate"]), sample_course, s)
             ok = not rep.ok
         results.append({"id": case["id"], "expected": case["expected"], "ok": ok})
+    # HITL-03: every edit the owner accepted from feedback stays in the newest version of its level
+    fb = data_dir() / "warehouse" / "evals" / "feedback.yaml"
+    for i, case in enumerate(yaml.safe_load(fb.read_text()) or [] if fb.exists() else []):
+        lv = catalog.load_level(case["course"], case["level"], include_drafts=True)
+        text = catalog.norm(lv.model_dump_json()) if lv else ""
+        results.append({"id": f"feedback-{i + 1}", "expected": "kept", "ok": catalog.norm(case["must_contain"]) in text})
     return {"cases": len(results), "levels": len(levels), "failing_levels": failing,
             "pass_rate": round(sum(r["ok"] for r in results) / len(results), 3), "results": results}
 

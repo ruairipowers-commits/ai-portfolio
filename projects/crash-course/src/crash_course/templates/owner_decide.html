@@ -10,7 +10,9 @@
   {% if a.duplicate_of %}<p class="small">Close to the existing course <a href="{{ R }}/course/{{ a.duplicate_of }}">{{ a.duplicate_of }}</a>.</p>{% endif %}
   <p class="small muted">Status: {{ row.status }}{% if row.decided_by %} — decided by {{ row.decided_by }}{% endif %}</p>
 </div>
-{% if row.status == 'pending' %}
+{% if row.status == 'pending' and decision == 'approve' and not row.approvable %}
+<p class="note">This topic was flagged in a category that can't be approved ({{ a.categories|join(', ') }}). Use the reject link instead.</p>
+{% elif row.status == 'pending' %}
 <form method="post" action="{{ R }}/owner/decide" class="card" style="margin-top:14px">
   {% for k, v in {'k': kind, 'r': ref, 'd': decision, 'e': e, 'sig': sig}.items() %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
   {% if decision == 'approve' %}
