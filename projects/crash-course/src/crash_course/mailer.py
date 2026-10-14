@@ -67,7 +67,10 @@ def owner_email(s: Settings) -> str:
 
 
 def send(conn, to: str, kind: str, subject: str, text: str) -> str:
-    telemetry.require_enabled("email")
+    # The kill switch pauses the AI workflow (assessments, drafts, approval mail). Sign-in links keep working, so
+    # learners can still reach their tracker and take quizzes, which are scored by code with no model involved.
+    if kind != "signin":
+        telemetry.require_enabled("email")
     if os.getenv("RESEND_API_KEY"):
         status = _resend(to, subject, text)
     else:
@@ -123,10 +126,16 @@ def approval_request(conn, s: Settings, sid: int, text: str, a) -> str:
             + (f"Duplicate of: {a.duplicate_of}\n" if a.duplicate_of else "")
             + (f"Proposed title: {a.proposed_title}\n" if a.proposed_title else "")
             + ("Proposed outline:\n" + "".join(f"  - {o}\n" for o in a.proposed_outline) if a.proposed_outline else "")
-            + f"\nApprove (you can edit the title and docs link first): {signed_link('suggestion', str(sid), 'approve', ttl)}\n"
-            f"Reject: {signed_link('suggestion', str(sid), 'reject', ttl)}\n\n"
+            + (f"\nApprove (you can edit the title and docs link first): {signed_link('suggestion', str(sid), 'approve', ttl)}\n"
+               if moderation_approvable(s, a) else "\nApproval isn't offered: it was flagged in a category that can't be approved.\n")
+            + f"Reject: {signed_link('suggestion', str(sid), 'reject', ttl)}\n\n"
             f"Nothing is created until you approve. Links expire in {ttl} days; the operator app has the same queue.")
     return send(conn, to, "approval", f"Approve crash course topic #{sid}? ({a.verdict})", body)
+
+
+def moderation_approvable(s: Settings, a) -> bool:
+    from .moderation import approvable
+    return approvable(a, s)
 
 
 def draft_ready(conn, s: Settings, course: str, level: str, report_ok: bool, problems: list[str]) -> str:

@@ -6,7 +6,7 @@
   <ul class="small">{% for p in report.problems %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
   <span class="small muted">~{{ report.stats.minutes }} of {{ report.stats.budget }} min · {{ report.stats.questions }} questions in the bank · written by {{ lv.provenance.written_by }}</span></div>
 {% endif %}
-<p class="small muted">{% if not preview %}<a href="{{ R }}/tracker#c-{{ c.slug }}">My tracker</a> · {% endif %}{{ c.title }}</p>
+<p class="small muted">{% if not preview %}<a href="{{ R }}/tracker#c-{{ c.slug }}">My tracker</a>{% else %}<a href="{{ R }}/owner">Owner</a>{% endif %} · {{ c.title }}</p>
 <h1>{{ lv.title }}</h1>
 <p><span class="pill lv-{{ lv.level }}">{{ label }} · {{ cfg.minutes|dur }}</span> <span class="small muted">version {{ lv.version }}</span></p>
 <nav class="toc">

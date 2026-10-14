@@ -25,8 +25,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markdown_it import MarkdownIt
 
-from . import accounts, builder, catalog, checks, demo, jobs, mailer, moderation, quiz, telemetry, tracker
+from . import accounts, builder, catalog, checks, demo, jobs, mailer, moderation, quiz, revise, telemetry, tracker
 from .config import LEVELS, PKG, Settings, root
+from .schemas import Assessment
 from .store import connect, insert, now, one, rows
 from .tracker import NotAllowed
 
@@ -85,7 +86,18 @@ def create_app(start_worker: bool = False) -> FastAPI:
         if not lid:
             return None
         with connect() as conn:
-            return one(conn, "SELECT id, name, email, is_owner FROM learners WHERE id=?", lid)
+            u = one(conn, "SELECT id, name, email, is_owner FROM learners WHERE id=?", lid)
+        if u:   # the owner is whoever holds COURSE_OWNER_EMAIL now, not whoever had it at sign-up
+            u["is_owner"] = int(accounts.is_owner_email(s, u["email"]))
+        return u
+
+    def same_origin(req: Request) -> bool:
+        """Owner actions are POSTs from our own pages (cookies are SameSite=Lax; this is a second check)."""
+        origin = req.headers.get("origin") or req.headers.get("referer") or ""
+        if not origin:
+            return True
+        host = req.headers.get("x-forwarded-host") or req.headers.get("host") or ""
+        return origin.split("://", 1)[-1].split("/", 1)[0] == host
 
     def page(req: Request, name: str, status: int = 200, **ctx) -> HTMLResponse:
         ctx.setdefault("user", me(req))
@@ -138,7 +150,7 @@ def create_app(start_worker: bool = False) -> FastAPI:
             enrolled = bool(u and one(conn, "SELECT 1 FROM enrollments WHERE learner_id=? AND course=?", u["id"], slug))
         if not c:
             return message(req, "Course not found", "There's no course at that address.", 404)
-        return page(req, "course.html", c=c, status=catalog.level_status(slug), enrolled=enrolled, user=u)
+        return page(req, "course.html", c=c, lvstatus=catalog.level_status(slug), enrolled=enrolled, user=u)
 
     # ------------------------------------------------------------ sign-in
     @app.get("/signin", response_class=HTMLResponse)
@@ -361,8 +373,9 @@ def create_app(start_worker: bool = False) -> FastAPI:
                 row = one(conn, "SELECT * FROM suggestions WHERE id=?", int(r) if r.isdigit() else -1)
                 if not row:
                     return message(req, "Not found", "That suggestion no longer exists.", 404)
-                return page(req, "owner_decide.html", kind=k, ref=r, decision=d, e=e, sig=sig,
-                            row=moderation.parse(row), user=None)
+                parsed = moderation.parse(row)
+                parsed["approvable"] = moderation.approvable(Assessment.model_validate(parsed["assessment"]), s)
+                return page(req, "owner_decide.html", kind=k, ref=r, decision=d, e=e, sig=sig, row=parsed, user=None)
             if k == "level":
                 slug, level = (r.split(":") + [""])[:2]
                 lv = catalog.load_level(slug, level, include_drafts=True)
@@ -412,6 +425,91 @@ def create_app(start_worker: bool = False) -> FastAPI:
         rep = checks.check_level(lv, c, s)
         return page(req, "learn.html", lv=lv, p=None, c=c, passed=set(), attempts=[], preview=True, report=rep,
                     parts=tracker.quiz_parts(lv), label=s.level(level)["label"], cfg=s.level(level))
+
+    # ------------------------------------------------------------ owner page (signed in as COURSE_OWNER_EMAIL)
+    def owner_state(conn) -> dict:
+        courses = catalog.all_courses(conn)
+        drafts = []
+        for slug in sorted(courses):
+            for name in LEVELS:
+                if catalog.has_pending_draft(slug, name):
+                    lv = catalog.load_level(slug, name, include_drafts=True)
+                    rep = checks.check_level(lv, courses[slug], s)
+                    drafts.append({"course": slug, "title": courses[slug].title, "level": name, "version": lv.version,
+                                   "ok": rep.ok, "problems": rep.problems[:3], "minutes": rep.stats["minutes"],
+                                   "questions": rep.stats["questions"], "by": lv.provenance.written_by,
+                                   "note": lv.provenance.note})
+        sugg = [moderation.parse(r) for r in rows(conn, "SELECT * FROM suggestions ORDER BY (status='pending') DESC, "
+                                                        "id DESC LIMIT 30")]
+        for g in sugg:
+            g["approvable"] = moderation.approvable(Assessment.model_validate(g["assessment"]), s)
+        props = []
+        for p in rows(conn, "SELECT * FROM proposals WHERE status='pending' ORDER BY id"):
+            props.append({**p, "payload": json.loads(p["payload"])})
+        fb = rows(conn, "SELECT f.*, l.name FROM feedback f LEFT JOIN learners l ON l.id=f.learner_id "
+                        "ORDER BY f.id DESC LIMIT 20")
+        stats = {"learners": one(conn, "SELECT COUNT(*) n FROM learners")["n"],
+                 "enrolments": one(conn, "SELECT COUNT(*) n FROM enrollments")["n"],
+                 "attempts": one(conn, "SELECT COUNT(*) n FROM attempts WHERE submitted_at IS NOT NULL")["n"],
+                 "completed": one(conn, "SELECT COUNT(*) n FROM progress WHERE completed_at IS NOT NULL")["n"],
+                 "published": sum(1 for slug in courses for name in LEVELS if catalog.load_level(slug, name))}
+        return {"drafts": drafts, "suggestions": sugg, "proposals": props, "feedback": fb, "stats": stats,
+                "jobs": jobs.recent(conn, 10)}
+
+    @app.get("/owner", response_class=HTMLResponse)
+    def owner_page(req: Request, done: str = ""):
+        u, redirect = need_user(req, "/owner")
+        if redirect:
+            return redirect
+        if not u["is_owner"]:
+            return message(req, "Owner only", "This page is for the course owner.", 403)
+        with connect() as conn:
+            st = owner_state(conn)
+        return page(req, "owner.html", user=u, done=done[:200], **st)
+
+    @app.post("/owner/action")
+    async def owner_action(req: Request):
+        u = me(req)
+        if not (u and u["is_owner"]) or not same_origin(req):
+            return message(req, "Owner only", "This action is for the course owner.", 403)
+        f = await req.form()
+        kind, actor = str(f.get("kind", "")), s["owner"]
+        try:
+            with connect() as conn:
+                if kind == "suggestion":
+                    row = moderation.decide(conn, s, int(f.get("id", -1)), "approve" if f.get("decision") == "approve"
+                                            else "reject", actor, title=str(f.get("title", ""))[:80],
+                                            docs=str(f.get("docs", "")).strip()[:300], notes=str(f.get("notes", ""))[:4000])
+                    done = f"Suggestion #{row['id']} {row['status']}" + (f": course {row['course_slug']} created, "
+                           "its Familiar level is queued" if row["course_slug"] else "")
+                elif kind == "level":
+                    slug, level = str(f.get("course", "")), str(f.get("level", ""))
+                    if f.get("decision") == "publish":
+                        ok, problems = builder.publish(conn, s, slug, level, actor)
+                        done = f"{slug}/{level} published" if ok else f"{slug}/{level} not published: {problems[0]}"
+                    else:
+                        builder.reject(conn, s, slug, level, actor, str(f.get("notes", ""))[:300])
+                        done = f"{slug}/{level} draft rejected"
+                elif kind == "publish_all":
+                    n, bad = 0, 0
+                    for slug in sorted(catalog.all_courses(conn)):
+                        for level in LEVELS:
+                            if catalog.has_pending_draft(slug, level):
+                                ok, _ = builder.publish(conn, s, slug, level, actor)
+                                n, bad = n + ok, bad + (not ok)
+                    done = f"Published {n} level(s)" + (f"; {bad} failed their checks and stay as drafts" if bad else "")
+                elif kind == "proposal":
+                    pid = int(f.get("id", -1))
+                    accepted = [int(x) for x in f.getlist("accept")]
+                    res = revise.decide(conn, s, pid, accepted, actor)
+                    done = f"Proposal #{pid}: {res['status']}, {res['applied']} edit(s) applied to a new draft"
+                else:
+                    done = "Nothing changed"
+        except (ValueError, NotAllowed) as e:
+            done = f"Couldn't do that: {e}"
+        except telemetry.WorkflowDisabled:
+            done = "The workflow is paused by the governance console"
+        return go(f"/owner?done={quote(done[:200])}")
 
     # ------------------------------------------------------------ health
     @app.get("/api/health")
