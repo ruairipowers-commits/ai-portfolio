@@ -79,9 +79,15 @@ def send(conn, to: str, kind: str, subject: str, text: str) -> str:
     return status
 
 
+def sender() -> str:
+    """The From line. COURSE_MAIL_FROM wins, so this app keeps its own display name when the deploy .env shares one
+    MAIL_FROM (and one Resend key) across several apps; MAIL_FROM is the fallback."""
+    return (os.getenv("COURSE_MAIL_FROM") or os.getenv("MAIL_FROM") or "Crash course <courses@example.com>").strip()
+
+
 def _resend(to: str, subject: str, text: str) -> str:
     import httpx
-    body = {"from": os.getenv("MAIL_FROM", "Crash course <courses@example.com>"), "to": [to], "subject": subject,
+    body = {"from": sender(), "to": [to], "subject": subject,
             "text": text}
     try:
         r = httpx.post("https://api.resend.com/emails", json=body, timeout=15,
