@@ -58,6 +58,8 @@ def main(argv: list[str] | None = None) -> int:
     lg.add_argument("--local-draft", help="what the local model wrote (local-review)")
     lg.add_argument("--review", nargs="*", default=[], help="everything Claude wrote besides the post: brief, review notes")
     lg.add_argument("--read", nargs="*", default=[], help="every file Claude read for this run")
+    lg.add_argument("--sent", nargs="*", default=[], help="text Claude sent out, e.g. the local model's prompt")
+    lg.add_argument("--local-metrics", help="the JSON ollama_job_result returned (exact tokens and seconds)")
     lg.add_argument("--local-model", default="")
     lg.add_argument("--local-seconds", type=float, default=0.0)
     lg.add_argument("--checks-first-pass", action="store_true")
@@ -108,7 +110,7 @@ def main(argv: list[str] | None = None) -> int:
             print(routing.summary(routing.load())["paired"]["topics"])
             return 0
         row = routing.record(a.arm, a.topic, a.slug, a.final, local_draft=a.local_draft, review_notes=a.review,
-                             read=a.read, local_model=a.local_model, local_seconds=a.local_seconds,
+                             sent=a.sent, local_metrics=a.local_metrics, read=a.read, local_model=a.local_model, local_seconds=a.local_seconds,
                              checks_first_pass=a.checks_first_pass, defects=a.defects, rewritten=a.rewritten,
                              editor_min=a.editor_min, published=a.published, note=a.note)
         print(json.dumps(row, indent=2))

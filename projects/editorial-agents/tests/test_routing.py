@@ -61,3 +61,13 @@ def test_cli_log_and_table(tmp_path, monkeypatch, capsys):
     assert row["defects"] == 2 and row["published"] and row["checks_first_pass"]
     assert main(["routing", "table"]) == 0
     assert "Local model drafts" in capsys.readouterr().out
+
+
+def test_sent_prompt_and_exact_local_metrics(tmp_path):
+    f = _files(tmp_path, final="the final post text", local="the local post text", prompt="P" * 400,
+               metrics=json.dumps({"status": "done", "metrics": {"prompt_tokens": 900, "output_tokens": 2100,
+                                                                  "total_seconds": 88.0}}))
+    row = routing.record("local-review", "t", "s", f["final"], local_draft=f["local"], sent=[f["prompt"]],
+                         local_metrics=f["metrics"], local_seconds=999, log=tmp_path / "r.jsonl")
+    assert row["claude_sent_chars"] == 400 and row["claude_written_chars"] == 400 + len("final") + 1
+    assert (row["local_prompt_tokens"], row["local_output_tokens"], row["local_seconds"]) == (900, 2100, 88.0)
