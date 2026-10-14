@@ -9,13 +9,12 @@ audience: [AI and ML engineers, Product managers, "Risk, compliance and legal"]
 
 # Agents that find topics and draft posts, and why none of them can publish
 
-!!! note "Update, 14 October 2026: daily posts now publish themselves when every check passes"
-    I changed the rule this post describes. A new post now goes out most days: a local model on my own server drafts
+!!! note "Update, 14 October 2026: a post most days, still approved by me"
+    The pipeline has grown since this post. A new post now arrives most days: a local model on my own server drafts
     it from the top topic (readers can vote on the queue on the [Blog](../../blog/index.md) page), Claude reviews and
-    edits it, and code decides whether it publishes: every code check must pass and the independent editor must score
-    every criterion 4 or more. Posts that clear that bar publish without my review, tagged **AutoPublished** and saying
-    so in their last line. Anything that fails still waits for me as a draft pull request, exactly as below. I can
-    still pick or dismiss tomorrow's topic from the daily email, or switch the whole thing off.
+    edits it, and code checks it: every code check must pass and the independent editor must score every criterion
+    4 or more for it to be marked ready. Those posts are tagged **AutoPublished**. The rule below still holds: none
+    of them goes live until I merge it.
 
 I wanted this blog to keep moving without turning into the same post over and over. So I built three agents: a
 scout that finds topics, a writer that drafts a post each week, and an editor that tries to find what's wrong with

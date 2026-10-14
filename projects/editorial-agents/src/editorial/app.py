@@ -206,8 +206,7 @@ def create_app(store: Store | None = None, background: bool | None = None) -> Fa
         intro = ("<p>Topics my scout agent found, ranked by predicted engagement, novelty against what I've already "
                  "published, and how many market sectors could use them. Readers vote on the blog; my picks come "
                  "first, then the most-voted. Each day a local model drafts a post from the top topic and Claude "
-                 "reviews it; it publishes (tagged AutoPublished) only if every check passes, otherwise it waits "
-                 "for me.</p>")
+                 "reviews it; code checks it, and I read and approve every post before it goes live.</p>")
         return page("Blog topic queue", intro + rows)
 
     @app.get("/act", response_class=HTMLResponse)

@@ -9,7 +9,7 @@
     editorial eval [--alias ALIAS] the golden-set gate
     editorial serve                the web service (queue page, pick / dismiss, scheduler)
     editorial gate POST --editor EDITOR.json [--sources DIR] [--corpus …]
-                                   the auto-publish decision (exit 0 = publish, 1 = hold for the owner)
+                                   the ready-to-publish verdict (exit 0 = ready, 1 = needs work); the owner merges either way
     editorial routing log …        record one routed post run (claude-only or local-review) for the comparison
     editorial routing table        the comparison table the metrics post shows
 """
@@ -88,7 +88,7 @@ def main(argv: list[str] | None = None) -> int:
             scout.published_texts(str(ROOT / "fixtures" / "corpus.json"))
         g = review.gate(a.post, json.loads(open(a.editor).read()), a.sources, published)
         print(review.scorecard_md(g["review"]))
-        print("\nDECISION:", "PUBLISH" if g["publish"] else "HOLD for the owner")
+        print("\nDECISION:", "PUBLISH (ready for the owner to merge)" if g["publish"] else "HOLD (needs work)")
         for why in g["reasons"]:
             print(" -", why)
         return 0 if g["publish"] else 1
