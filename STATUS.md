@@ -3,6 +3,21 @@
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
 (or delete them) as they're done. Last updated 14 October 2026.
 
+## 0000000. Daily auto-published posts + votes + Blog/Learn tabs (15 October 2026, PR #24, `agent/claude-daily-post`)
+
+Built: reader votes on the editorial queue (blog page), daily owner email with votes, `editorial gate` (code decides
+auto-publish), `editorial routing` comparison log rendered into the metrics post, `.agents/skills/daily-post`, Blog
+and Learn tabs. Ruairi chose: scheduled Claude task (not an API key), failures → draft PR, Learn = Crash course +
+Classes + Technologies.
+
+- [ ] **Merge PR #24**, then: pause the "Weekly blog post draft" scheduled task and create the daily one (needs the
+      computer, for the EVO-X1 model). Not created yet: the skill must be on `main` first.
+- [ ] **Three comparison posts** (top 3 queue topics, both arms, published if the gate passes): blocked on reading
+      the queue — the fetch permission prompt timed out twice; Ruairi to paste the queue URL in the chat.
+- [ ] Suggested edit, not made: `how-i-govern-this-site.md` "never push or publish without my approval" now has the
+      daily-post exception.
+- [ ] After the first week: Ruairi reads a sample of AutoPublished posts (HITL-02 recommendation).
+
 ## 00000a. Every app has its own email sender (14 October 2026)
 
 So mail from each project can be filtered on its own. Each app reads its own setting first; if that is empty it uses the
