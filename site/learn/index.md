@@ -30,5 +30,5 @@ responsibly. [The classes and my coursework](../classes/index.md).
 
 ## Technologies
 
-A page on every tool used on this site: what it is, why I chose it, and which projects use it.
-[All technologies](../tech/index.md).
+Every tool used on this site has a page under the [Technologies](../tech/index.md) tab: what it is, why I chose
+it and which projects use it. Pages for tools with a course link straight to it.
