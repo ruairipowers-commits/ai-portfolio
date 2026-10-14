@@ -1,0 +1,243 @@
+course: seaborn
+level: familiar
+version: 1
+title: Matplotlib and seaborn in 15 minutes
+status: draft
+source:
+  page: tech/seaborn.md
+  docs: https://seaborn.pydata.org/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Matplotlib and seaborn page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    **Matplotlib** is Python's base plotting library. It draws static charts — line, bar, scatter, histogram, heatmap and
+    many more — and saves them as PNG, SVG or PDF. It controls every element of a figure: axes, ticks, labels, colours,
+    layout. That power also makes it verbose for everyday charts.
+
+    **seaborn** sits on top of Matplotlib for **statistical charts**. You give it a pandas DataFrame and column names, and
+    it handles grouping, colouring by category and statistical summaries itself: `histplot`, `boxplot`, `countplot`,
+    `heatmap` and `pairplot` each produce a finished chart in a line or two. Because a seaborn chart *is* a Matplotlib
+    figure, you can still adjust it with Matplotlib calls.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    John D. Hunter created Matplotlib in 2003, modelling it on MATLAB's plotting so scientists could move to Python
+    without losing their charts. Michael Waskom created seaborn around 2012 to make the common statistical plots of data
+    analysis quick and good-looking by default. Both are open-source projects sponsored by NumFOCUS.
+
+    Today they are the standard for static charts in Python notebooks, reports and papers. For interactive browser charts,
+    people usually reach for Plotly or a JavaScript library instead.
+- id: business
+  heading: How it fits business users
+  body: |
+    Business users see the output: the distribution chart in an analysis, the confusion matrix in a model review, the
+    figure in a slide. Charts are how most data problems are found **before** a model is trained — skewed distributions,
+    outliers, missing values and correlated features jump out of a plot faster than a table.
+
+    After training, a confusion matrix and a feature-importance chart explain a model's behaviour to people who will
+    never read the code.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Distributions of each feature** during exploratory analysis.
+    - **Correlation heatmaps.**
+    - **Comparing a feature across classes** with box plots or grouped histograms.
+    - **Confusion matrices and feature-importance charts** after training.
+    - **Charts for reports and slides.**
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | seaborn makes statistical charts from a DataFrame in one call | Static images; no built-in interactivity |
+    | Matplotlib can control every detail of a figure | Matplotlib's API is verbose and has two styles |
+    | Output to PNG, SVG and PDF for reports | Fine-tuning a seaborn chart still means learning Matplotlib |
+    | Works in notebooks, scripts and CI | Large scatter plots get slow |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [seaborn documentation](https://seaborn.pydata.org/) — the official docs from the seaborn project; the tutorial and
+      the example gallery are the best places to start.
+    - [Matplotlib documentation](https://matplotlib.org/stable/) — the official docs from the Matplotlib project.
+    - [Matplotlib quick start](https://matplotlib.org/stable/users/explain/quick_start.html) — figures, axes and the two
+      API styles explained.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below generates a synthetic loan dataset and draws a histogram of loan amount, coloured by whether the
+    loan defaulted, then saves it as a PNG — one seaborn call plus a Matplotlib title.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"How do you explore a new dataset?"** Distributions of every feature, a correlation heatmap, and the key features
+      split by the target class — then decide on cleaning.
+    - **"seaborn or Matplotlib?"** seaborn for quick statistical charts from a DataFrame; Matplotlib when you need full
+      control or a custom figure. They work together.
+    - **"How would you explain a classifier to a business audience?"** A confusion matrix in plain words ("we caught 81% of
+      defaults") and a feature-importance chart.
+
+    Pitfall: charts with no title, units or labels. Say you'd always label for the reader who wasn't in the room.
+project:
+  title: A histogram by outcome
+  kind: runnable
+  minutes: 4
+  goal: Draw a grouped histogram from a DataFrame and save it as an image.
+  steps:
+  - Run `pip install seaborn` (it installs Matplotlib, pandas and NumPy).
+  - Save the code below as `hello_seaborn.py` and run it.
+  - Open `loan_amount.png`; then change `histplot` to `boxplot(data=df, x="defaulted", y="loan_amount")` and run again.
+  code: |
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+    import seaborn as sns
+
+    rng = np.random.default_rng(0)
+    df = pd.DataFrame({
+        "loan_amount": rng.lognormal(mean=9.8, sigma=0.4, size=500),
+        "defaulted": rng.choice(["no", "yes"], size=500, p=[0.8, 0.2]),
+    })
+    ax = sns.histplot(data=df, x="loan_amount", hue="defaulted", bins=30, kde=True)
+    ax.set_title("Loan amount by outcome")
+    plt.tight_layout()
+    plt.savefig("loan_amount.png", dpi=150)
+  language: python
+  expected: |
+    loan_amount.png: overlapping histograms in two colours (no / yes) with smooth density
+    curves, titled "Loan amount by outcome".
+  done_when:
+  - The PNG was written and shows two coloured groups.
+  - You switched to a box plot by changing one call.
+quiz:
+- id: q1
+  prompt: What is Matplotlib?
+  options:
+  - Python's base plotting library
+  - A database
+  - A web framework
+  - A machine-learning library
+  answer: 0
+  explanation: seaborn sits on top of it.
+  evidence: Matplotlib is Python's base plotting library
+- id: q2
+  prompt: What does seaborn add on top of Matplotlib?
+  options:
+  - Common statistical charts from a DataFrame in one call
+  - Interactive 3D web dashboards
+  - Database connectivity
+  - Model training
+  answer: 0
+  explanation: It handles grouping, colour by category and summaries itself.
+  evidence: seaborn sits on top of it and makes common statistical charts from a DataFrame in one call
+- id: q3
+  prompt: Can you adjust a seaborn chart with Matplotlib calls?
+  options:
+  - Yes, because a seaborn chart is a Matplotlib figure
+  - No, never
+  - Only in Jupyter
+  - Only for bar charts
+  answer: 0
+  explanation: You can set titles, labels and layout with Matplotlib.
+  evidence: Because a seaborn chart is a Matplotlib figure, you can still adjust it with Matplotlib calls.
+- id: q4
+  prompt: Which formats can Matplotlib save to?
+  options:
+  - PNG, SVG and PDF
+  - Only JPG
+  - Only HTML
+  - Only Excel
+  answer: 0
+  explanation: Useful for reports and papers.
+  evidence: saves them as PNG, SVG or PDF
+- id: q5
+  prompt: What should you use for interactive charts in a browser?
+  options:
+  - Plotly or a JavaScript library
+  - Matplotlib's interactive mode only
+  - seaborn's web server
+  - A PDF viewer
+  answer: 0
+  explanation: Matplotlib and seaborn produce static images.
+  evidence: For interactive charts in a browser, Plotly or a JavaScript library is the usual choice.
+- id: q6
+  prompt: Why do charts matter before a model is trained?
+  options:
+  - Skewed distributions, outliers, missing values and correlated features show up faster in a plot
+  - Models need charts as input
+  - Charts make training faster
+  - They don't matter
+  answer: 0
+  explanation: Most data problems are found visually.
+  evidence: skewed distributions, outliers, missing values and correlated features show up faster in a plot than in a table
+- id: q7
+  prompt: After training, which charts explain a model to non-coders?
+  options:
+  - A confusion matrix and a feature-importance chart
+  - A loading spinner
+  - A Gantt chart
+  - A org chart
+  answer: 0
+  explanation: They show what the model gets right and wrong, and what drives it.
+  evidence: a confusion matrix and a feature-importance chart explain a model's behavior to people who will not read the code
+- id: q8
+  prompt: Which is a con of Matplotlib?
+  options:
+  - Its API is verbose and has two styles
+  - It can't draw histograms
+  - It can't save images
+  - It only works in browsers
+  answer: 0
+  explanation: The pyplot and object-oriented styles can confuse beginners.
+  evidence: Matplotlib's API is verbose and has two styles
+- id: q9
+  prompt: What gets slow?
+  options:
+  - Large scatter plots
+  - Small bar charts
+  - Saving a PNG
+  - Importing seaborn
+  answer: 0
+  explanation: Many points means many drawing operations.
+  evidence: Large scatter plots get slow
+- id: q10
+  prompt: Which seaborn functions produce a finished chart in a line or two?
+  options:
+  - histplot, boxplot, countplot, heatmap and pairplot
+  - read_csv and to_sql
+  - fit and predict
+  - get and post
+  answer: 0
+  explanation: They take a DataFrame and column names.
+  evidence: histplot, boxplot, countplot, heatmap and pairplot each produce a finished chart in a line or two
+- id: q11
+  prompt: Which is a typical use case?
+  options:
+  - Correlation heatmaps
+  - Serving web pages
+  - Storing secrets
+  - Running SQL
+  answer: 0
+  explanation: Heatmaps show which features move together.
+  evidence: seaborn and Matplotlib draw the feature distributions, a correlation heatmap
+- id: q12
+  prompt: What does fine-tuning a seaborn chart still require?
+  options:
+  - Learning Matplotlib
+  - Learning Java
+  - A paid licence
+  - A GPU
+  answer: 0
+  explanation: seaborn covers the common cases; details are Matplotlib.
+  evidence: Fine-tuning a seaborn chart still means learning Matplotlib
+- id: q13
+  prompt: Who created Matplotlib?
+  options:
+  - John D. Hunter, in 2003
+  - Michael Waskom, in 2012
+  - Wes McKinney, in 2008
+  - Guido van Rossum, in 1991
+  answer: 0
+  explanation: Michael Waskom created seaborn later, around 2012.
+  evidence: John D. Hunter created Matplotlib in 2003, modelling it on MATLAB's plotting

@@ -1,0 +1,246 @@
+course: sqlite-vec
+level: familiar
+version: 1
+title: Vector search with sqlite-vec in 15 minutes
+status: draft
+source:
+  page: tech/sqlite-vec.md
+  docs: https://alexgarcia.xyz/sqlite-vec/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's sqlite-vec page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    sqlite-vec is a small SQLite extension that adds **vector storage and nearest-neighbour search** to an ordinary
+    SQLite database. Embeddings — lists of numbers representing meaning — go into the same file as everything else.
+
+    You load it into a SQLite connection (the Python package does this with `sqlite_vec.load()`), create a **`vec0`**
+    virtual table with a fixed dimension, insert vectors keyed by `rowid`, and query with `MATCH` plus a **`k`** limit to
+    get the nearest rows by distance. Because rows are keyed by `rowid`, vectors join naturally to your document and
+    metadata tables.
+
+    Search is **brute force**: every stored vector is compared. That is simple, exact, and fast enough for a team's
+    document set — but it isn't designed for very large collections.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Alex Garcia created sqlite-vec in 2024 as a successor to his earlier sqlite-vss extension, rewriting it in plain C
+    with no dependencies so it would run anywhere SQLite runs — servers, laptops, phones, browsers via WebAssembly. The
+    project is still pre-1.0, so the API can change between releases.
+
+    It is used for local and embedded retrieval, prototypes and evals that need a single-file index, and as the vector
+    half of hybrid search alongside SQLite FTS5.
+- id: business
+  heading: How it fits business users
+  body: |
+    For a business, sqlite-vec makes a whole retrieval stack **portable**: documents, embeddings, keyword index and
+    entitlements in one file that runs offline in CI with a mock model. That makes AI search features easy to test,
+    demonstrate and reproduce, with no vector database service to buy or run.
+
+    The trade-off: it's a young project with a smaller community, and at very large scale a dedicated vector store or
+    pgvector is a better fit.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Local or embedded RAG** without a vector database service.
+    - **Semantic search** in desktop, mobile or edge apps.
+    - **Prototypes and evals** that need a reproducible, single-file index.
+    - **The vector half of hybrid search** next to SQLite FTS5.
+    - **"Find similar"** over a modest set of notes or records.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | No extra service; vectors live in the SQLite file | Pre-1.0; API may change |
+    | Exact search, simple to reason about | Brute-force search; not meant for very large collections |
+    | Joins to metadata and entitlement tables in SQL | Requires a SQLite build that allows loading extensions |
+    | Runs anywhere SQLite runs, including CI | Smaller community than pgvector or dedicated vector DBs |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [sqlite-vec documentation](https://alexgarcia.xyz/sqlite-vec/) — the official docs from the sqlite-vec project.
+    - [sqlite-vec on GitHub](https://github.com/asg017/sqlite-vec) — source, releases and examples.
+    - [SQLite FTS5](https://sqlite.org/fts5.html) — the keyword-search partner for hybrid retrieval.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below loads sqlite-vec into an in-memory database, stores two tiny three-dimensional "embeddings", and
+    finds which is nearest to a query vector. Real embeddings have hundreds of dimensions; the SQL is the same.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"How would you build retrieval that runs offline in CI?"** One SQLite file: FTS5 for keywords, sqlite-vec for
+      vectors, fuse the two rankings, apply permission filters in SQL before anything reaches the prompt, and run it all
+      against a mock model.
+    - **"Brute force — isn't that slow?"** It's exact and fine at the scale of a team's documents. For millions of vectors,
+      use an approximate index (pgvector's HNSW, or a dedicated store).
+    - **"What must you record?"** Which embedding model produced the vectors, so they can be rebuilt consistently.
+
+    Pitfall: shipping a pre-1.0 library without pinning it. Say you'd pin the version.
+project:
+  title: Nearest neighbours in a SQLite file
+  kind: runnable
+  minutes: 4
+  goal: Store vectors with sqlite-vec and find the nearest to a query.
+  steps:
+  - Run `pip install sqlite-vec`.
+  - Save the code below as `hello_vec.py` and run it.
+  - Change the query vector to `[0.1, 0.8, 0.1]` and run again.
+  code: |
+    import sqlite3
+    import sqlite_vec
+
+    con = sqlite3.connect(":memory:")
+    con.enable_load_extension(True)
+    sqlite_vec.load(con)
+    con.enable_load_extension(False)
+
+    con.execute("create virtual table chunks using vec0(embedding float[3])")
+    for rowid, vec in [(1, [0.9, 0.1, 0.0]), (2, [0.1, 0.9, 0.0])]:
+        con.execute("insert into chunks(rowid, embedding) values (?, ?)",
+                    (rowid, sqlite_vec.serialize_float32(vec)))
+
+    rows = con.execute(
+        "select rowid, distance from chunks where embedding match ? and k = 2 order by distance",
+        (sqlite_vec.serialize_float32([0.8, 0.2, 0.0]),)).fetchall()
+    print(rows)
+  language: python
+  expected: |
+    [(1, 0.14...), (2, 0.98...)] — row 1 is nearest.
+    With [0.1, 0.8, 0.1], row 2 comes first.
+  done_when:
+  - Row 1 is nearest for the first query and row 2 for the second.
+  - You can explain what k = 2 does.
+quiz:
+- id: q1
+  prompt: What does sqlite-vec add to SQLite?
+  options:
+  - Vector storage and nearest-neighbour search
+  - A web server
+  - User accounts
+  - Full-text search
+  answer: 0
+  explanation: Embeddings live in the same file as everything else.
+  evidence: sqlite-vec is a small SQLite extension that adds vector storage and nearest-neighbor search to an ordinary SQLite database.
+- id: q2
+  prompt: Which virtual table does sqlite-vec provide for embeddings?
+  options:
+  - vec0
+  - fts5
+  - rtree
+  - json_each
+  answer: 0
+  explanation: Create a vec0 table with a fixed dimension.
+  evidence: It provides a vec0 virtual table for storing embeddings and SQL functions for vector math.
+- id: q3
+  prompt: How do you get the nearest rows in a query?
+  options:
+  - MATCH plus a k limit
+  - ORDER BY RANDOM()
+  - LIKE with wildcards
+  - A separate API call
+  answer: 0
+  explanation: k sets how many neighbours to return.
+  evidence: query it with MATCH plus a k limit to get the nearest rows by distance
+- id: q4
+  prompt: How does sqlite-vec search?
+  options:
+  - Brute force over the stored vectors — exact and simple
+  - Approximate HNSW only
+  - Through a remote service
+  - By keyword only
+  answer: 0
+  explanation: It is fast at the scale of a team's document set.
+  evidence: Search is brute-force over the stored vectors, which is simple and exact
+- id: q5
+  prompt: Why do vectors join naturally to other tables?
+  options:
+  - They're keyed by rowid in the same file
+  - They're stored as images
+  - They're in a separate database
+  - They have no keys
+  answer: 0
+  explanation: Join to document and metadata tables with ordinary SQL.
+  evidence: Vectors sit in the same file as everything else, keyed by rowid, so they join naturally to document and metadata tables.
+- id: q6
+  prompt: What should you do because the project is pre-1.0?
+  options:
+  - Pin the version and expect the API to change between minor releases
+  - Never use it
+  - Use the latest version without pinning
+  - Fork it immediately
+  answer: 0
+  explanation: Pinning protects you from breaking changes.
+  evidence: The project is pre-1.0, so pin the version and expect the API to change between minor releases.
+- id: q7
+  prompt: What does sqlite-vec make portable, in AI work?
+  options:
+  - A whole retrieval stack in one file that runs offline in CI
+  - The model's weights
+  - The GPU driver
+  - The user's browser
+  answer: 0
+  explanation: Documents, embeddings, keyword index and entitlements together.
+  evidence: 'sqlite-vec makes a whole retrieval stack portable: documents, embeddings, keyword index and entitlements in one file that runs offline in CI with a mock model.'
+- id: q8
+  prompt: Which is a con of sqlite-vec?
+  options:
+  - Brute-force search; not meant for very large collections
+  - It needs a separate server
+  - It can't join tables
+  - It only runs on Windows
+  answer: 0
+  explanation: Use an approximate index for millions of vectors.
+  evidence: Brute-force search; not meant for very large collections
+- id: q9
+  prompt: What does sqlite-vec require from the SQLite build?
+  options:
+  - That it allows loading extensions
+  - That it is compiled with Java
+  - That it runs on a server
+  - Nothing
+  answer: 0
+  explanation: Some builds disable extension loading.
+  evidence: Requires a SQLite build that allows loading extensions
+- id: q10
+  prompt: Where should permission filters be applied in this stack?
+  options:
+  - In SQL, before results reach the prompt
+  - In the model's instructions
+  - After the answer is shown
+  - Nowhere
+  answer: 0
+  explanation: Filter first so the model never sees what the user may not.
+  evidence: apply permission filters in SQL before results reach the prompt
+- id: q11
+  prompt: What should you record about the vectors?
+  options:
+  - Which embedding model produced them
+  - The user's IP address
+  - The time zone
+  - Nothing
+  answer: 0
+  explanation: So they can be rebuilt consistently.
+  evidence: record which embedding model produced the vectors so they can be rebuilt consistently
+- id: q12
+  prompt: Which is a typical use case?
+  options:
+  - Prototypes and evals that need a reproducible, single-file index
+  - Global multi-region search over billions of vectors
+  - Video transcoding
+  - Email delivery
+  answer: 0
+  explanation: One file makes results reproducible.
+  evidence: Prototypes and evals that need a reproducible, single-file index.
+- id: q13
+  prompt: Who created sqlite-vec?
+  options:
+  - Alex Garcia
+  - D. Richard Hipp
+  - Andrew Kane
+  - Wes McKinney
+  answer: 0
+  explanation: It succeeded his earlier sqlite-vss extension.
+  evidence: Alex Garcia created sqlite-vec in 2024 as a successor to his earlier sqlite-vss extension

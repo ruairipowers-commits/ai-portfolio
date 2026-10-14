@@ -1,0 +1,246 @@
+course: fastapi
+level: familiar
+version: 1
+title: FastAPI in 15 minutes
+status: draft
+source:
+  page: tech/fastapi.md
+  docs: https://fastapi.tiangolo.com/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's FastAPI page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    FastAPI is a Python web framework for building HTTP APIs, where **the type hints on your functions do the work**.
+    You write an ordinary function, decorate it with a route such as `@app.get("/items/{item_id}")`, and annotate its
+    parameters: `item_id: int`. FastAPI then:
+
+    - validates every incoming request against those types (and against Pydantic models for request bodies),
+      returning a clear error when it doesn't match;
+    - converts the response to JSON;
+    - generates an **OpenAPI** schema and serves interactive docs at `/docs` and `/redoc`.
+
+    Handlers can be plain `def` or `async def`. It runs on an ASGI server, and the `fastapi` command starts a
+    development server with auto-reload.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    FastAPI was created by Sebastián Ramírez and first released in 2018. It built on two existing libraries —
+    Starlette for the web layer and Pydantic for validation — and on Python's newer type hints, which until then had
+    mostly been used by editors and linters rather than at runtime.
+
+    It grew quickly to become one of the most popular Python web frameworks, especially for machine-learning and data
+    services, where teams need to put a Python function behind a reliable HTTP interface without writing much
+    boilerplate.
+- id: business
+  heading: How it fits business users
+  body: |
+    Business users don't use FastAPI directly; they use the systems that call it. Its value to a firm is the
+    **contract**: other teams get a documented, validated API with a predictable shape, and can try it in the
+    browser at `/docs` before writing any code.
+
+    In AI work that matters a lot. Callers get a validated answer shape rather than raw model text, and the API is a
+    single place to enforce authentication, entitlements, input size limits and audit logging.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Internal REST APIs** in front of a model, database or batch job.
+    - **Wrapping an analytics or ML function** as a service other teams can call.
+    - **Webhook receivers** and small integration services.
+    - **Back ends for dashboards**, including server-rendered HTML.
+    - **Typed contracts between services**, published as OpenAPI.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Validation and OpenAPI docs come from type hints | Async vs sync handlers need care to avoid blocking |
+    | Little boilerplate for a working API | No batteries-included admin, auth or ORM |
+    | Pydantic models double as API contracts | Server-rendered UI is possible but basic |
+    | Easy to test with an in-process client | Large apps need your own structure and conventions |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [FastAPI documentation](https://fastapi.tiangolo.com/) — the official docs from the FastAPI project; the
+      tutorial is one of the best in the Python world.
+    - [Pydantic documentation](https://docs.pydantic.dev/) — the validation library underneath.
+    - [Starlette documentation](https://www.starlette.io/) — the web toolkit it builds on, for middleware and lower-level details.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below is a two-route API. You'll run it, call it, send a bad value on purpose to see validation, and
+    open the generated docs page.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"Why FastAPI?"** Type hints drive validation, serialisation and OpenAPI docs, so a working, documented API
+      takes little code, and Pydantic models double as the contract.
+    - **"When would you use `async def`?"** When the handler awaits I/O with async libraries. Calling blocking code
+      inside `async def` stalls the event loop; use plain `def` (run in a thread pool) for blocking work.
+    - **"How would you serve an LLM pipeline with it?"** Request and response models fix the contract; validate the
+      model's output against the response model; add authentication, entitlement checks, input size limits and
+      request logging before the model is called.
+
+    Pitfall: claiming FastAPI comes with auth or an ORM. It doesn't; you choose and add them.
+project:
+  title: A typed API with validation and docs
+  kind: runnable
+  minutes: 4
+  goal: Run a small API, trigger a validation error, and use the generated docs.
+  steps:
+  - Run `pip install "fastapi[standard]"`.
+  - Save the code below as `main.py` and run `fastapi dev main.py`.
+  - Open `http://127.0.0.1:8000/items/5?q=hi`, then `http://127.0.0.1:8000/items/five`.
+  - Open `http://127.0.0.1:8000/docs` and call the endpoint from the page.
+  code: |
+    from fastapi import FastAPI
+
+    app = FastAPI()
+
+    @app.get("/")
+    def read_root():
+        return {"Hello": "World"}
+
+    @app.get("/items/{item_id}")
+    def read_item(item_id: int, q: str | None = None):
+        return {"item_id": item_id, "q": q}
+  language: python
+  expected: |
+    /items/5?q=hi returns {"item_id": 5, "q": "hi"}.
+    /items/five returns a 422 error saying item_id must be a valid integer.
+    /docs shows both endpoints with a "Try it out" button.
+  done_when:
+  - You saw the 422 validation error for a bad value.
+  - You called the API from the /docs page.
+quiz:
+- id: q1
+  prompt: In FastAPI, what defines validation and the API documentation?
+  options:
+  - The type hints on your functions
+  - A separate XML schema
+  - Comments in the code
+  - The database tables
+  answer: 0
+  explanation: Types and Pydantic models declare what a request must contain.
+  evidence: the type hints on your functions define validation and the API documentation
+- id: q2
+  prompt: What happens when a request doesn't match the declared types?
+  options:
+  - FastAPI returns a clear error
+  - The function runs anyway with bad data
+  - The server crashes
+  - The request is silently dropped
+  answer: 0
+  explanation: Validation happens before your function runs.
+  evidence: returns a clear error when it does not match
+- id: q3
+  prompt: Where does FastAPI serve interactive docs by default?
+  options:
+  - /docs and /redoc
+  - /admin
+  - /help.txt
+  - It doesn't generate docs
+  answer: 0
+  explanation: The docs are generated from the same declarations as validation.
+  evidence: serves interactive docs at /docs and /redoc
+- id: q4
+  prompt: Which library provides FastAPI's request and response models?
+  options:
+  - Pydantic
+  - NumPy
+  - Jinja
+  - SQLAlchemy
+  answer: 0
+  explanation: Pydantic models declare the shape of data and double as API contracts.
+  evidence: Pydantic models double as API contracts
+- id: q5
+  prompt: What schema does FastAPI generate from your declarations?
+  options:
+  - An OpenAPI schema
+  - A GraphQL schema only
+  - A SQL schema
+  - A WSDL file
+  answer: 0
+  explanation: OpenAPI lets other teams and tools understand the API.
+  evidence: it generates an OpenAPI schema
+- id: q6
+  prompt: What kind of server does FastAPI run on?
+  options:
+  - An ASGI server
+  - An FTP server
+  - A mail server
+  - A DNS server
+  answer: 0
+  explanation: ASGI supports both async and sync handlers.
+  evidence: It runs on an ASGI server
+- id: q7
+  prompt: Which is a con of FastAPI?
+  options:
+  - No batteries-included admin, auth or ORM
+  - No validation
+  - No documentation generation
+  - It can't be tested
+  answer: 0
+  explanation: You choose and add those yourself.
+  evidence: No batteries-included admin, auth or ORM
+- id: q8
+  prompt: What needs care to avoid blocking?
+  options:
+  - Async vs sync handlers
+  - The OpenAPI schema
+  - The /docs page
+  - Type hints
+  answer: 0
+  explanation: Blocking calls inside async def stall the event loop.
+  evidence: Async vs sync handlers need care to avoid blocking
+- id: q9
+  prompt: In AI work, what do request and response models give callers?
+  options:
+  - A validated answer shape rather than raw model text
+  - A faster model
+  - Free tokens
+  - A chat interface
+  answer: 0
+  explanation: The contract stays stable even when the model's raw text varies.
+  evidence: callers get a validated answer shape rather than raw model text
+- id: q10
+  prompt: Which controls can FastAPI enforce before anything reaches the model?
+  options:
+  - Authentication, entitlement checks, input size limits and request logging
+  - Model fine-tuning
+  - GPU scheduling
+  - Prompt translation
+  answer: 0
+  explanation: The API is the natural single place for these controls.
+  evidence: authentication, entitlement checks, input size limits, logging of every request and response for audit
+- id: q11
+  prompt: How easy is FastAPI to test?
+  options:
+  - Easy, with an in-process client
+  - It needs a deployed server
+  - Only manually in a browser
+  - It can't be tested
+  answer: 0
+  explanation: A test client calls the app in-process, no network needed.
+  evidence: Easy to test with an in-process client
+- id: q12
+  prompt: Who created FastAPI?
+  options:
+  - Sebastián Ramírez
+  - Guido van Rossum
+  - Google
+  - Microsoft
+  answer: 0
+  explanation: He released it in 2018, building on Starlette and Pydantic.
+  evidence: FastAPI was created by Sebastián Ramírez and first released in 2018.
+- id: q13
+  prompt: Which is a typical use case?
+  options:
+  - Wrapping a Python analytics or ML function as a service other teams can call
+  - Editing videos
+  - Running a spreadsheet
+  - Designing logos
+  answer: 0
+  explanation: Putting a Python function behind a reliable HTTP interface is its sweet spot.
+  evidence: Wrapping a Python analytics or ML function as a service other teams can call.

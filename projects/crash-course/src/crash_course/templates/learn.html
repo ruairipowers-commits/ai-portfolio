@@ -1,0 +1,70 @@
+{% extends "base.html" %}{% block title %}{{ c.title }} · {{ label }} · Crash course{% endblock %}{% block wrapclass %}narrow{% endblock %}
+{% block body %}
+{% if preview %}
+<div class="note" style="margin-bottom:16px"><b>Owner preview — {{ lv.status }} v{{ lv.version }}.</b>
+  Content checks: {% if report.ok %}<span class="done">all passed</span>{% else %}<span class="error">{{ report.problems|length }} failed</span>
+  <ul class="small">{% for p in report.problems %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+  <span class="small muted">~{{ report.stats.minutes }} of {{ report.stats.budget }} min · {{ report.stats.questions }} questions in the bank · written by {{ lv.provenance.written_by }}</span></div>
+{% endif %}
+<p class="small muted">{% if not preview %}<a href="{{ R }}/tracker#c-{{ c.slug }}">My tracker</a>{% else %}<a href="{{ R }}/owner">Owner</a>{% endif %} · {{ c.title }}</p>
+<h1>{{ lv.title }}</h1>
+<p><span class="pill lv-{{ lv.level }}">{{ label }} · {{ cfg.minutes|dur }}</span> <span class="small muted">version {{ lv.version }}</span></p>
+<nav class="toc">
+  {% for sec in lv.sections %}<a href="#{{ sec.id }}">{{ sec.heading }}</a>{% endfor %}
+  <a href="#project">Project</a><a href="#quiz">Quiz</a>{% if not preview %}<a href="#feedback">Feedback</a>{% endif %}
+</nav>
+<article class="content">
+{% for sec in lv.sections %}
+<section id="{{ sec.id }}"><h2>{{ sec.heading }}</h2>{{ sec.body|md|safe }}
+{% if sec.id == 'modules' %}
+  {% for m in lv.modules %}
+  <div class="card" style="margin:12px 0" id="m-{{ m.id }}">
+    <h3 style="margin-top:0">Module {{ loop.index }} · {{ m.title }} <span class="muted small">· about {{ m.minutes }} min</span></h3>
+    {{ m.body|md|safe }}
+    <p><b>Exercise.</b> {{ m.exercise }}</p>
+    {% if not preview %}<p class="check-row">{% if ('module:' ~ m.id) in passed %}<span class="done">✓ Check passed</span>{% endif %}
+      <a class="btn small" href="{{ R }}/quiz/{{ c.slug }}/{{ lv.level }}?part=module:{{ m.id }}">{{ 'Retake' if ('module:' ~ m.id) in passed else 'Take' }} the module check ({{ s.levels.intermediate.modules.check_questions }} questions)</a></p>{% endif %}
+  </div>
+  {% endfor %}
+{% endif %}
+</section>
+{% endfor %}
+<section id="project"><h2>Project: {{ lv.project.title }}</h2>
+  <p><b>Goal.</b> {{ lv.project.goal }} <span class="muted small">(about {{ lv.project.minutes }} min{{ ', illustrative' if lv.project.kind == 'illustrative' }})</span></p>
+  <ol>{% for st in lv.project.steps %}<li>{{ st|md|safe }}</li>{% endfor %}</ol>
+  {% if lv.project.code %}<pre><code>{{ lv.project.code }}</code></pre>{% endif %}
+  {% if lv.project.expected %}<p><b>What you should see.</b></p><pre><code>{{ lv.project.expected }}</code></pre>{% endif %}
+  <p><b>Done when:</b></p><ul>{% for d in lv.project.done_when %}<li>{{ d }}</li>{% endfor %}</ul>
+  {% if not preview %}
+  <div class="check-row">
+  {% if p.project_done_at %}<span class="done">✓ You marked this project done.</span>
+  {% else %}<form method="post" action="{{ R }}/project/{{ c.slug }}/{{ lv.level }}"><button class="btn ok" type="submit">I completed the project</button></form>{% endif %}
+  </div>{% endif %}
+</section>
+<section id="quiz"><h2>Quiz</h2>
+  <p>{{ cfg.quiz.questions }} questions drawn from a larger bank and shuffled each time. Pass mark {{ cfg.quiz.pass_pct }}%. Retry as many times as you like; your best score counts.</p>
+  {% if not preview %}
+  <p class="check-row">{% if 'final' in passed %}<span class="done">✓ Passed (best {{ p.quiz_best }}%)</span>{% elif p.quiz_best %}<span class="muted">Best so far: {{ p.quiz_best }}%</span>{% endif %}
+  <a class="btn" href="{{ R }}/quiz/{{ c.slug }}/{{ lv.level }}?part=final">{{ 'Retake the quiz' if attempts else 'Start the quiz' }}{{ ' (final test)' if lv.modules }}</a></p>
+  {% if attempts %}<p class="small muted">Recent: {% for a in attempts %}{{ a.score }}/{{ a.total }}{{ ' ✓' if a.passed }}{{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
+  {% if p.completed_at %}<p class="note">Level complete. {% if lv.level != 'intermediate' %}The next level is unlocked on <a href="{{ R }}/tracker#c-{{ c.slug }}">your tracker</a>.{% else %}That's the whole course — well done.{% endif %}</p>{% endif %}
+  {% else %}
+  <details><summary>Question bank ({{ lv.all_questions()|length }}) with answers — owner preview only</summary>
+  <ol class="small">{% for q in lv.all_questions() %}<li>{{ q.prompt }}<br><b>{{ q.options[q.answer] }}</b> <span class="muted">— evidence: “{{ q.evidence }}”</span></li>{% endfor %}</ol></details>
+  {% endif %}
+</section>
+</article>
+{% if not preview %}
+<section id="feedback" class="card" style="margin-top:28px">
+  <h2 style="margin-top:0">Help improve this level</h2>
+  <form method="post" action="{{ R }}/feedback/{{ c.slug }}/{{ lv.level }}" x-data="{r: 0}">
+    <label>How useful was it?</label>
+    <div class="check-row" role="radiogroup">{% for i in range(1, 6) %}<label class="opt" style="margin:0;padding:6px 12px" :class="r == {{ i }} && 'sel'"><input type="radio" name="rating" value="{{ i }}" x-model.number="r"> {{ i }}</label>{% endfor %}</div>
+    <label for="unclear">What was unclear or wrong?</label><textarea id="unclear" name="unclear" maxlength="1000"></textarea>
+    <label for="add">What should we add?</label><textarea id="add" name="add" maxlength="1000"></textarea>
+    <p><button class="btn" type="submit">Send feedback</button></p>
+  </form>
+</section>
+{% endif %}
+<p class="small muted">Source: {{ lv.source.page }}{% if lv.source.docs %} · <a href="{{ lv.source.docs }}" rel="noopener">official docs</a>{% endif %}. Approved by {{ lv.provenance.approved_by or 'pending' }}.</p>
+{% endblock %}

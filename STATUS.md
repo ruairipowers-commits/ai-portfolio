@@ -21,6 +21,33 @@ a stand-in upstream with a real Caddy). Posts: `personal/posts/one-ollama-and-op
       2026" pointing to the new post.
 - [ ] **infra-setups commit** (Ruairi, from the EVO-X1; the Claude GitHub app has no access to that repo).
 
+## 00000. Crash course (new personal project, built 14 October 2026)
+
+`projects/crash-course` + `site/personal/posts/crash-course.md` + a "Take the crash course" box on every tech page
+(added by `scripts/mkdocs_hooks.py`, not by editing the pages). Courses at 15 min / 1 hour / 4 hours for all 38 tech
+pages: learner site (FastAPI + Alpine.js, magic-link sign-in), tracker with unlocks (quiz passed AND project done),
+server-scored retryable quizzes, feedback → proposed edits, topic suggestions reviewed by rules + a model, and an
+owner page at `/owner`. Decisions (13 Oct): personal tier; Familiar written in the build session for all 38, Beginner
+and Intermediate drafted on demand when a learner unlocks them; open registration. Work is on branch
+`agent/claude-crash-course` (per AGENT.md); the earlier `crash-course` branch on GitHub holds only the spec and can be
+deleted. Verified offline: 68 tests, `course all` ~25 s, eval gate passed, 38/38 levels pass every check, 22 of 38
+hello-world projects run by hand, governance / image-deps / security checks, live site walked through in Chromium
+(learner and owner, desktop and phone).
+
+- [ ] **Review and publish the 38 Familiar levels.** They ship as drafts, so nothing is visible until you publish.
+      Read a few in `/owner` → Review (the preview shows the answer key and each question's evidence). Then click
+      "Publish all … drafts that pass the checks", or run on the host:
+      `docker compose exec crash-course course publish --all --reviewer "Ruairi Powers"`.
+- [ ] **Demo host:** `git pull && ./update.sh` builds `Dockerfile.space` (`/crash-course/`, 1g, `egress: true`, volume
+      `/app/warehouse`). Set in the deploy `.env`: `COURSE_SECRET` (`openssl rand -hex 32`), `COURSE_OWNER_EMAIL`
+      (your email; signing in with it opens `/owner`), `COURSE_PUBLIC_URL`, `RESEND_API_KEY`, `MAIL_FROM`.
+- [ ] **Real writer model:** `COURSE_WRITER_MODEL=local-qwen` on the EVO-X1. The offline mock writes fill-the-gap
+      Beginner/Intermediate levels, which are fine for testing the flow but are not courses. Draft one with
+      `course build dbt beginner`, read it in the preview, and only then promote.
+- [ ] Not run: the 16 hello-world projects that need an account, key, server or Docker (Airflow, Anthropic, AWS,
+      Bedrock, Caddy, Chart.js, Cloudflare Tunnel, Docker, GitHub Actions, HF Spaces, MetricFlow (illustrative),
+      Ollama, OpenAI, Postgres, pgvector, Terraform); Terraform `validate`; Resend in production.
+
 ## 00000. One Ollama on the EVO-X1 (14 October 2026, branch `agent/claude-shared-ollama`)
 
 The demo stack ran its own CPU Ollama (`ai-portfolio-demos-ollama-1`, 7 GB loaded) next to the host's ROCm

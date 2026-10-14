@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Learn a tool at the depth you need</h1>
+<p class="lead">{{ count }} technologies, each at three levels. Start with fifteen minutes; go deeper when you're ready.</p>
+<div class="grid">
+  <div class="card"><span class="pill lv-familiar">Familiar · 15 min</span><h3>Know what it is</h3><p class="muted small">{{ BLURB.familiar }}</p></div>
+  <div class="card"><span class="pill lv-beginner">Beginner · 1 hour</span><h3>Use it once, properly</h3><p class="muted small">{{ BLURB.beginner }}</p></div>
+  <div class="card"><span class="pill lv-intermediate">Intermediate · 4 hours</span><h3>Work with it</h3><p class="muted small">{{ BLURB.intermediate }}</p></div>
+</div>
+<h2>How it works</h2>
+<ol>
+  <li><b>Register</b> with your email — no password; we send a sign-in link.</li>
+  <li><b>Sign up for a course</b> from the catalog. Familiar unlocks straight away.</li>
+  <li><b>Pass the quiz and do the project</b> to unlock the next level. Retry quizzes as often as you like.</li>
+  <li><b>Tell us what was unclear.</b> Feedback goes into the next revision of the material.</li>
+  <li><b>Missing a topic?</b> Suggest one. It's reviewed, then approved by a person before a course is created.</li>
+</ol>
+<p><a class="btn" href="{{ R }}/catalog">Browse the catalog</a> {% if not user %}<a class="btn ghost" href="{{ R }}/signin">Register</a>{% endif %}</p>
+<p class="muted small">Categories: {{ cats|join(" · ") }}</p>
+{% endblock %}

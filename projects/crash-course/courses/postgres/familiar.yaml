@@ -1,0 +1,248 @@
+course: postgres
+level: familiar
+version: 1
+title: PostgreSQL in 15 minutes
+status: draft
+source:
+  page: tech/postgres.md
+  docs: https://www.postgresql.org/docs/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's PostgreSQL page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    PostgreSQL — usually just "Postgres" — is a mature, open-source **relational database**. Data lives in tables,
+    you query it with SQL, and many applications and people can read and write at the same time safely.
+
+    It is a **client-server** database: a server process holds the data, and clients connect to it. It offers full
+    **ACID transactions** (a group of changes either all happen or none do), rich SQL — window functions, CTEs, JSONB
+    for semi-structured data, partial and expression indexes — and access control through roles, grants and
+    **row-level security**.
+
+    Its **extension system** keeps it relevant for new workloads: pgvector adds vector similarity search, and other
+    extensions add time series, geospatial and more — inside the same database and transaction model.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Postgres began as the POSTGRES research project at the University of California, Berkeley, in 1986. SQL support
+    arrived in the mid-1990s and the project was renamed PostgreSQL in 1996. It has been developed ever since by the
+    PostgreSQL Global Development Group under a permissive licence, with a major release every year.
+
+    Today it is one of the most popular databases in the world. Every major cloud offers it as a managed service — on
+    AWS, RDS for PostgreSQL and Aurora PostgreSQL — and with pgvector it has become a common home for AI retrieval as well.
+- id: business
+  heading: How it fits business users
+  body: |
+    Postgres is the system of record behind many internal tools: trades, positions, reference data, audit trails. For
+    the business, what matters is that it is **trustworthy** — transactions don't half-apply — and **governable** —
+    roles and row-level security control who sees what.
+
+    The cost to keep in mind is operations: a server to run, connections to manage, backups, upgrades and vacuuming to
+    plan for. Managed services take most of that on.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Application databases** for internal tools and services.
+    - **Operational data stores** for trade, position and reference data.
+    - **Audit and event tables** that need transactional guarantees.
+    - **Moderate-scale reporting** and dbt transformations.
+    - **Vector search next to relational data**, via pgvector.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Proven transactional engine with strong SQL | A server to operate: backups, upgrades, vacuum, connections |
+    | Extensions (pgvector and others) avoid extra systems | Large analytical scans are slower than a columnar engine |
+    | Managed everywhere, including RDS and Aurora | Connection limits need pooling under many clients |
+    | Roles, grants and row-level security for access control | Tuning (indexes, memory settings) needs expertise at scale |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [PostgreSQL documentation](https://www.postgresql.org/docs/) — the official manual from the PostgreSQL Global
+      Development Group. The tutorial section is a good start.
+    - [Row security policies](https://www.postgresql.org/docs/current/ddl-rowsecurity.html) — controlling which rows a
+      role can see.
+    - [pgvector](https://github.com/pgvector/pgvector) — vector search in Postgres.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below runs Postgres in a throwaway Docker container, creates a table of reconciliation breaks, and sums
+    them by account — then shows a transaction rolling back.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"Postgres or DuckDB?"** Postgres for a shared, multi-user transactional database; DuckDB for in-process analytics
+      on files. Postgres is slower on large analytical scans.
+    - **"What does ACID mean to you?"** Changes in a transaction all apply or none do, readers see consistent data, and
+      committed data survives a crash.
+    - **"How would you control access to retrieved documents in an AI app?"** With pgvector, retrieval is a SQL query, so
+      filter on entitlement columns and let row-level security and grants apply to it like any other query.
+    - **"What breaks first under load?"** Connections — use a pooler.
+
+    Pitfall: "Postgres can do everything". Name what it doesn't do well: huge analytical scans and unpooled connection storms.
+project:
+  title: A table, a sum and a rollback
+  kind: runnable
+  minutes: 4
+  goal: Create a table, aggregate it, and see a transaction roll back.
+  steps:
+  - 'Start Postgres: `docker run --rm -e POSTGRES_PASSWORD=pw -p 5432:5432 postgres:17`.'
+  - 'In another terminal connect: `psql postgresql://postgres:pw@localhost:5432/postgres`.'
+  - Paste the SQL below.
+  - Check that the row inserted inside the rolled-back transaction is not there.
+  code: |
+    CREATE TABLE breaks (
+        id bigserial PRIMARY KEY,
+        account text NOT NULL,
+        as_of_date date NOT NULL,
+        difference numeric NOT NULL
+    );
+    INSERT INTO breaks (account, as_of_date, difference) VALUES
+      ('FUND-01', '2026-09-30', -15.00), ('FUND-01', '2026-09-30', 5.00), ('FUND-02', '2026-09-30', 2.50);
+    SELECT account, sum(difference) AS total FROM breaks GROUP BY account ORDER BY account;
+
+    BEGIN;
+    INSERT INTO breaks (account, as_of_date, difference) VALUES ('FUND-03', '2026-09-30', 99);
+    ROLLBACK;
+    SELECT count(*) FROM breaks;
+  language: sql
+  expected: |
+    FUND-01 | -10.00
+    FUND-02 |   2.50
+    count = 3 (the FUND-03 row was rolled back)
+  done_when:
+  - Your totals match and the count is 3.
+  - You can explain what ROLLBACK did.
+quiz:
+- id: q1
+  prompt: What kind of database is PostgreSQL?
+  options:
+  - A mature, open-source relational database
+  - A document-only NoSQL store
+  - An in-process analytics library
+  - A graph database
+  answer: 0
+  explanation: It handles transactional workloads, moderate analytics and, through extensions, vector search.
+  evidence: PostgreSQL is a mature, open-source relational database
+- id: q2
+  prompt: What does full ACID transaction support mean?
+  options:
+  - A group of changes either all happen or none do, consistently and durably
+  - Data is encrypted at rest
+  - Queries run in parallel on GPUs
+  - Tables are automatically backed up to S3
+  answer: 0
+  explanation: ACID means a group of changes either all happen or none do, readers see consistent data, and committed changes survive a crash.
+  evidence: It is a client-server database with full ACID transactions
+- id: q3
+  prompt: Which access-control features does Postgres have?
+  options:
+  - Roles, grants and row-level security
+  - Only a single admin password
+  - None; access is open
+  - Only IP allow-lists
+  answer: 0
+  explanation: Row-level security limits which rows a role can see.
+  evidence: row-level security, and roles and grants for access control
+- id: q4
+  prompt: What keeps Postgres relevant for new workloads such as vector search?
+  options:
+  - Its extension system
+  - Its graphical admin tool
+  - Its age
+  - Its file format
+  answer: 0
+  explanation: pgvector and other extensions run inside the same database and transaction model.
+  evidence: Its extension system is what keeps it relevant for new workloads
+- id: q5
+  prompt: What is the operational cost of Postgres compared with an embedded engine?
+  options:
+  - A server to run, connections to manage, backups, upgrades and vacuuming
+  - None at all
+  - It needs a GPU
+  - It must be rewritten every year
+  answer: 0
+  explanation: Managed services take most of this on.
+  evidence: 'The cost relative to an embedded engine is operations: a server to run, connections to manage, backups, upgrades and vacuuming to plan for.'
+- id: q6
+  prompt: What are Postgres's managed offerings on AWS?
+  options:
+  - RDS for PostgreSQL and Aurora PostgreSQL
+  - S3 and Glacier
+  - Lambda and SQS
+  - Athena and Glue
+  answer: 0
+  explanation: Every major cloud offers managed Postgres.
+  evidence: on AWS, RDS for PostgreSQL and Aurora PostgreSQL
+- id: q7
+  prompt: In AI work, why is it useful that retrieval with pgvector is a SQL query?
+  options:
+  - Access control and retrieval use the same mechanism, so row-level security and grants apply
+  - It makes embeddings unnecessary
+  - It removes the need for a model
+  - It makes queries free
+  answer: 0
+  explanation: Entitlement filters and similarity ranking happen in one governed query.
+  evidence: so access control and retrieval use the same mechanism
+- id: q8
+  prompt: Which is a con of Postgres?
+  options:
+  - Large analytical scans are slower than a columnar engine
+  - It has no transactions
+  - It can't run SQL
+  - It isn't available as a managed service
+  answer: 0
+  explanation: Columnar engines such as DuckDB win on big scans.
+  evidence: Large analytical scans are slower than a columnar engine
+- id: q9
+  prompt: What do connection limits need under many clients?
+  options:
+  - Pooling
+  - A GPU
+  - A second database for every user
+  - Nothing
+  answer: 0
+  explanation: A connection pooler prevents connection storms.
+  evidence: Connection limits need pooling under many clients
+- id: q10
+  prompt: Which SQL features does Postgres offer?
+  options:
+  - Window functions, CTEs, JSONB, and partial and expression indexes
+  - Only SELECT and INSERT
+  - No indexes
+  - No joins
+  answer: 0
+  explanation: Rich SQL is one of its strengths.
+  evidence: rich SQL (window functions, CTEs, JSONB, partial and expression indexes)
+- id: q11
+  prompt: Which is a typical use case?
+  options:
+  - Audit and event tables that need transactional guarantees
+  - Rendering videos
+  - Training neural networks
+  - Hosting a static website
+  answer: 0
+  explanation: Transactions make audit records trustworthy.
+  evidence: Audit and event tables that need transactional guarantees.
+- id: q12
+  prompt: Who develops PostgreSQL?
+  options:
+  - The PostgreSQL Global Development Group, under a permissive licence
+  - Oracle
+  - Microsoft
+  - Amazon only
+  answer: 0
+  explanation: It's a community-developed open-source project.
+  evidence: PostgreSQL (Postgres) is developed by the PostgreSQL Global Development Group under a permissive license.
+- id: q13
+  prompt: Where did Postgres begin?
+  options:
+  - As the POSTGRES research project at UC Berkeley in 1986
+  - At Google in 2010
+  - At Amazon in 2006
+  - At Microsoft in 1995
+  answer: 0
+  explanation: It was renamed PostgreSQL in 1996 after SQL support arrived.
+  evidence: Postgres began as the POSTGRES research project at the University of California, Berkeley, in 1986.

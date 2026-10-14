@@ -1,0 +1,243 @@
+course: prefect
+level: familiar
+version: 1
+title: Prefect in 15 minutes
+status: draft
+source:
+  page: tech/prefect.md
+  docs: https://docs.prefect.io/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Prefect page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    Prefect turns **ordinary Python functions** into scheduled, retried, observable workflows. You add two decorators:
+
+    - `@flow` marks a function as a workflow run;
+    - `@task` marks a step inside it.
+
+    Prefect then adds **retries**, **caching**, **logging**, a **run history** and a **UI**. To run a flow on a schedule,
+    `serve()` runs it on an interval or a cron schedule from a single long-running process — no extra infrastructure.
+    Larger setups add **work pools and workers** to spread runs across machines, and **Prefect Cloud** is the hosted option.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Prefect was started by Jeremiah Lowin, who had worked on Airflow, and the company Prefect Technologies was founded in
+    2018 to build a more Python-native orchestrator: code that looks like normal Python rather than a framework's DSL.
+    Prefect 2 was a major redesign, and Prefect 3 followed — which is why older examples online can mislead.
+
+    Today it is one of the main modern alternatives to Airflow, popular with Python teams who want retries and a run
+    history without running a heavy platform.
+- id: business
+  heading: How it fits business users
+  body: |
+    For a business, Prefect makes scheduled Python jobs — data refreshes, API pulls, weekly reports — **reliable and
+    visible**: failed steps retry, every run is recorded, and the UI answers "did it run, and what happened?".
+
+    For AI steps it adds a useful control: a flow's schedule can be **paused** when governance switches a workflow off,
+    and each run's record supports audit.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Scheduled data refreshes** and API pulls.
+    - **Python pipelines** that need retries and a run history without a heavy platform.
+    - **Event- or schedule-triggered reports.**
+    - **AI steps with retries** for flaky providers and a record of every run.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Plain Python; very little ceremony | Less asset/lineage modelling than Dagster |
+    | `serve()` gives schedules without extra infrastructure | Scaling out means work pools and workers |
+    | Retries, caching and a UI built in | The 2.x → 3.x changes mean older examples mislead |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Prefect documentation](https://docs.prefect.io/) — the official docs from Prefect Technologies; start with the
+      quickstart.
+    - [Prefect on GitHub](https://github.com/PrefectHQ/prefect) — source and releases.
+    - When searching for examples, check they are for Prefect 3 — the current major version.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below defines a task that fails twice and then succeeds, inside a flow with retries. You'll run it once
+    and watch Prefect retry it, then open the UI to see the run history.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"Prefect, Airflow or Dagster?"** Prefect for plain-Python workflows with little ceremony; Airflow for the largest
+      ecosystem and install base; Dagster when assets and lineage are central.
+    - **"How would you run an AI step in Prefect?"** As a task with retries and backoff for a flaky provider, inside a flow
+      that logs each run; pause the schedule if governance switches the workflow off.
+    - **"How do you schedule without a big platform?"** `serve()` from one process; add work pools and workers only when
+      you need to scale out.
+
+    Pitfall: copying Prefect 1 or 2 examples into a Prefect 3 project. Check versions.
+project:
+  title: A flow that retries
+  kind: runnable
+  minutes: 4
+  goal: Run a flow whose task fails twice then succeeds, and see the retries and run history.
+  steps:
+  - Run `pip install prefect`.
+  - Save the code below as `hello_prefect.py` and run `python hello_prefect.py`.
+  - Read the logs — two failures, then success.
+  - Run `prefect server start`, open the UI, and find the flow run.
+  code: |
+    from prefect import flow, task
+
+    attempts = {"n": 0}
+
+    @task(retries=2, retry_delay_seconds=1)
+    def flaky_fetch() -> int:
+        attempts["n"] += 1
+        if attempts["n"] < 3:
+            raise RuntimeError("provider timeout")
+        return 42
+
+    @flow(log_prints=True)
+    def refresh():
+        print(f"got {flaky_fetch()} after {attempts['n']} attempts")
+
+    if __name__ == "__main__":
+        refresh()
+  language: python
+  expected: |
+    Logs show the task failing with "provider timeout", retrying twice,
+    then: got 42 after 3 attempts — and the flow run finishes Completed.
+  done_when:
+  - The flow completed after two retries.
+  - You found the run in the Prefect UI.
+quiz:
+- id: q1
+  prompt: What does Prefect turn ordinary Python functions into?
+  options:
+  - Scheduled, retried, observable workflows
+  - Web pages
+  - Database tables
+  - Machine-learning models
+  answer: 0
+  explanation: Decorators add orchestration features to plain functions.
+  evidence: Prefect turns ordinary Python functions into scheduled, retried, observable workflows.
+- id: q2
+  prompt: Which decorators mark Prefect workflows and steps?
+  options:
+  - '@flow and @task'
+  - '@dag and @op'
+  - '@app.get and @app.post'
+  - '@asset and @check'
+  answer: 0
+  explanation: A flow contains tasks.
+  evidence: You mark functions with @flow and @task
+- id: q3
+  prompt: What does Prefect add to decorated functions?
+  options:
+  - Retries, caching, logging, run history and a UI
+  - Type checking
+  - A database
+  - A web framework
+  answer: 0
+  explanation: Reliability and visibility come built in.
+  evidence: Prefect adds retries, caching, logging, run history and a UI
+- id: q4
+  prompt: How do you run a flow on a schedule without extra infrastructure?
+  options:
+  - serve(), from a single process
+  - A Kubernetes cluster
+  - cron only
+  - Prefect Cloud only
+  answer: 0
+  explanation: serve() runs flows on intervals or cron schedules.
+  evidence: serve() runs them on intervals or cron schedules from a single process
+- id: q5
+  prompt: What do larger Prefect setups add to scale out?
+  options:
+  - Work pools and workers
+  - More decorators
+  - A second UI
+  - Nothing; it can't scale
+  answer: 0
+  explanation: Prefect Cloud is the hosted option.
+  evidence: Larger setups add work pools and workers; Prefect Cloud is the hosted option.
+- id: q6
+  prompt: Why is a flow a natural boundary for an AI step?
+  options:
+  - Retries for flaky providers, a record of every run, and a schedule that can be paused
+  - It makes the model cheaper
+  - It removes the need for validation
+  - It trains the model
+  answer: 0
+  explanation: Governance can pause the schedule.
+  evidence: 'retries for flaky providers, a record of every run, and a schedule that can be paused when governance switches the workflow off'
+- id: q7
+  prompt: Which is a con of Prefect compared with Dagster?
+  options:
+  - Less asset and lineage modelling
+  - No retries
+  - No UI
+  - Not Python
+  answer: 0
+  explanation: Dagster centres on assets and lineage.
+  evidence: Less asset/lineage modelling than Dagster
+- id: q8
+  prompt: Why can older Prefect examples mislead?
+  options:
+  - The 2.x to 3.x changes
+  - They were written in Java
+  - They used a different database
+  - They're always correct
+  answer: 0
+  explanation: Check examples are for the current major version.
+  evidence: The 2.x → 3.x changes mean older examples mislead
+- id: q9
+  prompt: Which is a pro of Prefect?
+  options:
+  - Plain Python with very little ceremony
+  - Built-in asset lineage graphs
+  - No retries needed
+  - Runs only in the cloud
+  answer: 0
+  explanation: Code looks like normal Python.
+  evidence: Plain Python; very little ceremony
+- id: q10
+  prompt: Which is a typical use case?
+  options:
+  - Scheduled data refreshes and API pulls
+  - Hosting a static website
+  - Storing passwords
+  - Editing images
+  answer: 0
+  explanation: Retries and run history suit scheduled pulls.
+  evidence: Scheduled data refreshes and API pulls.
+- id: q11
+  prompt: What is Prefect Cloud?
+  options:
+  - The hosted option
+  - A free GPU service
+  - A database
+  - A Python version
+  answer: 0
+  explanation: Self-hosting is also possible.
+  evidence: Prefect Cloud is the hosted option.
+- id: q12
+  prompt: Who started Prefect?
+  options:
+  - Jeremiah Lowin, who had worked on Airflow
+  - Guido van Rossum
+  - The Apache Software Foundation
+  - Microsoft
+  answer: 0
+  explanation: Prefect Technologies was founded in 2018.
+  evidence: Prefect was started by Jeremiah Lowin, who had worked on Airflow
+- id: q13
+  prompt: Which company makes Prefect?
+  options:
+  - Prefect Technologies
+  - Dagster Labs
+  - dbt Labs
+  - HashiCorp
+  answer: 0
+  explanation: It's an open-source orchestrator from Prefect Technologies.
+  evidence: Prefect is an open-source orchestrator from Prefect Technologies.

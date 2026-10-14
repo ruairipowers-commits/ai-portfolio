@@ -1,0 +1,236 @@
+course: plotly
+level: familiar
+version: 1
+title: Plotly in 15 minutes
+status: draft
+source:
+  page: tech/plotly.md
+  docs: https://plotly.com/python/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's Plotly page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    Plotly draws **interactive charts** — bars, lines, scatter, maps and more — from Python, rendered in the browser.
+    Every chart is interactive by default: hover to see exact values, zoom, pan, and click legend items to hide or show
+    series.
+
+    Its Python library has two levels:
+
+    - **`plotly.express`** turns a DataFrame into a chart in one call — `px.bar(df, x=..., y=..., color=...)`;
+    - **`graph_objects`** gives full, lower-level control when you need it.
+
+    Charts embed in Streamlit, Jupyter notebooks or a standalone HTML file.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    Plotly, a company founded in Montreal in 2012, started with an online charting service and open-sourced its Python
+    graphing library in 2016. `plotly.express`, added in 2019, made the one-line DataFrame-to-chart style popular, and the
+    company's Dash framework lets people build full analytics apps around Plotly charts.
+
+    Today Plotly is one of the most common choices for interactive charts in Python dashboards and notebooks, alongside
+    static libraries such as Matplotlib for reports.
+- id: business
+  heading: How it fits business users
+  body: |
+    Business users like interactive charts because they can **check the number behind a bar** themselves, zoom into a
+    period, or hide a series — without asking an analyst for another version.
+
+    In AI work this matters: when a model's summary quotes a number, a reader can hover over the chart and confirm it
+    against the same data.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Dashboards** in Streamlit or Dash.
+    - **Exploratory charts** in notebooks.
+    - **Maps of points** (`scatter_geo`) without a map-tile key.
+    - **Shareable standalone HTML charts** for colleagues.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Interactive with no extra work | Heavier pages than static images |
+    | Express API is quick from a DataFrame | Fine layout control means `graph_objects` |
+    | Maps without a tile key | World outlines load from Plotly's CDN |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [Plotly Python documentation](https://plotly.com/python/) — the official docs and example gallery.
+    - [Plotly Express](https://plotly.com/python/plotly-express/) — the one-call API.
+    - [Dash documentation](https://dash.plotly.com/) — building full apps around Plotly charts.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below makes a stacked bar chart of launches per year by outcome from a small DataFrame and saves it as a
+    standalone HTML file you can open and hover over.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"Plotly or Matplotlib?"** Plotly for interactive charts in dashboards and notebooks; Matplotlib or seaborn for
+      static images in reports and papers.
+    - **"Express or graph_objects?"** Express for the common case from a DataFrame; graph_objects for fine layout control.
+      An Express figure is a graph_objects figure, so you can start with one and refine with the other.
+    - **"Why do hover tooltips matter for AI summaries?"** A reader can check the exact value behind any bar against the
+      numbers the model quoted.
+
+    Pitfall: tens of thousands of points in an interactive chart. Aggregate first or the page gets heavy.
+project:
+  title: An interactive stacked bar chart
+  kind: runnable
+  minutes: 3
+  goal: Turn a DataFrame into an interactive chart and save it as HTML.
+  steps:
+  - Run `pip install plotly pandas`.
+  - Save the code below as `hello_plotly.py` and run it.
+  - Open `launches.html` in a browser; hover a bar and click a legend item.
+  code: |
+    import pandas as pd
+    import plotly.express as px
+
+    df = pd.DataFrame({
+        "year": [2024, 2024, 2025, 2025, 2026, 2026],
+        "outcome": ["success", "failure"] * 3,
+        "launches": [250, 9, 300, 7, 320, 6],
+    })
+    fig = px.bar(df, x="year", y="launches", color="outcome", title="Launches per year by outcome")
+    fig.write_html("launches.html")
+  language: python
+  expected: |
+    launches.html shows stacked bars for 2024–2026; hovering 2025's success segment shows launches=300.
+    Clicking "failure" in the legend hides that series.
+  done_when:
+  - The chart opens and the hover shows exact values.
+  - You toggled a series from the legend.
+quiz:
+- id: q1
+  prompt: What kind of charts does Plotly draw?
+  options:
+  - Interactive charts rendered in the browser
+  - Only static PNG images
+  - Only ASCII charts in the terminal
+  - Only 3D printed models
+  answer: 0
+  explanation: Hover, zoom and legend toggles come by default.
+  evidence: Plotly draws interactive charts — bars, lines, scatter, maps — from Python, rendered in the browser.
+- id: q2
+  prompt: Which API turns a DataFrame into a chart in one call?
+  options:
+  - plotly.express
+  - graph_objects
+  - matplotlib.pyplot
+  - pandas.plotting only
+  answer: 0
+  explanation: graph_objects is the lower-level API for full control.
+  evidence: a high-level API (plotly.express) that turns a DataFrame into a chart in one call
+- id: q3
+  prompt: What does graph_objects give you?
+  options:
+  - Full, lower-level control
+  - A database connection
+  - Automatic model training
+  - Email delivery
+  answer: 0
+  explanation: Use it for fine layout control.
+  evidence: a lower-level one (graph_objects) for full control
+- id: q4
+  prompt: Which interactions are on by default?
+  options:
+  - Hover, zoom and legend toggles
+  - Voice commands
+  - Printing to paper
+  - Editing the data
+  answer: 0
+  explanation: Readers can explore without new chart versions.
+  evidence: Charts are interactive by default (hover, zoom, legend toggles)
+- id: q5
+  prompt: Where can Plotly charts be embedded?
+  options:
+  - Streamlit, notebooks or static HTML
+  - Only Excel
+  - Only PDF
+  - Only PowerPoint
+  answer: 0
+  explanation: write_html saves a standalone file.
+  evidence: embed in Streamlit, notebooks or static HTML
+- id: q6
+  prompt: Why do hover tooltips matter in AI work?
+  options:
+  - A reader can check the exact value behind a bar when a model's summary quotes it
+  - They make the model more accurate
+  - They hide sensitive data
+  - They speed up the page
+  answer: 0
+  explanation: Numbers in a summary can be verified against the chart.
+  evidence: Hover tooltips let a reader check the exact value behind any bar
+- id: q7
+  prompt: Which is a con of Plotly?
+  options:
+  - Heavier pages than static images
+  - No interactivity
+  - It can't draw bar charts
+  - It needs a paid licence to run locally
+  answer: 0
+  explanation: Interactivity costs page weight; aggregate large data first.
+  evidence: Heavier pages than static images
+- id: q8
+  prompt: Can Plotly draw maps of points without a map-tile key?
+  options:
+  - Yes, with scatter_geo
+  - No, never
+  - Only with a paid plan
+  - Only in Dash
+  answer: 0
+  explanation: Geographic scatter plots don't need a tile provider key.
+  evidence: Maps of points (scatter_geo) without a map-tile key.
+- id: q9
+  prompt: Where do world outlines for maps load from?
+  options:
+  - Plotly's CDN
+  - Your local disk only
+  - Google Maps
+  - They are not shown
+  answer: 0
+  explanation: Offline use needs those assets available.
+  evidence: World outlines load from Plotly's CDN
+- id: q10
+  prompt: What does fine layout control require?
+  options:
+  - graph_objects
+  - A new library
+  - Editing the HTML by hand
+  - Nothing; Express covers everything
+  answer: 0
+  explanation: Start with Express, refine with graph_objects.
+  evidence: Fine layout control means graph_objects
+- id: q11
+  prompt: Which is a typical use case?
+  options:
+  - Dashboards in Streamlit or Dash
+  - Database backups
+  - Email campaigns
+  - Container builds
+  answer: 0
+  explanation: Interactive charts fit dashboards well.
+  evidence: Dashboards in Streamlit or Dash.
+- id: q12
+  prompt: When should you prefer Matplotlib or seaborn over Plotly?
+  options:
+  - For static images in reports and papers
+  - For interactive dashboards
+  - For hover tooltips
+  - For browser zoom
+  answer: 0
+  explanation: Static libraries suit print and slides.
+  evidence: Matplotlib or seaborn for static images in reports and papers
+- id: q13
+  prompt: When did Plotly add plotly.express?
+  options:
+  - 2019
+  - 2001
+  - 2010
+  - 2025
+  answer: 0
+  explanation: It popularised one-line DataFrame-to-chart plotting.
+  evidence: plotly.express, added in 2019, made the one-line DataFrame-to-chart style popular

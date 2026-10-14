@@ -1,0 +1,242 @@
+course: pymupdf
+level: familiar
+version: 1
+title: PyMuPDF in 15 minutes
+status: draft
+source:
+  page: tech/pymupdf.md
+  docs: https://pymupdf.readthedocs.io/en/latest/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's PyMuPDF page
+sections:
+- id: concept
+  heading: The big idea
+  body: |
+    PyMuPDF is a Python library for opening PDFs — and other documents such as EPUB — and getting at what's inside:
+    text, images, layout and metadata, **page by page**.
+
+    You open a document with `pymupdf.open()`, loop over its pages, and call `page.get_text()` for plain text, or
+    richer variants for words, blocks and their positions on the page. It can also render pages to images, read
+    annotations and metadata, and modify or create PDFs. For scanned pages that have no text layer, it can call OCR.
+
+    A companion package, **PyMuPDF4LLM**, converts documents to Markdown or JSON for LLM and retrieval (RAG) pipelines.
+- id: history
+  heading: Where it came from and how it is used today
+  body: |
+    PyMuPDF began as a community project providing Python bindings for MuPDF, a fast, lightweight PDF rendering engine.
+    It is now maintained by Artifex Software, the company behind MuPDF (and the long-established Ghostscript), which
+    develops the two together.
+
+    It has become a popular choice for document pipelines because it is fast and runs locally. The rise of RAG — models
+    answering from your documents — made reliable, page-aware text extraction much more important, which is what
+    PyMuPDF4LLM targets.
+- id: business
+  heading: How it fits business users
+  body: |
+    Firms hold huge archives of PDFs: research reports, filings, prospectuses, contracts. PyMuPDF is how those become
+    searchable and usable by AI without sending them to an outside service — which matters when the documents are
+    licensed research that cannot be shared with a third party.
+
+    One licensing point a business must check before shipping: the open-source edition is GNU AGPL v3, and Artifex sells
+    commercial licences for proprietary applications.
+- id: use_cases
+  heading: Key use cases
+  body: |
+    - **Extracting text** from research reports, filings and prospectuses for search.
+    - **Keeping page numbers with each chunk** so answers can cite a page.
+    - **Pulling tables, images or metadata** out of document archives.
+    - **Rendering page thumbnails** for a review screen.
+    - **Batch conversion** of document collections to text or Markdown.
+- id: pros_cons
+  heading: Pros and cons
+  body: |
+    | Pros | Cons |
+    |---|---|
+    | Fast, local, no external service | AGPL licence; proprietary use needs a commercial licence |
+    | Page-level access keeps citations precise | Reading order on complex multi-column layouts can need tuning |
+    | Handles text, images, metadata and rendering | Scanned documents need an OCR step |
+    | Companion package for Markdown output | Tables are harder than plain text to extract reliably |
+- id: resources
+  heading: Where to learn more
+  body: |
+    - [PyMuPDF documentation](https://pymupdf.readthedocs.io/en/latest/) — the official docs from Artifex Software.
+    - [PyMuPDF on GitHub](https://github.com/pymupdf/pymupdf) — source and licence.
+    - [PyMuPDF4LLM documentation](https://pymupdf.readthedocs.io/en/latest/pymupdf4llm/) — Markdown output for LLM pipelines.
+- id: hello_world
+  heading: Hello world
+  body: |
+    The project below creates a two-page PDF with PyMuPDF itself (so you don't need a sample file), then reads it back
+    page by page, printing each page's number and text — exactly what a RAG pipeline needs to cite pages.
+- id: interview
+  heading: Talking about it in an interview
+  body: |
+    - **"Where does RAG quality start?"** At parsing. If text comes out in the wrong order or loses its page, chunking,
+      embeddings and citations all inherit the error.
+    - **"How do you make citations checkable?"** Parse page by page and keep a page number on every chunk, so an answer
+      can cite "report X, page 12" and a reviewer can check it.
+    - **"What would you check before using PyMuPDF commercially?"** The AGPL licence; proprietary use needs a commercial
+      licence from Artifex.
+    - **"What's hard?"** Multi-column reading order, tables, and scans that need OCR.
+
+    Pitfall: assuming PDF text extraction is solved. Show you'd spot-check extraction on real documents.
+project:
+  title: Page-by-page text with page numbers
+  kind: runnable
+  minutes: 4
+  goal: Create a small PDF and extract its text page by page with page numbers.
+  steps:
+  - Run `pip install pymupdf`.
+  - Save the code below as `hello_pdf.py` and run it.
+  - Open the `report.pdf` it wrote, to see the same two pages.
+  code: |
+    import pymupdf
+
+    doc = pymupdf.open()                         # a new, empty PDF
+    for text in ["Revenue grew 12% in Q2.", "Margins were flat year on year."]:
+        page = doc.new_page()
+        page.insert_text((72, 72), text)
+    doc.save("report.pdf")
+
+    for page in pymupdf.open("report.pdf"):
+        print(f"--- page {page.number + 1} ---")
+        print(page.get_text().strip())
+  language: python
+  expected: |
+    --- page 1 ---
+    Revenue grew 12% in Q2.
+    --- page 2 ---
+    Margins were flat year on year.
+  done_when:
+  - Each page's text prints under its page number.
+  - You can explain why keeping the page number matters for citations.
+quiz:
+- id: q1
+  prompt: What does PyMuPDF do?
+  options:
+  - Opens PDFs and other documents and extracts text, images and structure page by page
+  - Trains language models
+  - Hosts websites
+  - Sends email
+  answer: 0
+  explanation: Page-level access is what makes precise citations possible.
+  evidence: PyMuPDF is a Python library for opening PDFs and other documents and extracting their text, images and structure, page by page.
+- id: q2
+  prompt: Which method gets a page's plain text?
+  options:
+  - page.get_text()
+  - page.read_all()
+  - doc.text_dump()
+  - pdf.scan()
+  answer: 0
+  explanation: Richer variants return words, blocks and positions.
+  evidence: call page.get_text() for plain text
+- id: q3
+  prompt: Which company maintains PyMuPDF?
+  options:
+  - Artifex Software, the company behind MuPDF
+  - Adobe
+  - Microsoft
+  - Google
+  answer: 0
+  explanation: Artifex develops MuPDF and PyMuPDF together.
+  evidence: PyMuPDF is maintained by Artifex Software, the company behind the MuPDF rendering engine it wraps.
+- id: q4
+  prompt: What does PyMuPDF4LLM do?
+  options:
+  - Converts documents to Markdown or JSON for LLM and RAG pipelines
+  - Trains an LLM on PDFs
+  - Translates PDFs
+  - Compresses PDFs
+  answer: 0
+  explanation: Markdown output keeps headings and structure for chunking.
+  evidence: a companion package that converts documents to Markdown or JSON for LLM and RAG pipelines
+- id: q5
+  prompt: What licence is the open-source edition under?
+  options:
+  - GNU AGPL v3
+  - MIT
+  - Public domain
+  - Apache 2.0
+  answer: 0
+  explanation: Proprietary applications need a commercial licence from Artifex.
+  evidence: the open-source edition is GNU AGPL v3
+- id: q6
+  prompt: Why does parsing quality matter so much for RAG?
+  options:
+  - Every later step — chunking, embeddings, citations — inherits parsing errors
+  - Parsing doesn't affect RAG
+  - It only affects image quality
+  - The model fixes parsing errors automatically
+  answer: 0
+  explanation: Retrieval quality starts at parsing.
+  evidence: every later step — chunking, embeddings, citations — inherits the error
+- id: q7
+  prompt: How does page-by-page parsing help citations?
+  options:
+  - It keeps a page number on every chunk, so answers can cite a page
+  - It removes the need for citations
+  - It makes PDFs smaller
+  - It hides the source
+  answer: 0
+  explanation: Reviewers can check "report X, page 12".
+  evidence: Parsing page by page with PyMuPDF keeps a page number on every chunk
+- id: q8
+  prompt: Why does running locally matter for licensed research?
+  options:
+  - The documents may not be allowed to go to a third-party parser
+  - Local is always faster
+  - Cloud parsers can't read PDFs
+  - It's required by PDF format
+  answer: 0
+  explanation: No external service means the documents stay in-house.
+  evidence: when the documents are licensed research that cannot be sent to a third-party parser
+- id: q9
+  prompt: What do scanned documents need?
+  options:
+  - An OCR step
+  - Nothing extra
+  - A GPU
+  - A different file extension
+  answer: 0
+  explanation: Scans have no text layer, so text must be recognised from the image.
+  evidence: Scanned documents need an OCR step
+- id: q10
+  prompt: Which is a con of PyMuPDF?
+  options:
+  - Tables are harder than plain text to extract reliably
+  - It needs an internet connection
+  - It can't read PDFs
+  - It only runs on Windows
+  answer: 0
+  explanation: Table structure often needs extra work or checking.
+  evidence: Tables are harder than plain text to extract reliably
+- id: q11
+  prompt: What can need tuning on complex layouts?
+  options:
+  - Reading order on multi-column pages
+  - The PDF file size
+  - The page colours
+  - The fonts
+  answer: 0
+  explanation: Columns can come out interleaved without care.
+  evidence: Reading order on complex multi-column layouts can need tuning
+- id: q12
+  prompt: Besides PDF, which formats can it read?
+  options:
+  - EPUB, MOBI and plain text, among others
+  - Only PDF
+  - Only Word documents
+  - Only images
+  answer: 0
+  explanation: It reads several document formats.
+  evidence: Besides PDF it reads formats such as EPUB, MOBI and plain text.
+- id: q13
+  prompt: Which is a typical use case?
+  options:
+  - Rendering page thumbnails for a review screen
+  - Running a database
+  - Building containers
+  - Sending SMS alerts
+  answer: 0
+  explanation: Pages can be rendered to images.
+  evidence: Rendering page thumbnails for a review screen.

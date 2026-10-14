@@ -1,0 +1,96 @@
+{% extends "base.html" %}{% block title %}Owner · Crash course{% endblock %}
+{% block body %}
+<h1>Owner</h1>
+<p class="lead">Everything that waits for you: topic suggestions, drafts to publish, and edits proposed from learner feedback.
+Nothing reaches learners until you approve it here (or from the links in your email).</p>
+{% if done %}<p class="note">{{ done }}</p>{% endif %}
+<p class="small muted">Learners {{ stats.learners }} · course sign-ups {{ stats.enrolments }} · quiz attempts {{ stats.attempts }} ·
+levels completed {{ stats.completed }} · levels published {{ stats.published }}</p>
+
+<h2>Topic suggestions</h2>
+{% set pending = suggestions|selectattr('status', 'equalto', 'pending')|list %}
+{% if not pending %}<p class="muted">None waiting.</p>{% endif %}
+{% for g in pending %}{% set a = g.assessment %}
+<div class="card" style="margin-bottom:12px">
+  <p class="q" style="margin:0">#{{ g.id }} “{{ g.text }}”</p>
+  <p style="margin:6px 0">Agent: <span class="pill {{ 'st-complete' if a.verdict == 'approve-recommended' else ('st-preparing' if a.verdict == 'needs-review' else 'st-locked') }}">{{ a.verdict }}</span>
+    {% if a.categories %}<span class="small muted">{{ a.categories|join(', ') }}</span>{% endif %}</p>
+  <ul class="small" style="margin:4px 0">{% for r in a.reasons %}<li>{{ r }}</li>{% endfor %}</ul>
+  {% if a.duplicate_of %}<p class="small">Close to <a href="{{ R }}/course/{{ a.duplicate_of }}">{{ a.duplicate_of }}</a>.</p>{% endif %}
+  {% if not g.approvable %}<p class="small error">Can't be approved: flagged {{ a.categories|join(', ') }}.</p>{% else %}
+  <details><summary>Approve…</summary>
+  <form method="post" action="{{ R }}/owner/action">
+    <input type="hidden" name="kind" value="suggestion"><input type="hidden" name="id" value="{{ g.id }}"><input type="hidden" name="decision" value="approve">
+    <label>Course title</label><input type="text" name="title" maxlength="80" value="{{ a.proposed_title or g.text }}">
+    <label>Official documentation (https) the course is grounded in</label><input type="url" name="docs" value="{{ a.official_docs }}" placeholder="https://…">
+    <label>Source notes for the writer (optional)</label><textarea name="notes" maxlength="4000"></textarea>
+    <p><button class="btn ok small" type="submit">Approve and create the course</button></p>
+  </form></details>{% endif %}
+  <form method="post" action="{{ R }}/owner/action" style="margin-top:6px">
+    <input type="hidden" name="kind" value="suggestion"><input type="hidden" name="id" value="{{ g.id }}"><input type="hidden" name="decision" value="reject">
+    <button class="btn bad small" type="submit">Reject</button>
+  </form>
+</div>
+{% endfor %}
+{% set decided = suggestions|rejectattr('status', 'equalto', 'pending')|list %}
+{% if decided %}<details><summary class="small">Decided ({{ decided|length }})</summary><ul class="small">
+{% for g in decided %}<li>#{{ g.id }} {{ g.text }} — {{ g.status }} by {{ g.decided_by }}{% if g.course_slug %} → <a href="{{ R }}/course/{{ g.course_slug }}">{{ g.course_slug }}</a>{% endif %}</li>{% endfor %}
+</ul></details>{% endif %}
+
+<h2>Drafts waiting to publish ({{ drafts|length }})</h2>
+{% if drafts %}
+{% set passing = drafts|selectattr('ok')|list %}
+<form method="post" action="{{ R }}/owner/action" style="margin-bottom:12px">
+  <input type="hidden" name="kind" value="publish_all">
+  <button class="btn ok" type="submit" {{ 'disabled' if not passing }}>Publish {{ 'the draft' if passing|length == 1 else 'all ' ~ passing|length ~ ' drafts' }} that pass{{ 'es' if passing|length == 1 }} the checks</button>
+  <span class="small muted">Only after you've reviewed them. Each is re-checked and logged as your approval.</span>
+</form>
+<div class="card" style="padding:0;overflow-x:auto">
+<table class="tbl">
+  <thead><tr><th>Course</th><th>Level</th><th>Checks</th><th>Size</th><th></th></tr></thead>
+  <tbody>
+  {% for d in drafts %}
+  <tr>
+    <td>{{ d.title }}<div class="small muted">{{ d.by }}</div></td>
+    <td><span class="pill lv-{{ d.level }}">{{ d.level }}</span> v{{ d.version }}</td>
+    <td>{% if d.ok %}<span class="done">passed</span>{% else %}<span class="error">failed</span><div class="small">{{ d.problems|join('; ') }}</div>{% endif %}</td>
+    <td class="small">~{{ d.minutes }} min<br>{{ d.questions }} questions</td>
+    <td class="actions">
+      <a class="btn ghost small" href="{{ R }}/owner/preview/{{ d.course }}/{{ d.level }}">Review</a>
+      <form method="post" action="{{ R }}/owner/action"><input type="hidden" name="kind" value="level"><input type="hidden" name="course" value="{{ d.course }}"><input type="hidden" name="level" value="{{ d.level }}"><input type="hidden" name="decision" value="publish"><button class="btn ok small" type="submit" {{ 'disabled' if not d.ok }}>Publish</button></form>
+      <form method="post" action="{{ R }}/owner/action"><input type="hidden" name="kind" value="level"><input type="hidden" name="course" value="{{ d.course }}"><input type="hidden" name="level" value="{{ d.level }}"><input type="hidden" name="decision" value="reject"><button class="btn bad small" type="submit">Reject</button></form>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}<p class="muted">None waiting.</p>{% endif %}
+
+<h2>Edits proposed from feedback</h2>
+{% if not proposals %}<p class="muted">None waiting.</p>{% endif %}
+{% for p in proposals %}
+<form method="post" action="{{ R }}/owner/action" class="card" style="margin-bottom:12px">
+  <input type="hidden" name="kind" value="proposal"><input type="hidden" name="id" value="{{ p.id }}">
+  <p style="margin:0"><b>{{ p.course }} / {{ p.level }}</b> v{{ p.version }} — {{ p.payload.summary }}</p>
+  {% for e in p.payload.edits %}
+  <label class="opt" style="margin:8px 0"><input type="checkbox" name="accept" value="{{ loop.index0 }}" checked>
+    <span><b>{{ e.target }}</b>: {{ e.change }}<br><span class="small muted">{{ e.reason }}</span></span></label>
+  {% endfor %}
+  {% if p.payload.held %}<p class="small error">Held for you to check by hand (would change an answer key — never applied automatically):</p>
+  <ul class="small">{% for e in p.payload.held %}<li>{{ e.target }}: {{ e.change }}</li>{% endfor %}</ul>{% endif %}
+  <p><button class="btn small" type="submit">Accept the ticked edits (new draft)</button>
+  <span class="small muted">Untick all to reject. Accepted edits become a draft you review and publish, and new eval cases.</span></p>
+</form>
+{% endfor %}
+
+<h2>Recent feedback</h2>
+{% if not feedback %}<p class="muted">None yet.</p>{% else %}
+<div class="card" style="padding:0;overflow-x:auto"><table class="tbl">
+<thead><tr><th>Level</th><th>Rating</th><th>Unclear</th><th>Add</th><th>Status</th></tr></thead><tbody>
+{% for f in feedback %}<tr><td class="small">{{ f.course }} / {{ f.level }} v{{ f.version }}</td><td>{{ f.rating or '–' }}</td>
+<td class="small">{{ f.unclear }}</td><td class="small">{{ f.add_text }}</td><td class="small muted">{{ f.status }}</td></tr>{% endfor %}
+</tbody></table></div>{% endif %}
+
+{% if jobs %}<h2>Background jobs</h2>
+<ul class="small">{% for j in jobs %}<li>#{{ j.id }} {{ j.kind }} {{ j.course }}/{{ j.level }} — {{ j.status }}</li>{% endfor %}</ul>{% endif %}
+{% endblock %}
