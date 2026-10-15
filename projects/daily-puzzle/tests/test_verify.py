@@ -36,7 +36,8 @@ def test_bad_drafts_are_rejected(ctx, kind, scenario, flag):
 def test_report_never_contains_the_answer(ctx):
     d = puzzles.make("cipher", 9, "medium", "wrong_key")
     _, rep = verify.verify(d, ctx)
-    assert d["answer"] not in json.dumps(rep.as_dict())
+    report = json.dumps(rep.as_dict())
+    assert d["answer"] not in report and puzzles.make("cipher", 9, "medium")["answer"] not in report
 
 
 def test_repeat_is_rejected(ctx):

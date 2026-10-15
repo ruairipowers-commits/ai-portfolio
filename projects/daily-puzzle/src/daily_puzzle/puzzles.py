@@ -58,7 +58,7 @@ def _wrong_key(d: dict, rng: random.Random) -> dict:
     elif d["answer_type"] == "float":
         a = f"{float(a) * 1.07 + 0.013:.{d.get('decimals') or 3}f}"
     elif d["kind"] in ("cipher", "anagram"):
-        a = rng.choice([w for w in all_words() if len(w) == len(a) and w != a] or ["wrong"])
+        a = rng.choice([w for w in sorted(all_words()) if len(w) == len(a) and w != a] or ["wrong"])
     else:
         parts = [p.strip() for p in a.split(",")]
         a = ", ".join(reversed(parts)) if len(parts) > 1 else (NAMES[0] if a != NAMES[0] else NAMES[1])
