@@ -46,6 +46,7 @@ extra_css:
   - assets/portfolio.css
 extra_javascript:
   - assets/blog-filter.js
+  - assets/info-tip.js
   - assets/suggest.js
   - assets/likes.js
   - assets/home-side.js

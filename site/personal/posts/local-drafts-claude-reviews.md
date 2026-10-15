@@ -18,8 +18,8 @@ first numbers.
 <!-- more -->
 
 !!! note "Status"
-    Draft. The measured numbers below come from one task. The results table fills in as the routing runs on real
-    weekly posts; this post publishes once it holds at least a month of them.
+    Draft. The measured numbers below come from one task. The results table fills in as the routing runs on the
+    daily posts; this post publishes once it holds at least a month of them.
 
 ## The problem
 
