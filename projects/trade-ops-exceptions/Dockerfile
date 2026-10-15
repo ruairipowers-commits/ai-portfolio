@@ -5,7 +5,7 @@ RUN npm install --no-audit --no-fund
 COPY mcp-server/ ./
 RUN npm run build && npm prune --omit=dev
 
-FROM python:3.11-slim
+FROM python:3.14-slim
 # Node 22.13+ is required (node:sqlite); copy it from the build stage rather than the older distro package.
 COPY --from=server /usr/local/bin/node /usr/local/bin/node
 WORKDIR /app
