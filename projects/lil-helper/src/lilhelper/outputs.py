@@ -202,7 +202,7 @@ def mail_from() -> str:
     """The From line. HELPER_MAIL_FROM wins: this app's own sender, so its mail can be filtered on its own.
     Otherwise the shared MAIL_FROM / SMTP_FROM address is used under this app's name ("Lil'Helper").
     """
-    own = (os.getenv("HELPER_MAIL_FROM") or "").strip()
+    own = (os.getenv("HELPER_MAIL_FROM") or "").strip().strip('"').strip("'").strip()   # docker --env-file keeps quotes
     if own:
         return own
     for k in ('MAIL_FROM', 'SMTP_FROM'):

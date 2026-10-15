@@ -246,3 +246,9 @@ def test_a_refused_email_is_reported_not_swallowed(monkeypatch, tmp_path, caplog
 
 def test_health_says_how_email_goes(server):
     assert server.client.get("/api/health").json()["email"].startswith("outbox")
+
+
+def test_a_quoted_sender_from_an_env_file_is_cleaned(monkeypatch):
+    from lilhelper import outputs
+    monkeypatch.setenv("HELPER_MAIL_FROM", '"Lil\'Helper <helper@agentls.com>"')
+    assert outputs.mail_from() == "Lil'Helper <helper@agentls.com>"
