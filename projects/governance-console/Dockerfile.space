@@ -3,7 +3,7 @@
 # Space secrets (set by the portfolio's sync workflow): GOVERNANCE_INGEST_TOKEN (the demo apps post with it),
 # GOVERNANCE_ADMIN_TOKEN (permanent kill-switch changes), optional DATABASE_URL (Postgres, so live history
 # survives restarts — a free Space's disk is wiped when it sleeps).
-FROM python:3.11-slim
+FROM python:3.14-slim
 # /app must belong to the app user: the build writes data/ and warehouse/ there (WORKDIR alone creates it as root)
 RUN useradd -m -u 1000 user && install -d -o user -g user /app
 ENV HOME=/home/user PATH=/home/user/.local/bin:$PATH PYTHONUNBUFFERED=1
