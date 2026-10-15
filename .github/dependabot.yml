@@ -15,7 +15,12 @@ updates:
     directory: /projects/trade-ops-exceptions/mcp-server
     schedule: {interval: weekly}
     groups: {node: {patterns: ["*"], update-types: [minor, patch]}}
+    ignore:                    # majors are deliberate changes: TypeScript 7 is a rewrite; types track the Node we run (22 LTS)
+      - {dependency-name: typescript, update-types: ["version-update:semver-major"]}
+      - {dependency-name: "@types/node", update-types: ["version-update:semver-major"]}
   - package-ecosystem: docker
     directories: ["/projects/altdata-triage", "/projects/eod-heartbeat", "/projects/governance-console",
                   "/projects/research-qa-rag", "/projects/site-assistant", "/projects/trade-ops-exceptions"]
     schedule: {interval: weekly}
+    ignore:                    # Node base images stay on an LTS line; moving to the next LTS is a deliberate change
+      - {dependency-name: node, update-types: ["version-update:semver-major"]}
