@@ -7,10 +7,15 @@ the request, then saved as a flagged draft. Nothing is published here: `publish`
 """
 from __future__ import annotations
 
+import os
+
 from . import ai, catalog, checks, mailer, telemetry
 from .config import Settings
 from .schemas import Level, Provenance, Source
 from .store import approval, now
+
+NO_WRITER = ("no writer model: COURSE_WRITER_MODEL isn't set, and the offline mock only writes placeholder text. "
+             "Set it (e.g. local-qwen), restart, then use Draft now on the owner page.")
 
 GUIDE = {
     "concept": "What it is, at a high level, in plain words; the one problem it solves.",
@@ -59,11 +64,20 @@ def build(conn, s: Settings, slug: str, level: str) -> tuple[Level | None, check
     course = catalog.all_courses(conn).get(slug)
     if not course:
         return None, None, "unknown course"
+    if ai.placeholder_writer_blocked(s):
+        # Live service, no real writer configured: write nothing rather than a placeholder that would pass the
+        # checks and look publishable. The level stays "being prepared"; the owner page says why.
+        telemetry.record("build", status="failed", flags=["no_writer_model"])
+        return None, None, NO_WRITER
+    # never fall back to the mock writer on the live service: a failed call is better than placeholder text
+    fallback = s["build"]["fallback_alias"]
+    if ai.live() and ai.is_placeholder(fallback) and os.getenv("COURSE_ALLOW_MOCK_WRITER") != "1":
+        fallback = None
     fix, last_err, lv, rep, spent = None, "", None, None, 0.0
     for _ in range(1 + s["build"]["regenerate_on_fail"]):
         res = ai.call(conn, s, "build", "writer", s["build"]["writer_alias"], request(course, level, s, fix), Level,
                       s["cost"]["max_usd_per_build"] - spent, s["build"]["max_output_tokens"],
-                      fallback=s["build"]["fallback_alias"])
+                      fallback=fallback)
         spent += res.cost_usd
         if res.value is None:
             last_err = res.error

@@ -1,0 +1,416 @@
+course: aws
+level: beginner
+version: 2                   # v1 on the live site is the offline placeholder writer's draft; this replaces it
+title: AWS for AI workloads in 1 hour
+status: draft
+source:
+  page: tech/aws.md
+  docs: https://docs.aws.amazon.com/
+provenance:
+  written_by: Claude (build session, 14 Oct 2026), from the site's AWS page and the Familiar level
+sections:
+- id: recap
+  heading: Where Familiar left you
+  body: |
+    - AWS is a catalogue of managed services; each project here maps its laptop setup onto a handful of them.
+    - **S3** holds files, **Object Lock** makes records unchangeable, **Athena** queries files with SQL.
+    - Containers run on **ECS Fargate** or **App Runner**; small event-driven steps run on **Lambda**.
+    - Models are reached through **Bedrock** with an IAM role, so there is no API key to leak.
+    - **Secrets Manager**, **CloudWatch** and **AWS Budgets** cover keys, monitoring and spend.
+
+    This hour turns that map into hands-on skill: the ten terms you will meet on day one, a safe account setup, and a
+    small project that builds an audit trail for model calls — the kind of record an investment firm's compliance
+    team will ask for.
+- id: core_terms
+  heading: The 10 terms you need
+  body: |
+    1. **Region and Availability Zone.** A region is a geographic area such as us-east-1; each region contains
+       several isolated data centres called Availability Zones. Most resources live in one region, so a bucket or
+       database created in one region is not in another.
+    2. **Account.** The billing and security boundary. Larger firms use several accounts (production, development,
+       sandbox) grouped under AWS Organizations.
+    3. **IAM identity: user, role, policy.** A policy is a JSON document that allows or denies actions on
+       resources. A role is an identity that software or people assume temporarily; a user has long-term
+       credentials. Applications should use roles, not users with stored keys.
+    4. **Least privilege.** Grant only the actions a job needs, on only the resources it needs. An app that writes
+       audit records needs `s3:PutObject` on one prefix, not `s3:*` on every bucket.
+    5. **ARN.** The Amazon Resource Name, a unique ID such as `arn:aws:s3:::my-bucket`. Policies refer to
+       resources by ARN.
+    6. **Bucket, key and version.** S3 stores objects in buckets, addressed by key (a path-like name). With
+       versioning on, overwriting or deleting an object keeps the earlier versions.
+    7. **Object Lock retention.** Governance mode blocks deletes unless a user has a special permission to bypass
+       it. Compliance mode blocks everyone, including the account root, until the retention date. Learn in
+       governance mode; use compliance mode only when a records policy demands it.
+    8. **Managed compute.** Fargate and App Runner run containers without servers to patch; Lambda runs a function
+       per event and suits short steps, not long model calls.
+    9. **The shared responsibility model.** AWS secures the infrastructure; you are responsible for how you
+       configure it — who can read a bucket, which ports are open, which keys exist.
+    10. **Infrastructure as code.** Resources are defined in files (Terraform in this portfolio) so an environment
+        can be reviewed, recreated and torn down. Clicking in the console is fine for learning, not for production.
+- id: setup
+  heading: Set up an account safely (10 minutes)
+  body: |
+    Use a personal sandbox account, never a work production account.
+
+    1. Create an AWS account and immediately turn on **MFA for the root user**. Then stop using root: it is for
+       billing and account recovery only.
+    2. In **IAM Identity Center**, create a user for yourself with an administrator permission set. Sign in as that
+       user from now on.
+    3. **Set a budget before you build anything.** In Billing and Cost Management, open Budgets and create a monthly
+       cost budget of a few dollars with an email alert. Billing data lags, so this is a backstop, not a hard stop.
+    4. Install the **AWS CLI version 2** and run `aws configure sso` to sign the CLI in with your Identity Center
+       user. This gives short-lived credentials instead of an access key in a file.
+    5. Pick one region and stay in it for this course. The examples use us-east-1.
+
+    **You are ready when** `aws sts get-caller-identity` prints your account number and an ARN that names your
+    Identity Center role, not the root user.
+- id: guided_project
+  heading: 'Guided project: a tamper-proof audit trail for model calls (30 minutes)'
+  body: |
+    Every governed AI workflow in this portfolio writes one record per model call: which model, which prompt
+    version, how many tokens, what it cost. On AWS those records land in S3 with Object Lock, so nobody — including
+    an administrator in a hurry — can quietly edit or remove them.
+
+    You will create a locked bucket, write a record, prove it cannot be deleted, then write the least-privilege
+    policy an application would need. The steps and commands are in the project below. It costs fractions of a
+    cent, and the cleanup step removes everything.
+
+    While you work, notice three things: Object Lock must be switched on when the bucket is created; a plain delete
+    only hides an object behind a delete marker; and deleting a specific locked version is refused.
+- id: mistakes
+  heading: Common mistakes and how to spot them
+  body: |
+    - **Using the root user day to day.** If `get-caller-identity` shows `:root`, stop and sign in as your
+      Identity Center user.
+    - **Long-lived access keys in code or `.env` files.** They leak through repos and laptops. Use roles for
+      apps and `aws configure sso` for yourself.
+    - **Wildcard policies.** `"Action": "s3:*"` on `"Resource": "*"` works on the first try, which is exactly why
+      it survives into production. Name the actions and the ARNs.
+    - **Wrong region.** "Bucket not found" or an empty console page often means you are looking in another
+      region. Check the region selector and the `--region` flag.
+    - **Compliance mode by accident.** Compliance-mode retention cannot be shortened, even by the account root —
+      mistakes are expensive. Test with governance mode and a one-day retention.
+    - **Idle costs.** Some services charge while doing nothing: an MWAA environment, an OpenSearch Serverless
+      collection's minimum capacity, RDS instances, and NAT gateways. Delete what you are not using.
+    - **Treating Lambda as a model server.** Execution time limits and cold starts make it a poor fit for long or
+      heavy model calls; put those in a container.
+- id: cheat_sheet
+  heading: Cheat sheet
+  body: |
+    | Task | Command or place |
+    |---|---|
+    | Who am I signed in as? | `aws sts get-caller-identity` |
+    | Sign the CLI in | `aws configure sso`, then `aws sso login` |
+    | List buckets | `aws s3 ls` |
+    | Copy a file up | `aws s3 cp file.json s3://bucket/key.json` |
+    | See every version of an object | `aws s3api list-object-versions --bucket B --prefix P` |
+    | Check an object's lock | `aws s3api get-object-retention --bucket B --key K` |
+    | What did this cost? | Billing and Cost Management → Cost Explorer |
+    | Why did a call fail? | CloudWatch Logs, or the CLI error message |
+
+    | If you need to… | Start with |
+    |---|---|
+    | Store files or model artifacts | S3 |
+    | Keep records unchangeable | S3 Object Lock |
+    | Query files with SQL | Athena (with the Glue Data Catalog) |
+    | Run a containerised AI app | ECS Fargate |
+    | React to a file landing | Lambda |
+    | Call a foundation model | Bedrock, with an IAM role |
+    | Pause a workflow for a human | Step Functions (`waitForTaskToken`) |
+    | Keep a model provider key | Secrets Manager |
+    | Get warned about spend | AWS Budgets |
+- id: interview
+  heading: Five beginner interview questions
+  body: |
+    - **"How would you give an application access to S3?"** A good answer: an IAM role attached to the compute
+      (task role, function role), a policy naming the specific actions and bucket prefix, no stored access keys.
+    - **"What's the difference between a role and a user?"** Roles are assumed temporarily and suit software;
+      users have long-term credentials and should be rare. Mention MFA and Identity Center for people.
+    - **"How do you stop a cloud bill surprising you?"** Budgets with alerts, cost-allocation tags per workload,
+      deleting idle resources, and in-app limits on model spend — Budgets alone lags.
+    - **"How would you keep an audit trail of model calls?"** One record per call written to S3 with Object
+      Lock, queried with Athena; say which retention mode and why, and who can read the records.
+    - **"Lambda or a container for an AI agent?"** Container on Fargate for long, stateful or heavy work; Lambda
+      for short glue steps triggered by events. Show you know the time limit and cold starts.
+
+    Red flags interviewers listen for: "we just use the root account", "the key is in the environment file", and
+    not knowing which region something runs in.
+- id: next_steps
+  heading: Where to go next
+  body: |
+    - [AWS documentation](https://docs.aws.amazon.com/) — the official reference for every service.
+    - [IAM security best practices](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html)
+    - [S3 Object Lock](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html)
+    - [AWS CLI user guide](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html)
+    - [AWS Budgets](https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-managing-costs.html)
+
+    The Intermediate level goes deeper: networking and private access, Bedrock and Knowledge Bases, orchestration
+    with Step Functions and MWAA, cost control, and the production path each portfolio project documents.
+project:
+  title: Build a tamper-proof audit trail for model calls
+  kind: runnable
+  minutes: 30
+  goal: Create an S3 bucket with Object Lock, write one model-call record, prove it cannot be deleted, and write the
+    least-privilege policy an app would use to add records.
+  steps:
+  - Sign in with `aws sso login` and confirm `aws sts get-caller-identity` does not show the root user.
+  - Set the two variables at the top of the script, then create the bucket with Object Lock enabled (it must be
+    switched on at creation; this also turns on versioning).
+  - Set a default retention of 1 day in GOVERNANCE mode, so every new object is locked automatically.
+  - Write a small JSON record of a model call and upload it under audit/.
+  - Check its retention, then try a plain delete and list the versions — the record is still there behind a delete
+    marker.
+  - Try to delete the record's version directly and read the AccessDenied error.
+  - Write the policy an application role would need to add records to audit/ and nothing else (no need to apply it).
+  - Clean up with the commands at the end, using your administrator's right to bypass governance retention.
+  code: |
+    REGION=us-east-1
+    BUCKET=ai-audit-$(aws sts get-caller-identity --query Account --output text)-demo
+
+    # 1. bucket with Object Lock (us-east-1 needs no location constraint; other regions add
+    #    --create-bucket-configuration LocationConstraint=$REGION)
+    aws s3api create-bucket --bucket "$BUCKET" --region "$REGION" --object-lock-enabled-for-bucket
+
+    # 2. lock every new object for 1 day, in governance mode
+    aws s3api put-object-lock-configuration --bucket "$BUCKET" --object-lock-configuration \
+      '{"ObjectLockEnabled":"Enabled","Rule":{"DefaultRetention":{"Mode":"GOVERNANCE","Days":1}}}'
+
+    # 3. one model-call record
+    echo '{"run":"r-001","model":"example-model","prompt_version":"v1","tokens":812,"cost_usd":0.0021}' > record.json
+    aws s3api put-object --bucket "$BUCKET" --key audit/r-001.json --body record.json --checksum-algorithm SHA256
+
+    # 4. it is locked
+    aws s3api get-object-retention --bucket "$BUCKET" --key audit/r-001.json
+
+    # 5. a plain delete only adds a delete marker; the locked version survives
+    aws s3api delete-object --bucket "$BUCKET" --key audit/r-001.json
+    aws s3api list-object-versions --bucket "$BUCKET" --prefix audit/
+
+    # 6. deleting the version itself is refused
+    VID=$(aws s3api list-object-versions --bucket "$BUCKET" --prefix audit/ --query 'Versions[0].VersionId' --output text)
+    aws s3api delete-object --bucket "$BUCKET" --key audit/r-001.json --version-id "$VID"
+
+    # 7. the policy an app role needs (write it, don't apply it)
+    cat > app-policy.json <<EOF
+    {"Version": "2012-10-17",
+     "Statement": [{"Effect": "Allow", "Action": "s3:PutObject",
+                    "Resource": "arn:aws:s3:::$BUCKET/audit/*"}]}
+    EOF
+
+    # 8. clean up: remove the version (bypassing governance) and the delete marker, then the bucket
+    aws s3api delete-object --bucket "$BUCKET" --key audit/r-001.json --version-id "$VID" --bypass-governance-retention
+    MID=$(aws s3api list-object-versions --bucket "$BUCKET" --prefix audit/ --query 'DeleteMarkers[0].VersionId' --output text)
+    aws s3api delete-object --bucket "$BUCKET" --key audit/r-001.json --version-id "$MID"
+    aws s3api delete-bucket --bucket "$BUCKET"
+  language: bash
+  expected: |
+    Step 4 prints a Retention block with "Mode": "GOVERNANCE" and a RetainUntilDate one day ahead.
+    Step 5's listing shows one entry under Versions and one under DeleteMarkers.
+    Step 6 fails with an AccessDenied error saying the object is protected by Object Lock.
+    Step 8 deletes everything; delete-bucket prints nothing when it succeeds.
+  done_when:
+  - You saw the AccessDenied error in step 6 and can explain why the plain delete in step 5 "worked".
+  - Your app policy allows only s3:PutObject, only on the audit/ prefix of one bucket.
+  - The bucket is gone (aws s3 ls no longer lists it).
+quiz:
+- id: q1
+  prompt: Where should an application's AWS permissions come from?
+  options:
+  - IAM roles, assumed by the compute the app runs on
+  - An access key stored in the app's .env file
+  - The account root user's credentials
+  - A shared administrator user
+  answer: 0
+  explanation: Roles give temporary credentials; stored keys leak and root is for billing and recovery only.
+  evidence: Applications should use roles, not users with stored keys.
+- id: q2
+  prompt: What does least privilege mean for an app that writes audit records to S3?
+  options:
+  - It gets s3:PutObject on one prefix, not s3:* on every bucket
+  - It gets administrator access so it never fails
+  - It gets read access to every bucket in the account
+  - It uses the root user but only at night
+  answer: 0
+  explanation: Grant only the actions and resources the job needs.
+  evidence: An app that writes audit records needs `s3:PutObject` on one prefix, not `s3:*` on every bucket.
+- id: q3
+  prompt: When must Object Lock be switched on for a bucket?
+  options:
+  - When the bucket is created
+  - Any time, by editing the bucket policy
+  - Only after the first object is uploaded
+  - It is on for every bucket by default
+  answer: 0
+  explanation: Object Lock is enabled at bucket creation, which also turns on versioning.
+  evidence: 'notice three things: Object Lock must be switched on when the bucket is created'
+- id: q4
+  prompt: In this project, what happens when you run a plain delete on a locked object?
+  options:
+  - S3 adds a delete marker and the locked version is still kept
+  - The object is permanently removed
+  - The bucket is deleted
+  - The retention period is reset to zero
+  answer: 0
+  explanation: With versioning, a plain delete only hides the object behind a delete marker.
+  evidence: a plain delete only hides an object behind a delete marker
+- id: q5
+  prompt: Which Object Lock mode blocks everyone, including the account root, until the retention date?
+  options:
+  - Compliance mode
+  - Governance mode
+  - Versioning mode
+  - Lifecycle mode
+  answer: 0
+  explanation: Governance mode can be bypassed with a special permission; compliance mode cannot.
+  evidence: Compliance mode blocks everyone, including the account root, until the retention date.
+- id: q6
+  prompt: Why does this course practise with governance mode and a one-day retention?
+  options:
+  - Compliance-mode retention can't be shortened, so a mistake is expensive
+  - Governance mode is the only mode the CLI supports
+  - Compliance mode is free and governance mode is not
+  - Governance mode makes objects public
+  answer: 0
+  explanation: Test safely first; use compliance mode only when a records policy demands it.
+  evidence: compliance-mode retention cannot be shortened, even by the account root - mistakes are expensive
+- id: q7
+  prompt: What should you do first after creating a new AWS account?
+  options:
+  - Turn on MFA for the root user, then stop using root
+  - Create an access key for the root user
+  - Launch a large database to test performance
+  - Make a public bucket for sharing files
+  answer: 0
+  explanation: Root is for billing and recovery; protect it and work as an Identity Center user.
+  evidence: Create an AWS account and immediately turn on MFA for the root user. Then stop using root
+- id: q8
+  prompt: Why set an AWS Budget before building anything, and what is its limit?
+  options:
+  - It alerts on spend, but billing data lags, so it is a backstop rather than a hard stop
+  - It stops all services the moment you hit the limit
+  - It makes every service free up to the budget
+  - It is only needed for production accounts
+  answer: 0
+  explanation: Budgets warn you; they do not switch anything off in real time.
+  evidence: Billing data lags, so this is a backstop, not a hard stop.
+- id: q9
+  prompt: How should you sign the AWS CLI in for your own work?
+  options:
+  - aws configure sso, which gives short-lived credentials
+  - Paste the root user's access key into a config file
+  - Email yourself an access key
+  - The CLI needs no credentials
+  answer: 0
+  explanation: SSO through Identity Center avoids long-lived keys on your laptop.
+  evidence: run `aws configure sso` to sign the CLI in with your Identity Center user
+- id: q10
+  prompt: You get "bucket not found" for a bucket you just created. What is a common cause?
+  options:
+  - You are looking in a different region
+  - S3 deletes buckets after one hour
+  - Buckets are only visible to the root user
+  - The bucket name has too many letters
+  answer: 0
+  explanation: Most resources live in one region; check the region selector and the --region flag.
+  evidence: often means you are looking in another region
+- id: q11
+  prompt: Which of these keeps charging even when it is doing no work?
+  options:
+  - An MWAA environment
+  - An S3 bucket with no objects
+  - An IAM role
+  - An AWS Budget alert
+  answer: 0
+  explanation: Delete what you are not using; idle environments still cost money.
+  evidence: An environment has a standing cost even when no DAGs are running.
+- id: q12
+  prompt: Why is Lambda a poor fit for long model calls?
+  options:
+  - Execution time limits and cold starts
+  - It cannot make network calls
+  - It only runs JavaScript
+  - It is more expensive than every other service
+  answer: 0
+  explanation: Put long or heavy model calls in a container on Fargate.
+  evidence: execution time limits and cold starts make it a poor fit for long or heavy model calls
+- id: q13
+  prompt: Under the shared responsibility model, what are you responsible for?
+  options:
+  - How you configure your resources, such as who can read a bucket
+  - The physical security of AWS data centres
+  - Patching the hardware behind S3
+  - Nothing; AWS secures everything
+  answer: 0
+  explanation: AWS secures the infrastructure; your configuration is yours.
+  evidence: you are responsible for how you configure it - who can read a bucket, which ports are open, which keys exist
+- id: q14
+  prompt: What is an ARN used for?
+  options:
+  - A unique ID that policies use to refer to a resource
+  - A type of database instance
+  - The name of an Availability Zone
+  - A billing alert
+  answer: 0
+  explanation: An Amazon Resource Name identifies a resource uniquely across AWS.
+  evidence: Policies refer to resources by ARN.
+- id: q15
+  prompt: Which service would you use to keep a model provider's API key?
+  options:
+  - Secrets Manager
+  - S3 Object Lock
+  - CloudWatch
+  - Athena
+  answer: 0
+  explanation: Keys belong in Secrets Manager, with access controlled by IAM.
+  evidence: Secrets Manager stores credentials and API keys, with access controlled by IAM and optional rotation.
+- id: q16
+  prompt: How does Bedrock avoid an API key that could leak?
+  options:
+  - It is called with an IAM role
+  - It does not need authentication
+  - The key is printed in CloudWatch for safekeeping
+  - It only runs on your laptop
+  answer: 0
+  explanation: IAM roles give the caller temporary, scoped credentials.
+  evidence: Models are reached through Bedrock with an IAM role, so there is no API key to leak.
+- id: q17
+  prompt: Which service pauses a workflow until a human responds?
+  options:
+  - Step Functions, with the waitForTaskToken pattern
+  - Lambda, by sleeping for a day
+  - S3, with a delete marker
+  - AWS Budgets
+  answer: 0
+  explanation: A durable wait for a callback is how the trade-ops agent's approval step maps to AWS.
+  evidence: Its `waitForTaskToken` pattern pauses a workflow until a callback arrives
+- id: q18
+  prompt: Why define AWS resources as code (for example with Terraform)?
+  options:
+  - So an environment can be reviewed, recreated and torn down
+  - Because the console cannot create resources
+  - It makes every service free
+  - AWS requires it for new accounts
+  answer: 0
+  explanation: Console clicks are fine for learning; production needs reviewable, repeatable definitions.
+  evidence: Resources are defined in files (Terraform in this portfolio) so an environment can be reviewed, recreated
+    and torn down.
+- id: q19
+  prompt: What is the difference between a region and an Availability Zone?
+  options:
+  - A region is a geographic area that contains several isolated data centres called Availability Zones
+  - They are two names for the same thing
+  - An Availability Zone contains several regions
+  - Regions are for storage and Availability Zones are for billing
+  answer: 0
+  explanation: Regions contain Availability Zones; most resources live in one region.
+  evidence: each region contains several isolated data centres called Availability Zones
+- id: q20
+  prompt: In an interview, which answer is a red flag?
+  options:
+  - '"We just use the root account."'
+  - '"Each app has its own IAM role."'
+  - '"We set Budgets and tag costs per workload."'
+  - '"Audit records go to S3 with Object Lock."'
+  answer: 0
+  explanation: Day-to-day use of root is one of the habits interviewers listen for.
+  evidence: 'Red flags interviewers listen for: "we just use the root account"'
