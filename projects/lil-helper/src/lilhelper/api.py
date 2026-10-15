@@ -190,16 +190,9 @@ def _hh():
         raise HTTPException(409, str(e))
 
 
-def _send_email(to: str, subject: str, body_html: str, tag: str) -> None:
-    if os.getenv("RESEND_API_KEY"):
-        httpx.post("https://api.resend.com/emails", timeout=15,
-                   headers={"Authorization": f"Bearer {os.environ['RESEND_API_KEY']}"},
-                   json={"from": outputs.mail_from(), "to": [to],
-                         "subject": subject, "html": body_html})
-    else:
-        d = data_root() / "outbox"                      # account emails aren't any one household's
-        d.mkdir(parents=True, exist_ok=True)
-        (d / f"{tag}-{hashlib.sha256(to.encode()).hexdigest()[:8]}.html").write_text(body_html)
+def _send_email(to: str, subject: str, body_html: str, tag: str) -> str:
+    # account emails aren't any one household's, so their outbox is the server's
+    return outputs.send_mail(to, subject, body_html, tag, data_root() / "outbox")
 
 
 # ---------------------------------------------------------------- sign-in and accounts
@@ -215,7 +208,8 @@ class TokenIn(BaseModel):
 
 @app.get("/api/health")
 def health() -> dict:
-    return {"ok": True, "version": __version__, "signup": accounts.signup_mode()}
+    return {"ok": True, "version": __version__, "signup": accounts.signup_mode(),
+            "email": "resend" if os.getenv("RESEND_API_KEY") else "outbox (RESEND_API_KEY not set)"}
 
 
 @app.post("/api/auth/request")

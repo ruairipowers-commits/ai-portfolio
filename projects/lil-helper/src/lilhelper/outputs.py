@@ -212,6 +212,37 @@ def mail_from() -> str:
     return "Lil'Helper <helper@example.com>"
 
 
+def send_mail(to: str, subject: str, html: str, tag: str, outbox) -> str:
+    """Send one email through Resend, or write it to `outbox` when there's no RESEND_API_KEY.
+    Returns "sent", "outbox", or "failed <status>: <Resend's reason>". Failures are logged (never the address)."""
+    import logging
+    log = logging.getLogger("lilhelper.mail")
+    if not os.getenv("RESEND_API_KEY"):
+        from pathlib import Path
+        d = Path(outbox)
+        d.mkdir(parents=True, exist_ok=True)
+        import hashlib
+        (d / f"{tag}-{hashlib.sha256(to.encode()).hexdigest()[:8]}.html").write_text(html)
+        log.warning("email %s: RESEND_API_KEY isn't set, so it was written to %s instead of sent", tag, d)
+        return "outbox"
+    import httpx
+    try:
+        r = httpx.post("https://api.resend.com/emails", timeout=15,
+                       headers={"Authorization": f"Bearer {os.environ['RESEND_API_KEY']}"},
+                       json={"from": mail_from(), "to": [to], "subject": subject, "html": html})
+    except httpx.HTTPError as e:
+        log.error("email %s: couldn't reach Resend (%s)", tag, type(e).__name__)
+        return f"failed: couldn't reach Resend ({type(e).__name__})"
+    if r.status_code < 300:
+        return "sent"
+    try:
+        reason = r.json().get("message") or r.text[:200]
+    except ValueError:
+        reason = r.text[:200]
+    log.error("email %s: Resend refused it (%s): %s — sender was %s", tag, r.status_code, reason, mail_from())
+    return f"failed {r.status_code}: {reason}"
+
+
 def send_week_email(h: Household, rec: dict, links: dict, notes: dict | None = None) -> list[str]:
     telemetry.require_enabled("email")
     cfg = (h.raw.get("outputs") or {}).get("email", {})

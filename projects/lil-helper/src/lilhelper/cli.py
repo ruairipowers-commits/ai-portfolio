@@ -281,6 +281,22 @@ def cmd_receipt(a) -> int:
     return 0
 
 
+def cmd_mail_test(a) -> int:
+    """Send one test email the way sign-in links go out, and say exactly what happened."""
+    from . import outputs
+    from .config import data_root
+    print(f"sender: {outputs.mail_from()}")
+    print(f"resend key: {'set' if os.getenv('RESEND_API_KEY') else 'NOT SET (emails go to a file, not to anyone)'}")
+    res = outputs.send_mail(a.to, "Lil'Helper test email", "<p>If you can read this, sign-in emails will arrive.</p>",
+                            "test", data_root() / "outbox")
+    print(f"result: {res}")
+    if res.startswith("failed"):
+        print("Most often: the sender's domain isn't verified in Resend (resend.com → Domains), or the key is wrong.")
+    elif res == "outbox":
+        print(f"Written to {data_root() / 'outbox'}; set RESEND_API_KEY to send for real.")
+    return 0 if res == "sent" else 1
+
+
 def cmd_household(a) -> int:
     from . import accounts
     con = accounts.connect()
@@ -372,6 +388,8 @@ def main(argv: list[str] | None = None) -> int:
     sp.add_argument("file")
     sp.add_argument("--card")
     sp.add_argument("--confirm", action="store_true")
+    sp = add("mail-test", cmd_mail_test)
+    sp.add_argument("to", help="an address to send the test email to")
     sp = add("household", cmd_household)
     sp.add_argument("action", choices=["create", "import", "list"])
     sp.add_argument("name", nargs="?", help="household name (create) or household.yaml path (import)")
