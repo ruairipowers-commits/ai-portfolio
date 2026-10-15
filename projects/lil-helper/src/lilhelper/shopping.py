@@ -111,12 +111,26 @@ def needs(plan, c: Catalog, pantry: dict[str, float], pet_restock: dict[str, flo
         if r is None:
             continue
         first = DAYS.index(getattr(e, "prep_day", e.day) or e.day)
-        for iid, q in r.ing.items():
+        cooked = [(r, e.servings)] + [(c.recipes[p["recipe"]], float(p.get("servings") or 0))
+                                      for p in (getattr(e, "parts", None) or [])
+                                      if p.get("kind") == "cook" and p.get("recipe") in c.recipes]
+        for rr, servings in cooked:
+            for iid, q in rr.ing.items():
+                ing = c.ingredients[iid]
+                n = total.setdefault(iid, Need(iid, ing.name, 0.0, ing.unit, [], 6))
+                n.qty += q * servings
+                n.for_.append(f"{e.day} {e.meal}")
+                n.need_day = min(n.need_day, first)
+    for b in getattr(plan, "buffet", None) or []:              # weekly buffet: cook back up to each item's target
+        rr = c.recipes.get(b["recipe"])
+        if not rr or not b.get("cook"):
+            continue
+        for iid, q in rr.ing.items():
             ing = c.ingredients[iid]
             n = total.setdefault(iid, Need(iid, ing.name, 0.0, ing.unit, [], 6))
-            n.qty += q * e.servings
-            n.for_.append(f"{e.day} {e.meal}")
-            n.need_day = min(n.need_day, first)
+            n.qty += q * float(b["cook"])
+            n.for_.append(f"buffet {b['meal']}")
+            n.need_day = 0
     out = []
     for iid, n in total.items():
         left = n.qty - pantry.get(iid, 0)

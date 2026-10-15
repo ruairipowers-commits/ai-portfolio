@@ -13,6 +13,7 @@ approve: a named adult approves (HITL-02); meals go into history, the pantry and
 from __future__ import annotations
 
 import datetime as dt
+import json
 import time
 from dataclasses import dataclass, field
 
@@ -65,6 +66,7 @@ class WeekResult:
 def with_overrides(h: Household, con, week_of: dt.date) -> Household:
     away, nights = store.overrides(con, week_start(week_of).isoformat())
     h.away, h.night_overrides = away, nights
+    h.week_of = week_start(week_of)
     return h
 
 
@@ -113,6 +115,88 @@ def _nights_out(h: Household, con, week_of: dt.date) -> list[dict]:
                     "rewards": round(pick.earned, 2), "net": round(budget - credit - pick.earned, 2),
                     "eaters": eaters, "per_person": round((budget - credit) / max(1, len(eaters)), 2)})
     return out
+
+
+PART_KINDS = ("cook", "leftovers", "ready")
+
+
+def parts_for(con, week_of: str) -> dict[tuple[str, str], list[dict]]:
+    out = {}
+    for r in con.execute("SELECT day, person, value FROM overrides WHERE week_of = ? AND kind = 'parts'", (week_of,)):
+        out[(r["day"], r["person"])] = json.loads(r["value"] or "[]")
+    return out
+
+
+def _servings(h: Household, people: list[str], factor: float = 1.0) -> float:
+    return round(sum(h.people[p].portion for p in people if p in h.people) * factor, 2)
+
+
+def _apply_parts(h: Household, c: Catalog, con, plan: planner.Plan, week_of: dt.date) -> None:
+    """A meal can have more than one part: the planned recipe for some people, a second recipe, leftovers or something
+    ready-made for others. People on another part come off the main recipe's servings (and the shopping list)."""
+    port = store.portions(con)
+    for (day, meal), parts in parts_for(con, week_of.isoformat()).items():
+        e = next((e for e in plan.entries if e.day == day and e.meal == meal and e.kind == "cook"), None)
+        if not e:
+            continue
+        elsewhere = {p for part in parts for p in part.get("eaters") or []}
+        main = [p for p in e.eaters if p not in elsewhere]
+        e.eaters = main
+        e.servings = _servings(h, main, port.get(e.recipe, 1.0)) if main else 0.0
+        out = []
+        for part in parts:
+            ppl = [p for p in part.get("eaters") or [] if p in h.people]
+            d = {"kind": part["kind"], "eaters": ppl, "recipe": part.get("recipe"), "food": part.get("food", "")}
+            if part["kind"] == "cook" and part.get("recipe") in c.recipes:
+                rr = c.recipes[part["recipe"]]
+                d.update(name=rr.name, servings=float(part.get("servings") or _servings(h, ppl, port.get(rr.id, 1.0))))
+            else:
+                d.update(name=part.get("food") or ("leftovers" if part["kind"] == "leftovers" else "something ready"),
+                         servings=_servings(h, ppl))
+            out.append(d)
+        e.parts = out
+
+
+def set_parts(week_of: dt.date, day: str, meal: str, parts: list[dict], by: str) -> None:
+    """Save a meal's parts. Each: {kind: cook|leftovers|ready, eaters: [ids], recipe (cook), food (text), servings}."""
+    wk = week_start(week_of)
+    con = store.connect()
+    h = with_overrides(load_household(), con, wk)
+    c = for_household(h)
+    clean = []
+    for p in parts[:6]:
+        if p.get("kind") not in PART_KINDS:
+            con.close()
+            raise ValueError("each part is cook, leftovers or ready")
+        if p["kind"] == "cook":
+            r = c.recipes.get(p.get("recipe") or "")
+            if not r:
+                con.close()
+                raise ValueError("a cooked part needs a recipe")
+            from . import safety
+            v = safety.recipe_for(c, r, [h.people[x] for x in p.get("eaters") or [] if x in h.people] or
+                                  h.eaters(meal, day), h.everyone_allergies())
+            if not v.ok:
+                con.close()
+                raise ValueError("; ".join(v.reasons))
+        clean.append({k: p.get(k) for k in ("kind", "eaters", "recipe", "food", "servings") if p.get(k) not in (None, "")})
+    con.execute("INSERT OR REPLACE INTO overrides VALUES (?,?,?,?,?,?,?)",
+                (wk.isoformat(), day, "parts", meal, json.dumps(clean), by, store.now()))
+    con.commit()
+    rec = store.get_week(con, wk.isoformat())
+    if rec and rec.get("status") == "approved":
+        # shopping's done: apply to the stored plan without re-planning
+        for e in rec["plan"]["entries"]:
+            if e["day"] == day and e["meal"] == meal and e.get("kind", "cook") == "cook":
+                ent = planner.Entry(**{k: v for k, v in e.items() if k in planner.Entry.__dataclass_fields__})
+                fake = type("P", (), {"entries": [ent]})()
+                _apply_parts(h, c, con, fake, wk)
+                e.update(eaters=ent.eaters, servings=ent.servings, parts=ent.parts)
+        store.save_week(con, wk.isoformat(), plan=rec["plan"])
+        con.close()
+    else:
+        con.close()
+        draft(wk, ideas=False, actor=by)
 
 
 def _freezer_nights(h: Household, con, plan: planner.Plan, flags: list[str]) -> None:
@@ -185,6 +269,10 @@ def draft(week_of: dt.date, *, h: Household | None = None, s: Settings | None = 
             else:
                 stock[i] -= need
     chosen, _ = store.picks(con, week_of.isoformat())
+    for day in DAYS:                                  # an occasion with a set recipe ("make John's favourite")
+        for o in h.occasions(day):
+            if o.get("recipe"):
+                chosen.setdefault((day, o.get("meal") or "dinner"), o["recipe"])
     if chosen:
         locks = {**chosen, **(locks or {})}            # meals a person picked stay picked through re-plans
     hist, hist_all = store.history(con), store.history_all(con)
@@ -192,7 +280,21 @@ def draft(week_of: dt.date, *, h: Household | None = None, s: Settings | None = 
     budget = float(h.info.get("budget_per_week", 0)) or None
     plan = planner.plan_week(h, c, pb, s, extra=suggested, history=hist, portions=port, locks=locks, bans=bans,
                              history_all=hist_all)
-    _freezer_nights(h, con, plan, flags)
+    from . import workflows
+
+    def finish(pl, fl):
+        """What the household set on top of the solver's choices: freezer nights, meal parts, the buffet, guests."""
+        _freezer_nights(h, con, pl, fl)
+        _apply_parts(h, c, con, pl, week_of)
+        pl.buffet = [b for b in workflows.buffet_restock(h, c, con) if b["cook"] > 0]
+        for e in pl.entries:
+            guests = sum(o.get("guests") or 0 for o in h.occasions(e.day) if (o.get("meal") or "dinner") == e.meal)
+            if guests and e.kind == "cook":
+                per = e.est_cost / e.servings if e.servings else 0
+                e.servings = round(e.servings + guests, 2)
+                e.est_cost = round(per * e.servings, 2)
+                e.why.append(f"+{guests} guests")
+    finish(plan, flags)
     free = storage.free_space(h, con, c)
     freeze = storage.freezer_plan(h, c, plan, free["freezer"],
                                   sum(1 for k in h.special_nights().values() if k == "freezer"),
@@ -217,7 +319,7 @@ def draft(week_of: dt.date, *, h: Household | None = None, s: Settings | None = 
         tighter = planner.plan_week(h, c, pb, s, extra=suggested, history=hist, portions=port, locks=locks,
                                     bans=bans, budget=plan.est_food_cost * scale, history_all=hist_all)
         if tighter.entries and "over_budget" not in tighter.flags:
-            _freezer_nights(h, con, tighter, [])
+            finish(tighter, [])
             pw2 = pets.pet_week(h, c, tighter, pantry, s)
             items2 = shopping.needs(tighter, c, pantry, {k: v for p in pw2 for k, v in p.restock.items()})
             opts2 = _options(h, c, pb, items2, s, free, ytd)
@@ -533,7 +635,7 @@ def approve(week_of: dt.date, person: str, seconds: float, choice: str = "balanc
     w = store.get_week(con, wk)
     if not w:
         raise ValueError("no draft for that week")
-    if person not in h.people or h.people[person].is_kid:
+    if person not in h.people or not h.people[person].may_approve:
         raise PermissionError("only an adult in the household can approve a week")
     split = w["split"][choice]
     pantry = store.pantry(con)
@@ -556,9 +658,12 @@ def approve(week_of: dt.date, person: str, seconds: float, choice: str = "balanc
         if kind != "cook":
             continue
         r = c.recipes.get(e["recipe"])
-        if r:
-            for iid, q in r.ing.items():
-                pantry[iid] = pantry.get(iid, 0) - q * e["servings"]
+        cooked = ([(r, e["servings"])] if r else []) + [
+            (c.recipes[p["recipe"]], float(p.get("servings") or 0)) for p in e.get("parts") or []
+            if p.get("kind") == "cook" and p.get("recipe") in c.recipes]
+        for rr, servings in cooked:
+            for iid, q in rr.ing.items():
+                pantry[iid] = pantry.get(iid, 0) - q * servings
                 if pantry[iid] < frozen.get(iid, 0):
                     frozen[iid] = max(0.0, pantry[iid])
         if e.get("to_freeze"):
@@ -566,6 +671,10 @@ def approve(week_of: dt.date, person: str, seconds: float, choice: str = "balanc
                         (e["recipe"], e["name"], e["to_freeze"], date.isoformat(),
                          (date + dt.timedelta(days=90)).isoformat()))
         con.execute("INSERT INTO history VALUES (?,?)", (e["recipe"], date.isoformat()))
+    for b in w["plan"].get("buffet") or []:           # the buffet restock is cooked from this week's shopping
+        rr = c.recipes.get(b["recipe"])
+        for iid, q in (rr.ing.items() if rr else []):
+            pantry[iid] = pantry.get(iid, 0) - q * float(b.get("cook") or 0)
     for p in h.pets.values():
         pantry[p.food["ingredient"]] = pantry.get(p.food["ingredient"], 0) - p.food["cups_per_day"] * 7
         pantry["dog_treats"] = pantry.get("dog_treats", 0) - p.treats_per_day * 7

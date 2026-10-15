@@ -71,6 +71,16 @@ class PriceBook:
                 if st in self.shelf and iid not in self.shelf[st]:
                     self.shelf[st][iid] = [{"brand": p.get("brand", "any"), "pack": float(p.get("pack", 1)),
                                             "price": float(p["price"]), "organic": bool(p.get("organic"))}]
+        # the household's own choice for an item: its brand, where it buys it, and what it pays (used in every plan)
+        self.prefs = dict(h.raw.get("ingredient_prefs") or {})
+        for iid, pref in self.prefs.items():
+            st = pref.get("store")
+            if st in self.shelf and pref.get("price"):
+                mine = {"brand": pref.get("brand") or "your choice", "pack": float(pref.get("pack") or 1),
+                        "price": float(pref["price"]), "organic": bool(pref.get("organic")), "mine": True}
+                self.shelf[st] = {**self.shelf[st], iid: [mine] + [o for o in self.shelf[st].get(iid, [])
+                                                                    if not pref.get("brand")
+                                                                    or o["brand"] == pref.get("brand")]}
         # prices the household actually paid (confirmed receipts) replace the file's shelf price for that pack
         self.observed = dict(observed or {})
         for (st, iid), price in self.observed.items():
@@ -82,7 +92,10 @@ class PriceBook:
         allowed = member_deals(h)
         self.specials = [sp for sp in self._load_specials() + list(extra_specials or [])
                          if not sp.get("member") or sp["member"] in allowed]
-        self.brand_rules = h.raw.get("brands", {}) or {}
+        self.brand_rules = {k: dict(v or {}) for k, v in (h.raw.get("brands", {}) or {}).items()}
+        for iid, pref in self.prefs.items():
+            if pref.get("brand"):
+                self.brand_rules.setdefault(iid, {})["prefer"] = pref["brand"]
 
     def _load_specials(self) -> list[dict]:
         p = ROOT / "data" / "specials" / f"week-{self.week_of.isoformat()}.yaml"
@@ -93,7 +106,10 @@ class PriceBook:
         rule = self.brand_rules.get(iid, {}) or {}
         if rule.get("banned"):
             return []
+        only = (self.prefs.get(iid) or {}).get("store") if (self.prefs.get(iid) or {}).get("only_store", True) else None
         for s in ([store] if store else self.stores):
+            if only and only in self.stores and s != only:
+                continue                                   # the household buys this one at one store
             for o in self.shelf.get(s, {}).get(iid, []):
                 off = Offer(s, iid, o["brand"], float(o["pack"]), float(o["price"]), bool(o.get("organic")),
                             seen=bool(o.get("seen")))

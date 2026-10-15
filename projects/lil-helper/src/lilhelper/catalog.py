@@ -65,6 +65,17 @@ class Recipe:
     created_by: str = ""
     credit: str = ""               # where it's from, shown with the recipe: "Lil'Helper", a person, a website
     url: str = ""                  # link back to the source page
+    meals: list[str] = field(default_factory=list)   # every meal it suits (breakfast, lunch, dinner); first = `meal`
+    kcal: int = 0                  # estimated calories per serving (0: not known)
+
+    def __post_init__(self):
+        if not self.meals:
+            self.meals = [self.meal]
+        elif self.meal not in self.meals:
+            self.meal = self.meals[0]
+
+    def suits(self, meal: str) -> bool:
+        return meal in self.meals
 
     def has(self, tag: str) -> bool:
         return tag in self.tags
@@ -132,6 +143,17 @@ class Catalog:
             if rid in self.recipes:
                 self.recipes[rid].kid_min_age = int(age)
                 self.recipes[rid].tags.append("kid_can_make")
+        steps_file = ROOT / "data" / "recipe_steps.yaml"
+        if steps_file.exists():
+            for rid, d in (yaml.safe_load(steps_file.read_text()) or {}).items():
+                r = self.recipes.get(rid)
+                if not r:
+                    continue
+                r.instructions = list(d.get("steps") or [])
+                r.kcal = int(d.get("kcal") or 0)
+                if d.get("meals"):
+                    r.meals = list(dict.fromkeys([r.meal] + list(d["meals"])))
+                r.tags = list(dict.fromkeys(r.tags + list(d.get("tags") or [])))
         for rid in book.get("freezes_well") or []:
             if rid in self.recipes:
                 self.recipes[rid].tags.append("freezes_well")

@@ -53,8 +53,10 @@ def _rid(name: str) -> str:
 def save(con, h: Household, c: Catalog, body: dict, by: str, rid: str | None = None) -> dict:
     """One of the household's own recipes from {name, meal, serves, active, total, ingredients: [{text|ingredient,
     qty, unit}], instructions, tags, season_months, want, kid_min_age, notes, credit, url}."""
-    if body.get("meal", "dinner") not in MEALS:
-        raise RecipeError("meal must be breakfast, lunch or dinner")
+    meals = [m for m in (body.get("meals") or [body.get("meal", "dinner")]) if m]
+    if not meals or any(m not in MEALS for m in meals):
+        raise RecipeError("meals: breakfast, lunch or dinner")
+    body = {**body, "meal": meals[0]}
     if any(not 1 <= int(m) <= 12 for m in body.get("season_months") or []):
         raise RecipeError("season months are 1–12")
     serves = float(body.get("serves") or 4)
@@ -86,7 +88,8 @@ def save(con, h: Household, c: Catalog, body: dict, by: str, rid: str | None = N
             "season_months": [int(m) for m in body.get("season_months") or []],
             "want": {k: int(v) for k, v in (body.get("want") or {}).items() if k in ("times", "per_weeks")},
             "notes": str(body.get("notes") or "")[:500], "created_by": by,
-            "credit": str(body.get("credit") or "")[:80], "url": url[:500]}
+            "credit": str(body.get("credit") or "")[:80], "url": url[:500], "meals": list(dict.fromkeys(meals)),
+            "kcal": max(0, min(int(body.get("kcal") or 0), 5000))}
     allergens = c.allergens_of(Recipe(**{k: v for k, v in data.items() if k in Recipe.__dataclass_fields__}))
     con.execute("INSERT OR REPLACE INTO custom_recipes VALUES (?,?,?,?,?)", (rid, json.dumps(data), 1, by, store.now()))
     con.commit()
@@ -113,8 +116,9 @@ def export(con, c: Catalog, household_name: str = "") -> dict:
             if iid in custom:
                 used.add(iid)
             lines.append({"text": ing.name, "qty": round(q * 4, 3), "unit": ing.unit})
-        recipes.append({k: d.get(k) for k in ("name", "meal", "active", "total", "instructions", "tags", "season_months",
-                                              "want", "kid_min_age", "notes", "credit", "url", "veg", "protein")}
+        recipes.append({k: d.get(k) for k in ("name", "meal", "meals", "kcal", "active", "total", "instructions", "tags",
+                                              "season_months", "want", "kid_min_age", "notes", "credit", "url", "veg",
+                                              "protein")}
                        | {"serves": 4, "ingredients": lines})
     ings = [{k: custom[i].get(k) for k in ("name", "unit", "cat", "allergens", "storage", "freezable", "shelf")}
             for i in sorted(used)]

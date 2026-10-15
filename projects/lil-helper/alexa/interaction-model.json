@@ -1,0 +1,399 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "lil helper",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
+        {
+          "name": "WhatsForIntent",
+          "samples": [
+            "what's for {meal}",
+            "what's for {meal} {day}",
+            "what are we having for {meal}",
+            "what are we having for {meal} {day}",
+            "what's cooking {day}",
+            "what's for {meal} on {day}"
+          ],
+          "slots": [
+            {
+              "name": "meal",
+              "type": "MEAL"
+            },
+            {
+              "name": "day",
+              "type": "DAY"
+            }
+          ]
+        },
+        {
+          "name": "ShoppingIntent",
+          "samples": [
+            "what's on the shopping list",
+            "what do we need to buy",
+            "read the shopping list",
+            "what's on the grocery list"
+          ]
+        },
+        {
+          "name": "JobsIntent",
+          "samples": [
+            "what are my jobs",
+            "what are my chores",
+            "what do I do {day}",
+            "what are my jobs {day}"
+          ],
+          "slots": [
+            {
+              "name": "day",
+              "type": "DAY"
+            }
+          ]
+        },
+        {
+          "name": "CookWithIntent",
+          "samples": [
+            "I have {items}",
+            "I've got {items}",
+            "we have {items}",
+            "what can I make with {items}",
+            "cook with {items}",
+            "use up {items}"
+          ],
+          "slots": [
+            {
+              "name": "items",
+              "type": "AMAZON.SearchQuery"
+            }
+          ]
+        },
+        {
+          "name": "VibeIntent",
+          "samples": [
+            "I have {minutes} minutes",
+            "I have {minutes} minutes and want something {mood}",
+            "I'm in the mood for something {mood}",
+            "something {mood} in {minutes} minutes"
+          ],
+          "slots": [
+            {
+              "name": "minutes",
+              "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "mood",
+              "type": "MOOD"
+            }
+          ]
+        },
+        {
+          "name": "SurpriseIntent",
+          "samples": [
+            "surprise me",
+            "pick something for {meal}",
+            "surprise me for {meal}",
+            "anything for {meal}"
+          ],
+          "slots": [
+            {
+              "name": "meal",
+              "type": "MEAL"
+            }
+          ]
+        },
+        {
+          "name": "BuffetCountIntent",
+          "samples": [
+            "we have {count} portions of {item} left",
+            "there are {count} servings of {item} left",
+            "{count} portions of {item} left"
+          ],
+          "slots": [
+            {
+              "name": "count",
+              "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "item",
+              "type": "AMAZON.Food"
+            }
+          ]
+        },
+        {
+          "name": "LeftoversIntent",
+          "samples": [
+            "{meal} was {amount}",
+            "there was {amount} from {meal}",
+            "{meal} {day} was {amount}"
+          ],
+          "slots": [
+            {
+              "name": "meal",
+              "type": "MEAL"
+            },
+            {
+              "name": "day",
+              "type": "DAY"
+            },
+            {
+              "name": "amount",
+              "type": "AMOUNT"
+            }
+          ]
+        },
+        {
+          "name": "RateIntent",
+          "samples": [
+            "rate {meal} {stars} stars",
+            "{meal} was {stars} stars",
+            "give {meal} {stars} stars"
+          ],
+          "slots": [
+            {
+              "name": "meal",
+              "type": "MEAL"
+            },
+            {
+              "name": "stars",
+              "type": "AMAZON.NUMBER"
+            }
+          ]
+        },
+        {
+          "name": "PlanWeekIntent",
+          "samples": [
+            "plan {which} week",
+            "make a plan for {which} week"
+          ],
+          "slots": [
+            {
+              "name": "which",
+              "type": "WHICH"
+            }
+          ]
+        }
+      ],
+      "types": [
+        {
+          "name": "MEAL",
+          "values": [
+            {
+              "name": {
+                "value": "breakfast"
+              }
+            },
+            {
+              "name": {
+                "value": "lunch"
+              }
+            },
+            {
+              "name": {
+                "value": "dinner",
+                "synonyms": [
+                  "supper",
+                  "tonight"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DAY",
+          "values": [
+            {
+              "name": {
+                "value": "today"
+              }
+            },
+            {
+              "name": {
+                "value": "tomorrow"
+              }
+            },
+            {
+              "name": {
+                "value": "monday"
+              }
+            },
+            {
+              "name": {
+                "value": "tuesday"
+              }
+            },
+            {
+              "name": {
+                "value": "wednesday"
+              }
+            },
+            {
+              "name": {
+                "value": "thursday"
+              }
+            },
+            {
+              "name": {
+                "value": "friday"
+              }
+            },
+            {
+              "name": {
+                "value": "saturday"
+              }
+            },
+            {
+              "name": {
+                "value": "sunday"
+              }
+            }
+          ]
+        },
+        {
+          "name": "MOOD",
+          "values": [
+            {
+              "name": {
+                "value": "quick",
+                "synonyms": [
+                  "fast"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "comfort",
+                "synonyms": [
+                  "comforting"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "cozy",
+                "synonyms": [
+                  "cosy",
+                  "warm"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "light",
+                "synonyms": [
+                  "healthy"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "veggie",
+                "synonyms": [
+                  "vegetarian"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "fresh",
+                "synonyms": []
+              }
+            },
+            {
+              "name": {
+                "value": "adventurous",
+                "synonyms": [
+                  "different",
+                  "new"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "special",
+                "synonyms": [
+                  "fancy"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "party",
+                "synonyms": []
+              }
+            }
+          ]
+        },
+        {
+          "name": "AMOUNT",
+          "values": [
+            {
+              "name": {
+                "value": "all",
+                "synonyms": [
+                  "all gone",
+                  "eaten",
+                  "finished"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "some",
+                "synonyms": [
+                  "some left",
+                  "a bit left"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "lots",
+                "synonyms": [
+                  "lots left",
+                  "a lot left",
+                  "plenty left"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "WHICH",
+          "values": [
+            {
+              "name": {
+                "value": "this",
+                "synonyms": [
+                  "the"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "next"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
