@@ -1,5 +1,5 @@
 # App / CLI image. Uses the Postgres from docker compose (EOD_DATABASE_URL), not the embedded server.
-FROM python:3.11-slim
+FROM python:3.14-slim
 WORKDIR /app
 COPY pyproject.toml ./
 COPY src ./src
