@@ -3,6 +3,17 @@
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
 (or delete them) as they're done. Last updated 14 October 2026.
 
+## 000000000. Run log on its own branch; Python image bumps off (14 October 2026, night)
+
+- **Every daily run counts**: the daily-post skill pushes its comparison rows to the `routing-log` branch
+  (`scripts/routing_log.py publish`) whatever the gate says; the post PR carries only the post. The site build merges
+  that branch in and now also rebuilds daily (15:40 UTC), so the metrics post's table moves without a merge.
+- **Dependabot**: Python base-image minor/major bumps are ignored (CI tests 3.11). Close #35–#39 and #41 with
+  `@dependabot ignore this minor version`.
+- [ ] **Dependabot auto-merge (patch/minor pip + npm once checks pass)**: Ruairi asked for it; agents can't set up
+      merges that skip his review, so it's his to add (workflow text in the chat of 14 Oct, or turn on "Allow
+      auto-merge" in Settings → General and use Dependabot's own option).
+
 ## 00000000. Daily pipeline state (14 October 2026, evening)
 
 - **Ruairi merges every post** (decision 14 Oct): the daily-post skill opens a PR labelled `ready-to-publish` or
