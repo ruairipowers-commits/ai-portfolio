@@ -325,6 +325,22 @@ def all_posts() -> list[dict]:
     return sorted(sorted(out, key=lambda p: p["title"]), key=lambda p: p["date"], reverse=True)   # newest first
 
 
+# Post types, in the order the chips show them under the Blog heading (label: the chip's text).
+POST_TYPES = {"AI insight": "AI insights", "Industry project": "Industry projects", "AI governance": "AI governance",
+              "Personal project": "Personal projects", "Class": "Classes"}
+
+
+def _post_types() -> str:
+    """The row of type chips under the Blog heading. assets/blog-filter.js wires them into the list's filters."""
+    e = _html.escape
+    used = {p["section"] for p in all_posts()}
+    h = ['<nav class="post-types" data-type-chips aria-label="Post type">',
+         '<button type="button" class="post-chip" data-section="" aria-pressed="true">All posts</button>']
+    h += [f'<button type="button" class="post-chip" data-section="{e(s)}" aria-pressed="false">{e(label)}</button>'
+          for s, label in POST_TYPES.items() if s in used]
+    return "".join(h) + "</nav>"
+
+
 def _posts_index(page_uri: str) -> str:
     """Server-rendered list of every post (works without JS); assets/blog-filter.js adds the topic/section/date
     filters on top, reading the data-* attributes."""
@@ -334,8 +350,6 @@ def _posts_index(page_uri: str) -> str:
     e = _html.escape
     posts = all_posts()
     topics = sorted({t for p in posts for t in p["topics"]}, key=str.lower)
-    sections = [s for s in ("Industry project", "AI governance", "AI insight", "Personal project", "Class")
-                if any(p["section"] == s for p in posts)]
     months = sorted({p["date"][:7] for p in posts if p["date"]}, reverse=True)
     month_name = lambda ym: dt.date(int(ym[:4]), int(ym[5:7]), 1).strftime("%B %Y")  # noqa: E731
     h = ['<div class="post-filter" data-posts-filter>',
@@ -343,12 +357,9 @@ def _posts_index(page_uri: str) -> str:
          '<button type="button" class="post-chip" data-topic="" aria-pressed="true">All</button>']
     h += [f'<button type="button" class="post-chip" data-topic="{e(t)}" aria-pressed="false">{e(t)}</button>'
           for t in topics]
-    h += ['</div><div class="post-filter__row">',
-          '<label class="post-filter__label" for="post-section">Type</label>',
-          '<select id="post-section" data-section-select><option value="">All types</option>']
-    h += [f'<option value="{e(s)}">{e(s)}s</option>' for s in sections]
     used = {a for p in posts for a in p["audience"]}
-    h += ['</select><label class="post-filter__label" for="post-audience">For</label>',
+    h += ['</div><div class="post-filter__row">',
+          '<label class="post-filter__label" for="post-audience">For</label>',
           '<select id="post-audience" data-audience-select><option value="">Everyone</option>']
     h += [f'<option value="{e(a)}">{e(a)}</option>' for a in audiences() if a in used]
     h += ['</select><label class="post-filter__label" for="post-when">When</label>',
@@ -527,6 +538,8 @@ def on_page_markdown(markdown, page, config, files):
             markdown = markdown.replace(tag, _table(tier, page.file.src_uri))
     if "<!-- routing:results -->" in markdown:
         markdown = markdown.replace("<!-- routing:results -->", _routing_results())
+    if "<!-- posts:types -->" in markdown:
+        markdown = markdown.replace("<!-- posts:types -->", _post_types())
     if "<!-- topics:upcoming -->" in markdown:
         markdown = markdown.replace("<!-- topics:upcoming -->", _upcoming_box())
     if "<!-- learn:crash-course -->" in markdown:

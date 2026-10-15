@@ -291,3 +291,23 @@
 .md-typeset .topic-slide__vote:disabled { cursor: default; }
 .md-typeset .topic-slide__host { flex: 1 1 auto; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .md-typeset .upcoming-side:not(.home-side--panel) { max-width: 26rem; }
+
+/* Page heading with an info button (Blog): the intro lives in a small panel under the heading */
+.md-typeset .page-head { position: relative; }
+.md-typeset .page-head h1 { display: flex; align-items: center; gap: .4rem; }
+.md-typeset .info-tip { display: inline-flex; padding: .15rem; border: 0; border-radius: 50%; background: none;
+  cursor: pointer; color: var(--md-default-fg-color--light); line-height: 0; }
+.md-typeset .info-tip svg { width: 1.1rem; height: 1.1rem; fill: currentColor; }
+.md-typeset .info-tip:hover, .md-typeset .info-tip[aria-expanded="true"] { color: var(--md-accent-fg-color); }
+.md-typeset .info-tip:focus-visible { outline: 2px solid var(--md-accent-fg-color); outline-offset: 2px; }
+.md-typeset .info-tip__panel { position: absolute; z-index: 5; top: 100%; left: 0; width: min(34rem, 100%);
+  margin-top: .3rem; padding: .7rem .9rem; border-radius: .3rem; font-size: .75rem; line-height: 1.5;
+  background: var(--md-default-bg-color); border: 1px solid var(--md-default-fg-color--lighter);
+  box-shadow: var(--md-shadow-z2); }
+.md-typeset .info-tip__panel[hidden] { display: none; }
+.md-typeset .info-tip__panel p { margin: 0; }
+.md-typeset .info-tip__panel p + p { margin-top: .55rem; }
+
+/* Blog: post types as a chip row under the heading */
+.md-typeset .post-types { display: flex; flex-wrap: wrap; gap: .4rem; margin: -.4rem 0 1rem; }
+.md-typeset .post-types .post-chip { font-size: .74rem; padding: .25rem .8rem; }

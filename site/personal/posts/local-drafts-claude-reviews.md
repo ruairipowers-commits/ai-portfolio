@@ -2,7 +2,6 @@
 date: 2026-10-14
 slug: local-drafts-claude-reviews
 short: "Local drafts, Claude reviews"
-draft: true
 categories: [Evaluation, Self-hosting, Agents]
 tags: [ollama, claude, model routing, code review, local models, cost, evaluation]
 audience: [AI and ML engineers, CTOs and heads of technology, Heads of data]
@@ -12,14 +11,15 @@ audience: [AI and ML engineers, CTOs and heads of technology, Heads of data]
 
 Most of what I ask Claude to do on this site has two parts: write something, then check it. Writing is the bulk of
 the tokens. Checking is where a frontier model earns its keep. So I'm moving the first draft to the model running on
-my own GPU and keeping Claude for the review. This post sets out how I'll measure whether that's worth it, and the
-first numbers.
+my own GPU and keeping Claude for the review. This post sets out how I'm measuring whether that's worth it, with a
+results table that grows every day.
 
 <!-- more -->
 
-!!! note "Status"
-    Draft. The measured numbers below come from one task. The results table fills in as the routing runs on real
-    weekly posts; this post publishes once it holds at least a month of them.
+!!! note "A running experiment"
+    The first measured numbers below come from one task. The [results table](#results-so-far) gains a row with every
+    daily run, published or not, starting from a local-model first draft since 15 October 2026. Until a few weeks of runs
+    are in, treat it as an early read, not a verdict.
 
 ## The problem
 
@@ -34,7 +34,7 @@ can a local model do well enough that Claude's job shrinks to a review, and what
 
 ```mermaid
 flowchart LR
-  task["Task<br/>post · code · summary"] --> draft["Local draft<br/>qwen3-coder:30b on the EVO-X1"]
+  task["Task<br/>post · code · summary"] --> draft["Local draft<br/>on the EVO-X1"]
   draft --> checks["Code checks<br/>tests · governance · editorial checks"]
   checks -- "pass" --> review["Claude review<br/>reads the draft, lists defects"]
   checks -- "fail" --> redraft["Local redraft<br/>with the failures attached"]
@@ -132,7 +132,8 @@ wrote the code.
 
 ## What's next
 
-- **Route the weekly post's first draft to the local model.** The editor reviews and the pull request stay with
-  Claude, and nothing publishes without my approval.
+- **Daily posts now start local.** From 15 October the daily post's first draft comes from `gpt-oss:20b` on the
+  EVO-X1; Claude reviews and edits it, code checks it, and nothing goes live until I merge it. Each run adds a row
+  to the table above.
 - **Compare two local models on writing**, `gpt-oss:20b` and `qwen3-coder:30b`, against the site's style guide.
-- **Publish this post** once the table has a month of real runs, including the ones where the local draft lost.
+- **Write up the first month**, including the runs where the local draft lost.
