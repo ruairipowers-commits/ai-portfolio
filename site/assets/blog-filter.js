@@ -1,4 +1,4 @@
-// Blog index: filter the post list by topic (chips), type, audience and date. The list itself is rendered at build time
+// Blog index: filter the post list by type (the chip row under the heading), topic (chips), audience and date. The list itself is rendered at build time
 // (scripts/mkdocs_hooks.py → <!-- posts:all -->), so without JavaScript every post is still listed.
 // Material loads pages instantly (XHR), so this re-runs on each page change via document$ when available.
 (function () {
@@ -21,7 +21,7 @@
     if (wide.addEventListener) wide.addEventListener("change", place); else if (wide.addListener) wide.addListener(place);
     var cards = Array.prototype.slice.call(document.querySelectorAll(".post-card"));
     var chips = Array.prototype.slice.call(box.querySelectorAll(".post-chip"));
-    var section = box.querySelector("[data-section-select]");
+    var types = Array.prototype.slice.call(document.querySelectorAll("[data-type-chips] [data-section]"));
     var when = box.querySelector("[data-when-select]");
     var audience = box.querySelector("[data-audience-select]");
     var count = box.querySelector("[data-count]");
@@ -46,6 +46,7 @@
       var shown = 0;
       cards.forEach(function (c) { var ok = matches(c); c.hidden = !ok; if (ok) shown++; });
       chips.forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.topic === state.topic)); });
+      types.forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.section === state.section)); });
       count.textContent = shown + " of " + cards.length + " posts";
       if (empty) empty.hidden = shown > 0;
       var q = new URLSearchParams();
@@ -59,16 +60,18 @@
     chips.forEach(function (b) {
       b.addEventListener("click", function () { state.topic = b.dataset.topic === state.topic ? "" : b.dataset.topic; apply(); });
     });
-    section.addEventListener("change", function () { state.section = section.value; apply(); });
+    types.forEach(function (b) {
+      b.addEventListener("click", function () { state.section = b.dataset.section === state.section ? "" : b.dataset.section; apply(); });
+    });
     when.addEventListener("change", function () { state.when = when.value; apply(); });
     if (audience) audience.addEventListener("change", function () { state.audience = audience.value; apply(); });
 
     // deep links: ?topic=Agents&type=Class&audience=Hiring%20managers&when=90
     var p = new URLSearchParams(location.search);
     state.topic = p.get("topic") || "";
-    state.section = section.value = p.get("type") || "";
+    state.section = p.get("type") || "";
+    if (!types.some(function (b) { return b.dataset.section === state.section; })) state.section = "";
     state.when = when.value = p.get("when") || "";
-    if (section.value !== state.section) state.section = "";
     if (when.value !== state.when) state.when = "";
     if (audience) { audience.value = p.get("audience") || ""; state.audience = audience.value; }
     apply();
