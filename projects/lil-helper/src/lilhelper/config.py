@@ -307,6 +307,9 @@ def validate_household(raw: dict, s: "Settings") -> None:
             raise HouseholdError("A card field looks like a card number. Use a name you'd recognise, never the number.")
     if not isinstance(raw.get("household"), dict) or not isinstance(raw.get("people"), dict) or not raw["people"]:
         raise HouseholdError("settings need a household section and at least one person")
+    for site in raw.get("recipe_sources") or []:
+        if not re.fullmatch(r"[a-z0-9.-]+\.[a-z]{2,}", str(site)):
+            raise HouseholdError(f"recipe sources are website names like marthastewart.com, not {site!r}")
     tz = raw["household"].get("timezone")
     if tz is not None:
         from zoneinfo import ZoneInfo

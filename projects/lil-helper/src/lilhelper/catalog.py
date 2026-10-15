@@ -63,6 +63,8 @@ class Recipe:
     want: dict = field(default_factory=dict)  # how often: {times: 2, per_weeks: 4} → due until had that often
     notes: str = ""
     created_by: str = ""
+    credit: str = ""               # where it's from, shown with the recipe: "Lil'Helper", a person, a website
+    url: str = ""                  # link back to the source page
 
     def has(self, tag: str) -> bool:
         return tag in self.tags
@@ -78,6 +80,7 @@ GENERIC = {
     "bread": ["bread", "bagels", "tortillas"],
     "turkey": ["ground_turkey", "turkey_slices"],
     "beef": ["ground_beef", "beef_sirloin"],
+    "chicken": ["chicken_breast", "chicken_thighs", "whole_chicken"],     # the meat, not the broth
 }
 
 # Where things keep, by category: (storage, can be frozen, days frozen). Rough guides; any ingredient can override.

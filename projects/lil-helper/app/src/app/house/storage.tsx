@@ -2,10 +2,10 @@
 // the freezer, and freezer meals.
 import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { api, Storage } from "@/lib/api";
 import { useSettings } from "@/lib/useSettings";
-import { AdminNote, Button, ErrorText, Field, Header, NumberField, Saved, Screen, Toggle } from "@/components/ui";
+import { AdminNote, Button, ErrorText, Field, Header, NumberField, Pill, Saved, Screen, Toggle } from "@/components/ui";
 import { c, s } from "@/lib/theme";
 
 function Bar({ label, used, cap }: { label: string; used: number; cap: number }) {
@@ -55,8 +55,12 @@ export default function StorageScreen() {
       ) : null}
       <View style={s.card}>
         <Text style={s.h2}>In the freezer</Text>
-        {now?.freezer_meals.length ? now.freezer_meals.map((m) => <Text key={m.id} style={s.body}>🍲 {m.name}
-          <Text style={s.muted}> · {m.portions} portions · use by {m.use_by}</Text></Text>) : <Text style={s.muted}>No meals yet.</Text>}
+        {now?.freezer_meals.length ? now.freezer_meals.map((m) => role !== "kid" ? (
+          <FreezerItem key={m.id} m={m} onSaved={load} onError={setError} />
+        ) : <Text key={m.id} style={s.body}>🍲 {m.name}<Text style={s.muted}> · {m.portions} portions · use by {m.use_by}</Text></Text>)
+          : <Text style={s.muted}>No meals yet.</Text>}
+        {now?.freezer_meals.some((m) => m.use_by && m.use_by <= soon()) ? <Text style={s.muted}>Meals near their use-by go into
+          next week's plan first.</Text> : null}
         {now?.frozen.map((f) => <Text key={f.ingredient} style={s.body}>❄️ {f.name} <Text style={s.muted}>{f.qty} {f.unit}</Text></Text>)}
         {role !== "kid" ? <>
           <Field label="Add a meal you froze" value={meal.name} onChangeText={(name) => setMeal({ ...meal, name })} placeholder="Chili" />
@@ -83,5 +87,36 @@ export default function StorageScreen() {
       <Saved at={set.savedAt} />
       <ErrorText error={set.error ?? error} />
     </Screen>
+  );
+}
+
+const soon = () => new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10);
+
+function FreezerItem({ m, onSaved, onError }: { m: Storage["freezer_meals"][number]; onSaved: () => void;
+  onError: (e: unknown) => void }) {
+  const [open, setOpen] = useState(false);
+  const [f, setF] = useState({ name: m.name, portions: m.portions, use_by: m.use_by ?? "" });
+  const [confirm, setConfirm] = useState(false);
+  const due = m.use_by && m.use_by <= soon();
+  return (
+    <View style={{ gap: 6, paddingVertical: 4 }}>
+      <Pressable onPress={() => setOpen(!open)} style={s.between} accessibilityRole="button" accessibilityLabel={`Edit ${m.name}`}>
+        <Text style={[s.body, { flex: 1 }]}>🍲 {m.name}<Text style={s.muted}> · {m.portions} portions · use by {m.use_by}</Text></Text>
+        {due ? <Pill text="use soon" tone="red" /> : null}
+        <Text style={s.muted}>{open ? "Done" : "Edit"}</Text>
+      </Pressable>
+      {open ? <>
+        <Field label="Name" value={f.name} onChangeText={(name) => setF({ ...f, name })} />
+        <NumberField label="Portions" step={0.5} max={40} value={f.portions} onChange={(portions) => setF({ ...f, portions })} />
+        <Field label="Use by (YYYY-MM-DD)" value={f.use_by} onChangeText={(use_by) => setF({ ...f, use_by })} autoCapitalize="none" />
+        <View style={s.row}>
+          <View style={{ flex: 1 }}><Button title="Save" disabled={f.name.trim().length < 2 || !/^\d{4}-\d{2}-\d{2}$/.test(f.use_by)}
+            onPress={async () => { try { await api.editFreezerMeal(m.id, f); setOpen(false); onSaved(); } catch (e) { onError(e); } }} /></View>
+          <View style={{ flex: 1 }}><Button kind="ghost" title={confirm ? "Tap again to remove" : "Remove"}
+            onPress={async () => { if (!confirm) { setConfirm(true); return; }
+              try { await api.removeFreezerMeal(m.id); onSaved(); } catch (e) { onError(e); } }} /></View>
+        </View>
+      </> : null}
+    </View>
   );
 }

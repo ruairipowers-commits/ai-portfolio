@@ -75,8 +75,12 @@ export default function ThisWeek() {
               <Text style={s.h2}>{DAY_NAME[d]} <Text style={s.muted}>{week.dinner_times[d]}</Text></Text>
               <Text style={s.muted}>{(week.away[d] ?? []).length ? `${week.away[d].length} out · ` : ""}{isOpen ? "Done" : "Change"}</Text>
             </Pressable>
-            {meals.map((e) => <MealRow key={e.meal} e={e} week={week} locked={approved || !adult} busy={busy === `${d}${e.meal}`}
-              onSwap={() => run(`${d}${e.meal}`, () => api.swap(d, e.meal))} />)}
+            {meals.map((e) => <MealRow key={e.meal} e={e} week={week} adult={adult} approved={approved}
+              busy={busy === `${d}${e.meal}`}
+              onSwap={() => run(`${d}${e.meal}`, () => api.swap(d, e.meal))}
+              onChange={() => router.push({ pathname: "/house/change", params: { day: d, meal: e.meal } } as never)}
+              onUndo={() => run(`${d}${e.meal}`, () => api.revert(d, e.meal))}
+              onOutcome={(o, n) => run(`${d}${e.meal}`, () => api.outcome(d, e.meal, o, n))} />)}
             {special && !out ? <Text style={s.body}>{NIGHT_ICON[special] ?? "•"} {NIGHT_NAME[special] ?? special} night
               {special === "leftovers" ? <Text style={s.muted}> — eat up what's in the fridge</Text> : null}</Text> : null}
             {out ? <NightOutRow n={out} /> : null}
@@ -121,27 +125,70 @@ function Stat({ label, value }: { label: string; value: string }) {
     <Text style={[s.h2, { fontSize: 19 }]}>{value}</Text><Text style={s.muted}>{label}</Text></View>;
 }
 
-function MealRow({ e, week, locked, busy, onSwap }: { e: Entry; week: Week; locked: boolean; busy: boolean; onSwap: () => void }) {
+const STATE: Record<string, { label: string; tone: "green" | "amber" | "red" }> = {
+  planned: { label: "Planned", tone: "amber" }, today: { label: "Today", tone: "green" },
+  to_confirm: { label: "How did it go?", tone: "red" }, finished: { label: "Finished", tone: "green" },
+  leftovers: { label: "Leftovers", tone: "amber" }, freezer: { label: "Some frozen", tone: "green" },
+  skipped: { label: "Skipped", tone: "amber" },
+};
+
+function MealRow({ e, week, adult, approved, busy, onSwap, onChange, onUndo, onOutcome }: { e: Entry; week: Week;
+  adult: boolean; approved: boolean; busy: boolean; onSwap: () => void; onChange: () => void; onUndo: () => void;
+  onOutcome: (outcome: string, frozen: number) => void }) {
   const kind = e.kind ?? "cook";
   const who = e.cook ? week.people[e.cook] : null;
+  const [open, setOpen] = useState(false);
+  const [frozen, setFrozen] = useState(e.frozen || e.to_freeze || 2);
+  const st = e.state ?? "planned";
+  const past = approved && st !== "planned";
   const detail = kind === "leftovers" ? `from ${DAY_NAME[e.prep_day]}'s dinner` : kind === "freezer" ? "from the freezer"
-    : `${e.active} min hands-on · ${e.meal === "lunch" ? "lunchbox" : `${e.servings} servings`} · ~${money(e.est_cost)}`
+    : `${e.active} min hands-on · ${e.meal === "lunch" ? "lunchbox" : `${e.servings} serving${e.servings === 1 ? "" : "s"}`} · ~${money(e.est_cost)}`
       + (e.prep_day !== e.day ? ` · cook ${DAY_NAME[e.prep_day]}` : "");
+  const label = st === "freezer" ? `${e.frozen} frozen` : STATE[st]?.label ?? st;
   return (
-    <View style={[s.between, { paddingVertical: 4 }]}>
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={s.body}>{MEAL_ICON[e.meal] ?? "•"} {e.name}</Text>
-        <Text style={s.muted}>{detail}</Text>
-        <View style={s.row}>
-          {who && e.meal === "dinner" ? <Pill text={`${who} cooks`} /> : null}
-          {e.to_freeze ? <Pill text={`+${e.to_freeze} for the freezer`} tone="amber" /> : null}
-          {(e.why ?? []).filter((w) => w.startsWith("cooked extra")).map((w) => <Pill key={w} text={w} tone="amber" />)}
+    <View style={{ paddingVertical: 4, gap: 4 }}>
+      <View style={s.between}>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={s.body}>{MEAL_ICON[e.meal] ?? "•"} {e.name}</Text>
+          <Text style={s.muted}>{detail}</Text>
+          <View style={[s.row, { flexWrap: "wrap" }]}>
+            {approved ? <Pressable onPress={() => past && setOpen(!open)} disabled={!past}
+              accessibilityLabel={`${e.name}: ${label}${past ? ", tap to say what happened" : ""}`}>
+              <Pill text={label + (past ? " ▾" : "")} tone={STATE[st]?.tone ?? "amber"} /></Pressable> : null}
+            {who && e.meal === "dinner" ? <Pill text={`${who} cooks`} /> : null}
+            {e.to_freeze && st !== "freezer" ? <Pill text={`+${e.to_freeze} for the freezer`} tone="amber" /> : null}
+          </View>
+          {e.original ? (
+            <Text style={s.muted}>Changed from {e.original.name} · {adult ? <Text style={{ color: c.red, fontWeight: "700" }}
+              onPress={onUndo} accessibilityRole="button">Undo</Text> : null}</Text>
+          ) : null}
         </View>
+        {adult && kind === "cook" ? (
+          <View style={{ gap: 4 }}>
+            <Pressable onPress={onChange} disabled={busy} style={[s.ghost, { paddingVertical: 6 }]} accessibilityLabel={`Change ${e.name}`}>
+              <Text style={s.ghostText}>{busy ? "…" : "Change"}</Text>
+            </Pressable>
+            {!approved ? <Pressable onPress={onSwap} disabled={busy} style={[s.ghost, { paddingVertical: 6 }]}
+              accessibilityLabel={`Swap ${e.name} for another idea`}><Text style={s.ghostText}>Swap</Text></Pressable> : null}
+          </View>
+        ) : null}
       </View>
-      {!locked && kind === "cook" ? (
-        <Pressable onPress={onSwap} disabled={busy} style={[s.ghost, { paddingVertical: 6 }]} accessibilityLabel={`Swap ${e.name}`}>
-          <Text style={s.ghostText}>{busy ? "…" : "Swap"}</Text>
-        </Pressable>
+      {open ? (
+        <View style={{ gap: 6, borderTopWidth: 1, borderTopColor: c.line, paddingTop: 6 }}>
+          <Text style={s.label}>What happened?</Text>
+          <View style={s.wrap}>
+            {[["finished", "All eaten"], ["leftovers", "Leftovers in the fridge"], ["skipped", "Didn't make it"]].map(([k, l]) => (
+              <Pressable key={k} style={[s.chip, st === k && { backgroundColor: c.greenSoft, borderColor: c.green }]}
+                onPress={() => { onOutcome(k, 0); setOpen(false); }}><Text style={s.chipText}>{l}</Text></Pressable>))}
+          </View>
+          <View style={s.row}>
+            <Pressable style={[s.chip, st === "freezer" && { backgroundColor: c.greenSoft, borderColor: c.green }]}
+              onPress={() => { onOutcome("freezer", frozen); setOpen(false); }}>
+              <Text style={s.chipText}>Froze {frozen} portion{frozen === 1 ? "" : "s"}</Text></Pressable>
+            <Pressable style={s.chip} onPress={() => setFrozen(Math.max(0.5, frozen - 0.5))}><Text style={s.chipText}>−</Text></Pressable>
+            <Pressable style={s.chip} onPress={() => setFrozen(frozen + 0.5)}><Text style={s.chipText}>+</Text></Pressable>
+          </View>
+        </View>
       ) : null}
     </View>
   );

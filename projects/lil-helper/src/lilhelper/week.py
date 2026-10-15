@@ -50,7 +50,9 @@ class WeekResult:
         return self.options[self.choice]
 
     def to_record(self) -> dict:
-        return {"plan": self.plan.to_dict(),
+        plan = self.plan.to_dict()
+        plan["flags"] = list(self.flags)          # everything the week wants a person to know, not only the solver's
+        return {"plan": plan,
                 "split": {k: v.to_dict() for k, v in self.options.items()},
                 "chores": [a.__dict__ for a in self.chores],
                 "pets": [p.__dict__ for p in self.pets],
@@ -154,6 +156,23 @@ def draft(week_of: dt.date, *, h: Household | None = None, s: Settings | None = 
             idea_res = ai.suggest_recipes(ctx, h, c, (week_of + dt.timedelta(days=3)).month, on_sp)
             suggested = idea_res.accepted
             flags += idea_res.flags
+    # freezer meals nearing their use-by are planned first: each takes a cooked dinner night this week
+    week_end = week_of + dt.timedelta(days=6)
+    due = [m for m in store.freezer_meals(con) if m.get("use_by") and
+           dt.date.fromisoformat(m["use_by"]) <= week_end + dt.timedelta(days=7)]
+    taken = sum(1 for k in h.special_nights().values() if k == "freezer")
+    kc = h.kid_chef()
+    picked = {d for (d, meal) in store.picks(con, week_of.isoformat())[0] if meal == "dinner"}
+    open_days = sorted([d for d in h.cooked_dinner_days()
+                        if d not in kc and d not in h.night_overrides and d not in picked],
+                       key=lambda d: (h.prep_limit(d), DAYS.index(d)))
+    for m in due[taken:]:
+        need = sum(p.portion for p in h.eaters("dinner", open_days[0])) * 0.75 if open_days else 99
+        if not open_days or m["portions"] < need:
+            continue
+        d = open_days.pop(0)
+        h.night_overrides[d] = "freezer"
+        flags.append(f"{d}: {m['name']} from the freezer, before its use-by ({m['use_by']})")
     # freezer nights need something in the freezer: nights the freezer can't cover are cooked instead
     stock = [m["portions"] for m in store.freezer_meals(con)]
     for day, kind in sorted(h.special_nights().items(), key=lambda kv: DAYS.index(kv[0])):
@@ -165,6 +184,9 @@ def draft(week_of: dt.date, *, h: Household | None = None, s: Settings | None = 
                 flags.append(f"{day}: freezer night, but the freezer has nothing big enough — planned a cooked dinner")
             else:
                 stock[i] -= need
+    chosen, _ = store.picks(con, week_of.isoformat())
+    if chosen:
+        locks = {**chosen, **(locks or {})}            # meals a person picked stay picked through re-plans
     hist, hist_all = store.history(con), store.history_all(con)
     port = store.portions(con)
     budget = float(h.info.get("budget_per_week", 0)) or None
@@ -285,6 +307,141 @@ def swap(week_of: dt.date, day: str, meal: str, *, to: str | None = None, actor:
     elif current:
         bans.setdefault((day, meal), []).append(current)
     return draft(week_of, locks=locks, bans=bans, ideas=False, actor=actor, **kw)
+
+
+def change(week_of: dt.date, day: str, meal: str, recipe: str, by: str) -> dict:
+    """A person puts a recipe (from the book or their own) on a planned slot. Draft weeks re-plan around it (the
+    shopping list follows); an approved week changes in place and says what the new recipe needs that isn't in the
+    house. What was there first is remembered, so the change can be undone."""
+    from . import safety
+    wk = week_start(week_of)
+    con = store.connect()
+    rec = store.get_week(con, wk.isoformat())
+    if not rec:
+        con.close()
+        raise ValueError("no plan for that week")
+    h = with_overrides(load_household(), con, wk)
+    c = for_household(h)
+    r = c.recipes.get(recipe)
+    if not r:
+        con.close()
+        raise ValueError("no such recipe")
+    entry = next((e for e in rec["plan"]["entries"] if e["day"] == day and e["meal"] == meal
+                  and e.get("kind", "cook") == "cook"), None)
+    if not entry:
+        con.close()
+        raise ValueError("nothing is cooked in that slot")
+    v = safety.recipe_for(c, r, h.eaters(meal, day), h.everyone_allergies())
+    if not v.ok:
+        con.close()
+        raise ValueError("; ".join(v.reasons))
+    _, original = store.picks(con, wk.isoformat())
+    first = original.get((day, meal)) or entry["recipe"]
+    store.set_pick(con, wk.isoformat(), day, meal, recipe, None if recipe == first else first, by)
+    out = {"missing": []}
+    if rec.get("status") == "approved":
+        pantry = store.pantry(con)
+        need = []
+        for iid, q in r.ing.items():
+            ing = c.ingredients[iid]
+            if not ing.staple and pantry.get(iid, 0) < q * entry["servings"] * 0.5:
+                need.append(ing.name)
+        pb = PriceBook(h, wk, catalog=c)
+        est = round(sum((pb.best_unit(i) or 0) * q * entry["servings"] for i, q in r.ing.items()), 2)
+        entry.update(recipe=r.id, name=r.name, active=r.active, est_cost=est, why=["your pick"] + (
+            [f"not on this week's list: {', '.join(need)}"] if need else []))
+        store.save_week(con, wk.isoformat(), plan=rec["plan"])
+        out["missing"] = need
+        store.audit(con, by, "change_meal", {"week_of": wk.isoformat(), "day": day, "meal": meal, "to": r.id})
+        con.close()
+    else:
+        store.audit(con, by, "change_meal", {"week_of": wk.isoformat(), "day": day, "meal": meal, "to": r.id})
+        con.close()
+        draft(wk, ideas=False, actor=by)
+    return out
+
+
+OUTCOMES = ("finished", "leftovers", "freezer", "skipped")
+
+
+def today_in(h: Household) -> dt.date:
+    from zoneinfo import ZoneInfo
+    return dt.datetime.now(ZoneInfo(h.info.get("timezone", "America/New_York"))).date()
+
+
+def states(h: Household, con, rec: dict, today: dt.date | None = None) -> dict[tuple[str, str], dict]:
+    """Where each meal of the week is: planned (later), today, or — once its day has passed — what happened:
+    finished, leftovers, freezer (with portions), skipped, or to_confirm when nobody has said yet."""
+    today = today or today_in(h)
+    wk = dt.date.fromisoformat(rec["week_of"])
+    said = {(r["day"], r["meal"]): dict(r) for r in con.execute(
+        "SELECT * FROM outcomes WHERE week_of = ?", (rec["week_of"],))}
+    eaten = {(r["day"], r["meal"]): r["eaten"] for r in con.execute(
+        "SELECT day, meal, eaten FROM feedback WHERE week_of = ?", (rec["week_of"],))}
+    out = {}
+    for e in rec["plan"]["entries"]:
+        k = (e["day"], e["meal"])
+        d = wk + dt.timedelta(days=DAYS.index(e["day"]))
+        o = said.get(k)
+        if o:
+            st = {"state": o["outcome"], "frozen": o["frozen"] or 0}
+        elif d > today:
+            st = {"state": "planned"}
+        elif d == today:
+            st = {"state": "today"}
+        elif k in eaten:
+            st = {"state": "finished" if eaten[k] == "all" else "leftovers"}
+        else:
+            st = {"state": "to_confirm"}
+        st["date"] = d.isoformat()
+        out[k] = st
+    return out
+
+
+def record_outcome(week_of: dt.date, day: str, meal: str, outcome: str, frozen: float, by: str) -> dict:
+    """What happened to a meal. Freezer portions are what actually went in: the freezer item from that meal is set to
+    that many portions (added if the plan didn't expect any, removed if none went in)."""
+    if outcome not in OUTCOMES:
+        raise ValueError(f"outcome: one of {', '.join(OUTCOMES)}")
+    if day not in DAYS or not (0 <= frozen <= 40):
+        raise ValueError("bad day or portions")
+    wk = week_start(week_of)
+    con = store.connect()
+    rec = store.get_week(con, wk.isoformat())
+    e = next((e for e in (rec or {}).get("plan", {}).get("entries", []) if e["day"] == day and e["meal"] == meal), None)
+    if not e:
+        con.close()
+        raise ValueError("no such meal that week")
+    date = (wk + dt.timedelta(days=DAYS.index(day))).isoformat()
+    frozen = frozen if outcome == "freezer" else 0.0
+    con.execute("INSERT OR REPLACE INTO outcomes VALUES (?,?,?,?,?,?,?)",
+                (wk.isoformat(), day, meal, outcome, frozen, by, store.now()))
+    row = con.execute("SELECT id FROM freezer WHERE recipe = ? AND frozen_on = ? AND used_on IS NULL",
+                      (e["recipe"], date)).fetchone()
+    if row and frozen <= 0:
+        con.execute("DELETE FROM freezer WHERE id = ?", (row["id"],))
+    elif row:
+        con.execute("UPDATE freezer SET portions = ? WHERE id = ?", (frozen, row["id"]))
+    elif frozen > 0:
+        use_by = (dt.date.fromisoformat(date) + dt.timedelta(days=90)).isoformat()
+        con.execute("INSERT INTO freezer (recipe, name, portions, frozen_on, use_by) VALUES (?,?,?,?,?)",
+                    (e["recipe"], e["name"].replace("From the freezer: ", ""), frozen, date, use_by))
+    con.commit()
+    store.audit(con, by, "outcome", {"week_of": wk.isoformat(), "day": day, "meal": meal, "outcome": outcome})
+    con.close()
+    return {"outcome": outcome, "frozen": frozen}
+
+
+def revert(week_of: dt.date, day: str, meal: str, by: str) -> dict:
+    """Undo a change: put back what was planned before the first change to that slot."""
+    wk = week_start(week_of)
+    con = store.connect()
+    _, original = store.picks(con, wk.isoformat())
+    con.close()
+    first = original.get((day, meal))
+    if not first:
+        raise ValueError("nothing to undo for that meal")
+    return change(wk, day, meal, first, by)
 
 
 def set_night(week_of: dt.date, day: str, kind: str, by: str) -> None:
@@ -450,3 +607,24 @@ def _log(res: WeekResult, h: Household) -> None:
                    detail={"total": sp.total, "minutes": sp.minutes, "stores": len(sp.orders),
                            "dollars_saved": res.savings.dollars_saved if res.savings else None,
                            "ideas_rejected": rec["ideas_rejected"]})
+
+
+def orders(rec: dict, choice: str | None = None) -> list[dict]:
+    """The chosen split's orders, with any buy-ahead items added to the matching store's order."""
+    choice = choice or rec.get("shopping_choice") or "balanced"
+    orders = [dict(o, lines=list(o["lines"])) for o in rec["split"][choice]["orders"]]
+    for a in (rec.get("extras") or {}).get("buy_ahead_added", []):
+        o = next((o for o in orders if o["store_name"] == a["store_name"]
+                  and (a.get("channel", "any") == "any" or (a["channel"] == "in_store") == (o["mode"] == "in_store"))),
+                 None)
+        line = {"ingredient": a["ingredient"], "name": a["name"] + " (buy ahead)", "brand": "", "packs": a["packs"],
+                "pack": a["pack"], "price_each": a["price"], "special": True, "cost": round(a["packs"] * a["price"], 2),
+                "aisle": 99}
+        if o:
+            o["lines"].append(line)
+            o["total"] = round(o["total"] + line["cost"], 2)
+        else:
+            orders.append({"store": a["store"], "store_name": a["store_name"], "mode": "in_store", "handoff": "print",
+                           "lines": [line], "total": line["cost"], "payload": {"aisle_ordered": []}, "credits": 0,
+                           "minutes": 30})
+    return orders

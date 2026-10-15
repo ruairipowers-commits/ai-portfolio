@@ -175,6 +175,19 @@ walked through at iPhone size (wizard → first plan → approve → specials, r
 - [ ] **Not done:** the Streamlit demo still shows v1 screens only; the App Store release work (AWS + RevenueCat +
       privacy) is planned in `docs/aws-native.md`, not built.
 
+### Lil'Helper v3 (15 October 2026, branch `agent/claude-lil-helper-v3`, not merged)
+
+Builds on `agent/claude-lil-helper-mail` (email fixes, Create household button). Change any planned meal (existing,
+new, or from the web) with undo; meals move planned → today → what happened (eaten / leftovers / portions frozen /
+skipped); freezer items editable, use-by-first planning; recipes: credit + link, add from the web (schema.org;
+method stays at the source), export/import file, share with a household by code; cook-from ranks by what you typed
+and writes a new recipe when nothing uses it all; calendar events link into the app and shopping events carry the
+whole list. Verified offline: 88 tests, eval gate, governance, mkdocs, app typecheck, browser walk-through.
+
+- [ ] **Ruairi: merge** (both branches), then a new TestFlight build and server rebuild.
+- [ ] Optional `BRAVE_API_KEY` on the server for in-app recipe search results (without it, search opens the browser).
+- [ ] Not tested against live recipe sites from here (the sandbox can't reach them); parsing is tested on a fixture page.
+
 ## 000a. Data marketplace & lifecycle platform (featured, built 6 October 2026)
 
 `projects/data-lifecycle-platform` + `site/blog/posts/data-lifecycle-platform.md` + tech pages (MetricFlow,

@@ -21,17 +21,19 @@ import html
 import json
 import os
 import re
+import secrets
 import time
 from collections import defaultdict
 from dataclasses import dataclass
 
 import httpx
+from urllib.parse import quote
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import BaseModel, Field
 
-from . import (__version__, accounts, ai, catalog, chores, cookfrom, feedback, forecast, money, notify, outputs,
+from . import (__version__, accounts, recipebook, ai, catalog, chores, cookfrom, feedback, forecast, money, notify, outputs,
                reports, spend, storage, store, telemetry, week)
 from .config import (ALLERGENS, DAYS, DIETS, MEALS, NIGHT_KINDS, HouseholdError, Settings, data_root, load_household,
                      reset_tenant, save_household, set_tenant, stores as load_stores, work_root)
@@ -393,7 +395,7 @@ def put_settings(body: SettingsIn, ctx: Ctx = Depends(member)) -> dict:
 SECTIONS = {"household", "meals", "dinner_times", "prep_minutes", "batch_day", "health", "brands", "stores",
             "home_store", "memberships", "cards", "suggestions", "chores", "outputs", "styles", "kid_chef", "leftovers",
             "eating_out", "cost_per_serving", "storage", "freezer_meals", "shopping_sessions", "pets",
-            "plan_ahead_weeks"}
+            "plan_ahead_weeks", "recipe_sources"}
 
 
 class SectionIn(BaseModel):
@@ -616,9 +618,17 @@ def _view(rec: dict) -> dict:
     choice = rec.get("shopping_choice") or "balanced"
     con = store.connect()
     away, _ = store.overrides(con, rec["week_of"])
+    _, original = store.picks(con, rec["week_of"])
+    st = week.states(h, con, rec)
     con.close()
+    c = catalog.for_household(h)
+    for e in rec["plan"]["entries"]:
+        e.update(st.get((e["day"], e["meal"]), {}))
+        o = original.get((e["day"], e["meal"]))
+        e["original"] = {"recipe": o, "name": c.recipes[o].name if o in c.recipes else o} \
+            if o and o != e["recipe"] else None
     return {"week_of": rec["week_of"], "status": rec.get("status"), "approved_by": rec.get("approved_by"),
-            "plan": rec["plan"], "choice": choice,
+            "plan": rec["plan"], "choice": choice, "today": week.today_in(h).isoformat(),
             "options": {k: {"total": v["total"], "minutes": v["minutes"], "flags": v.get("flags", []),
                             "storage_used": v.get("storage_used", {}),
                             "stores": [{"store": o["store_name"], "mode": o["mode"], "total": o["total"],
@@ -731,6 +741,65 @@ def approve_week(body: ApproveIn, ctx: Ctx = Depends(member)) -> dict:
     return _view(_stored(_week(body.week)))
 
 
+class ChangeIn(BaseModel):
+    week: str | None = None
+    day: str
+    meal: str = "dinner"
+    recipe: str
+
+
+class SlotIn(BaseModel):
+    week: str | None = None
+    day: str
+    meal: str = "dinner"
+
+
+class OutcomeIn(BaseModel):
+    week: str | None = None
+    day: str
+    meal: str = "dinner"
+    outcome: str
+    frozen: float = Field(default=0, ge=0, le=40)
+
+
+@app.post("/api/week/change")
+def change_meal(body: ChangeIn, ctx: Ctx = Depends(member)) -> dict:
+    """Put a chosen recipe (existing or just saved) on a planned meal. Undo with /api/week/revert."""
+    need(ctx, "adult")
+    try:
+        out = week.change(_week(body.week), body.day, body.meal, body.recipe, actor(ctx))
+    except ValueError as e:
+        raise HTTPException(409, str(e))
+    _notify_others(ctx, "The plan changed", f"{body.day.title()} {body.meal} changed.", f"lilhelper://week?day={body.day}")
+    return {**_view(_stored(_week(body.week))), "missing": out["missing"]}
+
+
+@app.post("/api/week/revert")
+def revert_meal(body: SlotIn, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    try:
+        week.revert(_week(body.week), body.day, body.meal, actor(ctx))
+    except ValueError as e:
+        raise HTTPException(409, str(e))
+    return _view(_stored(_week(body.week)))
+
+
+@app.post("/api/week/outcome")
+def meal_outcome(body: OutcomeIn, ctx: Ctx = Depends(member)) -> dict:
+    """What happened to a meal: finished, leftovers, some went in the freezer (how many portions), or skipped."""
+    try:
+        week.record_outcome(_week(body.week), body.day, body.meal, body.outcome, body.frozen, actor(ctx))
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    if body.outcome in ("finished", "leftovers"):
+        try:
+            _record_feedback(_week(body.week).isoformat(), body.day, body.meal,
+                             "all" if body.outcome == "finished" else "some_left", None, actor(ctx))
+        except HTTPException:
+            pass
+    return _view(_stored(_week(body.week)))
+
+
 def _notify_others(ctx: Ctx, title: str, body: str, link: str) -> None:
     con = accounts.connect()
     others = [m["user_id"] for m in accounts.members(con, ctx.hid) if m["user_id"] != ctx.uid]
@@ -741,22 +810,7 @@ def _notify_others(ctx: Ctx, title: str, body: str, link: str) -> None:
 
 # ---------------------------------------------------------------- shopping hand-offs
 def _orders(rec: dict, choice: str) -> list[dict]:
-    """The chosen split's orders, with any buy-ahead items added to the matching store's order."""
-    orders = [dict(o, lines=list(o["lines"])) for o in rec["split"][choice]["orders"]]
-    for a in (rec.get("extras") or {}).get("buy_ahead_added", []):
-        o = next((o for o in orders if o["store_name"] == a["store_name"]
-                  and (a.get("channel", "any") == "any" or (a["channel"] == "in_store") == (o["mode"] == "in_store"))),
-                 None)
-        line = {"ingredient": a["ingredient"], "name": a["name"] + " (buy ahead)", "brand": "", "packs": a["packs"],
-                "pack": a["pack"], "price_each": a["price"], "special": True, "cost": round(a["packs"] * a["price"], 2)}
-        if o:
-            o["lines"].append(line)
-            o["total"] = round(o["total"] + line["cost"], 2)
-        else:
-            orders.append({"store": a["store"], "store_name": a["store_name"], "mode": "in_store", "handoff": "print",
-                           "lines": [line], "total": line["cost"], "payload": {"aisle_ordered": []}, "credits": 0,
-                           "minutes": 30})
-    return orders
+    return week.orders(rec, choice)
 
 
 @app.get("/api/week/shopping")
@@ -893,6 +947,8 @@ class RecipeIn(BaseModel):
     veg: float = Field(default=1, ge=0, le=6)
     protein: float = Field(default=20, ge=0, le=150)
     notes: str = Field(default="", max_length=500)
+    credit: str = Field(default="", max_length=80)       # where it's from; blank → the person saving it
+    url: str = Field(default="", max_length=500)
 
 
 UNIT_TO = {("tbsp", "cup"): 1 / 16, ("cup", "tbsp"): 16, ("tsp", "tbsp"): 1 / 3, ("tsp", "cup"): 1 / 48,
@@ -918,9 +974,151 @@ def list_recipes(q: str = "", meal: str | None = None, mine: bool = False, ctx: 
             continue
         out.append({"id": r.id, "name": r.name, "meal": r.meal, "active": r.active, "total": r.total, "tags": r.tags,
                     "source": r.source, "season_months": r.season_months, "want": r.want,
-                    "kid_min_age": r.kid_min_age})
+                    "kid_min_age": r.kid_min_age, "credit": r.credit or ("Lil'Helper" if r.source == "book" else ""),
+                    "url": r.url})
     out.sort(key=lambda r: (r["source"] != "household", r["meal"], r["name"]))
     return {"recipes": out}
+
+
+@app.post("/api/recipes")
+def save_recipe(body: RecipeIn, rid: str | None = None, ctx: Ctx = Depends(member)) -> dict:
+    """Add (or, with ?rid=, replace) one of the household's own recipes. Amounts are for `serves` servings."""
+    need(ctx, "adult")
+    h = _hh()
+    data = body.model_dump()
+    data["ingredients"] = [ln.model_dump() for ln in body.ingredients]
+    data["credit"] = body.credit.strip() or (h.people[ctx.person].name if ctx.person in h.people else ctx.name)
+    con = store.connect()
+    try:
+        return recipebook.save(con, h, catalog.for_household(h), data, actor(ctx), rid)
+    except recipebook.RecipeError as e:
+        raise HTTPException(422, {"message": str(e), "unknown": e.unknown} if e.unknown else str(e))
+    finally:
+        con.close()
+
+
+@app.get("/api/recipes/export")
+def export_recipes(ctx: Ctx = Depends(member)) -> dict:
+    h = _hh()
+    con = store.connect()
+    out = recipebook.export(con, catalog.for_household(h), h.info.get("name", ""))
+    con.close()
+    return out
+
+
+class BookIn(BaseModel):
+    book: dict
+
+
+@app.post("/api/recipes/import")
+def import_recipes(body: BookIn, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    h = _hh()
+    con = store.connect()
+    try:
+        return recipebook.import_book(con, h, catalog.for_household(h), body.book, actor(ctx))
+    except recipebook.RecipeError as e:
+        raise HTTPException(422, str(e))
+    finally:
+        con.close()
+
+
+@app.post("/api/recipes/share")
+def share_recipes(ctx: Ctx = Depends(member)) -> dict:
+    """A code (and link) another household can use to copy this household's recipes. Stop sharing any time."""
+    need(ctx, "adult")
+    nonce = secrets.token_urlsafe(8)
+    con = store.connect()
+    con.execute("INSERT INTO book_shares (code, created, by) VALUES (?,?,?)", (nonce, store.now(), actor(ctx)))
+    con.commit()
+    n = con.execute("SELECT COUNT(*) FROM custom_recipes WHERE active = 1").fetchone()[0]
+    con.close()
+    code = sign("book", f"{ctx.hid}|{nonce}", 30 * 24 * 3600)
+    return {"code": code, "link": f"{public_url()}/open/book?code={code}", "recipes": n,
+            "note": "Anyone with this code can copy your recipes (not your plans or anything else) for 30 days."}
+
+
+@app.delete("/api/recipes/share")
+def stop_sharing(ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    con = store.connect()
+    n = con.execute("UPDATE book_shares SET revoked = 1 WHERE revoked = 0").rowcount
+    con.commit()
+    con.close()
+    return {"stopped": n}
+
+
+def _shared_book(code: str) -> tuple[str, dict]:
+    try:
+        hid, nonce = verify("book", code.strip()).split("|", 1)
+    except HTTPException:
+        raise HTTPException(404, "that sharing code isn't valid (or has expired)")
+    tok = set_tenant(hid)
+    try:
+        con = store.connect()
+        ok = con.execute("SELECT 1 FROM book_shares WHERE code = ? AND revoked = 0", (nonce,)).fetchone()
+        if not ok:
+            con.close()
+            raise HTTPException(404, "that household has stopped sharing its recipes")
+        h = load_household()
+        book = recipebook.export(con, catalog.for_household(h), h.info.get("name", ""))
+        con.close()
+    finally:
+        reset_tenant(tok)
+    return hid, book
+
+
+class CodeIn(BaseModel):
+    code: str = Field(max_length=500)
+
+
+@app.post("/api/recipes/shared")
+def preview_shared(body: CodeIn, ctx: Ctx = Depends(member)) -> dict:
+    hid, book = _shared_book(body.code)
+    return {"household": book["household"], "recipes": [r["name"] for r in book["recipes"]], "same": hid == ctx.hid}
+
+
+@app.post("/api/recipes/import-shared")
+def import_shared(body: CodeIn, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    hid, book = _shared_book(body.code)
+    if hid == ctx.hid:
+        raise HTTPException(409, "that's your own recipe book")
+    h = _hh()
+    con = store.connect()
+    try:
+        return recipebook.import_book(con, h, catalog.for_household(h), book, actor(ctx),
+                                      credit=f"Shared by {book['household']}")
+    finally:
+        con.close()
+
+
+class UrlIn(BaseModel):
+    url: str = Field(max_length=1000)
+
+
+@app.post("/api/recipes/from-url")
+def recipe_from_url(body: UrlIn, ctx: Ctx = Depends(member)) -> dict:
+    """A draft recipe from a web page (name, ingredients, times, servings, source and link); nothing is saved."""
+    need(ctx, "adult")
+    rate_limit(f"fetch:{ctx.hid}", 60)
+    try:
+        url, page = recipebook.fetch(body.url.strip())
+        return recipebook.draft_from_page(catalog.for_household(_hh()), page, url)
+    except recipebook.FetchError as e:
+        raise HTTPException(422, str(e))
+    except httpx.HTTPError as e:
+        raise HTTPException(502, f"couldn't load that page ({type(e).__name__})")
+
+
+@app.get("/api/recipes/search")
+def search_recipes(q: str, site: str | None = None, ctx: Ctx = Depends(member)) -> dict:
+    """Recipes on the web from the household's favourite sites (Settings → recipe sources), or one site, or anywhere."""
+    rate_limit(f"search:{ctx.hid}", 60)
+    h = _hh()
+    sites = [site] if site else ([] if site == "" else list(h.raw.get("recipe_sources") or []))
+    return {**recipebook.search(q, [x for x in sites if re.fullmatch(r"[a-z0-9.-]+\.[a-z]{2,}", x or "")]),
+            "sites": sites}
 
 
 @app.get("/api/recipes/{rid}")
@@ -931,52 +1129,7 @@ def get_recipe(rid: str, ctx: Ctx = Depends(member)) -> dict:
         raise HTTPException(404, "no such recipe")
     return {**r.__dict__, "ingredients": [{"ingredient": i, "name": c.ingredients[i].name, "per_serving": q,
                                            "unit": c.ingredients[i].unit} for i, q in r.ing.items()],
-            "allergens": c.allergens_of(r)}
-
-
-@app.post("/api/recipes")
-def save_recipe(body: RecipeIn, rid: str | None = None, ctx: Ctx = Depends(member)) -> dict:
-    """Add (or, with ?rid=, replace) one of the household's own recipes. Amounts are for `serves` servings."""
-    need(ctx, "adult")
-    h = _hh()
-    c = catalog.for_household(h)
-    if body.meal not in MEALS:
-        raise HTTPException(422, "meal must be breakfast, lunch or dinner")
-    if any(not 1 <= m <= 12 for m in body.season_months):
-        raise HTTPException(422, "season months are 1–12")
-    ing, unknown = {}, []
-    for ln in body.ingredients:
-        iid = ln.ingredient if ln.ingredient in c.ingredients else (c.match(ln.text or "") if ln.text else None)
-        if not iid:
-            unknown.append(ln.text or ln.ingredient or "?")
-            continue
-        ing[iid] = round(ing.get(iid, 0) + _convert(ln.qty, ln.unit, c.ingredients[iid].unit) / body.serves, 4)
-    if unknown:
-        raise HTTPException(422, {"message": "add these as your own ingredients first", "unknown": unknown})
-    if not ing:
-        raise HTTPException(422, "a recipe needs ingredients")
-    rid = rid or "h_" + re.sub(r"[^a-z0-9]+", "_", body.name.lower()).strip("_")[:40]
-    if rid in c.recipes and c.recipes[rid].source != "household":
-        raise HTTPException(409, "that's a built-in recipe; choose another name")
-    tags = sorted(set(body.tags) | ({"kid_can_make"} if body.kid_min_age else set()))
-    data = {"id": rid, "name": body.name, "meal": body.meal, "active": body.active, "total": body.total, "ing": ing,
-            "veg": body.veg, "protein": body.protein, "tags": tags, "source": "household",
-            "kid_min_age": body.kid_min_age, "instructions": [s[:300] for s in body.instructions[:30]],
-            "season_months": body.season_months, "want": {k: int(v) for k, v in body.want.items()
-                                                          if k in ("times", "per_weeks")},
-            "notes": body.notes, "created_by": actor(ctx)}
-    from .catalog import Recipe
-    allergens = c.allergens_of(Recipe(**{k: v for k, v in data.items() if k in Recipe.__dataclass_fields__}))
-    con = store.connect()
-    con.execute("INSERT OR REPLACE INTO custom_recipes VALUES (?,?,?,?,?)",
-                (rid, json.dumps(data), 1, actor(ctx), store.now()))
-    con.commit()
-    store.audit(con, actor(ctx), "recipe", {"id": rid})
-    con.close()
-    house = h.everyone_allergies()
-    return {"saved": rid, "allergens": allergens,
-            "warning": (f"Contains {', '.join(sorted(set(allergens) & house))}: someone in the house is allergic, so "
-                        "Lil'Helper won't plan it.") if set(allergens) & house else None}
+            "allergens": c.allergens_of(r), "credit": r.credit or ("Lil'Helper" if r.source == "book" else "")}
 
 
 @app.delete("/api/recipes/{rid}")
@@ -1341,28 +1494,8 @@ class UseIn(BaseModel):
 
 @app.post("/api/cookfrom/use")
 def cook_from_use(body: UseIn, ctx: Ctx = Depends(member)) -> dict:
-    """Put a "what I've got" idea into the plan for that day (the rest of the week stays put)."""
-    need(ctx, "adult")
-    rec = store.get_week(store.connect(), _week(body.week).isoformat())
-    if rec and rec.get("status") == "approved":
-        # an approved week keeps its shopping; only the meal changes
-        for e in rec["plan"]["entries"]:
-            if e["day"] == body.day and e["meal"] == body.meal and e.get("kind", "cook") == "cook":
-                c = catalog.for_household(_hh())
-                r = c.recipes.get(body.recipe)
-                if not r:
-                    raise HTTPException(404, "no such recipe")
-                e.update({"recipe": r.id, "name": r.name, "active": r.active, "why": ["from what you've got"]})
-        con = store.connect()
-        store.save_week(con, rec["week_of"], plan=rec["plan"])
-        store.audit(con, actor(ctx), "cook_from", {"day": body.day, "recipe": body.recipe})
-        con.close()
-        return _view(_stored(_week(body.week)))
-    try:
-        week.swap(_week(body.week), body.day, body.meal, to=body.recipe, actor=actor(ctx))
-    except ValueError as e:
-        raise HTTPException(409, str(e))
-    return _view(_stored(_week(body.week)))
+    """Put a "what I've got" idea on that day's plan (undo puts the planned meal back)."""
+    return change_meal(ChangeIn(week=body.week, day=body.day, meal=body.meal, recipe=body.recipe), ctx)
 
 
 @app.get("/api/storage")
@@ -1398,6 +1531,41 @@ def add_freezer_meal(body: FreezerIn, ctx: Ctx = Depends(member)) -> dict:
     return {"added": body.name}
 
 
+class FreezerEdit(BaseModel):
+    name: str = Field(min_length=2, max_length=80)
+    portions: float = Field(ge=0, le=40)
+    use_by: str | None = None
+
+
+@app.put("/api/storage/freezer/{fid}")
+def edit_freezer_meal(fid: int, body: FreezerEdit, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    if body.use_by:
+        try:
+            dt.date.fromisoformat(body.use_by)
+        except ValueError:
+            raise HTTPException(422, "use-by: YYYY-MM-DD")
+    con = store.connect()
+    n = con.execute("UPDATE freezer SET name = ?, portions = ?, use_by = COALESCE(?, use_by), "
+                    "used_on = CASE WHEN ? <= 0 THEN date('now') ELSE NULL END WHERE id = ?",
+                    (body.name, body.portions, body.use_by, body.portions, fid)).rowcount
+    con.commit()
+    con.close()
+    if not n:
+        raise HTTPException(404, "no such freezer item")
+    return {"saved": fid}
+
+
+@app.delete("/api/storage/freezer/{fid}")
+def remove_freezer_meal(fid: int, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    con = store.connect()
+    con.execute("DELETE FROM freezer WHERE id = ?", (fid,))
+    con.commit()
+    con.close()
+    return {"removed": fid}
+
+
 # ---------------------------------------------------------------- calendar feeds and tap-back links
 @app.get("/api/calendar/link")
 def calendar_link(ctx: Ctx = Depends(member)) -> dict:
@@ -1421,8 +1589,10 @@ def calendar_rotate(ctx: Ctx = Depends(member)) -> dict:
 
 def _tap_links(hid: str, uid: str):
     def link(kind: str, **kw) -> str:
-        if kind == "app":
-            return f"lilhelper://week?day={kw.get('day', '')}"
+        if kind in ("app", "open"):
+            screen = kw.pop("screen", "week")
+            q = "&".join(f"{k}={v}" for k, v in kw.items() if k in ("day",) and v)
+            return f"{public_url()}/open/{screen}" + (f"?{q}" if q else "")
         sub = json.dumps({"h": hid, "u": uid, "k": kind, **kw}, separators=(",", ":"), default=str)
         return f"{public_url()}/t/{sign('tap', sub, TAP_TTL)}"
     return link
@@ -1458,6 +1628,26 @@ h1 span.l{{color:#D7392A}}h1 span.h{{color:#3E9E3A}}.card{{background:#fff;borde
 padding:16px;margin:12px 0}}button,a.b{{display:inline-block;background:#D7392A;color:#fff;border:0;border-radius:12px;
 padding:12px 16px;font-size:16px;font-weight:700;text-decoration:none}}li{{margin:4px 0}}.m{{color:#7A6A5C;font-size:14px}}
 </style></head><body><h1><span class="l">Lil’</span><span class="h">Helper</span></h1>{body}</body></html>"""
+
+
+OPEN_SCREENS = {"week", "shopping", "meals", "jobs", "money", "book", "signin"}
+
+
+@app.get("/open/{screen}", response_class=HTMLResponse)
+def open_in_app(screen: str, request: Request) -> str:
+    """A web link that opens the app: calendar apps make https links tappable (not app links), so events link here
+    and the page hands over to lilhelper://… on a phone with the app; elsewhere it says what to do."""
+    if screen not in OPEN_SCREENS:
+        raise HTTPException(404)
+    q = "&".join(f"{k}={quote(v)}" for k, v in request.query_params.items() if k in ("day", "code", "token", "invite"))
+    app_link = f"lilhelper://{screen}" + (f"?{q}" if q else "")
+    label = {"week": "this week's plan", "shopping": "the shopping lists", "book": "the shared recipes",
+             "meals": "rate meals", "jobs": "jobs", "money": "money", "signin": "sign in"}[screen]
+    body = (f"<div class='card'><p>Opening Lil'Helper — {html.escape(label)}…</p>"
+            f"<p><a class='b' href='{html.escape(app_link)}'>Open Lil'Helper</a></p>"
+            "<p class='m'>Nothing happening? Open this on the phone where Lil'Helper is installed.</p></div>"
+            f"<script>location.href={json.dumps(app_link)}</script>")
+    return PAGE.format(body=body)
 
 
 @app.get("/t/{token}", response_class=HTMLResponse)
