@@ -262,10 +262,9 @@ def _home_side(page_url: str) -> str:
     """Home's side panel: one project at a time and the three newest posts. Rendered inline (below the intro on
     phones); site/assets/home-side.js moves it under the table of contents on wide screens."""
     up = "../" * page_url.strip("/").count("/") + ("../" if page_url.strip("/") else "")
-    auto = lambda html: html.replace("data-carousel ", "data-carousel data-autoheight ", 1)   # noqa: E731
     return ('<aside class="home-side" data-home-side aria-label="Projects and latest posts">'
-            '<p class="home-side__title">Projects</p>' + auto(_gallery(page_url, compact=True))
-            + '<p class="home-side__title">Latest posts</p>' + auto(_posts_carousel(page_url, limit=3))
+            '<p class="home-side__title">Projects</p>' + _gallery(page_url, compact=True)
+            + '<p class="home-side__title">Latest posts</p>' + _posts_carousel(page_url, limit=3)
             + f'<p class="home-side__all"><a href="{up}blog/">All posts →</a></p></aside>')
 
 
@@ -400,15 +399,19 @@ def _routing_results() -> str:
 
 
 def _upcoming_box() -> str:
-    """Blog → Upcoming topics: the live editorial queue with reader votes (assets/upcoming.js). The editorial service's
-    URL is its live demo URL; without the demos (local preview) the box says it's offline."""
+    """Blog → Upcoming topics: the live editorial queue with reader votes, as a one-at-a-time carousel
+    (assets/upcoming.js fills it, assets/home-side.js moves it into the right-hand panel on wide screens). The
+    editorial service's URL is its live demo URL; without the demos (local preview) it says it's offline."""
     url = demo_url("editorial-agents", _cfg).rstrip("/") if "editorial-agents" in _cfg["projects"] else ""
-    return ('\n\n<div class="upcoming" data-upcoming data-max="6" data-editorial="' + _html.escape(url) + '">'
-            '<p class="upcoming__head">Upcoming topics: vote for what I write next</p>'
-            '<p class="upcoming__how">A scout agent finds these every morning. My picks go first, then the most-voted. '
-            'Each day the top one becomes a post: a local model drafts it, Claude reviews it, code checks it, and I approve '
-            'it before it goes live. One vote per topic per day; votes are anonymous.</p>'
-            '<div data-upcoming-list><p class="ideas__empty">Loading…</p></div></div>\n')
+    return ('\n\n<aside class="home-side upcoming-side" data-side-panel aria-label="Upcoming topics">'
+            '<p class="home-side__title">Upcoming topics</p>'
+            '<p class="upcoming__how">Vote for what I write next: my picks go first, then the most-voted. One vote per '
+            'topic per day; anonymous.</p>'
+            '<div class="carousel upcoming" data-upcoming data-max="8" data-interval="8000" '
+            'data-editorial="' + _html.escape(url) + '" aria-roledescription="carousel" aria-label="Upcoming topics">'
+            '<div class="carousel__track" data-upcoming-list><p class="ideas__empty">Loading…</p></div></div>'
+            '<p class="home-side__all">Each day the top topic becomes a post: a local model drafts it, Claude reviews '
+            'it, code checks it, and I approve it.</p></aside>\n')
 
 
 def _learn_crash_course(page_uri: str) -> str:
