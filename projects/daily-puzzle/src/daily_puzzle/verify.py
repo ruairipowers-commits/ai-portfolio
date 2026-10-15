@@ -23,6 +23,9 @@ from .config import Settings
 from .schemas import Draft, SolverReply
 from .store import ai_calls, now, puzzles as puzzles_t, sandbox_runs
 
+# A random generator built with no seed: numpy's default_rng() / RandomState(), or random.Random().
+UNSEEDED = re.compile(r"\b(?:default_rng|RandomState|random\.Random)\(\s*(?:None\s*)?\)")
+
 
 @dataclass
 class Ctx:
@@ -235,6 +238,12 @@ def verify(raw: dict | str, ctx: Ctx) -> tuple[dict | None, Report]:
         rep.step("proof", True, "exhaustive search: exactly one solution, equal to the key")
     # 4. reference code reproduces the key (code kinds)
     if kind.get("sandbox"):
+        # Comparing runs alone misses randomness when the answer is coarse (an accuracy over 150 rows often comes out
+        # the same twice), so an unseeded generator is rejected by reading the code first.
+        if UNSEEDED.search(d["reference_code"]):
+            rep.step("reference", False, "not reproducible: the reference code creates a random generator with no seed")
+            rep.flags.append("nondeterministic")
+            return d, rep
         runs = int(s.puzzles["sandbox"].get("reproducibility_runs", 2))
         outs = []
         for _ in range(runs):
