@@ -90,9 +90,13 @@ hello-world projects run by hand, governance / image-deps / security checks, liv
       `/app/warehouse`). Set in the deploy `.env`: `COURSE_SECRET` (`openssl rand -hex 32`), `COURSE_OWNER_EMAIL`
       (your email; signing in with it opens `/owner`), `COURSE_PUBLIC_URL`, `RESEND_API_KEY` (shared), and
       `COURSE_MAIL_FROM` (e.g. `Crash course <courses@your-domain>`; falls back to the shared `MAIL_FROM`).
-- [ ] **Real writer model:** `COURSE_WRITER_MODEL=local-qwen` on the EVO-X1. The offline mock writes fill-the-gap
-      Beginner/Intermediate levels, which are fine for testing the flow but are not courses. Draft one with
-      `course build dbt beginner`, read it in the preview, and only then promote.
+- [ ] **AWS Beginner (hand-written, v2):** review and publish it on `/owner` (it replaces the placeholder v1 draft the
+      live site wrote on 14 Oct; reject that one). Then the AWS tracker shows Beginner "In progress".
+- [ ] **Real writer model** (the live site now refuses the mock writer and says so on `/owner`; nothing is drafted
+      until this is set): in the deploy `.env` set `COURSE_WRITER_MODEL=local-qwen` and `COURSE_OLLAMA_MODEL` to a
+      model the shared Ollama has (`qwen3:14b` by default; the shared `OLLAMA_MODEL` is no longer used by this app),
+      `ollama pull` it, `./update.sh --force`, then **Draft now** on `/owner` for each waiting level. Read each draft
+      in the preview before publishing; a mid-size local model may need a second attempt or edits.
 - [ ] Not run: the 16 hello-world projects that need an account, key, server or Docker (Airflow, Anthropic, AWS,
       Bedrock, Caddy, Chart.js, Cloudflare Tunnel, Docker, GitHub Actions, HF Spaces, MetricFlow (illustrative),
       Ollama, OpenAI, Postgres, pgvector, Terraform); Terraform `validate`; Resend in production.

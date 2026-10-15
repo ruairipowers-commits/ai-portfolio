@@ -50,6 +50,25 @@ def alias_for(role_alias: str) -> str:
     return os.getenv(env) if env and os.getenv(env) else role_alias
 
 
+def live() -> bool:
+    """The live service (the deploy image sets COURSE_REQUIRE_SECRETS=1), as opposed to tests and the offline demo."""
+    return os.getenv("COURSE_REQUIRE_SECRETS") == "1"
+
+
+def is_placeholder(alias: str) -> bool:
+    """True when an alias (after its env override) resolves to the offline mock provider. The mock writer fills a
+    level from the source page's own sentences so the flow can be tested; it is not course content."""
+    try:
+        return registry().resolve(alias_for(alias)).provider == "mock"
+    except Exception:  # noqa: BLE001 — an unknown model is reported by the call itself
+        return False
+
+
+def placeholder_writer_blocked(s: Settings) -> bool:
+    """On the live service the mock writer is refused (COURSE_ALLOW_MOCK_WRITER=1 overrides, e.g. for a demo)."""
+    return live() and os.getenv("COURSE_ALLOW_MOCK_WRITER") != "1" and is_placeholder(s["build"]["writer_alias"])
+
+
 def call(conn, s: Settings, action: str, prompt_name: str, alias: str, payload: dict, schema: type[BaseModel],
          budget_usd: float, max_tokens: int, fallback: str | None = None) -> Call:
     system, phash = prompt(prompt_name)
