@@ -3,7 +3,7 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
-import { api, DAY_SHORT, DAYS, Me, Person, PersonIn } from "@/lib/api";
+import { api, DAY_SHORT, DAYS, Me, Person, PersonIn, signOut } from "@/lib/api";
 import { useSettings } from "@/lib/useSettings";
 import { LoopCard, TripsEditor } from "@/components/house";
 import { Button, Chips, ErrorText, Field, NumberField, Pill, Screen, Toggle } from "@/components/ui";
@@ -43,6 +43,7 @@ export default function Welcome() {
           {step >= 3 ? <View style={{ flex: 1 }}><Button kind="ghost" title="Skip for now" onPress={next} /></View> : null}
         </View>
       ) : null}
+      <Escape me={me} onReset={() => { setStep(0); api.me().then(setMe).catch(() => {}); }} />
     </Screen>
   );
 }
@@ -360,5 +361,38 @@ function FirstPlan() {
       <Button kind="ghost" title="Go to the app" onPress={() => router.replace("/")} />
       <ErrorText error={error} />
     </>
+  );
+}
+
+// Ways out at any point: sign out (or sign in as someone else), go back to an existing household, or cancel a
+// household you've only just started (it's deleted, and nobody else has joined it yet).
+function Escape({ me, onReset }: { me: Me | null; onReset: () => void }) {
+  const [confirm, setConfirm] = useState(false);
+  const [error, setError] = useState<unknown>(null);
+  const cur = me?.current;
+  const others = (me?.households ?? []).filter((h) => h.household_id !== cur?.household_id);
+  async function cancelHousehold() {
+    if (!cur) return;
+    if (!confirm) { setConfirm(true); return; }
+    try {
+      await api.deleteHousehold(cur.name);
+      if (others.length) await api.switchHousehold(others[0].household_id);
+      else await api.me();
+      setConfirm(false);
+      onReset();
+    } catch (e) { setError(e); }
+  }
+  return (
+    <View style={[s.card, { gap: 8 }]}>
+      <Text style={s.muted}>Signed in as {me?.user.email ?? "…"}</Text>
+      {cur && cur.role === "admin" ? <Button kind="ghost" title={confirm ? `Tap again to cancel and delete “${cur.name}”`
+        : "Cancel setting up this household"} onPress={cancelHousehold} /> : null}
+      {others.length ? <Button kind="ghost" title={`Go to ${others[0].name} instead`} onPress={async () => {
+        try { await api.switchHousehold(others[0].household_id); router.replace("/"); } catch (e) { setError(e); }
+      }} /> : null}
+      <Button kind="ghost" title="Sign out / use a different email" onPress={async () => {
+        await signOut(); router.replace("/signin"); }} />
+      <ErrorText error={error} />
+    </View>
   );
 }

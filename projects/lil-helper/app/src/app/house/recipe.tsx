@@ -9,7 +9,7 @@ import { takeDraft } from "@/lib/handoff";
 import { Button, Chips, ErrorText, Field, Header, NumberField, Screen } from "@/components/ui";
 import { c, s } from "@/lib/theme";
 
-type Line = { text: string; qty: string; unit: string; hint?: string };
+type Line = { text: string; qty: string; unit: string; hint?: string; id?: string };
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const UNITS = ["", "each", "lb", "oz", "cup", "tbsp", "tsp", "g", "kg", "ml", "can", "slice"];
 const blank: RecipeIn = { name: "", meal: "dinner", serves: 4, active: 20, total: 30, ingredients: [], instructions: [],
@@ -54,8 +54,10 @@ export default function RecipeScreen() {
       setSource(x.source); setAllergens(x.allergens);
       setR({ name: x.name, meal: x.meal, serves, active: x.active, total: x.total, ingredients: [],
         instructions: x.instructions ?? [], tags: x.tags ?? [], season_months: x.season_months ?? [], want: x.want ?? {},
-        kid_min_age: x.kid_min_age ?? 0, notes: x.notes ?? "", credit: x.credit ?? "", url: x.url ?? "" });
-      setLines(x.ingredients.map((i) => ({ text: i.name, qty: String(Math.round(i.per_serving * serves * 100) / 100), unit: i.unit })));
+        kid_min_age: x.kid_min_age ?? 0, notes: x.notes ?? "", credit: x.credit ?? "", url: x.url ?? "",
+        meals: x.meals ?? [x.meal], kcal: x.kcal ?? 0 });
+      setLines(x.ingredients.map((i) => ({ text: i.name, qty: String(Math.round(i.per_serving * serves * 100) / 100), unit: i.unit,
+        id: i.ingredient })));
       setSteps((x.instructions ?? []).join("\n"));
     }).catch(setError);
   }, [id]);
@@ -70,9 +72,9 @@ export default function RecipeScreen() {
       const out = await api.saveRecipe(body, id !== "new" && !copy ? id : undefined);
       setAllergens(out.allergens); setWarning(out.warning);
       if (useFor && !out.warning) {
-        const [day, meal] = useFor.split(":");
-        await api.change(day, meal, out.saved);
-        router.replace("/");
+        const [day, meal, wk] = useFor.split(":");
+        await api.change(day, meal, out.saved, wk || undefined);
+        router.replace("/plan" as never);
         return;
       }
       if (id === "new" || copy) router.replace({ pathname: "/house/recipe", params: { id: out.saved } } as never);
@@ -99,10 +101,13 @@ export default function RecipeScreen() {
         {warning ? <Text style={s.body}>{warning}</Text> : null}</View> : null}
       <View style={s.card}>
         <Field label="Name" value={r.name} editable={editable} onChangeText={(name) => setR({ ...r, name })} />
-        <Chips multi={false} options={["dinner", "lunch", "breakfast"]} value={r.meal} onChange={([meal]) => editable && setR({ ...r, meal })} />
+        <Chips label="Good for" options={["breakfast", "lunch", "dinner"]} value={r.meals?.length ? r.meals : [r.meal]}
+          onChange={(meals) => editable && meals.length && setR({ ...r, meals, meal: meals.includes(r.meal) ? r.meal : meals[0] })} />
         <NumberField label="Makes servings" value={r.serves} min={1} max={40} onChange={(serves) => setR({ ...r, serves })} />
         <NumberField label="Hands-on minutes" step={5} min={1} max={300} value={r.active} onChange={(active) => setR({ ...r, active })} />
         <NumberField label="Total minutes" step={5} min={1} max={1440} value={r.total} onChange={(total) => setR({ ...r, total })} />
+        <NumberField label="Calories per serving (0 = don't know)" step={10} min={0} max={5000} value={r.kcal ?? 0}
+          onChange={(kcal) => setR({ ...r, kcal })} />
       </View>
       <View style={s.card}>
         <Text style={s.h2}>Ingredients</Text>
@@ -117,6 +122,8 @@ export default function RecipeScreen() {
               onChangeText={(text) => setLine(i, { text })} />
             {editable ? <Pressable onPress={() => setLines(lines.filter((_, j) => j !== i))}><Text style={{ color: c.red, fontSize: 18 }}>✕</Text></Pressable> : null}
             {l.hint ? <Text style={[s.muted, { width: "100%" }]}>from: {l.hint}</Text> : null}
+            {l.id ? <Pressable onPress={() => router.push({ pathname: "/house/ingredient", params: { id: l.id! } } as never)}>
+              <Text style={s.muted}>🏷️</Text></Pressable> : null}
           </View>
         ))}
         {editable ? <Button kind="ghost" title="Add an ingredient" onPress={() => setLines([...lines, { text: "", qty: "1", unit: "" }])} /> : null}
@@ -129,7 +136,7 @@ export default function RecipeScreen() {
         </View>
       ) : null}
       <View style={s.card}>
-        <Text style={s.h2}>Steps</Text>
+        <Text style={s.h2}>Cooking steps</Text>
         <TextInput style={[s.input, { minHeight: 120, textAlignVertical: "top" }]} multiline editable={editable}
           placeholder="One step per line" value={steps} onChangeText={setSteps} />
       </View>

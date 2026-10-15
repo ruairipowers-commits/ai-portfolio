@@ -18,8 +18,8 @@ export default function People() {
       <Header title="People" />
       <View style={s.card}>
         {people.map((p) => (
-          <LinkRow key={p.id} icon={p.age_band === "kid" ? "🧒" : "🧑"} title={p.name}
-            sub={[p.role, p.signed_up ? "using the app" : p.invited ? "invited" : "not invited",
+          <LinkRow key={p.id} icon={p.child || p.age_band === "kid" ? "🧒" : p.teen ? "🧑‍🎤" : "🧑"} title={p.name}
+            sub={[p.teen ? "teen" : p.role, p.age_now != null ? `${p.age_now}` : "", p.signed_up ? "using the app" : p.invited ? "invited" : "not invited",
               p.allergies?.length ? `allergic to ${p.allergies.join(", ")}` : ""].filter(Boolean).join(" · ")}
             onPress={() => router.push({ pathname: "/house/person", params: { id: p.id } } as never)} />
         ))}

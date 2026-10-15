@@ -8,6 +8,7 @@ exists, else the fictional example household.
 from __future__ import annotations
 
 import contextlib
+import datetime as dt
 import copy
 import os
 import re
@@ -95,6 +96,9 @@ def work_root() -> Path:
     return demo.current() or ROOT
 
 
+CHILD_UNDER = 12                         # under this age is a child: lighter jobs, kid portions
+
+
 @dataclass
 class Person:
     id: str
@@ -110,24 +114,55 @@ class Person:
     can_cook: bool = False
     email: str | None = None            # adults: where invites and sign-in links go
     admin: bool = False                 # can change the household's settings and invite people
+    birthday: str | None = None         # "2014-03-07", or "03-07" without the year
+    can_approve: bool | None = None     # under-18s can approve the week (spend) only if the admin says so
+
+    @property
+    def current_age(self) -> int | None:
+        """From the birthday when it has a year; otherwise the age entered."""
+        if self.birthday and len(self.birthday) == 10:
+            b = dt.date.fromisoformat(self.birthday)
+            t = dt.date.today()
+            return t.year - b.year - ((t.month, t.day) < (b.month, b.day))
+        return self.age
 
     @property
     def is_kid(self) -> bool:
-        return self.age_band == "kid"
+        """A child is under 12 (from the birthday or age); without either, what the profile says."""
+        a = self.current_age
+        return a < CHILD_UNDER if a is not None else self.age_band == "kid"
+
+    @property
+    def is_teen(self) -> bool:
+        a = self.current_age
+        return a is not None and CHILD_UNDER <= a < 18
 
     @property
     def years(self) -> int:
-        return self.age if self.age is not None else (18 if not self.is_kid else 8)
+        a = self.current_age
+        return a if a is not None else (18 if not self.is_kid else 8)
+
+    @property
+    def may_approve(self) -> bool:
+        """Approving the week leads to spending: adults, and teens the admin allows."""
+        if self.is_kid:
+            return False
+        return bool(self.can_approve) if self.is_teen else self.can_approve is not False
 
     @property
     def role(self) -> str:
-        return "admin" if self.admin and not self.is_kid else ("kid" if self.is_kid else "adult")
+        if self.admin and not self.is_kid and not self.is_teen:
+            return "admin"
+        return "adult" if self.may_approve else "kid"
 
     def label(self, share_names: bool) -> str:
         """What a model sees: never a child's name unless the household opts in (DATA-03)."""
         if share_names:
             return self.name
-        return f"kid ({self.age})" if self.is_kid and self.age else ("kid" if self.is_kid else "adult")
+        a = self.current_age
+        if self.is_kid:
+            return f"kid ({a})" if a else "kid"
+        return f"teen ({a})" if self.is_teen else "adult"
 
 
 @dataclass
@@ -151,10 +186,23 @@ class Household:
     # this week's changes made in the app: who's away (day → person ids), and nights changed to takeout etc.
     away: dict[str, set[str]] = field(default_factory=dict)
     night_overrides: dict[str, str] = field(default_factory=dict)
+    week_of: "dt.date | None" = None        # the week being planned (occasions and birthdays need dates)
 
     @property
     def info(self) -> dict:
         return self.raw["household"]
+
+    def date_of(self, day: str) -> "dt.date | None":
+        return self.week_of + dt.timedelta(days=DAYS.index(day)) if self.week_of and day in DAYS else None
+
+    def occasions(self, day: str) -> list[dict]:
+        from . import occasions
+        d = self.date_of(day)
+        return occasions.on_day(self.raw, self.people, d) if d else []
+
+    def off_duty(self, day: str) -> set[str]:
+        """People with no jobs that day: it's their birthday."""
+        return {pid for o in self.occasions(day) if o["kind"] == "birthday" for pid in o["people"]}
 
     @property
     def meals(self) -> dict:
@@ -176,9 +224,12 @@ class Household:
     def slots(self) -> list[tuple[str, str]]:
         """(day, meal) pairs to plan, in calendar order, excluding nights that aren't cooked and meals nobody's home for."""
         special = self.special_nights()
+        buffet = {m for m, v in (self.raw.get("buffet") or {}).items() if v and v.get("on")}
         out = []
         for day in DAYS:
             for meal in MEALS:
+                if meal in buffet:
+                    continue                               # kept as a buffet: portions on hand, no recipe per day
                 cfg = self.meals.get(meal)
                 if cfg and day in cfg.get("days", []) and not (meal == "dinner" and day in special) \
                         and self.eaters(meal, day):
@@ -310,6 +361,29 @@ def validate_household(raw: dict, s: "Settings") -> None:
     for site in raw.get("recipe_sources") or []:
         if not re.fullmatch(r"[a-z0-9.-]+\.[a-z]{2,}", str(site)):
             raise HouseholdError(f"recipe sources are website names like marthastewart.com, not {site!r}")
+    for i, o in enumerate(raw.get("occasions") or []):
+        d = str(o.get("date", ""))
+        try:
+            ok = bool(re.fullmatch(r"(\d{4}-)?\d{2}-\d{2}", d)) and bool(
+                dt.date.fromisoformat(d if len(d) == 10 else f"2000-{d}"))
+        except ValueError:
+            ok = False
+        if not o.get("name") or not ok:
+            raise HouseholdError(f"occasion {i + 1}: needs a name and a real date (YYYY-MM-DD or MM-DD)")
+        if o.get("kind", "custom") not in ("anniversary", "holiday", "custom", "birthday", "party"):
+            raise HouseholdError(f"occasion {o['name']}: kind is anniversary, party, holiday or custom")
+        for who in o.get("people") or []:
+            if who not in raw["people"]:
+                raise HouseholdError(f"occasion {o['name']}: unknown person {who!r}")
+    for iid, pref in (raw.get("ingredient_prefs") or {}).items():
+        if not isinstance(pref, dict) or (pref.get("store") and pref["store"] not in (raw.get("stores") or [])):
+            raise HouseholdError(f"{iid}: the store for this item must be one of your stores")
+        if pref.get("price") is not None and not 0 < float(pref["price"]) <= 1000:
+            raise HouseholdError(f"{iid}: price must be between 0 and 1000")
+    from .occasions import HOLIDAYS
+    for hid in raw.get("holidays_off") or []:
+        if hid not in HOLIDAYS:
+            raise HouseholdError(f"unknown holiday {hid!r}")
     tz = raw["household"].get("timezone")
     if tz is not None:
         from zoneinfo import ZoneInfo
@@ -335,8 +409,19 @@ def validate_household(raw: dict, s: "Settings") -> None:
             raise HouseholdError(f"{pid}: home days must be mon..sun")
         if p.get("email") and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", p["email"]):
             raise HouseholdError(f"{pid}: that email doesn't look right")
-        if p.get("admin") and p.get("age_band") == "kid":
-            raise HouseholdError(f"{pid}: a child can't be the household admin")
+        bday = p.get("birthday")
+        if bday is not None:
+            if not re.fullmatch(r"(\d{4}-)?\d{2}-\d{2}", str(bday)):
+                raise HouseholdError(f"{pid}: birthday as YYYY-MM-DD (or MM-DD)")
+            try:
+                dt.date.fromisoformat(str(bday) if len(str(bday)) == 10 else f"2000-{bday}")
+            except ValueError:
+                raise HouseholdError(f"{pid}: that birthday isn't a real date")
+            if len(str(bday)) == 10 and dt.date.fromisoformat(str(bday)) > dt.date.today():
+                raise HouseholdError(f"{pid}: a birthday can't be in the future")
+        person = Person(id=pid, **{k: v for k, v in p.items() if k in Person.__dataclass_fields__})
+        if p.get("admin") and (person.is_kid or person.is_teen):
+            raise HouseholdError(f"{pid}: the household admin needs to be an adult")
         if pat.search(str(p.get("name", ""))):
             raise HouseholdError(f"{pid}: that name looks like a card number")
     if not any(p.get("admin") for p in raw["people"].values()) and raw.get("require_admin", False):

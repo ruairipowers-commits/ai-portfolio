@@ -176,3 +176,209 @@ def test_calendar_shopping_events_carry_the_whole_list_and_open_the_app(server):
     page = c.get("/open/week", params={"day": "tue"})
     assert page.status_code == 200 and "lilhelper://week?day=tue" in page.text
     assert c.get("/open/evil").status_code == 404
+
+
+def test_birthdays_teens_and_occasions(server, monkeypatch):
+    import datetime as dt
+    c = server.client
+    H, _ = server.household()
+    today = dt.date.today()
+    teen_bday = today.replace(year=today.year - 14).isoformat()
+    kid_bday = f"{today.year - 9}-10-21"            # a Wednesday in the plan week below when the year lines up
+    assert c.post("/api/household/people", headers=H, json={"name": "Leo", "birthday": kid_bday}).status_code == 200
+    assert c.post("/api/household/people", headers=H, json={"name": "Mia", "birthday": teen_bday, "can_cook": True}).status_code == 200
+    ppl = {p["id"]: p for p in c.get("/api/household/people", headers=H).json()["people"]}
+    assert ppl["leo"]["child"] and ppl["leo"]["age_band"] == "kid"
+    assert ppl["mia"]["teen"] and not ppl["mia"]["child"] and ppl["mia"]["role"] == "kid"      # can't approve by default
+    assert c.post("/api/household/people", headers=H, json={"name": "Bad", "birthday": "2050-01-01"}).status_code == 422
+    assert c.post("/api/household/people", headers=H, json={"name": "Kidmin", "birthday": kid_bday, "admin": True}).status_code == 422
+    # the birthday person's favourite on their birthday, and no jobs for them
+    c.put("/api/household/people/leo", headers=H, json={"name": "Leo", "birthday": kid_bday, "likes": ["chicken_tacos"]})
+    c.patch("/api/household/settings/occasions", headers=H,
+            json={"value": [{"name": "Our anniversary", "date": "10-23", "kind": "anniversary", "tags": ["special"]}]})
+    w = c.post("/api/week/draft", headers=H, json={"week": "2026-10-19"}).json()
+    occ = w["occasions"]
+    assert any(o["kind"] == "anniversary" for o in occ.get("fri", []))
+    wed_bday = [o for o in occ.get("wed", []) if o["kind"] == "birthday"]
+    assert wed_bday and wed_bday[0]["people"] == ["leo"]
+    wed = next(e for e in w["plan"]["entries"] if e["day"] == "wed" and e["meal"] == "dinner")
+    assert wed["recipe"] == "chicken_tacos" and "birthday favourite" in wed["why"]
+    assert not any(j["day"] == "wed" and j["person"] == "leo" for j in w["chores"])
+    up = c.get("/api/occasions", headers=H, params={"days": 366}).json()
+    assert any(u["name"] == "Thanksgiving" for u in up["upcoming"])
+    assert c.patch("/api/household/settings/occasions", headers=H, json={"value": [{"name": "x", "date": "13-45"}]}).status_code == 422
+
+
+def test_holiday_dates():
+    import datetime as dt
+    from lilhelper import occasions
+    assert occasions.holiday_date("thanksgiving", 2026) == dt.date(2026, 11, 26)
+    assert occasions.holiday_date("easter", 2026) == dt.date(2026, 4, 5)
+    assert occasions.holiday_date("mothers_day", 2026) == dt.date(2026, 5, 10)
+    assert occasions.holiday_date("memorial_day", 2026) == dt.date(2026, 5, 25)
+    assert occasions.yearly_on("2016-02-29", dt.date(2027, 2, 28))
+
+
+def test_my_brand_store_and_price_for_an_item(server):
+    c = server.client
+    H, _ = server.household()
+    d = c.get("/api/ingredients/broccoli", headers=H).json()
+    assert d["book_prices"] and d["mine"] is None and "Garlic chicken, broccoli and rice" in d["used_in"]
+    assert c.put("/api/ingredients/broccoli/pref", headers=H, json={"price": 1.0}).status_code == 422
+    r = c.put("/api/ingredients/broccoli/pref", headers=H,
+              json={"brand": "Farm stand", "store": "trader_joes", "price": 1.25, "pack": 1})
+    assert r.status_code == 200, r.text
+    c.post("/api/week/draft", headers=H, json={"week": W})
+    c.post("/api/week/change", headers=H, json={"week": W, "day": "tue", "recipe": "chicken_broccoli_rice"})
+    c.post("/api/week/approve", headers=H, json={"week": W, "seconds": 5})
+    shop = c.get("/api/week/shopping", headers=H, params={"week": W}).json()["orders"]
+    lines = [(o["store"], ln) for o in shop for ln in o["lines"] if ln["name"] == "broccoli"]
+    assert lines and all(st == "Trader Joe's" and ln["brand"] == "Farm stand" and ln["price"] == 1.25 for st, ln in lines)
+    assert c.delete("/api/ingredients/broccoli/pref", headers=H).status_code == 200
+
+
+def test_a_meal_with_parts(server):
+    c = server.client
+    H, _ = server.household()
+    for n in ("Lili", "Son", "Kid"):
+        c.post("/api/household/people", headers=H, json={"name": n, "can_cook": True})
+    w = c.post("/api/week/draft", headers=H, json={"week": W}).json()
+    tue = _dinner(w, "tue")
+    full = tue["servings"]
+    w = c.post("/api/week/parts", headers=H, json={"week": W, "day": "tue", "parts": [
+        {"kind": "leftovers", "eaters": ["son"], "food": "Monday's pasta"},
+        {"kind": "cook", "recipe": "quesadillas", "eaters": ["kid"]}]}).json()
+    tue = _dinner(w, "tue")
+    assert "son" not in tue["eaters"] and "kid" not in tue["eaters"] and tue["servings"] < full
+    kinds = {p["kind"]: p for p in tue["parts"]}
+    assert kinds["leftovers"]["name"] == "Monday's pasta" and kinds["cook"]["name"] == "Bean and cheese quesadillas"
+    c.post("/api/week/approve", headers=H, json={"week": W, "seconds": 5})
+    shop = c.get("/api/week/shopping", headers=H, params={"week": W}).json()["orders"]
+    names = {ln["name"] for o in shop for ln in o["lines"]}
+    assert "flour tortillas" in names or any("tortilla" in n for n in names)     # the quesadillas are shopped for
+    assert c.post("/api/week/parts", headers=H, json={"week": W, "day": "tue", "parts": [{"kind": "dance"}]}).status_code == 422
+
+
+def test_vibe_occasion_surprise_buffet_and_plan_ahead(server):
+    c = server.client
+    H, _ = server.household()
+    c.post("/api/household/people", headers=H, json={"name": "John", "likes": ["veggie_pizza"]})
+    v = c.post("/api/vibe", headers=H, json={"minutes": 30, "moods": ["quick", "veggie"]}).json()
+    assert v["ideas"] and all(i["total"] <= 30 for i in v["ideas"])
+    assert all("vegetarian" in i["why"] for i in v["ideas"])
+    order = c.post("/api/vibe/order", headers=H, json={"recipe": v["ideas"][0]["recipe"], "servings": 2}).json()
+    assert order["orders"] or order.get("note")
+    occ = c.post("/api/occasions/ideas", headers=H, json={"people": ["john"], "tags": ["party"], "guests": 6}).json()
+    assert occ["ideas"][0]["recipe"] == "veggie_pizza" and "John's favourite" in occ["ideas"][0]["why"]
+    assert occ["servings"] >= 8
+    r = c.post("/api/occasions", headers=H, json={"name": "Soccer pizza party", "date": "2026-10-24", "kind": "party",
+                                                  "recipe": "veggie_pizza", "guests": 6})
+    assert r.status_code == 200, r.text
+    w = c.post("/api/week/draft", headers=H, json={"week": W}).json()
+    sat = _dinner(w, "sat")
+    assert sat["recipe"] == "veggie_pizza" and "+6 guests" in sat["why"]
+    assert any(o["name"] == "Soccer pizza party" for o in w["occasions"]["sat"])
+    s1 = c.get("/api/surprise", headers=H, params={"seed": 1}).json()
+    assert s1["recipe"] and s1["steps"]
+    # breakfast as a buffet: 10 portions of overnight oats, 4 left → cook 6, and no daily breakfast recipes
+    c.patch("/api/household/settings/meals", headers=H, json={"value": {
+        "dinner": {"days": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"], "eaters": "all"},
+        "breakfast": {"days": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"], "eaters": "all"}, "special_nights": {}}})
+    b = c.put("/api/buffet", headers=H, json={"meal": "breakfast", "items": [{"recipe": "apple_cinnamon_oats", "target": 10}]}).json()
+    assert b["items"][0]["cook"] == 10
+    b = c.post("/api/buffet/count", headers=H, json={"meal": "breakfast", "recipe": "apple_cinnamon_oats", "on_hand": 4}).json()
+    assert b["items"][0]["cook"] == 6
+    w = c.post("/api/week/draft", headers=H, json={"week": W}).json()
+    assert not any(e["meal"] == "breakfast" for e in w["plan"]["entries"])
+    assert w["plan"]["buffet"][0]["cook"] == 6
+    ahead = c.post("/api/plan/ahead", headers=H, json={"weeks": 3, "start": W}).json()["weeks"]
+    assert len(ahead) == 3 and all(x["dinners"] for x in ahead)
+
+
+def test_today_and_activity_report(server, monkeypatch):
+    import datetime as dt
+    from lilhelper import api
+    c = server.client
+    H, _ = server.household()
+    c.post("/api/week/draft", headers=H, json={"week": W})
+    c.post("/api/week/approve", headers=H, json={"week": W, "seconds": 5})
+    monkeypatch.setattr(api.week, "today_in", lambda h: dt.date(2026, 10, 21))
+    t = c.get("/api/today", headers=H).json()
+    assert t["day"] == "wed" and t["meals"] and t["meals"][-1]["meal"] == "dinner"
+    assert any(x["kind"] == "confirm" for x in t["tasks"])          # Monday and Tuesday are waiting for an answer
+    assert t["my_jobs"]                                              # the only person cooks
+    r = c.get("/api/reports/activity", headers=H, params={"end": W, "weeks": 1}).json()
+    assert r["weeks"][0]["cooking_minutes"] > 0 and r["kcal"] and r["chores"][0]["total"] >= 7
+
+
+def test_bulk_workbook_round_trip(server):
+    import io
+    from openpyxl import load_workbook
+    c = server.client
+    H, _ = server.household()
+    r = c.get("/api/bulk/export", headers=H)
+    assert r.status_code == 200 and r.content[:2] == b"PK"
+    wb = load_workbook(io.BytesIO(r.content))
+    assert {"People", "Recipes", "Recipe ingredients", "Ingredients", "Freezer", "Occasions"} <= set(wb.sheetnames)
+    wb["People"].append(["", "Nana", "1950-05-04", "", "", "dairy", "", 0.8, "sun", "", "", "", "", "", ""])
+    wb["Occasions"].append(["", "Nana's visit", "2026-10-25", "party", "nana", "", 4, "festive", "", ""])
+    wb["Recipes"].append(["", "Nana's chicken soup", "household", "dinner, lunch", 4, 20, 60, 380, 10, "one_pot", "10, 11, 12",
+                          2, "Nana", "", "Simmer the chicken.\nAdd the vegetables.", ""])
+    for row in (["Nana's chicken soup", "chicken thighs", 1.5, "lb"], ["Nana's chicken soup", "carrots", 0.5, "lb"],
+                ["Nana's chicken soup", "chicken broth", 4, "cup"]):
+        wb["Recipe ingredients"].append(row)
+    ing = wb["Ingredients"]
+    for row in ing.iter_rows(min_row=2):
+        if row[0].value == "broccoli":
+            row[6].value, row[7].value, row[8].value, row[9].value = "Farm stand", "trader_joes", 1.5, 1
+    wb["Freezer"].append(["", "Lasagna", "", 6, "2026-10-01", "2026-12-01", ""])
+    wb["Recipes"].append(["", "Mystery stew", "household", "dinner", 4, 20, 60, "", "", "", "", "", "", "", "", ""])
+    wb["Recipe ingredients"].append(["Mystery stew", "unobtainium", 1, "each"])
+    buf = io.BytesIO()
+    wb.save(buf)
+    p = c.post("/api/bulk/import", headers=H, files={"file": ("h.xlsx", buf.getvalue())}).json()
+    assert "Nana" in p["changes"]["People"]["add"] and "Nana's chicken soup" in p["changes"]["Recipes"]["add"]
+    assert "broccoli" in p["changes"]["Ingredients"]["add"] and "Lasagna" in p["changes"]["Freezer"]["add"]
+    assert any("unobtainium" in x for x in p["problems"])
+    assert c.get("/api/household/people", headers=H).json()["people"].__len__() == 1      # nothing saved yet
+    done = c.post("/api/bulk/import/confirm", headers=H, json={"token": p["token"]}).json()
+    assert done["applied"] and done["recipes"] == 1
+    ppl = {x["name"]: x for x in c.get("/api/household/people", headers=H).json()["people"]}
+    assert ppl["Nana"]["birthday"] == "1950-05-04" and ppl["Nana"]["allergies"] == ["dairy"]
+    mine = c.get("/api/recipes", headers=H, params={"mine": True}).json()["recipes"]
+    soup = next(x for x in mine if x["name"] == "Nana's chicken soup")
+    assert soup["meals"] == ["dinner", "lunch"] and soup["kcal"] == 380 and soup["kid_min_age"] == 10
+    assert any(m["name"] == "Lasagna" for m in c.get("/api/storage", headers=H).json()["freezer_meals"])
+    # an adult who isn't the admin can't
+    assert c.post("/api/bulk/import/confirm", headers=H, json={"token": p["token"]}).status_code == 404
+
+
+def test_voice_commands(server, monkeypatch):
+    import datetime as dt
+    from lilhelper import api
+    c = server.client
+    H, _ = server.household()
+    c.post("/api/week/draft", headers=H, json={"week": W})
+    c.post("/api/week/approve", headers=H, json={"week": W, "seconds": 5})
+    monkeypatch.setattr(api.week, "today_in", lambda h: dt.date(2026, 10, 21))
+    say = lambda t: c.post("/api/voice", headers=H, json={"text": t}).json()   # noqa: E731
+    r = say("What's for dinner tonight?")
+    assert r["intent"] == "whats_for" and "Dinner today is" in r["say"] and r["screen"] == "week"
+    assert "things from" in say("what's on the shopping list")["say"]
+    r = say("I have half a chicken, rice and half a bag of broccoli")
+    assert r["intent"] == "cook_with" and "Garlic chicken, broccoli and rice" in r["say"]
+    assert say("dinner was all gone")["say"].startswith("Thanks")
+    assert say("rate dinner five stars")["intent"] == "rate"
+    assert say("surprise me")["say"].startswith("How about")
+    assert say("I've got 20 minutes and want something quick")["intent"] == "vibe"
+    assert "didn't catch" in say("sing me a song")["say"]
+
+
+def test_bulk_download_link(server):
+    c = server.client
+    H, _ = server.household()
+    url = c.post("/api/bulk/link", headers=H).json()["url"]
+    path = url.split("localhost:8650", 1)[-1] if "localhost:8650" in url else "/" + url.split("/", 3)[3]
+    r = c.get(path)
+    assert r.status_code == 200 and r.content[:2] == b"PK"
+    assert c.get(path.replace("/bulk/", "/bulk/x")).status_code == 401

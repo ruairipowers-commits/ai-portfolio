@@ -127,6 +127,8 @@ cd projects/lil-helper && docker build -t lil-helper . && docker rm -f lil-helpe
 # …then the same `docker run -d …` as A3, and `docker network connect "$NET" lil-helper` again.
 ```
 
+**Alexa (optional):** follow [alexa.md](alexa.md) once; it adds `HELPER_ALEXA_SKILL_ID` to `.env`.
+
 Back up: `docker run --rm -v lilhelper-data:/d -v ~/lil-helper-home:/b alpine tar czf /b/lilhelper-$(date +%F).tgz -C /d .`
 
 ---
@@ -149,7 +151,9 @@ npm install
 `npx expo start --web` opens the app in a browser; `npx expo start` and scan the QR code with Expo Go on the iPhone.
 On the sign-in screen, tap **Use my own server** and enter `https://helper.agentls.com`. In Expo Go the emailed link
 can't open the app directly: long-press it, **Copy**, and paste it into **Opened the email on another device?**.
-Push notifications only work in the real build (B5).
+Push notifications and the microphone only work in the real build (B5); in Expo Go, use the microphone on the
+iPhone keyboard instead. A version that adds a native module (v4 added speech recognition) needs a new build (B5–B7),
+not just a reload.
 
 ### B3. Link the project to Expo
 
@@ -210,7 +214,12 @@ installs **TestFlight**, opens the invite → **Accept** → **Install**.
 taps **join the household** in the email (or signs in with that email): she lands straight in the household as an
 adult. She does step 9 for her own phone; her calendar shows her dinners, her jobs and the trips she's on.
 
-Everything in the wizard is under **Home** later. Only the admin changes settings and people; any adult can plan,
+**Then:** add everyone's birthday in **More → People** (it decides child or adult, gives teens adult portions, takes
+birthday people off jobs, and puts birthdays in **Special occasions**). To enter a lot at once — recipes, what's in
+the freezer, the brands you buy — use **More → Import and export**: download the workbook, fill it in, upload it,
+check the preview, confirm.
+
+Everything in the wizard is under **More** later. Only the admin changes settings and people; any adult can plan,
 swap, change a night, add specials and recipes, approve and record spending.
 
 ---
@@ -224,7 +233,9 @@ swap, change a night, add specials and recipes, approve and record spending.
 | No sign-in email | `docker exec lil-helper helper mail-test you@example.com` sends a test and prints exactly what happened. `refused (403)… not verified`: the sender in `HELPER_MAIL_FROM` must be on a domain verified in Resend (resend.com → Domains). `RESEND_API_KEY not set`: add it to `.env` and re-create the container. Also check spam, and that you haven't asked more than 5 times in an hour |
 | "A sign-up code is needed" | Use a code from `HELPER_SIGNUP_CODES`, or ask the admin to invite you |
 | Invite link says "expired" or "for a different email" | Invites last 14 days and only work for the invited address; the admin sends it again from **People** |
-| No notifications | **Home → Calendar and notifications** shows the state; iPhone **Settings → Lil'Helper → Notifications**; `HELPER_PUSH=expo` on the server; the build had push set up (B5) |
+| No notifications | **More → Calendar and notifications** shows the state; iPhone **Settings → Lil'Helper → Notifications**; `HELPER_PUSH=expo` on the server; the build had push set up (B5) |
 | Calendar not updating | Apple refreshes subscribed calendars about hourly, Google every few hours. **Make a new private link** if a link was shared by mistake |
 | Container keeps restarting | `docker logs lil-helper` — usually a missing `HELPER_SECRET` |
+| Microphone button missing | It only shows where speech recognition is available: the TestFlight/App Store build (not Expo Go), or Chrome/Safari on the web. iPhone **Settings → Lil'Helper**: Microphone and Speech Recognition on |
+| Alexa says "link Lil'Helper first" | **More → Alexa → Get a code**, then enable the skill in the Alexa app and type the code (ten minutes, once). Each person links their own |
 | Weekly email not arriving | The email day and time in settings, and `docker logs lil-helper` |

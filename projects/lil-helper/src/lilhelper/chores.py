@@ -53,8 +53,9 @@ def rota(h: Household, cooked_nights: list[str], past_load: dict[str, int] | Non
             continue
         days = DAYS if spec.get("per") == "day" else cooked_nights
         for d in days:
-            gone = h.away.get(d, set())
+            gone = h.away.get(d, set()) | h.off_duty(d)          # nobody has jobs on their birthday
             chef = h.kid_chef().get(d) if d in cooked_nights else None
+            chef = None if chef in gone else chef
             if job == "cook":
                 ok = [p for p in people if p.id not in gone and (eligible(p, job, spec, d) or p.id == chef)]
                 if chef and chef in [p.id for p in ok]:
@@ -82,7 +83,10 @@ def rota(h: Household, cooked_nights: list[str], past_load: dict[str, int] | Non
         if other:
             for (j, d, pid), v in a.items():
                 if j == job and (other, d, pid) in a:
-                    m.Add(v + a[(other, d, pid)] <= 1)
+                    # only when someone else could do one of them that night (a household of one does both)
+                    others = {p for (jj, dd, p) in a if dd == d and jj in (job, other)} - {pid}
+                    if others:
+                        m.Add(v + a[(other, d, pid)] <= 1)
     # kids carry a lighter share: load is divided by capacity (adults 2, kids 1) before it's compared
     for job, spec in jobs.items():
         cap = spec.get("kid_max_per_week")

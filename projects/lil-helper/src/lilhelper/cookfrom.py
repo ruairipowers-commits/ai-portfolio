@@ -87,7 +87,7 @@ def plain(phrase: str) -> str:
 
 
 def _usual_amount(c: Catalog, iid: str, meal: str) -> float | None:
-    qs = sorted(r.ing[iid] for r in c.recipes.values() if iid in r.ing and r.meal == meal)
+    qs = sorted(r.ing[iid] for r in c.recipes.values() if iid in r.ing and r.suits(meal))
     return qs[len(qs) // 2] if qs else None
 
 
@@ -156,7 +156,7 @@ def suggest(h: Household, c: Catalog, pb: PriceBook, *, text: str = "", use_pant
     servings = round(sum(p.portion for p in eaters), 2)
     ideas: list[Idea] = []
     for r in c.recipes.values():
-        if r.meal != meal or r.active > limit:
+        if not r.suits(meal) or r.active > limit:
             continue
         used = [phrase for phrase, ids in groups if ids & set(r.ing)]
         if groups and not used:
@@ -188,7 +188,7 @@ def suggest(h: Household, c: Catalog, pb: PriceBook, *, text: str = "", use_pant
             why.append("everything's in the house")
         if likes:
             why.append("a favourite")
-        ideas.append(Idea(r.id, r.name, r.meal, got, miss, round(missing_cost, 2), round(coverage, 2), used_soon,
+        ideas.append(Idea(r.id, r.name, meal, got, miss, round(missing_cost, 2), round(coverage, 2), used_soon,
                           r.active, r.total, servings, round(score, 2), list(r.instructions), why, used,
                           credit=r.credit or ("Lil'Helper" if r.source == "book" else "")))
     ideas.sort(key=lambda i: (-i.score, i.missing_cost, i.name))

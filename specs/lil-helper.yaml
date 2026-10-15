@@ -170,6 +170,15 @@ decisions:                       # answered by Ruairi, 5 October 2026
   - 'Sign-up: invite codes now, many households; open App Store sign-up with subscriptions at production release'
   - 'Hosting: public behind sign-in via Cloudflare now; a cloud-hosted service for the production release'
   - 'Work in progress may be pushed to feature branches; merging to main needs Ruairi''s OK'
+  # answered by Ruairi, 15 October 2026 (v4)
+  - 'v4 features: birthdays and child (under 12) / adult on profiles, special occasions (birthdays, holidays,
+    anniversaries, own), no jobs on your birthday, breakfast/lunch/dinner recipes with steps and calories, own brand /
+    store / price per ingredient, meals with several parts, a Today home screen, Make a plan / Vibe cooking / Special
+    occasions / Weekly buffet / Surprise me, reports (cost, time, calories, jobs), voice in the app, an Alexa skill'
+  - 'Bulk import/export: one Excel workbook, admins only, preview before saving'
+  - 'Teens (12-17): adult portions, not admin, approve spending only if the admin allows'
+  - 'Alexa: build the skill backend here (verified endpoint, account linking by app code); Ruairi creates the skill
+    in the Amazon developer console from docs/alexa.md'
 
 demo:
   title: Lil'Helper

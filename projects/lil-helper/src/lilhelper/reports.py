@@ -182,3 +182,50 @@ def analyse(h: Household, c: Catalog, rows: list[dict], meals: list[dict]) -> li
     if share_out > 0.25:
         out.append(f"Nights out were {share_out:.0%} of food spending.")
     return out
+
+
+def activity_report(h: Household, c: Catalog, *, end: dt.date, weeks: int = 8) -> dict:
+    """Time, calories and chores over the last weeks (from the plans; calories are estimates per serving)."""
+    con = store.connect()
+    recs = _weeks(con, end, weeks)
+    con.close()
+    names = {p.id: p.name for p in h.people.values()}
+    out_weeks, chores_tot, kcal_tot = [], {}, {}
+    for wk, rec in recs:
+        plan = rec.get("plan") or {}
+        cook_min = 0
+        kcal: dict[str, float] = {}
+        days_eaten: dict[str, set] = {}
+        for e in plan.get("entries", []):
+            if e.get("kind", "cook") == "cook":
+                cook_min += int(e.get("active") or 0)
+                cook_min += sum(c.recipes[p["recipe"]].active for p in e.get("parts") or []
+                                if p.get("kind") == "cook" and p.get("recipe") in c.recipes)
+            r = c.recipes.get(e["recipe"])
+            per = (r.kcal if r else 0) or 0
+            for pid in e.get("eaters") or []:
+                if pid in h.people and per:
+                    kcal[pid] = kcal.get(pid, 0) + per * h.people[pid].portion
+                    days_eaten.setdefault(pid, set()).add(e["day"])
+        choice = rec.get("shopping_choice") or "balanced"
+        shop_min = ((rec.get("split") or {}).get(choice) or {}).get("minutes", 0)
+        jobs: dict[str, dict[str, int]] = {}
+        for a in rec.get("chores") or []:
+            jobs.setdefault(a["person"], {}).setdefault(a["job"], 0)
+            jobs[a["person"]][a["job"]] += 1
+            chores_tot.setdefault(a["person"], {}).setdefault(a["job"], 0)
+            chores_tot[a["person"]][a["job"]] += 1
+        for pid, v in kcal.items():
+            kcal_tot.setdefault(pid, []).append(v / max(1, len(days_eaten.get(pid, ())) or 1))
+        out_weeks.append({"week_of": wk.isoformat(), "cooking_minutes": cook_min, "shopping_minutes": shop_min,
+                          "planning_minutes": round(((rec.get("savings") or {}).get("planning_after") or 0), 1),
+                          "kcal_per_day": {names.get(p, p): round(v / max(1, len(days_eaten.get(p, ()))))
+                                           for p, v in kcal.items()},
+                          "chores": {names.get(p, p): j for p, j in jobs.items()}})
+    return {"weeks": out_weeks,
+            "chores": [{"person": names.get(p, p), "jobs": j, "total": sum(j.values())} for p, j in chores_tot.items()],
+            "kcal": [{"person": names.get(p, p), "avg_per_day_planned": round(sum(v) / len(v))} for p, v in kcal_tot.items()],
+            "minutes": {"cooking": sum(w["cooking_minutes"] for w in out_weeks),
+                        "shopping": sum(w["shopping_minutes"] for w in out_weeks)},
+            "note": "Calories are estimates per serving from the recipe book, counted for the meals each person was "
+                    "planned to eat (only meals Lil'Helper plans). Not dietary advice."}

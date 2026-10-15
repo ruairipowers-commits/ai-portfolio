@@ -45,6 +45,7 @@ class Entry:
     kind: str = "cook"                   # cook | leftovers (a lunch from last night's dinner) | freezer
     cook: str | None = None              # a kid chef's id on their night
     to_freeze: float = 0.0               # extra portions cooked to freeze for a later night
+    parts: list = field(default_factory=list)   # more to this meal: a second recipe, leftovers or ready food for some
 
     @property
     def per_serving(self) -> float:
@@ -63,6 +64,7 @@ class Plan:
     rejected: dict[str, list[str]]       # recipe → why it couldn't be used this week
     health: dict[str, float]
     unmet: list[str] = field(default_factory=list)
+    buffet: list = field(default_factory=list)          # weekly buffet restock: [{meal, recipe, name, cook, ...}]
 
     def at(self, day: str, meal: str) -> Entry | None:
         return next((e for e in self.entries if e.day == day and e.meal == meal), None)
@@ -71,7 +73,8 @@ class Plan:
         return {"week_of": self.week_of.isoformat(), "status": self.status, "flags": self.flags,
                 "est_food_cost": self.est_food_cost, "special_nights": self.special_nights,
                 "entries": [{**e.__dict__, "per_serving": e.per_serving} for e in self.entries],
-                "health": self.health, "unmet": self.unmet, "rejected": self.rejected, "solve_ms": self.solve_ms}
+                "health": self.health, "unmet": self.unmet, "rejected": self.rejected, "solve_ms": self.solve_ms,
+                "buffet": self.buffet}
 
 
 def servings_for(h: Household, meal: str, recipe: str, portions: dict[str, float], day: str | None = None) -> float:
@@ -107,6 +110,13 @@ def candidates(h: Household, c: Catalog, pb: PriceBook, extra: list[Recipe], his
     rejected: dict[str, list[str]] = {}
     notes: list[str] = []
     pool = list(c.recipes.values()) + [r for r in extra if r.id not in c.recipes]
+    if not (h.raw.get("use_book") or {}).get("recipes", True):
+        own = [r for r in pool if r.source != "book"]
+        if len({r.id for r in own if r.meal == "dinner"}) >= 3:
+            pool = own                                     # the household plans from its own recipes only
+        else:
+            notes.append("Lil'Helper's recipes are off, but you have fewer than 3 dinners of your own, so they were "
+                         "used this week")
     no_repeat = int(h.raw.get("health", {}).get("no_repeat_days", 0))
     batch_day = h.raw.get("batch_day")
     kid_chef = h.kid_chef()
@@ -122,7 +132,11 @@ def candidates(h: Household, c: Catalog, pb: PriceBook, extra: list[Recipe], his
         too_dear = []
         repeats = []                                       # blocked only by the no-repeat rule (kid chef fallback)
         for r in pool:
-            if r.meal != meal:
+            if not r.suits(meal):
+                continue
+            lunchbox = meal == "lunch" and (h.meals.get("lunch") or {}).get("label") == "lunchbox"
+            if lunchbox and r.meal != "lunch" and not r.has("lunchbox"):
+                continue                                   # a lunchbox needs something made for lunch, packed cold
                 continue
             v = safety.recipe_for(c, r, eaters, house)
             if not v.ok:
@@ -183,6 +197,9 @@ def candidates(h: Household, c: Catalog, pb: PriceBook, extra: list[Recipe], his
     return out, rejected, notes
 
 
+MAX_PER_SLOT = 24
+
+
 def plan_week(h: Household, c: Catalog, pb: PriceBook, s: Settings, *, extra: list[Recipe] | None = None,
               history: dict[str, dt.date] | None = None, portions: dict[str, float] | None = None,
               locks: dict[tuple[str, str], str] | None = None, bans: dict[tuple[str, str], list[str]] | None = None,
@@ -202,6 +219,11 @@ def plan_week(h: Household, c: Catalog, pb: PriceBook, s: Settings, *, extra: li
     pool = {r.id: r for r in list(extra)}
     rec = lambda rid: c.recipes.get(rid) or pool[rid]
 
+    occ: dict[tuple[str, str], list[dict]] = {}
+    for day in DAYS:
+        for o in h.occasions(day):
+            occ.setdefault((day, o.get("meal") or "dinner"), []).append(o)
+
     def build(hard_health: bool, cap_cents: int | None):
         m = cp_model.CpModel()
         x: dict[tuple[str, str, str], cp_model.IntVar] = {}
@@ -211,6 +233,15 @@ def plan_week(h: Household, c: Catalog, pb: PriceBook, s: Settings, *, extra: li
             rs = [r for r in rs if r.id not in bans.get((day, meal), [])]
             if (day, meal) in locks:
                 rs = [r for r in rs if r.id == locks[(day, meal)]] or rs
+            elif len(rs) > MAX_PER_SLOT:
+                # keep the solver quick: the slot's own-meal recipes, favourites and the household's own come first
+                fans = {rid for p in h.people.values() for rid in p.likes}
+                def keep(r):
+                    ins, outs = c.season_score(r, month)
+                    serv = servings_for(h, meal, r.id, portions, day) or 1
+                    return (r.meal != meal, r.id not in fans and r.source != "household",
+                            -ins + outs, round(est_cost(r, serv, pb) / serv, 1), r.id)
+                rs = sorted(rs, key=keep)[:MAX_PER_SLOT]
             if not rs:
                 return None
             vs = []
@@ -242,6 +273,8 @@ def plan_week(h: Household, c: Catalog, pb: PriceBook, s: Settings, *, extra: li
                 kids = sum(1 for p in eaters if p.is_kid)
                 if r.has("kid_friendly") and kids:
                     score += w.get("kid_friendly", -1.0) * kids
+                if r.meal != meal:
+                    score += w.get("other_meal", 2.0)       # a dinner recipe at lunch: only when it earns its place
                 if r.source == "suggested":
                     score += w["new_suggestion"]
                     why.append("new idea")
@@ -260,6 +293,15 @@ def plan_week(h: Household, c: Catalog, pb: PriceBook, s: Settings, *, extra: li
                 if meal == "dinner" and day in feeds_lunch and r.has("leftovers") and h.leftover_eaters():
                     score += w.get("leftovers_for_lunch", -1.0)
                     why.append("reheats well for tomorrow's lunch")
+                for o in occ.get((day, meal), []):
+                    fans = [pid for pid in o["people"] if pid in h.people and r.id in h.people[pid].likes]
+                    tagged = [t for t in o["tags"] if r.has(t)]
+                    if fans:
+                        score += w.get("occasion_favourite", -8.0) * len(fans)
+                        why.append("birthday favourite" if o["kind"] == "birthday" else "their favourite")
+                    elif tagged:
+                        score += w.get("occasion_tag", -3.0) * len(tagged)
+                        why.append(f"for {o['name']}" if o["kind"] == "holiday" else "for the occasion")
                 if lo is not None and serv and cost / serv < lo:
                     score += w.get("under_cost_min", 1.0) * (lo - cost / serv) * serv
                 info[(day, meal, r.id)] = (serv, cost, why)

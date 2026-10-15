@@ -27,7 +27,7 @@ export default function PersonScreen() {
 
   useEffect(() => {
     api.settings().then((v) => setCat(v.catalogs)).catch(() => {});
-    api.recipes({ meal: "dinner" }).then((r) => setRecipes(r.recipes)).catch(() => {});
+    api.recipes().then((r) => setRecipes(r.recipes)).catch(() => {});
     api.people().then((r) => {
       setRole(r.role); setMe(r.me);
       const x = r.people.find((q) => q.id === id);
@@ -39,6 +39,8 @@ export default function PersonScreen() {
   }, [id]);
 
   const admin = role === "admin";
+  const age = ageOf(p.birthday ?? "");
+  const teen = age != null ? age >= 12 && age < 18 : !!row?.teen;
   const self = id === me;
   const canEdit = admin || isNew;
 
@@ -68,16 +70,26 @@ export default function PersonScreen() {
   return (
     <Screen>
       <Header title={isNew ? "Add someone" : p.name || "Person"} />
-      {row ? <View style={s.row}><Pill text={row.role} />{row.signed_up ? <Pill text="using the app" />
+      {row ? <View style={s.row}><Pill text={row.teen ? `teen${row.role === "adult" ? " · can approve" : ""}` : row.role} />{row.signed_up ? <Pill text="using the app" />
         : row.invited ? <Pill text="invited" tone="amber" /> : null}</View> : null}
       {canEdit ? (
         <View style={s.card}>
           <Field label="Name" value={p.name} onChangeText={(name) => setP({ ...p, name })} />
-          <Chips multi={false} options={[{ id: "adult", label: "Adult" }, { id: "kid", label: "Child" }]} value={p.age_band}
-            onChange={([v]) => setP({ ...p, age_band: v as "adult" | "kid", admin: v === "kid" ? false : p.admin,
-              age: v === "kid" ? p.age ?? 8 : undefined })} />
-          {p.age_band === "kid" ? <NumberField label="Age" value={p.age ?? 8} min={0} max={17}
-            onChange={(age) => setP({ ...p, age })} /> : null}
+          <Field label="Birthday" value={p.birthday ?? ""} autoCapitalize="none" placeholder="e.g. 2014-03-07 (or 03-07)"
+            onChangeText={(birthday) => {
+              const a = ageOf(birthday);
+              setP({ ...p, birthday: birthday || undefined, ...(a != null ? { age: a, age_band: a < 12 ? "kid" : "adult",
+                admin: a < 18 ? false : p.admin } : {}) });
+            }}
+            hint={age != null ? `${age} · ${age < 12 ? "child (under 12)" : age < 18 ? "teen: adult portions" : "adult"} · no jobs on their birthday`
+              : "With a full date, child (under 12) or adult follows from it. Birthdays show up in Special occasions."} />
+          {age == null ? <>
+            <Chips multi={false} options={[{ id: "adult", label: "Adult" }, { id: "kid", label: "Child (under 12)" }]} value={p.age_band}
+              onChange={([v]) => setP({ ...p, age_band: v as "adult" | "kid", admin: v === "kid" ? false : p.admin,
+                age: v === "kid" ? p.age ?? 8 : undefined })} />
+            {p.age_band === "kid" ? <NumberField label="Age" value={p.age ?? 8} min={0} max={11}
+              onChange={(a) => setP({ ...p, age: a })} /> : null}
+          </> : null}
           <Chips label="Allergies" options={cat.allergens} value={p.allergies} onChange={(allergies) => setP({ ...p, allergies })} />
           <Chips label="Diet" options={cat.diets} value={p.diet} onChange={(diet) => setP({ ...p, diet })} />
           <NumberField label="Portion (1 = an adult's)" step={0.1} min={0.2} max={3} value={p.portion}
@@ -86,22 +98,24 @@ export default function PersonScreen() {
             onChange={(home) => setP({ ...p, home })} />
           {p.age_band === "adult" ? <>
             <Toggle label="Can cook dinner" value={!!p.can_cook} onChange={(can_cook) => setP({ ...p, can_cook })} />
-            <Toggle label="Household admin" hint="Can change settings and invite people. There's always at least one."
-              value={!!p.admin} onChange={(a) => setP({ ...p, admin: a })} />
+            {teen ? <Toggle label="Can approve plans and spending" hint="Teens (12–17) can't unless you allow it. Admins must be 18+."
+              value={!!p.can_approve} onChange={(can_approve) => setP({ ...p, can_approve })} />
+              : <Toggle label="Household admin" hint="Can change settings and invite people. There's always at least one."
+                value={!!p.admin} onChange={(a) => setP({ ...p, admin: a })} />}
           </> : null}
           <Field label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address"
             hint="For inviting them to the app and the weekly email." />
         </View>
       ) : (
         <View style={s.card}>
-          <Text style={s.body}>{p.age_band === "kid" ? `Age ${p.age ?? "?"}` : "Adult"}
+          <Text style={s.body}>{p.age_band === "kid" ? `Age ${row?.age_now ?? p.age ?? "?"}` : teen ? `Teen, ${row?.age_now ?? ""}` : "Adult"}
             {p.allergies?.length ? ` · allergic to ${p.allergies.join(", ")}` : ""}</Text>
           <Text style={s.muted}>Home for dinner: {(p.home ?? []).map((d) => DAY_SHORT[d]).join(", ")}</Text>
         </View>
       )}
       {canEdit || self ? (
         <View style={s.card}>
-          <Chips label="Favourite dinners" options={recipeOpts} value={p.likes} onChange={(likes) => setP({ ...p, likes })} />
+          <Chips label="Favourites (birthday meals and occasions use these first)" options={recipeOpts} value={p.likes} onChange={(likes) => setP({ ...p, likes })} />
           <Chips label="Rather not" options={recipeOpts} value={p.dislikes} onChange={(dislikes) => setP({ ...p, dislikes })} />
         </View>
       ) : null}
@@ -123,4 +137,14 @@ export default function PersonScreen() {
       <ErrorText error={error} />
     </Screen>
   );
+}
+
+function ageOf(b: string): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(b.trim());
+  if (!m) return null;
+  const t = new Date();
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  if (mo < 1 || mo > 12 || d < 1 || d > 31 || y < 1900) return null;
+  const a = t.getFullYear() - y - ((t.getMonth() + 1 < mo || (t.getMonth() + 1 === mo && t.getDate() < d)) ? 1 : 0);
+  return a >= 0 && a < 121 ? a : null;
 }

@@ -27,15 +27,16 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 import httpx
+import yaml
 from urllib.parse import quote
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import BaseModel, Field
 
-from . import (__version__, accounts, recipebook, ai, catalog, chores, cookfrom, feedback, forecast, money, notify, outputs,
+from . import (__version__, accounts, alexa, recipebook, ai, catalog, chores, cookfrom, feedback, forecast, money, notify, outputs,
                reports, spend, storage, store, telemetry, week)
-from .config import (ALLERGENS, DAYS, DIETS, MEALS, NIGHT_KINDS, HouseholdError, Settings, data_root, load_household,
+from .config import (ROOT, ALLERGENS, DAYS, DIETS, MEALS, NIGHT_KINDS, HouseholdError, Settings, data_root, load_household,
                      reset_tenant, save_household, set_tenant, stores as load_stores, work_root)
 from .prices import PriceBook, week_start
 
@@ -46,6 +47,7 @@ TAP_TTL = 30 * 24 * 3600
 INSTACART = {"development": "https://connect.dev.instacart.tools", "production": "https://connect.instacart.com"}
 
 app = FastAPI(title="Lil'Helper", version=__version__, root_path=os.getenv("ROOT_PATH", ""))
+app.include_router(alexa.router)
 app.add_middleware(CORSMiddleware, allow_origins=os.getenv("HELPER_CORS", "*").split(","), allow_methods=["*"],
                    allow_headers=["*"])
 
@@ -395,7 +397,8 @@ def put_settings(body: SettingsIn, ctx: Ctx = Depends(member)) -> dict:
 SECTIONS = {"household", "meals", "dinner_times", "prep_minutes", "batch_day", "health", "brands", "stores",
             "home_store", "memberships", "cards", "suggestions", "chores", "outputs", "styles", "kid_chef", "leftovers",
             "eating_out", "cost_per_serving", "storage", "freezer_meals", "shopping_sessions", "pets",
-            "plan_ahead_weeks", "recipe_sources"}
+            "plan_ahead_weeks", "recipe_sources", "occasions", "holidays", "holidays_off", "buffet",
+            "ingredient_prefs", "use_book"}
 
 
 class SectionIn(BaseModel):
@@ -437,6 +440,19 @@ class PersonIn(BaseModel):
     can_cook: bool = False
     email: str | None = None
     admin: bool = False
+    birthday: str | None = Field(default=None, max_length=10)     # YYYY-MM-DD, or MM-DD
+    can_approve: bool | None = None
+
+    def model_post_init(self, _):
+        # with a birthday, child or adult follows from it (under 12 is a child)
+        if self.birthday and len(self.birthday) == 10:
+            try:
+                b = dt.date.fromisoformat(self.birthday)
+            except ValueError:
+                return
+            t = dt.date.today()
+            years = t.year - b.year - ((t.month, t.day) < (b.month, b.day))
+            self.age, self.age_band = years, ("kid" if years < 12 else "adult")
 
 
 @app.get("/api/household/people")
@@ -451,7 +467,8 @@ def people(ctx: Ctx = Depends(member)) -> dict:
     for p in h.people.values():
         d = {k: v for k, v in h.raw["people"][p.id].items()}
         m = by_person.get(p.id)
-        d.update({"id": p.id, "role": m["role"] if m else ("kid" if p.is_kid else "adult"),
+        d.update({"id": p.id, "role": m["role"] if m else p.role, "age_now": p.current_age, "child": p.is_kid,
+                  "teen": p.is_teen,
                   "signed_up": bool(m), "invited": any(i["person_id"] == p.id for i in inv),
                   "last_seen": m["last_seen"] if m else None})
         out.append(d)
@@ -495,7 +512,7 @@ def edit_person(pid: str, body: PersonIn, ctx: Ctx = Depends(member)) -> dict:
     con = accounts.connect()
     for m in accounts.members(con, ctx.hid):
         if m["person_id"] == pid and ctx.role == "admin":
-            want = "admin" if body.admin else ("kid" if body.age_band == "kid" else "adult")
+            want = h2.people[pid].role if (h2 := _hh()) and pid in h2.people else m["role"]
             if want != m["role"]:
                 try:
                     accounts.set_role(con, ctx.hid, m["user_id"], want)
@@ -545,7 +562,7 @@ def invite(body: InviteIn, ctx: Ctx = Depends(member)) -> dict:
     if body.person_id not in h.people:
         raise HTTPException(404, "add the person first")
     p = h.people[body.person_id]
-    role = "admin" if p.admin else ("kid" if p.is_kid else "adult")
+    role = p.role
     rate_limit(f"invite:{ctx.hid}", 20)
     con = accounts.connect()
     try:
@@ -574,6 +591,471 @@ def remove_member(uid: str, ctx: Ctx = Depends(member)) -> dict:
         raise HTTPException(422, str(e))
     con.close()
     return {"removed": uid}
+
+
+@app.get("/api/occasions")
+def upcoming_occasions(days: int = 60, ctx: Ctx = Depends(member)) -> dict:
+    """Birthdays, anniversaries, the household's own dates and holidays coming up."""
+    from . import occasions
+    h = _hh()
+    start = week.today_in(h)
+    return {"upcoming": occasions.upcoming(h.raw, h.people, start, max(1, min(days, 366))),
+            "holidays": [{"id": k, "name": v[0], "on": k not in set(h.raw.get("holidays_off") or [])}
+                         for k, v in occasions.HOLIDAYS.items()],
+            "occasions": h.raw.get("occasions") or []}
+
+
+# ---------------------------------------------------------------- voice (the app's microphone, and Alexa)
+class VoiceIn(BaseModel):
+    text: str = Field(min_length=1, max_length=500)
+
+
+def _say_list(items: list[str], n: int = 6) -> str:
+    items = items[:n]
+    return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1] if items else ""
+
+
+def run_voice(ctx: Ctx, text: str) -> dict:
+    """Do what a spoken request asks (see voice.py) and say what happened."""
+    from . import voice, workflows
+    h = _hh()
+    c = catalog.for_household(h)
+    today = week.today_in(h)
+    q = voice.parse(text, today)
+    it = q["intent"]
+    out = {"intent": it, "heard": text, "screen": None, "params": {}, "say": ""}
+    wk = week_start(today)
+    con = store.connect()
+    rec = store.get_week(con, wk.isoformat())
+    con.close()
+    if it == "whats_for":
+        e = next((e for e in (rec or {}).get("plan", {}).get("entries", []) if e["day"] == q["day"]
+                  and e["meal"] == q["meal"]), None) if rec else None
+        cook = next((a["name"] for a in (rec or {}).get("chores") or [] if a["day"] == q["day"] and a["job"] == "cook"), None)
+        out["say"] = (f"{q['meal'].title()} {q['when']} is {e['name']}." + (f" {cook} is cooking." if cook else "")) if e \
+            else f"There's no {q['meal']} planned {q['when']}."
+        out.update(screen="week", params={"day": q["day"]})
+    elif it == "shopping":
+        if not rec or rec.get("status") != "approved":
+            out["say"] = "This week's plan isn't approved yet, so there's no list."
+        else:
+            orders = week.orders(rec)
+            if not orders:
+                out["say"] = "Nothing to buy this week."
+            else:
+                o = orders[0]
+                names = [ln["name"] for ln in o["lines"]]
+                out["say"] = (f"{len(names)} things from {o['store_name']}: {_say_list(names, 8)}"
+                              + (f", and {len(names) - 8} more." if len(names) > 8 else "."))
+        out["screen"] = "shopping"
+    elif it == "jobs":
+        mine = [a["job"].replace("_", " ") for a in (rec or {}).get("chores") or []
+                if a["day"] == q["day"] and a["person"] == ctx.person]
+        out["say"] = f"Your jobs: {_say_list(mine)}." if mine else "No jobs for you today."
+        out["screen"] = "jobs"
+    elif it == "cook_with":
+        res = cookfrom.suggest(h, c, PriceBook(h, today, catalog=c), text=q["have"], use_pantry=False, meal=q["meal"],
+                               day=q["day"])
+        top = res["ideas"][0] if res["ideas"] else None
+        new = res.get("new_recipe")
+        if top:
+            out["say"] = f"How about {top['name']}? It " + ("uses everything you said." if len(top["uses_typed"]) ==
+                                                             len(res["matched"]) or res["uses_everything"]
+                                                             else f"uses the {', '.join(top['uses_typed'])}.")
+        elif new:
+            out["say"] = f"Nothing in your book uses all of that. Try {new['name']}; it's on your phone."
+        else:
+            out["say"] = "I couldn't match those. Try naming the main things you have."
+        out.update(screen="cookfrom", params={"text": q["have"]}, data={"ideas": [i["name"] for i in res["ideas"][:3]]})
+    elif it == "vibe":
+        res = workflows.vibe(h, c, PriceBook(h, today, catalog=c), minutes=q["minutes"], moods=q["moods"], meal=q["meal"])
+        names = [i["name"] for i in res["ideas"][:3]]
+        out["say"] = f"In {q['minutes']} minutes: {_say_list(names)}." if names else "Nothing fits that; try more time."
+        out.update(screen="vibe", params={"minutes": str(q["minutes"]), "moods": ",".join(q["moods"])})
+    elif it == "surprise":
+        r = workflows.surprise(h, c, meal=q["meal"], day=q["day"], seed=secrets.randbelow(10 ** 6))
+        out["say"] = f"How about {r['name']}?" if r else "Nothing in the book fits tonight."
+        out.update(screen="surprise", params={"recipe": r["recipe"]} if r else {})
+    elif it == "buffet_count":
+        items = workflows.buffet_restock(h, c, store.connect())
+        hit = next((b for b in items if q["item"] and (q["item"] in b["name"].lower() or
+                                                       all(w in b["name"].lower() for w in q["item"].split()))), None)
+        if not hit:
+            out["say"] = "I couldn't find that in your buffet."
+        else:
+            con = store.connect()
+            workflows.set_buffet_stock(con, hit["meal"], hit["recipe"], float(q["count"]), actor(ctx))
+            con.close()
+            out["say"] = f"Got it: {q['count']:g} portions of {hit['name']} left."
+        out["screen"] = "buffet"
+    elif it in ("eaten", "rate"):
+        try:
+            r = _record_feedback(wk.isoformat(), q["day"], q["meal"], q.get("eaten"), q.get("rating"), actor(ctx))
+            out["say"] = f"Thanks, saved for {r['meal']}."
+        except HTTPException:
+            out["say"] = f"There's no {q['meal']} planned that day."
+    elif it == "plan":
+        if ctx.role not in ("admin", "adult"):
+            out["say"] = "Ask a grown-up to plan the week."
+        else:
+            target = wk + dt.timedelta(weeks=1) if q.get("next") else wk
+            r = store.get_week(store.connect(), target.isoformat())
+            if r and r.get("status") == "approved":
+                out["say"] = "That week is already approved."
+            else:
+                week.draft(target, ideas=False, actor=actor(ctx))
+                out["say"] = "Done. The plan is ready to look over on your phone."
+        out.update(screen="week")
+    else:
+        out["say"] = ("Sorry, I didn't catch that. You can ask what's for dinner, what's on the shopping list, "
+                      "what your jobs are, or tell me what you have to cook with.")
+    return out
+
+
+@app.post("/api/voice")
+def voice_command(body: VoiceIn, ctx: Ctx = Depends(member)) -> dict:
+    rate_limit(f"voice:{ctx.uid}", 120)
+    return run_voice(ctx, body.text)
+
+
+def run_as(uid: str, hid: str, text: str) -> dict:
+    """Run a spoken request for a linked Alexa (same rules as the app: the person's own role)."""
+    con = accounts.connect()
+    u = accounts.user(con, uid)
+    m = accounts.membership(con, uid, hid) if u else None
+    con.close()
+    if not u or not m:
+        return {"say": "That Alexa link no longer works. Link it again from the Lil'Helper app."}
+    rate_limit(f"voice:{uid}", 120)
+    tok = set_tenant(hid)
+    try:
+        return run_voice(Ctx(uid, hid, m["role"], m["person_id"], u["email"], u["name"]), text)
+    finally:
+        reset_tenant(tok)
+
+
+@app.get("/api/alexa")
+def alexa_status(ctx: Ctx = Depends(member)) -> dict:
+    return {"links": alexa.links(ctx.uid, ctx.hid), "configured": bool(os.getenv("HELPER_ALEXA_SKILL_ID")),
+            "link_page": f"{public_url()}/alexa/link", "endpoint": f"{public_url()}/alexa"}
+
+
+@app.post("/api/alexa/code")
+def alexa_code(ctx: Ctx = Depends(member)) -> dict:
+    rate_limit(f"alexa-code:{ctx.uid}", 10)
+    return {"code": alexa.new_code(ctx.uid, ctx.hid), "minutes": alexa.CODE_TTL // 60}
+
+
+@app.delete("/api/alexa")
+def alexa_unlink(ctx: Ctx = Depends(member)) -> dict:
+    return {"removed": alexa.unlink(ctx.uid, ctx.hid)}
+
+
+# ---------------------------------------------------------------- bulk import / export (admin)
+_bulk: dict[str, dict] = {}
+
+
+@app.get("/api/bulk/export")
+def bulk_export(ctx: Ctx = Depends(member)) -> Response:
+    """Everything the planner uses, as one Excel workbook."""
+    need(ctx, "admin")
+    return _workbook()
+
+
+@app.post("/api/bulk/link")
+def bulk_link(ctx: Ctx = Depends(member)) -> dict:
+    """A five-minute download link for the workbook (phones open downloads in the browser, without the session)."""
+    need(ctx, "admin")
+    return {"url": f"{public_url()}/bulk/{sign('bulk', f'{ctx.uid}|{ctx.hid}', 300)}/lilhelper.xlsx"}
+
+
+@app.get("/bulk/{token}/lilhelper.xlsx")
+def bulk_download(token: str) -> Response:
+    uid, _, hid = verify("bulk", token).partition("|")
+    con = accounts.connect()
+    m = accounts.membership(con, uid, hid)
+    con.close()
+    if not m or m["role"] != "admin":
+        raise HTTPException(403)
+    tok = set_tenant(hid)
+    try:
+        return _workbook()
+    finally:
+        reset_tenant(tok)
+
+
+def _workbook() -> Response:
+    from . import bulk
+    h = _hh()
+    con = store.connect()
+    data = bulk.export(h, catalog.for_household(h), con)
+    con.close()
+    name = re.sub(r"[^A-Za-z0-9]+", "-", h.info.get("name", "household")).strip("-").lower() or "household"
+    return Response(data, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": f'attachment; filename="lilhelper-{name}.xlsx"'})
+
+
+@app.post("/api/bulk/import")
+async def bulk_import(file: UploadFile = File(...), ctx: Ctx = Depends(member)) -> dict:
+    """Read an edited workbook and show what it would change. Nothing is saved until you confirm."""
+    need(ctx, "admin")
+    from . import bulk
+    data = await file.read()
+    if len(data) > 10_000_000:
+        raise HTTPException(413, "file too large (10 MB max)")
+    h = _hh()
+    con = store.connect()
+    try:
+        plan = bulk.plan_import(h, catalog.for_household(h), con, data)
+    except Exception as e:                      # not a workbook, or one we can't read
+        raise HTTPException(422, f"couldn't read that workbook ({type(e).__name__})")
+    finally:
+        con.close()
+    token = secrets.token_urlsafe(8)
+    _bulk[f"{ctx.hid}:{token}"] = plan
+    return {"token": token, "changes": plan["changes"], "problems": plan["problems"]}
+
+
+class BulkConfirmIn(BaseModel):
+    token: str
+
+
+@app.post("/api/bulk/import/confirm")
+def bulk_confirm(body: BulkConfirmIn, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "admin")
+    from . import bulk
+    plan = _bulk.pop(f"{ctx.hid}:{body.token}", None)
+    if not plan:
+        raise HTTPException(404, "upload the workbook again")
+    h = _hh()
+    con = store.connect()
+    try:
+        return bulk.apply_import(h, catalog.for_household(h), con, plan, actor(ctx))
+    except (HouseholdError, recipebook.RecipeError) as e:
+        raise HTTPException(422, str(e))
+    finally:
+        con.close()
+
+
+# ---------------------------------------------------------------- ways to decide: vibe, occasion, buffet, surprise, plan
+class VibeIn(BaseModel):
+    minutes: int = Field(default=45, ge=5, le=600)
+    moods: list[str] = []
+    meal: str = "dinner"
+    day: str | None = None
+    people: list[str] = []
+    have: str = Field(default="", max_length=1000)
+
+
+@app.post("/api/vibe")
+def vibe_cooking(body: VibeIn, ctx: Ctx = Depends(member)) -> dict:
+    """How much time you have and what you're in the mood for → ideas, with what's missing to order."""
+    from . import workflows
+    h = _hh()
+    c = catalog.for_household(h)
+    return workflows.vibe(h, c, PriceBook(h, dt.date.today(), catalog=c), minutes=body.minutes,
+                          moods=[m for m in body.moods if m in workflows.MOODS], meal=body.meal, day=body.day,
+                          people=body.people or None, have=body.have)
+
+
+class MissingIn(BaseModel):
+    recipe: str
+    servings: float = Field(default=4, gt=0, le=60)
+
+
+@app.post("/api/vibe/order")
+def vibe_order(body: MissingIn, ctx: Ctx = Depends(member)) -> dict:
+    """A quick list for one recipe (what isn't in the house), split the cheapest way, ready to hand to a store."""
+    need(ctx, "adult")
+    h = _hh()
+    c = catalog.for_household(h)
+    r = c.recipes.get(body.recipe)
+    if not r:
+        raise HTTPException(404, "no such recipe")
+    con = store.connect()
+    pantry = store.pantry(con)
+    con.close()
+    from .shopping import Need, split
+    needs = [Need(i, c.ingredients[i].name, round(q * body.servings - max(0, pantry.get(i, 0)), 3), c.ingredients[i].unit,
+                  ["now"], 0)
+             for i, q in r.ing.items() if not c.ingredients[i].staple and pantry.get(i, 0) < q * body.servings]
+    needs = [n for n in needs if n.qty > 0]
+    if not needs:
+        return {"orders": [], "note": "Everything's in the house."}
+    pb = PriceBook(h, dt.date.today(), catalog=c)
+    sp = split(h, c, pb, needs, Settings.load(), max_stores=1)
+    out = []
+    for o in sp.orders:
+        d = o.to_dict() if hasattr(o, "to_dict") else o.__dict__
+        lines = [ln if isinstance(ln, dict) else ln.__dict__ for ln in d["lines"]]
+        item = {"store": d["store_name"], "mode": d["mode"], "total": d["total"],
+                "lines": [{"name": ln["name"], "packs": ln["packs"], "brand": ln["brand"]} for ln in lines],
+                "share_text": "\n".join(f"{ln['packs']} × {ln['name']}" for ln in lines), "url": None}
+        if d.get("handoff") == "instacart" and d.get("payload"):
+            item["url"], item["note"] = instacart_link(d["payload"])
+        out.append(item)
+    return {"orders": out}
+
+
+class OccasionIdeasIn(BaseModel):
+    people: list[str] = []
+    tags: list[str] = []
+    guests: int = Field(default=0, ge=0, le=60)
+    meal: str = "dinner"
+
+
+@app.post("/api/occasions/ideas")
+def occasion_ideas(body: OccasionIdeasIn, ctx: Ctx = Depends(member)) -> dict:
+    from . import workflows
+    h = _hh()
+    c = catalog.for_household(h)
+    return workflows.occasion_ideas(h, c, PriceBook(h, dt.date.today(), catalog=c), people=body.people, tags=body.tags,
+                                    guests=body.guests, meal=body.meal)
+
+
+class OccasionIn(BaseModel):
+    name: str = Field(min_length=2, max_length=60)
+    date: str
+    kind: str = "custom"
+    people: list[str] = []
+    recipe: str | None = None
+    guests: int = Field(default=0, ge=0, le=60)
+    tags: list[str] = []
+    yearly: bool = False
+    meal: str = "dinner"
+
+
+@app.post("/api/occasions")
+def add_occasion(body: OccasionIn, ctx: Ctx = Depends(member)) -> dict:
+    """Plan a special meal: it's added to the household's occasions and the plan for that week follows it."""
+    need(ctx, "adult")
+    h = _hh()
+    occ = list(h.raw.get("occasions") or [])
+    d = {k: v for k, v in body.model_dump().items() if v not in (None, [], "", 0) or k == "yearly"}
+    d["id"] = "o_" + secrets.token_hex(4)
+    occ.append(d)
+    h.raw["occasions"] = occ
+    h.raw["require_admin"] = True
+    try:
+        save_household(h.raw)
+    except HouseholdError as e:
+        raise HTTPException(422, str(e))
+    if len(body.date) == 10:                          # re-plan that week if it's still a draft
+        wk = week_start(dt.date.fromisoformat(body.date))
+        rec = store.get_week(store.connect(), wk.isoformat())
+        if rec and rec.get("status") != "approved":
+            week.draft(wk, ideas=False, actor=actor(ctx))
+        elif rec and body.recipe:
+            day = DAYS[dt.date.fromisoformat(body.date).weekday()]
+            try:
+                week.change(wk, day, body.meal, body.recipe, actor(ctx))
+            except ValueError:
+                pass
+    return {"added": d["id"]}
+
+
+@app.delete("/api/occasions/{oid}")
+def remove_occasion(oid: str, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    h = _hh()
+    h.raw["occasions"] = [o for o in (h.raw.get("occasions") or []) if o.get("id") != oid]
+    h.raw["require_admin"] = True
+    save_household(h.raw)
+    return {"removed": oid}
+
+
+@app.get("/api/surprise")
+def surprise_me(meal: str = "dinner", day: str | None = None, minutes: int | None = None, seed: int | None = None,
+                ctx: Ctx = Depends(member)) -> dict:
+    """Anything from the recipe book that's safe for the people eating."""
+    from . import workflows
+    h = _hh()
+    r = workflows.surprise(h, catalog.for_household(h), meal=meal, day=day, minutes=minutes,
+                           seed=seed if seed is not None else secrets.randbelow(10 ** 6))
+    if not r:
+        raise HTTPException(404, "nothing in the book fits")
+    return r
+
+
+@app.get("/api/buffet")
+def get_buffet(ctx: Ctx = Depends(member)) -> dict:
+    from . import workflows
+    h = _hh()
+    con = store.connect()
+    out = workflows.buffet_restock(h, catalog.for_household(h), con)
+    con.close()
+    return {"config": h.raw.get("buffet") or {}, "items": out}
+
+
+class BuffetCountIn(BaseModel):
+    meal: str
+    recipe: str
+    on_hand: float = Field(ge=0, le=200)
+
+
+@app.post("/api/buffet/count")
+def buffet_count(body: BuffetCountIn, ctx: Ctx = Depends(member)) -> dict:
+    """How many portions of a buffet item are left (anyone can update it)."""
+    from . import workflows
+    con = store.connect()
+    workflows.set_buffet_stock(con, body.meal, body.recipe, body.on_hand, actor(ctx))
+    con.close()
+    return get_buffet(ctx)
+
+
+class BuffetIn(BaseModel):
+    meal: str
+    on: bool = True
+    items: list[dict] = []
+
+
+@app.put("/api/buffet")
+def set_buffet(body: BuffetIn, ctx: Ctx = Depends(member)) -> dict:
+    """Keep a meal as a buffet: which recipes, and how many portions of each to have on hand each week."""
+    need(ctx, "adult")
+    if body.meal not in MEALS:
+        raise HTTPException(422, "meal: breakfast, lunch or dinner")
+    h = _hh()
+    c = catalog.for_household(h)
+    items = []
+    for it in body.items[:12]:
+        if it.get("recipe") not in c.recipes or not 0 < float(it.get("target") or 0) <= 100:
+            raise HTTPException(422, "each item needs a recipe and a target of 1–100 portions")
+        items.append({"recipe": it["recipe"], "target": float(it["target"])})
+    buf = dict(h.raw.get("buffet") or {})
+    buf[body.meal] = {"on": body.on, "items": items}
+    h.raw["buffet"] = buf
+    h.raw["require_admin"] = True
+    try:
+        save_household(h.raw)
+    except HouseholdError as e:
+        raise HTTPException(422, str(e))
+    return get_buffet(ctx)
+
+
+class AheadPlanIn(BaseModel):
+    weeks: int = Field(default=4, ge=1, le=12)
+    start: str | None = None
+
+
+@app.post("/api/plan/ahead")
+def plan_ahead(body: AheadPlanIn, ctx: Ctx = Depends(member)) -> dict:
+    """Make a plan for the coming weeks (or months) and stick with it: drafts each week that has no plan yet."""
+    need(ctx, "adult")
+    weeks = [_week(body.start) + dt.timedelta(weeks=n) for n in range(body.weeks)]
+    out = []
+    con = store.connect()
+    for wk in weeks:
+        rec = store.get_week(con, wk.isoformat())
+        if not rec:
+            week.draft(wk, ideas=False, actor=actor(ctx))
+            rec = store.get_week(con, wk.isoformat())
+        dinners = [e["name"] for e in rec["plan"]["entries"] if e["meal"] == "dinner"]
+        choice = rec.get("shopping_choice") or "balanced"
+        out.append({"week_of": wk.isoformat(), "status": rec.get("status"), "dinners": dinners,
+                    "total": rec["split"][choice]["total"] if rec.get("split") else None})
+    con.close()
+    return {"weeks": out}
 
 
 # ---------------------------------------------------------------- the week
@@ -621,6 +1103,8 @@ def _view(rec: dict) -> dict:
     _, original = store.picks(con, rec["week_of"])
     st = week.states(h, con, rec)
     con.close()
+    h.week_of = dt.date.fromisoformat(rec["week_of"])
+    occ = {d: [{"name": o["name"], "kind": o["kind"], "people": o["people"]} for o in h.occasions(d)] for d in DAYS}
     c = catalog.for_household(h)
     for e in rec["plan"]["entries"]:
         e.update(st.get((e["day"], e["meal"]), {}))
@@ -629,6 +1113,7 @@ def _view(rec: dict) -> dict:
             if o and o != e["recipe"] else None
     return {"week_of": rec["week_of"], "status": rec.get("status"), "approved_by": rec.get("approved_by"),
             "plan": rec["plan"], "choice": choice, "today": week.today_in(h).isoformat(),
+            "occasions": {d: v for d, v in occ.items() if v},
             "options": {k: {"total": v["total"], "minutes": v["minutes"], "flags": v.get("flags", []),
                             "storage_used": v.get("storage_used", {}),
                             "stores": [{"store": o["store_name"], "mode": o["mode"], "total": o["total"],
@@ -772,6 +1257,24 @@ def change_meal(body: ChangeIn, ctx: Ctx = Depends(member)) -> dict:
         raise HTTPException(409, str(e))
     _notify_others(ctx, "The plan changed", f"{body.day.title()} {body.meal} changed.", f"lilhelper://week?day={body.day}")
     return {**_view(_stored(_week(body.week))), "missing": out["missing"]}
+
+
+class PartsIn(BaseModel):
+    week: str | None = None
+    day: str
+    meal: str = "dinner"
+    parts: list[dict] = []
+
+
+@app.post("/api/week/parts")
+def meal_parts(body: PartsIn, ctx: Ctx = Depends(member)) -> dict:
+    """More than one thing for a meal: e.g. cook the curry for three, and two heat up Monday's leftovers."""
+    need(ctx, "adult")
+    try:
+        week.set_parts(_week(body.week), body.day, body.meal, body.parts, actor(ctx))
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    return _view(_stored(_week(body.week)))
 
 
 @app.post("/api/week/revert")
@@ -935,6 +1438,8 @@ class LineIn(BaseModel):
 class RecipeIn(BaseModel):
     name: str = Field(min_length=2, max_length=80)
     meal: str = "dinner"
+    meals: list[str] = []                                 # every meal it suits; blank → just `meal`
+    kcal: int = Field(default=0, ge=0, le=5000)           # calories per serving, if you know them
     serves: float = Field(default=4, gt=0, le=40)        # the amounts below make this many servings
     active: int = Field(default=20, ge=1, le=300)
     total: int = Field(default=30, ge=1, le=1440)
@@ -970,9 +1475,10 @@ def list_recipes(q: str = "", meal: str | None = None, mine: bool = False, ctx: 
     c = catalog.for_household(_hh())
     out = []
     for r in c.recipes.values():
-        if (meal and r.meal != meal) or (mine and r.source != "household") or (q and q.lower() not in r.name.lower()):
+        if (meal and not r.suits(meal)) or (mine and r.source != "household") or (q and q.lower() not in r.name.lower()):
             continue
-        out.append({"id": r.id, "name": r.name, "meal": r.meal, "active": r.active, "total": r.total, "tags": r.tags,
+        out.append({"id": r.id, "name": r.name, "meal": r.meal, "meals": r.meals, "kcal": r.kcal,
+                    "active": r.active, "total": r.total, "tags": r.tags,
                     "source": r.source, "season_months": r.season_months, "want": r.want,
                     "kid_min_age": r.kid_min_age, "credit": r.credit or ("Lil'Helper" if r.source == "book" else ""),
                     "url": r.url})
@@ -1151,6 +1657,70 @@ class IngredientIn(BaseModel):
     freezable: bool | None = None
     shelf: int = Field(default=7, ge=1, le=1000)
     prices: dict = {}                                   # {store: {pack, price, brand?}}
+
+
+class PrefIn(BaseModel):
+    brand: str | None = Field(default=None, max_length=60)
+    store: str | None = None
+    price: float | None = Field(default=None, gt=0, le=1000)
+    pack: float | None = Field(default=None, gt=0, le=1000)
+    only_store: bool = True
+    organic: bool = False
+
+
+@app.get("/api/ingredients/{iid}")
+def ingredient_detail(iid: str, ctx: Ctx = Depends(member)) -> dict:
+    """One ingredient: what Lil'Helper's price list says at each of your stores, and your own choice for it."""
+    h = _hh()
+    c = catalog.for_household(h)
+    ing = c.ingredients.get(iid)
+    if not ing:
+        raise HTTPException(404, "no such ingredient")
+    shelf = yaml.safe_load((ROOT / "data" / "prices.yaml").read_text())["stores"]
+    st = load_stores()["stores"]
+    book = [{"store": sid, "store_name": st[sid]["name"], **o} for sid in (h.raw.get("stores") or [])
+            for o in (shelf.get(sid, {}).get(iid, []) + [dict(p, brand=p.get("brand", "any"))
+                                                          for s2, p in (ing.prices or {}).items() if s2 == sid])]
+    used = sorted({r.name for r in c.recipes.values() if iid in r.ing})[:20]
+    return {"id": iid, "name": ing.name, "unit": ing.unit, "cat": ing.cat, "allergens": ing.allergens,
+            "source": ing.source, "storage": ing.storage, "book_prices": book,
+            "mine": (h.raw.get("ingredient_prefs") or {}).get(iid), "used_in": used,
+            "stores": [{"id": sid, "name": st[sid]["name"]} for sid in (h.raw.get("stores") or []) if sid in st]}
+
+
+@app.put("/api/ingredients/{iid}/pref")
+def set_ingredient_pref(iid: str, body: PrefIn, ctx: Ctx = Depends(member)) -> dict:
+    """Your brand, store and price for an item — used in every plan and shopping list from now on."""
+    need(ctx, "adult")
+    h = _hh()
+    if iid not in catalog.for_household(h).ingredients:
+        raise HTTPException(404, "no such ingredient")
+    if body.store and body.store not in (h.raw.get("stores") or []):
+        raise HTTPException(422, "choose one of your stores")
+    if body.price and not body.store:
+        raise HTTPException(422, "say which store that price is at")
+    prefs = dict(h.raw.get("ingredient_prefs") or {})
+    prefs[iid] = {k: v for k, v in body.model_dump().items() if v not in (None, "", False) or k == "only_store"}
+    h.raw["ingredient_prefs"] = prefs
+    h.raw["require_admin"] = True
+    try:
+        save_household(h.raw)
+    except HouseholdError as e:
+        raise HTTPException(422, str(e))
+    store.audit(store.connect(), actor(ctx), "ingredient_pref", {"ingredient": iid})
+    return {"saved": iid, "mine": prefs[iid]}
+
+
+@app.delete("/api/ingredients/{iid}/pref")
+def clear_ingredient_pref(iid: str, ctx: Ctx = Depends(member)) -> dict:
+    need(ctx, "adult")
+    h = _hh()
+    prefs = dict(h.raw.get("ingredient_prefs") or {})
+    prefs.pop(iid, None)
+    h.raw["ingredient_prefs"] = prefs
+    h.raw["require_admin"] = True
+    save_household(h.raw)
+    return {"cleared": iid}
 
 
 @app.get("/api/ingredients")
@@ -1430,6 +2000,69 @@ def cost_report(weeks: int = 8, end: str | None = None, ctx: Ctx = Depends(membe
     need(ctx, "adult")
     h = _hh()
     return reports.cost_report(h, catalog.for_household(h), end=_week(end), weeks=max(1, min(weeks, 26)))
+
+
+@app.get("/api/reports/activity")
+def activity_report(weeks: int = 8, end: str | None = None, ctx: Ctx = Depends(member)) -> dict:
+    h = _hh()
+    return reports.activity_report(h, catalog.for_household(h), end=_week(end), weeks=max(1, min(weeks, 26)))
+
+
+@app.get("/api/today")
+def today_view(ctx: Ctx = Depends(member)) -> dict:
+    """The home screen: what's next for me and for everyone — the next meal, jobs, shopping, things to answer."""
+    from . import occasions, workflows
+    h = _hh()
+    today = week.today_in(h)
+    day = DAYS[today.weekday()]
+    wk = week_start(today)
+    con = store.connect()
+    rec = store.get_week(con, wk.isoformat())
+    nxt_rec = store.get_week(con, (wk + dt.timedelta(weeks=1)).isoformat())
+    states = week.states(h, con, rec, today) if rec else {}
+    stock = workflows.buffet_restock(h, catalog.for_household(h), con)
+    con.close()
+    me = ctx.person
+    tasks, everyone = [], {p.id: [] for p in h.people.values()}
+    meals_today = []
+    if rec:
+        for e in rec["plan"]["entries"]:
+            if e["day"] == day:
+                cook = e.get("cook") or next((a["person"] for a in rec.get("chores") or []
+                                              if a["day"] == day and a["job"] == "cook"), None)
+                meals_today.append({"meal": e["meal"], "name": e["name"], "recipe": e["recipe"], "kind": e.get("kind"),
+                                    "active": e.get("active"), "cook": h.people[cook].name if cook in h.people else None,
+                                    "time": h.dinner_time(day) if e["meal"] == "dinner" else
+                                    {"breakfast": "08:00", "lunch": "12:00"}.get(e["meal"], ""),
+                                    "parts": e.get("parts") or []})
+        for a in rec.get("chores") or []:
+            if a["day"] == day and a["person"] in everyone:
+                everyone[a["person"]].append({"kind": "job", "job": a["job"], "text": a["job"].replace("_", " ")})
+        for (d, meal), st in states.items():
+            if st["state"] == "to_confirm":
+                tasks.append({"kind": "confirm", "day": d, "meal": meal, "text": f"How did {d.title()}'s {meal} go?"})
+        choice = rec.get("shopping_choice") or "balanced"
+        for o in (rec.get("split") or {}).get(choice, {}).get("orders", []):
+            if o.get("day") == day and rec.get("status") == "approved":
+                who = o.get("who")
+                t = {"kind": "shop", "text": f"Shopping at {o['store_name']}" + (f" at {o['time']}" if o.get("time") else ""),
+                     "items": len(o["lines"])}
+                (everyone[who].append(t) if who in everyone else tasks.append(t))
+        if rec.get("status") != "approved":
+            tasks.append({"kind": "approve", "week": wk.isoformat(), "text": "This week's plan is waiting for an adult to approve"})
+    if nxt_rec and nxt_rec.get("status") != "approved" and today.weekday() >= 4:
+        tasks.append({"kind": "approve", "week": (wk + dt.timedelta(weeks=1)).isoformat(),
+                      "text": "Next week's plan is ready to look over"})
+    if any(b["cook"] > 0 for b in stock) and today.weekday() in (4, 5):
+        tasks.append({"kind": "buffet", "text": "Count what's left in the buffet before shopping"})
+    up = occasions.upcoming(h.raw, h.people, today, 14)
+    mine = everyone.get(me, [])
+    return {"date": today.isoformat(), "day": day, "me": me, "my_name": h.people[me].name if me in h.people else ctx.name,
+            "role": ctx.role, "meals": meals_today, "my_jobs": mine, "tasks": tasks,
+            "everyone": [{"person": pid, "name": h.people[pid].name, "jobs": j} for pid, j in everyone.items() if j],
+            "occasions": up[:5], "birthday": any(o["kind"] == "birthday" and me in o["people"] and o["date"] == today.isoformat()
+                                                 for o in up),
+            "week_status": rec.get("status") if rec else None}
 
 
 def _ensure_ahead(h, start: dt.date, weeks: int, by: str) -> None:

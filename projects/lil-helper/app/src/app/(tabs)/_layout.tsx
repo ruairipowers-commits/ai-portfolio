@@ -9,12 +9,14 @@ export default function TabsLayout() {
   return (
     <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: c.red, tabBarInactiveTintColor: c.muted,
       tabBarStyle: { backgroundColor: "#FFFDF8", borderTopColor: c.line } }}>
-      <Tabs.Screen name="index" options={{ title: "This week", tabBarIcon: icon("🍎") }} />
+      <Tabs.Screen name="index" options={{ title: "Today", tabBarIcon: icon("🌞") }} />
+      <Tabs.Screen name="plan" options={{ title: "Week", tabBarIcon: icon("🍎") }} />
+      <Tabs.Screen name="ideas" options={{ title: "Cook", tabBarIcon: icon("🍳") }} />
       <Tabs.Screen name="shopping" options={{ title: "Shopping", tabBarIcon: icon("🛒") }} />
       <Tabs.Screen name="jobs" options={{ title: "Jobs", tabBarIcon: icon("🧽") }} />
-      <Tabs.Screen name="meals" options={{ title: "Rate", tabBarIcon: icon("⭐") }} />
-      <Tabs.Screen name="money" options={{ title: "Money", tabBarIcon: icon("💵") }} />
-      <Tabs.Screen name="settings" options={{ title: "Home", tabBarIcon: icon("🏠") }} />
+      <Tabs.Screen name="settings" options={{ title: "More", tabBarIcon: icon("🏠") }} />
+      <Tabs.Screen name="meals" options={{ href: null, title: "Rate" }} />
+      <Tabs.Screen name="money" options={{ href: null, title: "Money" }} />
     </Tabs>
   );
 }

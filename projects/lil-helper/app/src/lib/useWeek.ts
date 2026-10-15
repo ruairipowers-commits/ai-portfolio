@@ -3,7 +3,7 @@ import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { api, ApiError, Week } from "./api";
 
-export function useWeek() {
+export function useWeek(weekOf?: string) {
   const [week, setWeek] = useState<Week | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
@@ -11,14 +11,14 @@ export function useWeek() {
     setLoading(true);
     setError(null);
     try {
-      setWeek(await api.week());
+      setWeek(await api.week(weekOf));
     } catch (e) {
       if (e instanceof ApiError && e.status === 404) setWeek(null);
       else setError(e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [weekOf]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
   return { week, setWeek, error, setError, loading, reload: load };
 }

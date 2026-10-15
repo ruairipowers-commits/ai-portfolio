@@ -64,6 +64,15 @@ them badly, so the brief was to do the planning and hand everything else to the 
   as PDFs.
 - **Set up in the app.** A welcome wizard creates the household; its admin adds and invites everyone, and settings,
   recipes (with seasons and how often you'd like them) and specials (in store or online) are all edited there.
+- **Opens on today.** The next meal and who's cooking, your jobs, the shopping, and anything waiting for an answer;
+  birthdays and holidays coming up; and a microphone ("I have half a chicken, rice and broccoli"). Besides the
+  weekly plan there are other ways to decide: plan months ahead and stick to it, *vibe cooking* (time and mood),
+  special occasions (the birthday person's favourites, sized for the guests), a weekly buffet of portions kept on
+  hand, and *surprise me*. "Alexa, ask Lil'Helper what's for dinner" works too, through a skill backend that checks
+  Amazon's signature on every request.
+- **Gets the data in quickly.** Recipes come from the web with a link back to the source, any planned meal can be
+  changed and changed back, and an admin can load the whole household — people, recipes, the brands and prices you
+  pay, the fridge and freezer — from one Excel workbook, with a preview before anything is saved.
 - **Learns from one tap after each meal:** all gone, some left or lots left, plus a rating. Portions move, and the
   weekly report shows dollars, minutes and satisfaction against a stated baseline.
 
