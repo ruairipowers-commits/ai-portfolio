@@ -158,7 +158,7 @@ go-ahead.
       helper-candidate`, promote on a pass.
 - [ ] **Public demo:** `git pull && ./update.sh` builds `Dockerfile.space` (`/lil-helper/`, mock only).
 - [ ] Options documented, not built: two-adult approval above a spend threshold, automated retention pruning.
-### Lil'Helper v2 (built 11–14 October 2026, branch `lil-helper-v2`, not merged)
+### Lil'Helper v2 (built 11–14 October 2026, merged to `main` 15 October)
 
 Accounts and many households (admin/adult/kid roles, invites, welcome wizard, in-app settings), custom recipes,
 specials by store and channel, shopping trips, dinner times and attendance, takeout/eat-out/leftovers/freezer
@@ -168,7 +168,6 @@ feeds with one-tap feedback, Expo push, a 15-minute scheduler tick per household
 gate 20/20, 8-week simulation, governance and access checks, mkdocs --strict, app typecheck, and the web build
 walked through at iPhone size (wizard → first plan → approve → specials, recipe, forecast, money, calendar).
 
-- [ ] **Ruairi: merge** `lil-helper-v2` to `main` when happy.
 - [ ] **Server:** follow the new `docs/household-setup.md` (Cloudflare hostname `helper.agentls.com`, sign-up code,
       `HELPER_PUSH=expo`); import the v1 household file if you set one up.
 - [ ] **TestFlight build** with push (say yes to push notifications in `eas build`); push and Apple/Google calendar
