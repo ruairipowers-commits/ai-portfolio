@@ -9,7 +9,7 @@ import { Button, Chips, ErrorText, Header, LinkRow, Screen } from "@/components/
 import { c, s } from "@/lib/theme";
 
 export default function ChangeMeal() {
-  const { day, meal } = useLocalSearchParams<{ day: string; meal: string }>();
+  const { day, meal, week: wk } = useLocalSearchParams<{ day: string; meal: string; week?: string }>();
   const [current, setCurrent] = useState<Entry | null>(null);
   const [rows, setRows] = useState<RecipeRow[]>([]);
   const [search, setSearch] = useState("");
@@ -18,19 +18,19 @@ export default function ChangeMeal() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   useEffect(() => {
-    api.week().then((w) => setCurrent(w.plan.entries.find((e) => e.day === day && e.meal === meal) ?? null)).catch(setError);
+    api.week(wk).then((w) => setCurrent(w.plan.entries.find((e) => e.day === day && e.meal === meal) ?? null)).catch(setError);
     api.recipes({ meal: meal === "leftovers" ? "dinner" : meal }).then((r) => setRows(r.recipes)).catch(setError);
-  }, [day, meal]);
+  }, [day, meal, wk]);
 
   const shown = rows.filter((r) => r.id !== current?.recipe
     && (which === "all" || (which === "mine" ? r.source === "household" : r.source !== "household"))
     && (!search || r.name.toLowerCase().includes(search.toLowerCase())));
-  const useFor = `${day}:${meal}`;
+  const useFor = `${day}:${meal}${wk ? `:${wk}` : ""}`;
 
   async function use() {
     if (!pick) return;
     setBusy(true); setError(null);
-    try { await api.change(day, meal, pick.id); router.back(); } catch (e) { setError(e); } finally { setBusy(false); }
+    try { await api.change(day, meal, pick.id, wk); router.back(); } catch (e) { setError(e); } finally { setBusy(false); }
   }
 
   return (

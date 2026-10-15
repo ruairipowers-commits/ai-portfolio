@@ -11,6 +11,18 @@ the cooking and cleanup, and learns how much everyone — the dog included — a
 
 ## What it does
 
+- **Opens on Today:** the next meal and who's cooking, your jobs, the shopping, anything waiting for an answer,
+  birthdays and holidays coming up, and a microphone: "what's for dinner?", "I have half a chicken, rice and
+  broccoli", "we have 3 portions of oats left".
+- **Five ways to decide, besides the weekly plan:** *Make a plan* (a week or up to three months ahead, and stick to
+  it), *Vibe cooking* (the time you have and your mood → ideas, and an order for what's missing), *Special occasions*
+  (birthdays, anniversaries, holidays, "soccer pizza party" — the person's favourites first, sized for the guests),
+  *Weekly buffet* (no recipe per day: keep N portions of a few things, count what's left once a week, and the plan
+  cooks just enough to refill), and *Surprise me*.
+- **People with birthdays:** child (under 12) or adult follows from the birthday; teens (12–17) get adult portions but
+  approve spending only if the admin allows; nobody has jobs on their birthday.
+- **Meals with parts:** cook the curry for three while two heat up Monday's leftovers or have something ready-made;
+  people on another part come off the recipe and the shopping list.
 - **Plans the week** for the meals you turn on (dinners every night, weekend breakfasts, school lunchboxes), from
   recipes the family likes plus two new ideas a week. A solver fits everyone's allergies and diets (hard rules), each
   day's hands-on cooking limit, variety, the season where you live, the budget and this week's specials. Swap any
@@ -37,8 +49,10 @@ the cooking and cleanup, and learns how much everyone — the dog included — a
   freezes-well dinners for freezer nights.
 - **Forecasts an ingredient:** how much the next weeks' plans need, what's on hand, which trip to buy it on, how
   much, and where it's cheapest. **Cook from what I've got** turns what's in the kitchen into ideas.
-- **Your own recipes:** ingredients in everyday words, steps, the months they're in season, how often you'd like
-  them, and where each is from. Add one from the web (search the sites you like, or paste a link: name, ingredients,
+- **Your own recipes:** ingredients in everyday words, cooking steps, calories per serving, which meals they suit
+  (breakfast, lunch, dinner), the months they're in season, how often you'd like them, and where each is from. Every
+  recipe in Lil'Helper's book has steps and calories; use the book and its indicative prices, or turn the book off.
+  **Your brand, store and price** for any ingredient apply to every plan and list. Add one from the web (search the sites you like, or paste a link: name, ingredients,
   times and a link back come in, ready to check), export and import the book as a file, or share it with another
   household by code.
 - **Change any planned meal** to a recipe from the book, one of yours, a new one or one from the web — and undo it.
@@ -54,6 +68,14 @@ the cooking and cleanup, and learns how much everyone — the dog included — a
 - **Specials from a flyer photo:** a vision model reads it; a person confirms before it counts; typo prices are flagged.
 - **Households and roles:** a welcome wizard sets up a household; its admin adds and invites everyone; adults plan
   and approve; kids see the plan and their jobs and rate meals.
+- **Bulk import and export:** the admin downloads everything the planner uses — household, people, occasions,
+  recipes and their ingredients, ingredient brands/stores/prices, fridge, pantry and freezer — as one Excel
+  workbook, edits it, and uploads it; a preview shows every add, change and removal before anything is saved.
+- **Reports:** costs (planned against spent), time (cooking, shopping, planning), calories planned per person, and
+  who did which jobs.
+- **Voice and Alexa:** the app's microphone (the phone's own speech recogniser) fills any box or answers a question;
+  "Alexa, ask Lil'Helper what's for dinner" works through a skill you add in the Amazon developer console
+  ([docs/alexa.md](docs/alexa.md)). Requests are matched by rules, not a model; nothing is bought by voice.
 
 The family uses the **phone app** (`app/`, Expo — iPhone first via TestFlight, Android from the same code).
 
@@ -107,12 +129,15 @@ clean trend. Time saved is mostly the household's own before-estimate. Real numb
 
 ## Configuration
 
-Each household's settings are edited in the app (**Home**); the admin changes them, and every save is validated.
+Each household's settings are edited in the app (**More**), or all at once as an Excel workbook (**More → Import and export**); the admin changes them, and every save is validated.
 The same sections, for the CLI and the demo, are in `config/household.example.yaml`:
 
 | What | Section |
 |---|---|
-| People (adult/child, age, allergies, diets, portion, home days, can cook, admin, email); pets | `people`, `pets` |
+| People (birthday or adult/child, allergies, diets, portion, home days, can cook, admin, teen approval, email); pets | `people`, `pets` |
+| Occasions and holidays | `occasions`, `holidays`, `holidays_off` |
+| Weekly buffet (per meal: recipes and portions to keep) | `buffet` |
+| Your brand, store and price per ingredient; use Lil'Helper's book | `ingredient_prefs`, `use_book` |
 | Dinner days and times, breakfasts, lunchboxes, nights off | `meals`, `dinner_times`, `meals.special_nights` |
 | Takeout and eating out: budget and service | `eating_out` |
 | Hands-on minutes by day; styles to prefer or require; kid chef nights; leftover lunches | `prep_minutes`, `styles`, `kid_chef`, `leftovers` |
@@ -123,7 +148,7 @@ The same sections, for the CLI and the demo, are in `config/household.example.ya
 | Health preferences, brands | `health`, `brands` |
 | Jobs, ages, fairness window | `chores` |
 | Weekly email | `outputs.email` |
-| Server: sign-up, push, public address, scheduler | `.env` (see `.env.example`) |
+| Server: sign-up, push, public address, scheduler, Alexa skill id | `.env` (see `.env.example`) |
 | Solver weights, typo-special threshold, dog extras cap, portion learning | `config/settings.yaml` |
 | Models | `config/models.yaml` (aliases `helper-suggest`, `helper-vision`, `helper-notes`, `helper-fallback`, `helper-candidate`) |
 

@@ -759,6 +759,32 @@ _bulk: dict[str, dict] = {}
 def bulk_export(ctx: Ctx = Depends(member)) -> Response:
     """Everything the planner uses, as one Excel workbook."""
     need(ctx, "admin")
+    return _workbook()
+
+
+@app.post("/api/bulk/link")
+def bulk_link(ctx: Ctx = Depends(member)) -> dict:
+    """A five-minute download link for the workbook (phones open downloads in the browser, without the session)."""
+    need(ctx, "admin")
+    return {"url": f"{public_url()}/bulk/{sign('bulk', f'{ctx.uid}|{ctx.hid}', 300)}/lilhelper.xlsx"}
+
+
+@app.get("/bulk/{token}/lilhelper.xlsx")
+def bulk_download(token: str) -> Response:
+    uid, _, hid = verify("bulk", token).partition("|")
+    con = accounts.connect()
+    m = accounts.membership(con, uid, hid)
+    con.close()
+    if not m or m["role"] != "admin":
+        raise HTTPException(403)
+    tok = set_tenant(hid)
+    try:
+        return _workbook()
+    finally:
+        reset_tenant(tok)
+
+
+def _workbook() -> Response:
     from . import bulk
     h = _hh()
     con = store.connect()

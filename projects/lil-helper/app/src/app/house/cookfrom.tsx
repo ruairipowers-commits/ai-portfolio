@@ -1,16 +1,18 @@
 // Cook from what I've got: type what's in the fridge (or just use the pantry Lil'Helper keeps), get ideas ranked by
 // how much they use up, and put one on tonight's plan.
-import { router } from "expo-router";
-import { useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import { Text, TextInput, View } from "react-native";
 import { api, DAY_NAME, DAYS, Idea } from "@/lib/api";
 import { giveDraft } from "@/lib/handoff";
 import { Button, Chips, ErrorText, Header, money, NumberField, Screen, Toggle } from "@/components/ui";
+import { MicButton } from "@/components/voice";
 import { c, s } from "@/lib/theme";
 
 export default function CookFrom() {
   const today = DAYS[(new Date().getDay() + 6) % 7];
-  const [text, setText] = useState("");
+  const params = useLocalSearchParams<{ text?: string }>();
+  const [text, setText] = useState(params.text ? String(params.text) : "");
   const [pantry, setPantry] = useState(true);
   const [meal, setMeal] = useState("dinner");
   const [max, setMax] = useState(45);
@@ -20,11 +22,13 @@ export default function CookFrom() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
-  async function go() {
+  async function go(t = text, usePantry = pantry) {
     setBusy(true); setError(null); setDone(null);
-    try { setRes(await api.cookFrom({ text, use_pantry: pantry, meal, day, max_minutes: max })); }
+    try { setRes(await api.cookFrom({ text: t, use_pantry: usePantry, meal, day, max_minutes: max })); }
     catch (e) { setError(e); } finally { setBusy(false); }
   }
+  // said by voice (here or from Ask Lil'Helper): search straight away, using only what was said
+  useEffect(() => { if (params.text) { setPantry(false); go(String(params.text), false); } }, [params.text]);  // eslint-disable-line react-hooks/exhaustive-deps
   async function use(i: Idea) {
     try { await api.useIdea(i.recipe, day, meal); setDone(`${i.name} is on ${DAY_NAME[day]}'s plan.`); } catch (e) { setError(e); }
   }
@@ -32,14 +36,18 @@ export default function CookFrom() {
     <Screen>
       <Header title="What I've got" />
       <View style={s.card}>
-        <TextInput style={[s.input, { minHeight: 80, textAlignVertical: "top" }]} multiline value={text} onChangeText={setText}
-          placeholder="half a chicken, rice, some broccoli, eggs…" />
+        <View style={[s.row, { alignItems: "flex-start" }]}>
+          <TextInput style={[s.input, { flex: 1, minHeight: 80, textAlignVertical: "top" }]} multiline value={text} onChangeText={setText}
+            placeholder="half a chicken, rice, some broccoli, eggs…" />
+          <MicButton onText={setText} onDone={(t) => { setPantry(false); go(t, false); }} />
+        </View>
+        <Text style={s.muted}>Tap 🎤 and say what you have: it searches as soon as you stop talking.</Text>
         <Toggle label="Also use what's in the pantry" value={pantry} onChange={setPantry} />
         <Chips multi={false} options={["dinner", "lunch", "breakfast"]} value={meal} onChange={([m]) => setMeal(m)} />
         <Chips label="For" multi={false} options={DAYS.map((d) => ({ id: d, label: DAY_NAME[d].slice(0, 3) }))} value={day}
           onChange={([d]) => setDay(d)} />
         <NumberField label="Hands-on minutes, at most" step={5} min={5} max={240} value={max} onChange={setMax} />
-        <Button title="Find ideas" busy={busy} onPress={go} disabled={!text.trim() && !pantry} />
+        <Button title="Find ideas" busy={busy} onPress={() => go()} disabled={!text.trim() && !pantry} />
       </View>
       {res?.not_recognised.length ? <Text style={s.muted}>Didn't recognise: {res.not_recognised.join(", ")}</Text> : null}
       {done ? <View style={[s.card, { backgroundColor: c.greenSoft }]}><Text style={s.body}>✓ {done}</Text></View> : null}

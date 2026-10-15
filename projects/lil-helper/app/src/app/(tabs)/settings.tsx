@@ -1,4 +1,4 @@
-// Home: the household at a glance, and the way into everything else: people, settings, recipes, specials, the
+// More: the household at a glance, and the way into everything else: people, settings, recipes, specials, the
 // calendar, money and planning tools. Admin-only settings are visible to everyone but only the admin can change them.
 import * as WebBrowser from "expo-web-browser";
 import { router, useFocusEffect } from "expo-router";
@@ -39,7 +39,8 @@ export default function Home() {
       ) : null}
       <View style={s.card}>
         <Text style={s.h2}>Household</Text>
-        <LinkRow icon="👪" title="People" sub="Add, invite, allergies, who's home when" onPress={go("/house/people")} />
+        <LinkRow icon="👪" title="People" sub="Add, invite, birthdays, allergies, who's home when" onPress={go("/house/people")} />
+        <LinkRow icon="🎉" title="Special occasions" sub="Birthdays, anniversaries, holidays" onPress={go("/house/occasions")} />
         <LinkRow icon="🍽️" title="Dinners" sub="Days, times, nights off, takeout and eating out" onPress={go("/house/dinners")} />
         <LinkRow icon="🥗" title="Meal style" sub="Prep time, one-pot nights, kid chef, leftovers for lunch" onPress={go("/house/style")} />
         <LinkRow icon="🛒" title="Stores, cards and budget" sub="Where you shop, memberships, cards, cost per serving" onPress={go("/house/stores")} />
@@ -50,14 +51,28 @@ export default function Home() {
         <Text style={s.h2}>Food</Text>
         <LinkRow icon="🍳" title="Cook from what I've got" sub="Ideas from what's in the kitchen" onPress={go("/house/cookfrom")} />
         <LinkRow icon="📖" title="Recipes" sub="Your own recipes: ingredients, steps, seasons, how often" onPress={go("/house/recipes")} />
+        <LinkRow icon="🥕" title="Ingredients" sub="Your brand, store and price for anything" onPress={go("/house/ingredients")} />
+        <LinkRow icon="🥣" title="Weekly buffet" sub="Portions on hand instead of a recipe a day" onPress={go("/house/buffet")} />
         {adult ? <LinkRow icon="🏷️" title="Specials" sub="This week's deals by store, in store or online" onPress={go("/house/specials")} /> : null}
         {adult ? <LinkRow icon="📈" title="Ingredient forecast" sub="How much you'll need, when to buy, where" onPress={go("/house/forecast")} /> : null}
       </View>
       <View style={s.card}>
+        <Text style={s.h2}>Reports and money</Text>
+        <LinkRow icon="📊" title="Reports" sub="Costs, time, calories, who did which jobs" onPress={go("/house/report")} />
+        {adult ? <LinkRow icon="💵" title="Money" sub="Budget, spending, receipts, cards" onPress={go("/money")} /> : null}
+        <LinkRow icon="⭐" title="Rate meals" sub="How was it? How much was left?" onPress={go("/meals")} />
+      </View>
+      <View style={s.card}>
         <Text style={s.h2}>Stay in the loop</Text>
+        <LinkRow icon="🔊" title="Alexa" sub="“Alexa, ask Lil'Helper what's for dinner”" onPress={go("/house/alexa")} />
         <LinkRow icon="📅" title="Calendar and notifications" sub="Subscribe in your calendar; push updates" onPress={go("/house/calendar")} />
         <LinkRow icon="🖨️" title="Print this week" onPress={() => WebBrowser.openBrowserAsync(`${base}/api/print/week.pdf`)} />
       </View>
+      {cur?.role === "admin" ? <View style={s.card}>
+        <Text style={s.h2}>Admin</Text>
+        <LinkRow icon="📥" title="Import and export" sub="Everything in one Excel workbook: people, recipes, prices, fridge, freezer"
+          onPress={go("/house/bulk")} />
+      </View> : null}
       <View style={s.card}>
         <Text style={s.h2}>You</Text>
         {(me?.households.length ?? 0) > 1 ? <LinkRow icon="🔀" title="Switch household" onPress={go("/house/account")} /> : null}

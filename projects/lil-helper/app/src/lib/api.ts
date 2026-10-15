@@ -81,7 +81,9 @@ export type Entry = { day: string; meal: string; recipe: string; name: string; s
   active: number; prep_day: string; double?: boolean; why?: string[]; eaters?: string[];
   kind?: "cook" | "leftovers" | "freezer"; cook?: string | null; to_freeze?: number;
   state?: "planned" | "today" | "to_confirm" | "finished" | "leftovers" | "freezer" | "skipped"; date?: string;
-  frozen?: number; original?: { recipe: string; name: string } | null };
+  frozen?: number; original?: { recipe: string; name: string } | null; parts?: MealPart[] };
+export type MealPart = { kind: "cook" | "leftovers" | "ready"; eaters?: string[]; recipe?: string; food?: string;
+  servings?: number; name?: string };
 export type Option = { total: number; minutes: number; flags: string[]; storage_used: Record<string, number>;
   stores: { store: string; mode: string; total: number; day?: string | null; time?: string | null; card?: string | null }[] };
 export type Chore = { day: string; job: string; person: string; name: string };
@@ -108,10 +110,11 @@ export type Order = { store: string; mode: string; handoff: string; total: numbe
   card?: string | null; card_note?: string | null; rewards?: number;
   lines: { name: string; packs: number; brand: string; special: boolean; price: number }[] };
 
-export type Person = { id: string; name: string; age_band: "adult" | "kid"; age?: number; allergies?: string[];
+export type Person = { id: string; name: string; age_band: "adult" | "kid"; age?: number; birthday?: string;
+  can_approve?: boolean; age_now?: number | null; child?: boolean; teen?: boolean; allergies?: string[];
   diet?: string[]; portion?: number; likes?: string[]; dislikes?: string[]; home?: string[]; can_cook?: boolean;
   email?: string; admin?: boolean; role: Role; signed_up: boolean; invited: boolean; last_seen?: string | null };
-export type PersonIn = Omit<Person, "id" | "role" | "signed_up" | "invited" | "last_seen">;
+export type PersonIn = Omit<Person, "id" | "role" | "signed_up" | "invited" | "last_seen" | "age_now" | "child" | "teen">;
 export type Catalogs = { allergens: string[]; diets: string[]; night_kinds: string[]; days: string[]; meals: string[];
   regions: string[]; stores: { id: string; name: string; modes: string[]; needs?: string }[];
   cards: { id: string; name: string; verified: string }[]; memberships: { id: string; name: string }[]; styles: string[] };
@@ -121,11 +124,11 @@ export type SettingsView = { settings: Settings; version: string; role: Role; me
 
 export type RecipeRow = { id: string; name: string; meal: string; active: number; total: number; tags: string[];
   source: string; season_months: number[]; want: { times?: number; per_weeks?: number }; kid_min_age?: number | null;
-  credit?: string; url?: string };
+  credit?: string; url?: string; meals?: string[]; kcal?: number | null };
 export type RecipeIn = { name: string; meal: string; serves: number; active: number; total: number;
   ingredients: { text?: string; ingredient?: string; qty: number; unit?: string }[]; instructions: string[];
   tags: string[]; season_months: number[]; want: { times?: number; per_weeks?: number }; kid_min_age: number;
-  veg?: number; notes?: string; credit?: string; url?: string };
+  veg?: number; notes?: string; credit?: string; url?: string; meals?: string[]; kcal?: number };
 export type RecipeDraft = Omit<RecipeIn, "ingredients"> & { ingredients: { text?: string; ingredient?: string; qty: number; unit?: string;
   line?: string; known?: boolean }[]; unknown?: string[]; check_amounts?: string[]; note?: string };
 export type SearchResult = { results: { title: string; url: string; site: string; snippet: string }[];
@@ -146,7 +149,7 @@ export type Receipt = { receipt: string; store: string | null; merchant: string;
 export type CostReport = { weeks: { week_of: string; status: string; food_bill: number; food_used: number;
     stock_change: number; pet_food: number; eating_out: number; total: number; per_person: Record<string, number>;
     meals: { day: string; meal: string; name: string; cost: number; per_serving: number; servings: number }[];
-    actual: number | null }[];
+    actual: { groceries: number; takeout?: number; eat_out?: number; total?: number } | null }[];
   people: { person: string; name: string; total: number; per_week: number; per_day: number }[];
   by_meal: Record<string, { meals: number; avg_cost: number; avg_per_serving: number }>; pets: number;
   analysis: string[]; basis: string };
@@ -168,6 +171,34 @@ export type Storage = { capacity: { fridge_l: number; freezer_l: number; fill_ta
   used: Record<string, number>; free: Record<string, number>;
   freezer_meals: { id: number; name: string; portions: number; frozen_on: string; use_by: string }[];
   frozen: { ingredient: string; name: string; qty: number; unit: string }[] };
+export type Occasion = { id: string; name: string; kind: string; people: string[]; recipe: string | null; tags: string[];
+  guests: number; meal: string; date: string };
+export type OccasionIn = { name: string; date: string; kind: string; people: string[]; recipe?: string; guests: number;
+  tags: string[]; yearly: boolean; meal: string };
+export type VibeIdea = { recipe: string; name: string; active: number; total: number; kcal: number | null; servings: number;
+  why: string[]; missing: { ingredient: string; name: string; qty: number; unit: string; est_cost: number }[];
+  missing_cost: number; credit: string };
+export type BuffetItem = { meal: string; recipe: string; name: string; target: number; on_hand: number; cook: number;
+  active: number };
+export type TodayTask = { kind: "job" | "confirm" | "shop" | "approve" | "buffet"; text: string; day?: string;
+  meal?: string; week?: string; items?: number; job?: string };
+export type Today = { date: string; day: string; me: string; my_name: string; role: Role;
+  meals: { meal: string; name: string; recipe: string; kind?: string; active?: number; cook: string | null; time: string;
+    parts: MealPart[] }[];
+  my_jobs: TodayTask[]; tasks: TodayTask[]; everyone: { person: string; name: string; jobs: TodayTask[] }[];
+  occasions: Occasion[]; birthday: boolean; week_status: string | null };
+export type Activity = { weeks: { week_of: string; cooking_minutes: number; shopping_minutes: number;
+    planning_minutes: number; kcal_per_day: Record<string, number>; chores: Record<string, Record<string, number>> }[];
+  chores: { person: string; jobs: Record<string, number>; total: number }[];
+  kcal: { person: string; avg_per_day_planned: number }[]; minutes: { cooking: number; shopping: number }; note: string };
+export type IngredientDetail = { id: string; name: string; unit: string; cat: string; allergens: string[]; source: string;
+  storage: string; book_prices: { store: string; store_name: string; brand: string; pack: number; price: number }[];
+  mine: IngredientPref | null; used_in: string[]; stores: { id: string; name: string }[] };
+export type IngredientPref = { brand?: string; store?: string; price?: number; pack?: number; only_store?: boolean };
+export type VoiceReply = { intent: string; heard: string; say: string; screen: string | null; params: Record<string, string>;
+  data?: { ideas?: string[] } };
+export type BulkChanges = Record<string, Partial<Record<"add" | "change" | "remove", string[]>>>;
+export type BulkPreview = { token: string; changes: BulkChanges; problems: string[] };
 export type CalendarLink = { https: string; webcal: string; google: string; note: string };
 
 export const api = {
@@ -308,6 +339,52 @@ export const api = {
   calendarLink: () => call<CalendarLink>("/api/calendar/link"),
   rotateCalendar: () => post<CalendarLink>("/api/calendar/rotate", {}),
   registerDevice: (token: string, platform: string) => post<{ registered: boolean }>("/api/devices", { token, platform }),
+  // v4: occasions, ways to decide, today, reports, ingredients, bulk, voice
+  occasions: (days = 60) => call<{ upcoming: Occasion[]; holidays: { id: string; name: string; on: boolean }[];
+    occasions: (OccasionIn & { id: string })[] }>(`/api/occasions${q({ days })}`),
+  addOccasion: (o: OccasionIn) => post<{ added: string }>("/api/occasions", o),
+  removeOccasion: (id: string) => del<{ removed: string }>(`/api/occasions/${id}`),
+  occasionIdeas: (b: { people: string[]; tags: string[]; guests: number; meal?: string }) =>
+    post<{ servings: number; ideas: (VibeIdea & { est_cost: number; score: number })[] }>("/api/occasions/ideas", b),
+  vibe: (b: { minutes: number; moods: string[]; meal?: string; day?: string; people?: string[]; have?: string }) =>
+    post<{ meal: string; minutes: number; moods: string[]; servings: number; ideas: VibeIdea[]; not_recognised: string[];
+      mood_names: Record<string, string> }>("/api/vibe", b),
+  vibeOrder: (recipe: string, servings: number) => post<{ orders: { store: string; mode: string; total: number;
+    lines: { name: string; packs: number; brand: string }[]; share_text: string; url: string | null; note?: string }[];
+    note?: string }>("/api/vibe/order", { recipe, servings }),
+  surprise: (meal = "dinner", day?: string, minutes?: number) => call<{ recipe: string; name: string; active: number;
+    total: number; kcal: number | null; credit: string; steps: string[]; pool: number }>(`/api/surprise${q({ meal, day, minutes })}`),
+  buffet: () => call<{ config: Record<string, { on: boolean; items: { recipe: string; target: number }[] }>;
+    items: BuffetItem[] }>("/api/buffet"),
+  setBuffet: (meal: string, on: boolean, items: { recipe: string; target: number }[]) =>
+    put<{ config: Record<string, { on: boolean; items: { recipe: string; target: number }[] }>; items: BuffetItem[] }>(
+      "/api/buffet", { meal, on, items }),
+  buffetCount: (meal: string, recipe: string, on_hand: number) =>
+    post<{ items: BuffetItem[] }>("/api/buffet/count", { meal, recipe, on_hand }),
+  planAhead: (weeks: number, start?: string) => post<{ weeks: { week_of: string; status: string; dinners: string[];
+    total: number | null }[] }>("/api/plan/ahead", { weeks, start }),
+  parts: (day: string, meal: string, parts: MealPart[], week?: string) =>
+    post<Week>("/api/week/parts", { week, day, meal, parts }),
+  today: () => call<Today>("/api/today"),
+  activity: (weeks = 8) => call<Activity>(`/api/reports/activity${q({ weeks })}`),
+  ingredient: (id: string) => call<IngredientDetail>(`/api/ingredients/${id}`),
+  setPref: (id: string, p: IngredientPref) => put<{ saved: string; mine: IngredientPref }>(`/api/ingredients/${id}/pref`, p),
+  clearPref: (id: string) => del<{ cleared: string }>(`/api/ingredients/${id}/pref`),
+  bulkLink: () => post<{ url: string }>("/api/bulk/link", {}),
+  bulkImport: async (file: { uri: string; name: string; mimeType?: string; file?: File }) => {
+    const form = new FormData();
+    if (file.file) form.append("file", file.file);
+    else form.append("file", { uri: file.uri, name: file.name, type: file.mimeType ??
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" } as unknown as Blob);
+    return call<BulkPreview>("/api/bulk/import", { method: "POST", body: form });
+  },
+  bulkConfirm: (token: string) => post<{ applied: boolean; changes: BulkChanges }>("/api/bulk/import/confirm", { token }),
+  voice: (text: string) => post<VoiceReply>("/api/voice", { text }),
+  alexa: () => call<{ links: { created: string; last_used: string | null }[]; configured: boolean; link_page: string;
+    endpoint: string }>("/api/alexa"),
+  alexaCode: () => post<{ code: string; minutes: number }>("/api/alexa/code", {}),
+  alexaUnlink: () => del<{ removed: number }>("/api/alexa"),
+
   savings: () => call<{ weeks: { week_of: string; dollars_saved: number; minutes_saved: number; rating: number | null }[];
     dollars_saved: number; minutes_saved: number }>("/api/savings"),
 };

@@ -47,7 +47,14 @@
           "color": "#D7392A"
         }
       ],
-      "expo-document-picker"
+      "expo-document-picker",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Lil'Helper listens when you tap the microphone, so you can say what you have or ask what's for dinner.",
+          "speechRecognitionPermission": "Lil'Helper turns what you say into text to find recipes and answer questions."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false

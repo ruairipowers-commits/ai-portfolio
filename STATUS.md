@@ -1,7 +1,7 @@
 # Status — open items
 
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
-(or delete them) as they're done. Last updated 14 October 2026.
+(or delete them) as they're done. Last updated 15 October 2026.
 
 ## 000000000. Run log on its own branch; Python image bumps off (14 October 2026, night)
 
@@ -187,6 +187,24 @@ whole list. Verified offline: 88 tests, eval gate, governance, mkdocs, app typec
 - [ ] New TestFlight build and server rebuild (both from `main`).
 - [ ] Optional `BRAVE_API_KEY` on the server for in-app recipe search results (without it, search opens the browser).
 - [ ] Not tested against live recipe sites from here (the sandbox can't reach them); parsing is tested on a fixture page.
+
+### Lil'Helper v4 (15 October 2026, branch `agent/claude-lil-helper-v4`, not merged)
+
+Birthdays on profiles (child under 12 / teen / adult follows from them; teens adult portions, approve only if the
+admin allows; no jobs on your birthday); special occasions (birthdays, US holidays on/off, anniversaries, own) feed
+the plan; recipes suit breakfast/lunch/dinner with steps and calories for the whole book; own brand/store/price per
+ingredient; book recipes on/off; meals with parts (cook / leftovers / ready-made); Today home tab; Make a plan (up to
+12 weeks), Vibe cooking, Occasions, Weekly buffet, Surprise me; Reports (cost, time, calories, jobs); bulk Excel
+import/export (admin, preview then confirm); voice (app mic via expo-speech-recognition / Web Speech, rules-based
+`/api/voice`); Alexa skill backend (`alexa.py`, `docs/alexa.md`, `alexa/interaction-model.json`). Welcome screen
+can cancel setup / sign out. Verified offline: 101 tests, eval gate, governance, mkdocs, app typecheck, browser
+walk-through of every new screen.
+
+- [ ] **Ruairi: review and say "merge"** (merging to `main` needs his OK).
+- [ ] After merge: server rebuild and a **new TestFlight build** (speech recognition is a new native module).
+- [ ] Alexa: create the skill in the Amazon developer console (`docs/alexa.md`), set `HELPER_ALEXA_SKILL_ID`. The
+      certificate-chain check couldn't be run against Amazon's real certificate from the sandbox; the console's Test
+      tab is the first live check.
 
 ## 000a. Data marketplace & lifecycle platform (featured, built 6 October 2026)
 

@@ -372,3 +372,13 @@ def test_voice_commands(server, monkeypatch):
     assert say("surprise me")["say"].startswith("How about")
     assert say("I've got 20 minutes and want something quick")["intent"] == "vibe"
     assert "didn't catch" in say("sing me a song")["say"]
+
+
+def test_bulk_download_link(server):
+    c = server.client
+    H, _ = server.household()
+    url = c.post("/api/bulk/link", headers=H).json()["url"]
+    path = url.split("localhost:8650", 1)[-1] if "localhost:8650" in url else "/" + url.split("/", 3)[3]
+    r = c.get(path)
+    assert r.status_code == 200 and r.content[:2] == b"PK"
+    assert c.get(path.replace("/bulk/", "/bulk/x")).status_code == 401
