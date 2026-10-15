@@ -54,7 +54,11 @@
     },
     "extra": {
       "apiUrl": "http://localhost:8650",
-      "router": {}
-    }
+      "router": {},
+      "eas": {
+        "projectId": "65b77174-e87a-4846-993d-f6d37705e654"
+      }
+    },
+    "owner": "ruairipowers"
   }
 }

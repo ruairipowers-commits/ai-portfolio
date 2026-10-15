@@ -3,9 +3,9 @@
   "build": {
     "development": { "developmentClient": true, "distribution": "internal" },
     "preview": { "distribution": "internal", "ios": { "simulator": false } },
-    "production": { "autoIncrement": true, "env": { "EXPO_PUBLIC_API_URL": "https://REPLACE-WITH-YOUR-HOUSEHOLD-SERVER" } }
+    "production": { "autoIncrement": true, "env": { "EXPO_PUBLIC_API_URL": "https://helper.agentls.com" } }
   },
   "submit": {
-    "production": {}
+    "production": { "ios": { "ascAppId": "6822095952" } }
   }
 }
