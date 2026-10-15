@@ -31,7 +31,7 @@ models:
 
   local-qwen:              # local open model on the EVO-X1 through Ollama ($0 per token)
     provider: ollama
-    model_id: qwen3:14b    # override with OLLAMA_MODEL
+    model_id: qwen3:14b    # override with COURSE_OLLAMA_MODEL (the shared OLLAMA_MODEL is not used here)
     input_per_mtok: 0.0
     output_per_mtok: 0.0
     deprecation_date: null

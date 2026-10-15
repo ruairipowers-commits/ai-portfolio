@@ -235,6 +235,8 @@ demo:
   - ollama
   env:
   - COURSE_WRITER_MODEL
+  - COURSE_OLLAMA_MODEL          # the local writer's model (the shared OLLAMA_MODEL is not used)
+  - COURSE_OLLAMA_TIMEOUT
   - COURSE_MODERATOR_MODEL
   - COURSE_SECRET
   - RESEND_API_KEY

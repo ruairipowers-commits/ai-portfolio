@@ -149,18 +149,27 @@ def _tag_json(text: str, tag: str) -> dict:
 
 
 class OllamaProvider:
-    """A local open model through Ollama's chat API (OLLAMA_URL, default http://localhost:11434), JSON mode."""
+    """A local open model through Ollama's chat API (OLLAMA_URL, default http://localhost:11434), JSON mode.
+
+    The model is the registry's model_id, or COURSE_OLLAMA_MODEL. The shared OLLAMA_MODEL is deliberately NOT used:
+    the demo host passes it to every app (it names the site assistant's small chat model), and a one-hour level
+    needs a stronger writer than that."""
 
     def complete(self, spec, system, user, max_tokens):
         import httpx
         url = os.getenv("OLLAMA_URL", "http://localhost:11434").rstrip("/")
-        body = {"model": os.getenv("OLLAMA_MODEL") or spec.model_id, "stream": False, "format": "json",
+        model = os.getenv("COURSE_OLLAMA_MODEL") or spec.model_id
+        ctx = int(os.getenv("COURSE_OLLAMA_NUM_CTX") or 32768)     # source page + up to 12k output tokens
+        timeout = httpx.Timeout(float(os.getenv("COURSE_OLLAMA_TIMEOUT") or 1800), connect=5)
+        body = {"model": model, "stream": False, "format": "json",
                 "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
-                "options": {"temperature": 0.7, "num_predict": max_tokens, "num_ctx": 16384}, "think": False}
-        r = httpx.post(f"{url}/api/chat", json=body, timeout=httpx.Timeout(600, connect=5))
+                "options": {"temperature": 0.7, "num_predict": max_tokens, "num_ctx": ctx}, "think": False}
+        r = httpx.post(f"{url}/api/chat", json=body, timeout=timeout)
         if r.status_code == 400 and "think" in body:          # a model without a thinking switch
             body.pop("think")
-            r = httpx.post(f"{url}/api/chat", json=body, timeout=httpx.Timeout(600, connect=5))
+            r = httpx.post(f"{url}/api/chat", json=body, timeout=timeout)
+        if r.status_code == 404:
+            raise RuntimeError(f"Ollama has no model {model!r}: pull it first (ollama pull {model})")
         r.raise_for_status()
         d = r.json()
         return d["message"]["content"], d.get("prompt_eval_count", 0), d.get("eval_count", 0)

@@ -37,6 +37,23 @@ levels completed {{ stats.completed }} · levels published {{ stats.published }}
 {% for g in decided %}<li>#{{ g.id }} {{ g.text }} — {{ g.status }} by {{ g.decided_by }}{% if g.course_slug %} → <a href="{{ R }}/course/{{ g.course_slug }}">{{ g.course_slug }}</a>{% endif %}</li>{% endfor %}
 </ul></details>{% endif %}
 
+{% if no_writer %}<div class="card" style="margin:12px 0;border-left:4px solid #b26a00">
+  <p style="margin:0"><b>No writer model is set.</b> Beginner and Intermediate levels are drafted by a model the first
+  time a learner unlocks them, and the offline mock only writes placeholder text, so nothing is drafted here until
+  <code>COURSE_WRITER_MODEL</code> is set (e.g. <code>local-qwen</code>) and the service restarted. Then use
+  <b>Draft now</b> below.</p></div>{% endif %}
+
+{% if waiting %}<h2>Learners are waiting on ({{ waiting|length }})</h2>
+<div class="card" style="padding:0;overflow-x:auto"><table class="tbl">
+<thead><tr><th>Course</th><th>Level</th><th>Learners</th><th>Last draft attempt</th><th></th></tr></thead><tbody>
+{% for w in waiting %}<tr>
+  <td>{{ w.title }}</td><td><span class="pill lv-{{ w.level }}">{{ w.level }}</span></td><td>{{ w.learners }}</td>
+  <td class="small">{{ w.job or 'none' }}{% if w.why %}<div class="small muted">{{ w.why }}</div>{% endif %}</td>
+  <td class="actions"><form method="post" action="{{ R }}/owner/action"><input type="hidden" name="kind" value="build">
+    <input type="hidden" name="course" value="{{ w.course }}"><input type="hidden" name="level" value="{{ w.level }}">
+    <button class="btn small" type="submit" {{ 'disabled' if no_writer or w.job in ('pending', 'running') }}>Draft now</button></form></td>
+</tr>{% endfor %}</tbody></table></div>{% endif %}
+
 <h2>Drafts waiting to publish ({{ drafts|length }})</h2>
 {% if drafts %}
 {% set passing = drafts|selectattr('ok')|list %}

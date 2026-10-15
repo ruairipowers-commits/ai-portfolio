@@ -25,7 +25,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markdown_it import MarkdownIt
 
-from . import accounts, builder, catalog, checks, demo, jobs, mailer, moderation, quiz, revise, telemetry, tracker
+from . import accounts, ai, builder, catalog, checks, demo, jobs, mailer, moderation, quiz, revise, telemetry, tracker
 from .config import LEVELS, PKG, Settings, root
 from .schemas import Assessment
 from .store import connect, insert, now, one, rows
@@ -453,8 +453,17 @@ def create_app(start_worker: bool = False) -> FastAPI:
                  "attempts": one(conn, "SELECT COUNT(*) n FROM attempts WHERE submitted_at IS NOT NULL")["n"],
                  "completed": one(conn, "SELECT COUNT(*) n FROM progress WHERE completed_at IS NOT NULL")["n"],
                  "published": sum(1 for slug in courses for name in LEVELS if catalog.load_level(slug, name))}
+        # levels a learner has unlocked that have neither a published version nor a draft: what they are waiting on
+        waiting = []
+        for r in rows(conn, "SELECT course, level, COUNT(*) n FROM progress GROUP BY course, level ORDER BY course"):
+            if r["course"] in courses and catalog.level_status(r["course"])[r["level"]] == "missing":
+                last = one(conn, "SELECT status, detail FROM jobs WHERE kind='build' AND course=? AND level=? "
+                                 "ORDER BY id DESC LIMIT 1", r["course"], r["level"])
+                why = (json.loads(last["detail"] or "{}").get("error", "") if last and last["status"] == "failed" else "")
+                waiting.append({"course": r["course"], "title": courses[r["course"]].title, "level": r["level"],
+                                "learners": r["n"], "job": last["status"] if last else "", "why": why[:200]})
         return {"drafts": drafts, "suggestions": sugg, "proposals": props, "feedback": fb, "stats": stats,
-                "jobs": jobs.recent(conn, 10)}
+                "jobs": jobs.recent(conn, 10), "waiting": waiting, "no_writer": ai.placeholder_writer_blocked(s)}
 
     @app.get("/owner", response_class=HTMLResponse)
     def owner_page(req: Request, done: str = ""):
@@ -490,6 +499,16 @@ def create_app(start_worker: bool = False) -> FastAPI:
                     else:
                         builder.reject(conn, s, slug, level, actor, str(f.get("notes", ""))[:300])
                         done = f"{slug}/{level} draft rejected"
+                elif kind == "build":
+                    slug, level = str(f.get("course", "")), str(f.get("level", ""))
+                    if slug not in catalog.all_courses(conn) or level not in LEVELS:
+                        raise ValueError("unknown course or level")
+                    if ai.placeholder_writer_blocked(s):
+                        done = "No writer model is set: add COURSE_WRITER_MODEL (e.g. local-qwen) and restart first"
+                    else:
+                        jid = jobs.enqueue(conn, "build", slug, level)
+                        done = (f"{slug}/{level} queued: the draft appears here when it's written (a local model "
+                                "can take several minutes)") if jid else f"{slug}/{level} is already being drafted"
                 elif kind == "publish_all":
                     n, bad = 0, 0
                     for slug in sorted(catalog.all_courses(conn)):
