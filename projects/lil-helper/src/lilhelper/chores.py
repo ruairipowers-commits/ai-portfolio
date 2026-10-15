@@ -53,7 +53,15 @@ def rota(h: Household, cooked_nights: list[str], past_load: dict[str, int] | Non
             continue
         days = DAYS if spec.get("per") == "day" else cooked_nights
         for d in days:
-            ok = [p for p in people if eligible(p, job, spec, d)]
+            gone = h.away.get(d, set())
+            chef = h.kid_chef().get(d) if d in cooked_nights else None
+            if job == "cook":
+                ok = [p for p in people if p.id not in gone and (eligible(p, job, spec, d) or p.id == chef)]
+                if chef and chef in [p.id for p in ok]:
+                    locks = {**locks, (job, d): chef}   # the kid chef cooks that night (with an adult nearby)
+            else:
+                ok = [p for p in people if p.id not in gone and eligible(p, job, spec, d)
+                      and not (job == "kid_assistant" and p.id == chef)]
             if not ok:
                 if not spec.get("optional"):
                     gaps.append(f"nobody can do {job} on {d}")

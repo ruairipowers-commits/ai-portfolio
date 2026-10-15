@@ -1,24 +1,102 @@
-# Memberships and cards: what they save. EXAMPLES only — benefits change often, so the household enters what
-# its own plans give and the date it checked. Lil'Helper never stores card numbers (anything that looks like one
-# is refused), only a name you'd recognise.
-#   waive_fee      service fees that drop to zero, with the order minimum that unlocks it
-#   pct_back       cash or credit back on spend at matching stores/services (applied to the item total)
-#   monthly_credit a fixed credit you lose if you don't use it (counted once a month, first eligible order)
+# Cards, memberships and partnerships: what they earn or save, so Lil'Helper can count it and say which card to pay
+# with. Card and membership terms change often: each template carries the date it was checked and where. A household
+# uses a template by id, overrides any field in its own settings, and adds cards that aren't here.
+# Lil'Helper never stores card numbers (anything that looks like one is refused) — only a name you'd recognise.
+#
+#   earn            reward rate by spending category (see `categories`); `default` for everything else
+#                   pct: 0.03 = 3% cash back; points: 1 = 1 point per $1, valued at `point_value_cents`
+#                   annual_cap: spending in that category per calendar year that earns the bonus rate (then default)
+#   network         amex | visa | mastercard — some stores take only one (see `acceptance`)
+#   credits         fixed credits you lose if unused: amount per month, which merchants they apply to
+#   waive_fee       memberships: service fees that drop to zero above an order minimum
+#   pct_back        memberships: a store's own reward (e.g. Costco Executive), with its annual cap in dollars
+#   member_deals    memberships: unlocks member-only specials at a store (specials marked `member: <id>`)
+
+# How each store or service usually codes on a card statement. Check yours: issuers decide, not the store.
+categories:
+  whole_foods: supermarket
+  trader_joes: supermarket
+  stop_and_shop: supermarket
+  costco: warehouse_club          # not a "supermarket" for card rewards
+  instacart: online_retail        # varies by issuer; some code it as grocery
+  amazon: online_retail
+  uber_eats: restaurant           # food delivery usually codes as restaurants
+  doordash: restaurant
+  restaurant: restaurant
+
+# Which cards a store takes in person. Costco warehouses take only Visa in the US (Costco delivery via Instacart takes
+# any card Instacart takes).
+acceptance:
+  costco: {in_store: [visa], pickup: [visa]}
+
+point_value_cents:
+  amex_membership_rewards: 1.0    # a conservative value; transfers can be worth more
+  delta_skymiles: 1.0
+
+cards:
+  example_grocery_card:           # fictional, for the demo household
+    name: "Example grocery card"
+    network: visa
+    earn: {supermarket: {pct: 0.03}, default: {pct: 0.01}}
+    verified: null
+
+  amex_blue_cash_everyday:
+    name: "Amex Blue Cash Everyday"
+    network: amex
+    earn:
+      supermarket: {pct: 0.03, annual_cap: 6000}
+      online_retail: {pct: 0.03, annual_cap: 6000}
+      default: {pct: 0.01}
+    verified: 2026-10-11
+    source: https://www.americanexpress.com/us/credit-cards/card/blue-cash-everyday/
+
+  amex_platinum:
+    name: "Amex Platinum"
+    network: amex
+    earn: {default: {points: 1, program: amex_membership_rewards}}
+    credits:
+      - {name: "Uber Cash", monthly: 15, december_extra: 20, applies_to: [uber_eats],
+         note: "card must be in the Uber account and chosen at checkout"}
+    verified: 2026-10-11
+    source: https://www.americanexpress.com/en-us/credit-cards/credit-intel/how-does-the-american-express-platinum-uber-credit-work/
+
+  amex_delta_reserve:
+    name: "Amex Delta SkyMiles Reserve"
+    network: amex
+    earn: {default: {points: 1, program: delta_skymiles}}   # groceries assumed at the base rate: check your terms
+    verified: null
+
+  costco_anywhere_visa:
+    name: "Costco Anywhere Visa (Citi)"
+    network: visa
+    earn:
+      warehouse_club: {pct: 0.02}
+      restaurant: {pct: 0.03}
+      default: {pct: 0.01}
+    verified: 2026-10-11
+    source: https://www.mojosalesandbranding.com/post/costco-visa-credit-card-guide-2026   # third-party summary; confirm with Citi
+
 memberships:
   instacart_plus:
     name: Instacart+
-    verified: null
     waive_fee: {service: instacart, minimum: 35}
+    verified: null
   amazon_prime:
     name: Amazon Prime
-    verified: null
+    member_deals: whole_foods     # Prime member deals at Whole Foods (scan the app at checkout)
     waive_fee: {store: whole_foods, modes: [pickup], minimum: 35}
+    verified: null
+  amazon_grocery_subscription:
+    name: "Amazon grocery delivery subscription (Prime add-on)"
+    price_per_month: 9.99
+    waive_fee: {store: whole_foods, modes: [delivery], minimum: 25}
+    verified: 2026-10-11
+    source: https://www.aboutamazon.com/news/retail/amazon-grocery-delivery-subscription-prime-member-ebt-customers
   costco:
     name: Costco membership
     verified: null
-    pct_back: {store: costco, pct: 0.0}   # Executive members: set your reward rate here
-cards:
-  example_grocery_card:
-    name: "Example grocery card (3% at supermarkets)"
-    verified: null
-    pct_back: {stores: [whole_foods, trader_joes, stop_and_shop], pct: 0.03}
+  costco_executive:
+    name: Costco Executive membership
+    pct_back: {store: costco, pct: 0.02, annual_cap: 1250}
+    verified: 2026-10-11
+    source: https://customerservice.costco.com/app/answers/answer_view/a_id/1008254/~/executive-2%25-reward-faqs

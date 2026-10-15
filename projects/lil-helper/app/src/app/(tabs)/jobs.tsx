@@ -2,21 +2,19 @@
 // the job to someone else who can do it (the server checks ages and who's home).
 import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { api, Chore, DAY_NAME, DAYS, Household, JOB_NAME } from "@/lib/api";
+import { api, Chore, DAY_NAME, DAYS, JOB_NAME } from "@/lib/api";
 import { useWeek } from "@/lib/useWeek";
 import { ErrorText, Screen } from "@/components/ui";
 import { c, s } from "@/lib/theme";
 
 export default function Jobs() {
   const { week, error, setError, loading, reload } = useWeek();
-  const [hh, setHh] = useState<Household | null>(null);
   const [chores, setChores] = useState<Chore[]>([]);
-  useEffect(() => { api.household().then(setHh).catch(() => {}); }, []);
   useEffect(() => { setChores(week?.chores ?? []); }, [week]);
 
   async function next(a: Chore) {
-    if (!hh) return;
-    const ids = hh.people.map((p) => p.id);
+    if (!week) return;
+    const ids = Object.keys(week.people);
     for (let i = 1; i < ids.length; i++) {                // try the next person round; the server says who can
       const pid = ids[(ids.indexOf(a.person) + i) % ids.length];
       try { setChores((await api.swapJob(a.day, a.job, pid)).chores); setError(null); return; } catch {}

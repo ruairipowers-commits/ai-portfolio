@@ -257,3 +257,21 @@ items:
   regular: 5.67
   source: flyer
   confirmed_by: demo
+- store: whole_foods
+  ingredient: marinara
+  brand: 365 by Whole Foods
+  pack: 3
+  price: 5.09
+  regular: 6.36
+  member: amazon_prime
+  source: prime member deal
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: tomatoes
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 2.23
+  regular: 2.79
+  member: amazon_prime
+  source: prime member deal
+  confirmed_by: demo

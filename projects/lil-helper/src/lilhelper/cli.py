@@ -13,14 +13,25 @@
   helper eval [--alias helper-candidate]         golden set gate (EVAL-02, MODEL-02)
   helper promote ALIAS MODEL                     move an alias after a passing eval
   helper cost-report | check-models              COST-02/04, MODEL-03
-  helper job draft|email|restock                 run one scheduled job now
+  helper job draft|email|restock|tick            run one scheduled job now (tick: everything due, every household)
+  helper cookfrom "chicken, spinach, rice"       make a meal from what I've got
+  helper forecast INGREDIENT [--weeks 4]         how much the coming plans need, when, and what to buy
+  helper report [--weeks 8]                      cost per week, meal and person, with analysis
+  helper spend-import FILE.csv [--card ID]       food purchases from a card statement
+  helper receipt FILE.txt [--card ID]            read and record a receipt (text; photos go through the app)
+  helper household create NAME --email E --you N  a household with you as admin (server setup without the app)
+  helper household import FILE --email E --person ID   bring an existing household.yaml into an account
+  helper household list                          households on this server
   helper serve | ui                              API (FastAPI) | Streamlit demo
+
+  --household ID  (any command) work in that household's folder on this server
 """
 from __future__ import annotations
 
 import argparse
 import datetime as dt
 import json
+import re
 import os
 import sys
 from pathlib import Path
@@ -204,8 +215,87 @@ def cmd_check_models(a) -> int:
 
 def cmd_job(a) -> int:
     from . import schedule
+    if a.name == "tick":
+        print(json.dumps(schedule.tick_all(), default=str))
+        return 0
     print(json.dumps({"draft": schedule.job_draft, "email": schedule.job_email,
                       "restock": schedule.job_restock}[a.name](), default=str))
+    return 0
+
+
+def _ctx():
+    from . import catalog
+    from .prices import PriceBook
+    h = load_household()
+    c = catalog.for_household(h)
+    return h, c, PriceBook(h, dt.date.today(), catalog=c)
+
+
+def cmd_cookfrom(a) -> int:
+    from . import cookfrom
+    h, c, pb = _ctx()
+    r = cookfrom.suggest(h, c, pb, text=a.text, day=a.day)
+    if r["not_recognised"]:
+        print("not recognised:", ", ".join(r["not_recognised"]))
+    for i in r["ideas"]:
+        miss = ", ".join(m["name"] for m in i["missing"]) or "nothing"
+        print(f"{i['name']:55} {i['coverage']:.0%} in the house; missing {miss} (~${i['missing_cost']:.2f})"
+              + (f" — {'; '.join(i['why'])}" if i["why"] else ""))
+    return 0
+
+
+def cmd_forecast(a) -> int:
+    from . import forecast
+    h, c, pb = _ctx()
+    print(json.dumps(forecast.forecast(h, c, pb, a.ingredient, _week(a), a.weeks), indent=1, default=str))
+    return 0
+
+
+def cmd_report(a) -> int:
+    from . import catalog, reports
+    h = load_household()
+    r = reports.cost_report(h, catalog.for_household(h), end=_week(a), weeks=a.weeks)
+    for w in r["weeks"]:
+        print(f"{w['week_of']}  bill ${w['food_bill']:7.2f}  meals used ${w['food_used']:7.2f}  out ${w['eating_out']:6.2f}"
+              f"  pet ${w['pet_food']:6.2f}")
+    for p in r["people"]:
+        print(f"  {p['name']:10} ${p['per_week']:.2f} a week (${p['per_day']:.2f} a day)")
+    print("\n".join("• " + x for x in r["analysis"]))
+    return 0
+
+
+def cmd_spend_import(a) -> int:
+    from . import spend, store
+    print(json.dumps(spend.import_statement(store.connect(), load_household(), Path(a.file).read_text(), a.card,
+                                            "cli")))
+    return 0
+
+
+def cmd_receipt(a) -> int:
+    from . import ai, spend, store
+    h, c, pb = _ctx()
+    res = ai.read_receipt(ai.AIContext.make(Settings.load()), h, c, pb, text=Path(a.file).read_text())
+    print(json.dumps(res.__dict__, indent=1, default=str))
+    if a.confirm:
+        print(spend.confirm_receipt(store.connect(), h, res, a.card, "cli"))
+    return 0
+
+
+def cmd_household(a) -> int:
+    from . import accounts
+    con = accounts.connect()
+    if a.action == "list":
+        for hh in accounts.households(con):
+            print(hh["id"], hh["name"], [m["email"] for m in accounts.members(con, hh["id"])])
+        return 0
+    u = accounts.get_or_create_user(con, a.email)
+    if a.action == "create":
+        hid = accounts.create_household(con, u["id"], a.name, "northeast-us",
+                                        {"id": re.sub(r"[^a-z0-9]+", "_", a.you.lower()).strip("_"), "name": a.you,
+                                         "email": a.email, "can_cook": True})
+    else:
+        hid = accounts.import_household(con, u["id"], a.name, a.person)
+    print(f"household {hid}; {a.email} is its admin. Sign in to the app with that email.")
     return 0
 
 
@@ -228,6 +318,7 @@ def main(argv: list[str] | None = None) -> int:
         sp = sub.add_parser(name, **kw)
         sp.set_defaults(fn=fn)
         sp.add_argument("--week")
+        sp.add_argument("--household", help="a household id on this server")
         return sp
 
     sp = add("plan", cmd_plan)
@@ -265,14 +356,37 @@ def main(argv: list[str] | None = None) -> int:
     add("cost-report", cmd_cost)
     add("check-models", cmd_check_models)
     sp = add("job", cmd_job)
-    sp.add_argument("name", choices=["draft", "email", "restock"])
+    sp.add_argument("name", choices=["draft", "email", "restock", "tick"])
+    sp = add("cookfrom", cmd_cookfrom)
+    sp.add_argument("text")
+    sp.add_argument("--day")
+    sp = add("forecast", cmd_forecast)
+    sp.add_argument("ingredient")
+    sp.add_argument("--weeks", type=int, default=4)
+    sp = add("report", cmd_report)
+    sp.add_argument("--weeks", type=int, default=8)
+    sp = add("spend-import", cmd_spend_import)
+    sp.add_argument("file")
+    sp.add_argument("--card")
+    sp = add("receipt", cmd_receipt)
+    sp.add_argument("file")
+    sp.add_argument("--card")
+    sp.add_argument("--confirm", action="store_true")
+    sp = add("household", cmd_household)
+    sp.add_argument("action", choices=["create", "import", "list"])
+    sp.add_argument("name", nargs="?", help="household name (create) or household.yaml path (import)")
+    sp.add_argument("--email")
+    sp.add_argument("--you", default="Me")
+    sp.add_argument("--person")
     sp = add("serve", cmd_serve)
     sp.add_argument("--host", default=os.getenv("HOST", "127.0.0.1"))
     sp.add_argument("--port", type=int, default=int(os.getenv("PORT", "8650")))
     add("ui", cmd_ui)
     a = p.parse_args(argv)
+    from .config import tenant
     try:
-        return a.fn(a)
+        with tenant(getattr(a, "household", None)):
+            return a.fn(a)
     except telemetry.WorkflowDisabled as e:
         print(f"Paused by the governance console: {e}")
         return 3

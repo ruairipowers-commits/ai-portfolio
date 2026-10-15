@@ -4,7 +4,7 @@ import * as WebBrowser from "expo-web-browser";
 import { useCallback, useState } from "react";
 import { Share, Text, View } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { api, ApiError, Order } from "@/lib/api";
+import { api, ApiError, DAY_NAME, Order } from "@/lib/api";
 import { Button, ErrorText, money, Pill, Screen } from "@/components/ui";
 import { s } from "@/lib/theme";
 
@@ -30,14 +30,16 @@ export default function Shopping() {
       {locked ? <View style={s.card}><Text style={s.body}>🔒 Approve this week's plan first. Nothing goes to a store
         until an adult has said yes.</Text></View> : null}
       {orders?.map((o) => (
-        <View key={o.store + o.mode} style={s.card}>
+        <View key={`${o.store}${o.mode}${o.day ?? ""}`} style={s.card}>
           <View style={s.between}>
             <Text style={s.h2}>{o.store}</Text>
             <Pill text={o.mode.replace("_", " ")} tone={o.mode === "in_store" ? "amber" : "green"} />
           </View>
+          {o.day ? <Text style={s.body}>🗓️ {DAY_NAME[o.day] ?? o.day}{o.time ? ` at ${o.time}` : ""}{o.who ? ` · ${o.who}` : ""}</Text> : null}
           <Text style={s.muted}>{o.lines.length} items · {money(o.total)}{o.credits ? ` · credits ${money(o.credits)}` : ""}</Text>
+          {o.card ? <Text style={s.muted}>💳 {o.card}{o.rewards ? ` · ${money(o.rewards)} back` : ""}{o.card_note ? ` · ${o.card_note}` : ""}</Text> : null}
           {o.lines.slice(0, 8).map((ln) => (
-            <Text key={ln.name} style={s.body}>{ln.special ? "★ " : "☐ "}{ln.packs} × {ln.name}
+            <Text key={ln.name + ln.brand} style={s.body}>{ln.special ? "★ " : "☐ "}{ln.packs} × {ln.name}
               {ln.brand && ln.brand !== o.store ? <Text style={s.muted}> {ln.brand}</Text> : null}</Text>
           ))}
           {o.lines.length > 8 ? <Text style={s.muted}>…and {o.lines.length - 8} more</Text> : null}

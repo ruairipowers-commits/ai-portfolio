@@ -21,14 +21,17 @@ class Verdict:
     reasons: list[str]
 
 
-def recipe_for(c: Catalog, r: Recipe, people: list[Person]) -> Verdict:
-    """Can everyone eating this meal have it? Allergies (incl. hidden sources) and diets are hard rules."""
+def recipe_for(c: Catalog, r: Recipe, people: list[Person], house_allergies: set[str] | None = None) -> Verdict:
+    """Can everyone eating this meal have it? Allergies (incl. hidden sources) and diets are hard rules.
+    `house_allergies`: allergies of anyone in the house, applied even when that person isn't at this meal (a shared
+    kitchen, and leftovers end up in lunchboxes)."""
     reasons = []
     found = c.allergens_of(r)
+    allergic = {a for p in people for a in p.allergies} | set(house_allergies or ())
+    for a in sorted(allergic):
+        if a in found:
+            reasons.append(f"{a} ({', '.join(found[a])}) — someone is allergic")
     for p in people:
-        for a in p.allergies:
-            if a in found:
-                reasons.append(f"{a} ({', '.join(found[a])}) — someone is allergic")
         for d in p.diet:
             rule = DIET_RULES.get(d)
             if rule and not rule(c, r):

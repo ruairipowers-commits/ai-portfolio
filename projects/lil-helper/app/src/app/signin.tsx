@@ -1,5 +1,5 @@
 // Sign in with a one-time link: type your email, tap the link in the email (it opens the app via lilhelper://signin),
-// or paste the link here. Only adults in the household can sign in; kids just see the fridge calendar.
+// or paste the link here. An invite link carries the household too, so you land straight in it.
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Image, Text, TextInput, View } from "react-native";
@@ -8,22 +8,24 @@ import { Button, ErrorText, Screen } from "@/components/ui";
 import { c, s } from "@/lib/theme";
 
 export default function SignIn() {
-  const params = useLocalSearchParams<{ token?: string }>();
+  const params = useLocalSearchParams<{ token?: string; invite?: string }>();
   const [email, setEmail] = useState("");
   const [link, setLink] = useState("");
   const [server, setServer] = useState("");
+  const [showServer, setShowServer] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => { serverUrl().then(setServer); }, []);
-  useEffect(() => { if (params.token) finish(String(params.token)); }, [params.token]);
+  useEffect(() => { if (params.token) finish(String(params.token), params.invite ? String(params.invite) : undefined); },
+    [params.token]);
 
-  async function finish(token: string) {
+  async function finish(token: string, invite?: string) {
     setBusy(true); setError(null);
     try {
-      await api.verify(token);
-      router.replace("/");
+      const r = await api.verify(token, invite);
+      router.replace(r.household ? "/" : "/welcome");
     } catch (e) { setError(e); } finally { setBusy(false); }
   }
 
@@ -35,6 +37,13 @@ export default function SignIn() {
     } catch (e) { setError(e); } finally { setBusy(false); }
   }
 
+  function usePasted() {
+    const u = link.trim();
+    const get = (k: string) => { const m = u.match(new RegExp(`[?&]${k}=([^&]+)`)); return m ? decodeURIComponent(m[1]) : undefined; };
+    const token = get("token");
+    if (token) finish(token, get("invite"));
+  }
+
   return (
     <Screen>
       <View style={{ alignItems: "center", gap: 8, marginTop: 24 }}>
@@ -43,7 +52,8 @@ export default function SignIn() {
         <Text style={s.muted}>plan · shop · share the cooking</Text>
       </View>
       <View style={s.card}>
-        <Text style={s.h2}>Sign in</Text>
+        <Text style={s.h2}>Sign in or get started</Text>
+        <Text style={s.muted}>New here? Sign in with your email first; the next screen sets up your household.</Text>
         <TextInput style={s.input} placeholder="your email" autoCapitalize="none" keyboardType="email-address"
           autoComplete="email" value={email} onChangeText={setEmail} />
         <Button title="Email me a sign-in link" onPress={request} busy={busy} disabled={!email.includes("@")} />
@@ -53,13 +63,14 @@ export default function SignIn() {
         <Text style={s.muted}>Opened the email on another device? Paste the link:</Text>
         <TextInput style={s.input} placeholder="lilhelper://signin?token=…" autoCapitalize="none" value={link}
           onChangeText={setLink} />
-        <Button kind="ghost" title="Use this link" disabled={!link.includes("token=")}
-          onPress={() => finish(decodeURIComponent(link.split("token=")[1] ?? ""))} />
+        <Button kind="ghost" title="Use this link" disabled={!link.includes("token=")} onPress={usePasted} />
       </View>
-      <View style={s.card}>
-        <Text style={s.muted}>Your household's server</Text>
-        <TextInput style={s.input} autoCapitalize="none" value={server} onChangeText={setServer} />
-      </View>
+      {showServer ? (
+        <View style={s.card}>
+          <Text style={s.muted}>Server (only if you run your own)</Text>
+          <TextInput style={s.input} autoCapitalize="none" value={server} onChangeText={setServer} />
+        </View>
+      ) : <Button kind="ghost" title="Use my own server" onPress={() => setShowServer(true)} />}
       <ErrorText error={error} />
     </Screen>
   );

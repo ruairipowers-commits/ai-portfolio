@@ -185,3 +185,21 @@ items:
   regular: 2.6
   source: flyer
   confirmed_by: demo
+- store: whole_foods
+  ingredient: pork_tenderloin
+  brand: 365 by Whole Foods
+  pack: 1.5
+  price: 7.34
+  regular: 9.18
+  member: amazon_prime
+  source: prime member deal
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: sesame_oil
+  brand: 365 by Whole Foods
+  pack: 16
+  price: 6.02
+  regular: 7.52
+  member: amazon_prime
+  source: prime member deal
+  confirmed_by: demo

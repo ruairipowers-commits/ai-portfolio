@@ -185,3 +185,21 @@ items:
   regular: 3.51
   source: flyer
   confirmed_by: demo
+- store: whole_foods
+  ingredient: green_beans
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 2.58
+  regular: 3.23
+  member: amazon_prime
+  source: prime member deal
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: black_beans
+  brand: 365 by Whole Foods
+  pack: 1
+  price: 1.26
+  regular: 1.57
+  member: amazon_prime
+  source: prime member deal
+  confirmed_by: demo

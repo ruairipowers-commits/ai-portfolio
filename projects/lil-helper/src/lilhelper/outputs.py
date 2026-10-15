@@ -53,51 +53,120 @@ def _esc(t: str) -> str:
     return re.sub(r"([,;\\])", r"\\\1", t).replace("\n", "\\n")
 
 
-def ics(h: Household, weeks: list[dict], dinner_time: str = "18:00") -> str:
-    """One VCALENDAR with dinners (who cooks / does dishes), batch-prep reminders and the shopping run."""
-    hh, mm = map(int, dinner_time.split(":"))
+def ics(h: Household, weeks: list[dict], person: str | None = None, links=None, tz: str = "America/New_York") -> str:
+    """A calendar feed: dinners at each day's dinner time (who cooks, who does what), lunches from leftovers, nights
+    out, batch prep and the shopping trips with their lists. With `person`, only what that person is part of.
+    `links(kind, **kw)` builds signed links back to Lil'Helper (rate the meal, how much was left, change it, the list),
+    which calendar apps show as tappable links in the event's notes."""
     stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    name = h.info.get("name", "Family") + (f" — {h.people[person].name}" if person in h.people else "")
     out = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Lil'Helper//Meal plan//EN", "CALSCALE:GREGORIAN",
-           "METHOD:PUBLISH", f"X-WR-CALNAME:{_esc(h.info.get('name', 'Family'))} meals", "X-WR-TIMEZONE:America/New_York"]
+           "METHOD:PUBLISH", f"X-WR-CALNAME:{_esc(name)} meals", f"X-WR-TIMEZONE:{tz}",
+           "REFRESH-INTERVAL;VALUE=DURATION:PT1H", "X-PUBLISHED-TTL:PT1H"]
 
-    def event(uid: str, start: dt.datetime, minutes: int, summary: str, desc: str) -> None:
+    def event(uid: str, start: dt.datetime, minutes: int, summary: str, desc: str, url: str | None = None) -> None:
         end = start + dt.timedelta(minutes=minutes)
         out.extend(["BEGIN:VEVENT", f"UID:{uid}@lilhelper", f"DTSTAMP:{stamp}",
-                    f"DTSTART;TZID=America/New_York:{start.strftime('%Y%m%dT%H%M%S')}",
-                    f"DTEND;TZID=America/New_York:{end.strftime('%Y%m%dT%H%M%S')}",
-                    f"SUMMARY:{_esc(summary)}", f"DESCRIPTION:{_esc(desc)}", "END:VEVENT"])
+                    f"DTSTART;TZID={tz}:{start.strftime('%Y%m%dT%H%M%S')}",
+                    f"DTEND;TZID={tz}:{end.strftime('%Y%m%dT%H%M%S')}",
+                    f"SUMMARY:{_esc(summary)}", f"DESCRIPTION:{_esc(desc)}"] + ([f"URL:{url}"] if url else [])
+                   + ["END:VEVENT"])
+
+    def at(d: dt.date, hhmm: str) -> dt.datetime:
+        hh, mm = map(int, hhmm.split(":"))
+        return dt.datetime.combine(d, dt.time(hh, mm))
+
+    def uid(*parts) -> str:
+        return hashlib.sha1("|".join(str(p) for p in (person or "all",) + parts).encode()).hexdigest()[:16]
+
+    def feedback_lines(wk, day, meal) -> list[str]:
+        if not links:
+            return []
+        stars = " · ".join(f"{n}★ {links('rate', week=wk, day=day, meal=meal, value=n)}" for n in range(1, 6))
+        left = " · ".join(f"{label} {links('eaten', week=wk, day=day, meal=meal, value=v)}"
+                          for v, label in (("all", "All gone"), ("some_left", "Some left"), ("lots_left", "Lots left")))
+        return ["", "After the meal, tap one:", f"Rate it: {stars}", f"How much was left: {left}",
+                f"Change this meal: {links('change', week=wk, day=day, meal=meal)}"]
 
     for rec in weeks:
         plan = rec["plan"]
         wk = dt.date.fromisoformat(plan["week_of"])
         jobs = rec.get("chores", [])
+        status = "" if rec.get("status") == "approved" else " (draft)"
         for e in plan["entries"]:
-            if e["meal"] != "dinner":
+            eaters = e.get("eaters") or []
+            if person and person not in eaters and e.get("cook") != person and not any(
+                    a["person"] == person and a["day"] == e["day"] for a in jobs if e["meal"] == "dinner"):
                 continue
             d = wk + dt.timedelta(days=DAYS.index(e["day"]))
-            who = "; ".join(f"{JOB_LABEL.get(a['job'], a['job'])}: {a['name']}" for a in jobs if a["day"] == e["day"]
-                            and a["job"] != "feed_dog")
-            event(hashlib.sha1(f"{wk}{e['day']}dinner".encode()).hexdigest()[:16],
-                  dt.datetime.combine(d, dt.time(hh, mm)), 45, f"🍎 {e['name']}",
-                  f"{who}\nHands-on {e['active']} min. {'; '.join(e.get('why', []))}")
-            if e.get("prep_day") and e["prep_day"] != e["day"]:
-                pd = wk + dt.timedelta(days=DAYS.index(e["prep_day"]))
-                event(hashlib.sha1(f"{wk}{e['day']}prep".encode()).hexdigest()[:16],
-                      dt.datetime.combine(pd, dt.time(15, 0)), e["active"], f"Batch prep: {e['name']}",
-                      f"For {DAY_NAME[e['day']]}")
+            if e["meal"] == "dinner":
+                mine = [JOB_LABEL.get(a["job"], a["job"]) for a in jobs if a["day"] == e["day"] and a["person"] == person]
+                who = "; ".join(f"{JOB_LABEL.get(a['job'], a['job'])}: {a['name']}" for a in jobs
+                                if a["day"] == e["day"] and a["job"] != "feed_dog")
+                title = f"🍎 {e['name']}{status}" + (f" — you: {', '.join(mine)}" if mine else "")
+                desc = [who, f"Hands-on {e['active']} min. {'; '.join(e.get('why', []))}"]
+                event(uid(wk, e["day"], "dinner"), at(d, h.dinner_time(e["day"])), 45, title,
+                      "\n".join(desc + feedback_lines(wk.isoformat(), e["day"], "dinner")),
+                      links("app", week=wk.isoformat(), day=e["day"]) if links else None)
+                if e.get("prep_day") and e["prep_day"] != e["day"]:
+                    pd = wk + dt.timedelta(days=DAYS.index(e["prep_day"]))
+                    event(uid(wk, e["day"], "prep"), at(pd, "15:00"), e["active"], f"Batch prep: {e['name']}",
+                          f"For {DAY_NAME[e['day']]}")
+            elif e["meal"] in ("lunch", "leftovers"):
+                event(uid(wk, e["day"], e["meal"]), at(d, "12:00"), 30, f"🥪 {e['name']}",
+                      "\n".join(["; ".join(e.get("why", []))] + feedback_lines(wk.isoformat(), e["day"], e["meal"])))
+            elif e["meal"] == "breakfast":
+                event(uid(wk, e["day"], "breakfast"), at(d, "08:00"), 30, f"🥣 {e['name']}",
+                      "\n".join(feedback_lines(wk.isoformat(), e["day"], "breakfast")))
+        for n in rec.get("eating_out") or []:
+            if person and person not in n.get("eaters", []):
+                continue
+            d = wk + dt.timedelta(days=DAYS.index(n["day"]))
+            label = "Takeout" if n["kind"] == "takeout" else "Eating out"
+            pay = f"Pay with {n['card_name']}" + (f" ({n['credit_name']} applies)" if n.get("credit") else "") \
+                if n.get("card") else ""
+            event(uid(wk, n["day"], "out"), at(d, h.dinner_time(n["day"])), 60, f"🍽️ {label} night",
+                  f"Budget ${n['budget']:.0f}. {pay}".strip())
         for night, kind in (plan.get("special_nights") or {}).items():
+            if kind != "leftovers":
+                continue
             d = wk + dt.timedelta(days=DAYS.index(night))
-            event(hashlib.sha1(f"{wk}{night}special".encode()).hexdigest()[:16],
-                  dt.datetime.combine(d, dt.time(hh, mm)), 30, f"🍎 {kind.title()} night", "Eat up the fridge.")
+            event(uid(wk, night, "special"), at(d, h.dinner_time(night)), 30, "🍎 Leftovers night", "Eat up the fridge.")
         choice = rec.get("shopping_choice") or "balanced"
         split = rec["split"].get(choice) if isinstance(rec.get("split"), dict) else None
-        if split and split.get("orders"):
-            shop_day = wk - dt.timedelta(days=1)                       # Sunday before the week
-            stores = ", ".join(f"{o['store_name']} ({o['mode'].replace('_', ' ')})" for o in split["orders"])
-            event(hashlib.sha1(f"{wk}shop".encode()).hexdigest()[:16], dt.datetime.combine(shop_day, dt.time(10, 0)),
-                  max(15, split["minutes"]), "🛒 Groceries", f"{stores}. Total about ${split['total']:.2f}.")
+        for i, o in enumerate((split or {}).get("orders", [])):
+            if person and o.get("who") and o["who"] != person:
+                continue
+            day = o.get("day") or "sun_before"
+            offset = {"sun_before": -1, "sat_before": -2}.get(day, DAYS.index(day) if day in DAYS else -1)
+            d = wk + dt.timedelta(days=offset)
+            who = f" ({h.people[o['who']].name})" if o.get("who") in h.people else ""
+            items = "\n".join(f"☐ {ln['packs']} × {ln['name']}" for ln in o["lines"][:40])
+            list_link = links("list", week=wk.isoformat(), order=i) if links else None
+            event(uid(wk, "shop", o.get("session") or o["store"], o["mode"]), at(d, o.get("time") or "10:00"),
+                  max(10, int(o.get("minutes", 30))),
+                  f"🛒 {o['store_name']} {o['mode'].replace('_', ' ')}{who}",
+                  f"{len(o['lines'])} items, about ${o['total']:.2f}." + (f" Pay with {o['card_name']}." if o.get("card")
+                                                                          else "")
+                  + (f"\nList: {list_link}" if list_link else "") + f"\n{items}", list_link)
     out.append("END:VCALENDAR")
-    return "\r\n".join(out) + "\r\n"
+    return "\r\n".join(_fold(x) for x in out) + "\r\n"
+
+
+def _fold(line: str) -> str:
+    """iCalendar lines over 75 octets are folded (continuation lines start with a space)."""
+    b = line.encode()
+    if len(b) <= 75:
+        return line
+    parts, cur = [], b""
+    for ch in line:
+        e = ch.encode()
+        if len(cur) + len(e) > (75 if not parts else 74):
+            parts.append(cur.decode())
+            cur = b""
+        cur += e
+    parts.append(cur.decode())
+    return "\r\n ".join(parts)
 
 
 # ---------------------------------------------------------------- PDFs

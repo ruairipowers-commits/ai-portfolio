@@ -46,6 +46,19 @@ class FlyerRead(BaseModel):
     other: list[str] = []
 
 
+class ReceiptItem(BaseModel):
+    text: str = Field(max_length=160)
+    price: str = Field(max_length=40)
+
+
+class ReceiptRead(BaseModel):
+    store: str = Field(default="", max_length=80)
+    date: str | None = None
+    total: str | None = None
+    items: list[ReceiptItem] = []
+    other: list[str] = []
+
+
 class Note(BaseModel):
     day: str
     meal: str
@@ -289,3 +302,78 @@ def write_notes(ctx: AIContext, h: Household, plan) -> dict[tuple[str, str], str
         if (n.day, n.meal) in out and not safety.looks_like_instruction(n.note):
             out[(n.day, n.meal)] = n.note
     return out
+
+
+# ---------------------------------------------------------------- 4. receipts → what was actually spent
+CARD_NUMBER = re.compile(r"(?:\d[ -]?){12,19}|\*{4,}\s?\d{4}")
+
+
+@dataclass
+class ReceiptResult:
+    store: str | None
+    merchant: str
+    date: str | None
+    total: float | None
+    items: list[dict]
+    flags: list[str]
+    category: str = "groceries"
+
+
+def read_receipt(ctx: AIContext, h: Household, c: Catalog, pb, *, image: bytes | None = None,
+                 text: str | None = None) -> ReceiptResult:
+    """A receipt photo (vision model) or pasted email text → total, date, store and matched item prices.
+    Nothing counts until a person confirms it; card numbers are never kept; printed instructions are flagged."""
+    from . import spend
+    user = ""
+    if text is not None:
+        user = f"<receipt_text>\n{CARD_NUMBER.sub('[card]', text)}\n</receipt_text>"
+    raw = ctx.ask("receipt", "vision_alias", user, images=[image] if image else None)
+    if raw is None:
+        return ReceiptResult(None, "", None, None, [], ["model_error"])
+    try:
+        rr = ReceiptRead.model_validate(raw)
+    except ValidationError:
+        return ReceiptResult(None, "", None, None, [], ["schema_invalid"])
+    flags = []
+    if any(safety.looks_like_instruction(o) or re.search(r"\b(record|mark)\b.{0,40}\b(free|\$0)", o, re.I)
+           for o in rr.other + [i.text for i in rr.items]):
+        flags.append("instruction_on_receipt")
+    rule = spend.match_merchant(rr.store)
+    store_id = (rule or {}).get("store")
+    category = (rule or {}).get("category", "groceries")
+    label = (rule or {}).get("label", rr.store[:40])
+    total = _price(rr.total or "")
+    items_out = []
+    item_sum = 0.0
+    for it in rr.items:
+        price = None if "-" in it.price else _price(it.price)
+        row = {"text": CARD_NUMBER.sub("[card]", it.text), "price": price, "ingredient": None, "status": "spend_only",
+               "why": []}
+        if price is None:
+            row["status"], row["why"] = "ignored", ["a discount or non-item line"]
+            items_out.append(row)
+            continue
+        item_sum += price
+        if safety.looks_like_instruction(it.text):
+            row["status"], row["why"] = "ignored", ["looks like an instruction, not an item"]
+        elif category == "groceries" and store_id in pb.store_cfg:
+            iid = c.match(it.text)
+            if iid:
+                row["ingredient"] = iid
+                shelf = pb.shelf.get(store_id, {}).get(iid, [])
+                if shelf:
+                    ref = float(shelf[0]["price"])
+                    row["shelf_price"] = ref
+                    row["pack"] = float(shelf[0]["pack"])
+                    if 0.5 * ref <= price <= 2.0 * ref:
+                        row["status"] = "price_update"
+                    else:
+                        row["status"], row["why"] = "flagged", [f"${price:.2f} is far from the usual ${ref:.2f} "
+                                                                 "(a different size?) — not used for prices"]
+        items_out.append(row)
+    if total is None:
+        flags.append("no_total")
+    elif item_sum and abs(item_sum - total) > max(2.0, 0.15 * total):
+        flags.append("total_differs_from_items")
+    return ReceiptResult(store_id, label, rr.date, total, items_out, flags, category)
+

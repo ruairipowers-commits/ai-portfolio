@@ -185,3 +185,21 @@ items:
   regular: 4.51
   source: flyer
   confirmed_by: demo
+- store: whole_foods
+  ingredient: peanut_butter
+  brand: 365 by Whole Foods
+  pack: 28
+  price: 3.48
+  regular: 4.35
+  member: amazon_prime
+  source: prime member deal
+  confirmed_by: demo
+- store: whole_foods
+  ingredient: raisins
+  brand: 365 by Whole Foods
+  pack: 2
+  price: 4.83
+  regular: 6.04
+  member: amazon_prime
+  source: prime member deal
+  confirmed_by: demo

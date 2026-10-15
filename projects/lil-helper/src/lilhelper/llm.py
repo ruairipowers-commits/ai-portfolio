@@ -148,6 +148,8 @@ class MockProvider:
             text = json.dumps(mock.suggest(_tag_json(user, "household")))
         elif "ROLE: flyer" in system:
             text = json.dumps(mock.flyer(_tag_text(user, "flyer_text")))
+        elif "ROLE: receipt" in system:
+            text = json.dumps(mock.receipt(_tag_text(user, "receipt_text")))
         elif "ROLE: notes" in system:
             text = json.dumps(mock.notes(_tag_json(user, "plan")))
         else:
