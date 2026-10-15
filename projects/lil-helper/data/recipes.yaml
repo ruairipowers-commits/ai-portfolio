@@ -36,6 +36,10 @@ recipes:
     {name: Baked turkey meatballs with marinara, meal: dinner, active: 25, total: 45, veg: 1, protein: 28,
      tags: [kid_friendly, batch],
      ing: {ground_turkey: 0.3, breadcrumbs: 0.1, eggs: 0.25, marinara: 0.4, pasta: 2.5, parmesan: 0.3, spinach: 1}}
+  chicken_broccoli_rice:
+    {name: "Garlic chicken, broccoli and rice", meal: dinner, active: 20, total: 35, veg: 1.5, protein: 30,
+     tags: [one_pot, kid_friendly], dog: [chicken_thighs, rice],
+     ing: {chicken_thighs: 0.35, broccoli: 0.35, rice: 0.3, garlic: 0.5, soy_sauce: 1, olive_oil: 1, lemons: 0.15}}
   salmon_rice_broccoli:
     {name: Honey-soy salmon with rice and broccoli, meal: dinner, active: 15, total: 30, veg: 1.5, protein: 30,
      tags: [], dog: [salmon, rice],

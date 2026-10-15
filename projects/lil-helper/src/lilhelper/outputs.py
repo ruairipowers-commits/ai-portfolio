@@ -104,10 +104,11 @@ def ics(h: Household, weeks: list[dict], person: str | None = None, links=None, 
                 who = "; ".join(f"{JOB_LABEL.get(a['job'], a['job'])}: {a['name']}" for a in jobs
                                 if a["day"] == e["day"] and a["job"] != "feed_dog")
                 title = f"🍎 {e['name']}{status}" + (f" — you: {', '.join(mine)}" if mine else "")
-                desc = [who, f"Hands-on {e['active']} min. {'; '.join(e.get('why', []))}"]
+                desc = ([f"Open in Lil'Helper: {links('open', screen='week', day=e['day'])}"] if links else []) + \
+                    [who, f"Hands-on {e['active']} min. {'; '.join(e.get('why', []))}"]
                 event(uid(wk, e["day"], "dinner"), at(d, h.dinner_time(e["day"])), 45, title,
                       "\n".join(desc + feedback_lines(wk.isoformat(), e["day"], "dinner")),
-                      links("app", week=wk.isoformat(), day=e["day"]) if links else None)
+                      links("open", screen="week", day=e["day"]) if links else None)
                 if e.get("prep_day") and e["prep_day"] != e["day"]:
                     pd = wk + dt.timedelta(days=DAYS.index(e["prep_day"]))
                     event(uid(wk, e["day"], "prep"), at(pd, "15:00"), e["active"], f"Batch prep: {e['name']}",
@@ -132,23 +133,29 @@ def ics(h: Household, weeks: list[dict], person: str | None = None, links=None, 
                 continue
             d = wk + dt.timedelta(days=DAYS.index(night))
             event(uid(wk, night, "special"), at(d, h.dinner_time(night)), 30, "🍎 Leftovers night", "Eat up the fridge.")
-        choice = rec.get("shopping_choice") or "balanced"
-        split = rec["split"].get(choice) if isinstance(rec.get("split"), dict) else None
-        for i, o in enumerate((split or {}).get("orders", [])):
+        from .week import orders as week_orders
+        all_orders = week_orders(rec) if isinstance(rec.get("split"), dict) and rec.get("split") else []
+        for i, o in enumerate(all_orders):
             if person and o.get("who") and o["who"] != person:
                 continue
             day = o.get("day") or "sun_before"
             offset = {"sun_before": -1, "sat_before": -2}.get(day, DAYS.index(day) if day in DAYS else -1)
             d = wk + dt.timedelta(days=offset)
             who = f" ({h.people[o['who']].name})" if o.get("who") in h.people else ""
-            items = "\n".join(f"☐ {ln['packs']} × {ln['name']}" for ln in o["lines"][:40])
+            lines = sorted(o["lines"], key=lambda ln: (ln.get("aisle", 50), ln["name"])) if o["mode"] == "in_store" \
+                else o["lines"]
+            items = "\n".join(f"☐ {ln['packs']} × {ln['name']}" + (f" ({ln['brand']})" if ln.get("brand") else "")
+                              + (" ★ special" if ln.get("special") else "") for ln in lines)
             list_link = links("list", week=wk.isoformat(), order=i) if links else None
+            open_link = links("open", screen="shopping") if links else None
+            head = f"{len(o['lines'])} items, about ${o['total']:.2f}." + (f" Pay with {o['card_name']}."
+                                                                         if o.get("card") else "")
             event(uid(wk, "shop", o.get("session") or o["store"], o["mode"]), at(d, o.get("time") or "10:00"),
                   max(10, int(o.get("minutes", 30))),
                   f"🛒 {o['store_name']} {o['mode'].replace('_', ' ')}{who}",
-                  f"{len(o['lines'])} items, about ${o['total']:.2f}." + (f" Pay with {o['card_name']}." if o.get("card")
-                                                                          else "")
-                  + (f"\nList: {list_link}" if list_link else "") + f"\n{items}", list_link)
+                  head + "\n\nTHE LIST" + (" (in aisle order)" if o["mode"] == "in_store" else "") + f"\n{items}"
+                  + (f"\n\nTick it off on your phone: {list_link}" if list_link else "")
+                  + (f"\nOpen in Lil'Helper: {open_link}" if open_link else ""), list_link)
     out.append("END:VCALENDAR")
     return "\r\n".join(_fold(x) for x in out) + "\r\n"
 
@@ -202,7 +209,7 @@ def mail_from() -> str:
     """The From line. HELPER_MAIL_FROM wins: this app's own sender, so its mail can be filtered on its own.
     Otherwise the shared MAIL_FROM / SMTP_FROM address is used under this app's name ("Lil'Helper").
     """
-    own = (os.getenv("HELPER_MAIL_FROM") or "").strip()
+    own = (os.getenv("HELPER_MAIL_FROM") or "").strip().strip('"').strip("'").strip()   # docker --env-file keeps quotes
     if own:
         return own
     for k in ('MAIL_FROM', 'SMTP_FROM'):
@@ -210,6 +217,37 @@ def mail_from() -> str:
         if "@" in addr:
             return formataddr(("Lil'Helper", addr))
     return "Lil'Helper <helper@example.com>"
+
+
+def send_mail(to: str, subject: str, html: str, tag: str, outbox) -> str:
+    """Send one email through Resend, or write it to `outbox` when there's no RESEND_API_KEY.
+    Returns "sent", "outbox", or "failed <status>: <Resend's reason>". Failures are logged (never the address)."""
+    import logging
+    log = logging.getLogger("lilhelper.mail")
+    if not os.getenv("RESEND_API_KEY"):
+        from pathlib import Path
+        d = Path(outbox)
+        d.mkdir(parents=True, exist_ok=True)
+        import hashlib
+        (d / f"{tag}-{hashlib.sha256(to.encode()).hexdigest()[:8]}.html").write_text(html)
+        log.warning("email %s: RESEND_API_KEY isn't set, so it was written to %s instead of sent", tag, d)
+        return "outbox"
+    import httpx
+    try:
+        r = httpx.post("https://api.resend.com/emails", timeout=15,
+                       headers={"Authorization": f"Bearer {os.environ['RESEND_API_KEY']}"},
+                       json={"from": mail_from(), "to": [to], "subject": subject, "html": html})
+    except httpx.HTTPError as e:
+        log.error("email %s: couldn't reach Resend (%s)", tag, type(e).__name__)
+        return f"failed: couldn't reach Resend ({type(e).__name__})"
+    if r.status_code < 300:
+        return "sent"
+    try:
+        reason = r.json().get("message") or r.text[:200]
+    except ValueError:
+        reason = r.text[:200]
+    log.error("email %s: Resend refused it (%s): %s — sender was %s", tag, r.status_code, reason, mail_from())
+    return f"failed {r.status_code}: {reason}"
 
 
 def send_week_email(h: Household, rec: dict, links: dict, notes: dict | None = None) -> list[str]:

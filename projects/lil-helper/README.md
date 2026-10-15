@@ -37,10 +37,16 @@ the cooking and cleanup, and learns how much everyone — the dog included — a
   freezes-well dinners for freezer nights.
 - **Forecasts an ingredient:** how much the next weeks' plans need, what's on hand, which trip to buy it on, how
   much, and where it's cheapest. **Cook from what I've got** turns what's in the kitchen into ideas.
-- **Your own recipes:** ingredients in everyday words, steps, the months they're in season, and how often you'd like
-  them.
+- **Your own recipes:** ingredients in everyday words, steps, the months they're in season, how often you'd like
+  them, and where each is from. Add one from the web (search the sites you like, or paste a link: name, ingredients,
+  times and a link back come in, ready to check), export and import the book as a file, or share it with another
+  household by code.
+- **Change any planned meal** to a recipe from the book, one of yours, a new one or one from the web — and undo it.
+  As the week goes on, each meal shows what happened (eaten, leftovers, how much went in the freezer); freezer meals
+  can be edited, and ones near their use-by are planned first.
 - **Keeps everyone in the loop:** each person subscribes their own calendar (Apple, Google, Outlook) to their
-  dinners, jobs and shopping trips; every dinner has one-tap links to rate it and say how much is left. Push
+  dinners, jobs and shopping trips; every dinner has one-tap links to rate it and say how much is left, and a link
+  that opens the app; shopping events carry the whole list, in aisle order for in-store trips. Push
   notifications when the plan is ready, when tonight changes, before a shopping trip, and after dinner. A weekly
   email and fridge calendars (PDF).
 - **Learns:** after each meal, one tap for how much was eaten and a rating. Portions adjust; the savings report

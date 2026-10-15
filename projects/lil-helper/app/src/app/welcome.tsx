@@ -79,7 +79,10 @@ function CreateHousehold({ me, signup, onDone }: { me: Me | null; signup: string
   const [tz, setTz] = useState(deviceZone());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const missing = [!name.trim() && "the household's name", !you.trim() && "your first name",
+    signup === "invite" && !code.trim() && "the sign-up code"].filter(Boolean) as string[];
   async function create() {
+    if (missing.length) { setError(new Error(`Please fill in ${missing.join(" and ")}.`)); return; }
     setBusy(true); setError(null);
     try {
       await api.createHousehold({ name, your_name: you, signup_code: code || undefined, timezone: tz });
@@ -88,14 +91,13 @@ function CreateHousehold({ me, signup, onDone }: { me: Me | null; signup: string
   }
   return (
     <View style={s.card}>
-      <Field label="Household name" placeholder="The Powers house" value={name} onChangeText={setName} />
-      <Field label="Your first name" placeholder="as the family calls you" value={you} onChangeText={setYou} />
+      <Field label="Household name" placeholder="e.g. The Powers house" value={name} onChangeText={setName} />
+      <Field label="Your first name" placeholder="e.g. Sam" value={you} onChangeText={setYou} />
       <Field label="Time zone" value={tz} onChangeText={setTz} autoCapitalize="none"
         hint="Dinner times, reminders and the calendar use this." />
       {signup === "invite" ? <Field label="Sign-up code" value={code} onChangeText={setCode} autoCapitalize="none" /> : null}
       <Text style={s.muted}>You'll be the household's admin: you add people, invite them and change settings.</Text>
-      <Button title="Create household" busy={busy} onPress={create}
-        disabled={!name.trim() || !you.trim() || (signup === "invite" && !code.trim())} />
+      <Button title="Create household" busy={busy} onPress={create} />
       <ErrorText error={error} />
     </View>
   );

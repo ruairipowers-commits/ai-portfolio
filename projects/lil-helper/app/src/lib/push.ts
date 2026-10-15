@@ -38,7 +38,8 @@ export function openLink(url: string | undefined) {
   const m = url.match(/^lilhelper:\/\/([a-z]*)\??(.*)$/);
   if (!m) return;
   const params = Object.fromEntries(new URLSearchParams(m[2]));
-  const to = { week: "/", shopping: "/shopping", meals: "/meals", jobs: "/jobs", money: "/money" }[m[1]] ?? "/";
+  const to = { week: "/", shopping: "/shopping", meals: "/meals", jobs: "/jobs", money: "/money",
+    book: "/house/book" }[m[1]] ?? "/";
   router.push({ pathname: to as never, params });
 }
 

@@ -19,7 +19,7 @@ export default function Recipes() {
   const book = shown.filter((r) => r.source !== "household");
   const sub = (r: RecipeRow) => [`${r.active} min hands-on`, r.season_months?.length ? r.season_months.map((m) => MONTH[m]).join(" ") : "",
     r.want?.times ? `${r.want.times}× every ${r.want.per_weeks ?? 4} weeks` : "",
-    r.kid_min_age ? `kids ${r.kid_min_age}+ can make` : ""].filter(Boolean).join(" · ");
+    r.kid_min_age ? `kids ${r.kid_min_age}+ can make` : "", r.credit ? `from ${r.credit}` : ""].filter(Boolean).join(" · ");
   const open = (id: string) => router.push({ pathname: "/house/recipe", params: { id } } as never);
   return (
     <Screen>
@@ -27,6 +27,10 @@ export default function Recipes() {
       <Chips multi={false} options={["dinner", "lunch", "breakfast"]} value={meal} onChange={([m]) => setMeal(m)} />
       <TextInput style={s.input} placeholder="Search" value={search} onChangeText={setSearch} />
       <Button title="Add your own recipe" onPress={() => open("new")} />
+      <View style={s.row}>
+        <View style={{ flex: 1 }}><Button kind="ghost" title="🔎 From the web" onPress={() => router.push("/house/recipe-web" as never)} /></View>
+        <View style={{ flex: 1 }}><Button kind="ghost" title="Share · import" onPress={() => router.push("/house/book" as never)} /></View>
+      </View>
       {mine.length ? <View style={s.card}><Text style={s.h2}>Yours</Text>
         {mine.map((r) => <LinkRow key={r.id} icon="⭐" title={r.name} sub={sub(r)} onPress={() => open(r.id)} />)}</View> : null}
       <View style={s.card}><Text style={s.h2}>The book</Text>

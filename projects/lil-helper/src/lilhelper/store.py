@@ -38,6 +38,9 @@ CREATE TABLE IF NOT EXISTS overrides (week_of TEXT, day TEXT, kind TEXT, person 
     PRIMARY KEY (week_of, day, kind, person));
 CREATE TABLE IF NOT EXISTS freezer (id INTEGER PRIMARY KEY, recipe TEXT, name TEXT, portions REAL, frozen_on TEXT,
     use_by TEXT, used_on TEXT);
+CREATE TABLE IF NOT EXISTS outcomes (week_of TEXT, day TEXT, meal TEXT, outcome TEXT, frozen REAL, by TEXT, ts TEXT,
+    PRIMARY KEY (week_of, day, meal));
+CREATE TABLE IF NOT EXISTS book_shares (code TEXT PRIMARY KEY, created TEXT, by TEXT, revoked INTEGER DEFAULT 0);
 """
 
 
@@ -81,7 +84,8 @@ def frozen(con) -> dict[str, float]:
 
 
 def freezer_meals(con) -> list[dict]:
-    return [dict(r) for r in con.execute("SELECT * FROM freezer WHERE used_on IS NULL AND portions > 0 ORDER BY frozen_on")]
+    return [dict(r) for r in con.execute("SELECT * FROM freezer WHERE used_on IS NULL AND portions > 0 "
+                                         "ORDER BY COALESCE(use_by, '9999'), frozen_on")]
 
 
 def overrides(con, week_of: str) -> tuple[dict[str, set[str]], dict[str, str]]:
@@ -94,6 +98,28 @@ def overrides(con, week_of: str) -> tuple[dict[str, set[str]], dict[str, str]]:
         elif r["kind"] == "night" and r["value"]:
             nights[r["day"]] = r["value"]
     return away, nights
+
+
+def picks(con, week_of: str) -> tuple[dict[tuple[str, str], str], dict[tuple[str, str], str]]:
+    """Meals a person chose for a slot this week, and what was planned there before their first change:
+    ({(day, meal): recipe}, {(day, meal): original recipe})."""
+    chosen, original = {}, {}
+    for r in con.execute("SELECT day, kind, person, value FROM overrides WHERE week_of = ? AND kind IN "
+                         "('pick', 'original')", (week_of,)):
+        (chosen if r["kind"] == "pick" else original)[(r["day"], r["person"])] = r["value"]
+    return chosen, original
+
+
+def set_pick(con, week_of: str, day: str, meal: str, recipe: str | None, original: str | None, by: str) -> None:
+    for kind, value in (("pick", recipe), ("original", original)):
+        if value is None:
+            con.execute("DELETE FROM overrides WHERE week_of=? AND day=? AND kind=? AND person=?",
+                        (week_of, day, kind, meal))
+        else:
+            con.execute("INSERT OR IGNORE INTO overrides VALUES (?,?,?,?,?,?,?)" if kind == "original" else
+                        "INSERT OR REPLACE INTO overrides VALUES (?,?,?,?,?,?,?)",
+                        (week_of, day, kind, meal, value, by, now()))
+    con.commit()
 
 
 def pantry(con) -> dict[str, float]:

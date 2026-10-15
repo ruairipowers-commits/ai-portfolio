@@ -224,3 +224,31 @@ def test_changes_to_an_approved_week_apply_in_place(server):
     assert "lili" not in thu["eaters"] and w["away"] == {"thu": ["lili"]}
     # a later change still works (the refused one left nothing behind)
     assert c.post("/api/week/night", headers=H, json={"week": W, "day": "fri", "kind": "eat_out"}).status_code == 200
+
+
+def test_a_refused_email_is_reported_not_swallowed(monkeypatch, tmp_path, caplog):
+    import httpx
+    from lilhelper import outputs
+    monkeypatch.setenv("RESEND_API_KEY", "re_test")
+    monkeypatch.setenv("HELPER_MAIL_FROM", "Lil'Helper <helper@unverified.example>")
+
+    def refuse(*a, **k):
+        return httpx.Response(403, json={"message": "The unverified.example domain is not verified."})
+
+    monkeypatch.setattr(httpx, "post", refuse)
+    res = outputs.send_mail("someone@example.com", "s", "<p>x</p>", "signin", tmp_path)
+    assert res.startswith("failed 403") and "not verified" in res
+    assert "not verified" in caplog.text and "someone@example.com" not in caplog.text
+    monkeypatch.delenv("RESEND_API_KEY")
+    assert outputs.send_mail("someone@example.com", "s", "<p>x</p>", "signin", tmp_path) == "outbox"
+    assert list(tmp_path.glob("signin-*.html"))
+
+
+def test_health_says_how_email_goes(server):
+    assert server.client.get("/api/health").json()["email"].startswith("outbox")
+
+
+def test_a_quoted_sender_from_an_env_file_is_cleaned(monkeypatch):
+    from lilhelper import outputs
+    monkeypatch.setenv("HELPER_MAIL_FROM", '"Lil\'Helper <helper@agentls.com>"')
+    assert outputs.mail_from() == "Lil'Helper <helper@agentls.com>"

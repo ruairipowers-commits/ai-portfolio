@@ -1,20 +1,25 @@
 // One recipe. Built-in ones are read-only (you can copy one to make it yours); your own you can edit: ingredients in
 // your words ("2 cups rice"), steps, the months it's in season, and how often you'd like it.
+import * as Linking from "expo-linking";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
-import { api, ApiError, RecipeIn } from "@/lib/api";
+import { api, ApiError, DAY_NAME, RecipeIn } from "@/lib/api";
+import { takeDraft } from "@/lib/handoff";
 import { Button, Chips, ErrorText, Field, Header, NumberField, Screen } from "@/components/ui";
 import { c, s } from "@/lib/theme";
 
-type Line = { text: string; qty: string; unit: string };
+type Line = { text: string; qty: string; unit: string; hint?: string };
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const UNITS = ["", "each", "lb", "oz", "cup", "tbsp", "tsp", "g", "kg", "ml", "can", "slice"];
 const blank: RecipeIn = { name: "", meal: "dinner", serves: 4, active: 20, total: 30, ingredients: [], instructions: [],
   tags: [], season_months: [], want: {}, kid_min_age: 0, notes: "" };
 
 export default function RecipeScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string; useFor?: string }>();
+  const id = params.id;
+  const [useFor, setUseFor] = useState<string | undefined>(params.useFor ? String(params.useFor) : undefined);
+  const [note, setNote] = useState<string | null>(null);
   const [r, setR] = useState<RecipeIn>(blank);
   const [lines, setLines] = useState<Line[]>([{ text: "", qty: "1", unit: "" }]);
   const [steps, setSteps] = useState("");
@@ -29,13 +34,27 @@ export default function RecipeScreen() {
 
   useEffect(() => {
     api.settings().then((v) => setStyles(v.catalogs.styles)).catch(() => {});
-    if (id === "new") return;
+    if (id === "new") {
+      const got = takeDraft();
+      if (got) {
+        const d = got.draft;
+        if (got.useFor) setUseFor(got.useFor);
+        setR({ ...blank, ...d, ingredients: [], want: d.want ?? {}, season_months: d.season_months ?? [] });
+        setLines(d.ingredients.map((i) => ({ text: i.text ?? "", qty: String(i.qty), unit: i.unit ?? "",
+          hint: i.line && i.line.toLowerCase() !== (i.text ?? "").toLowerCase() ? i.line : undefined })));
+        setSteps((d.instructions ?? []).join("\n"));
+        setUnknown(d.unknown ?? []);
+        setNote([d.note, d.check_amounts?.length ? `Check these amounts: ${d.check_amounts.join("; ")}` : ""]
+          .filter(Boolean).join(" ") || null);
+      }
+      return;
+    }
     api.recipe(id).then((x) => {
       const serves = 4;
       setSource(x.source); setAllergens(x.allergens);
       setR({ name: x.name, meal: x.meal, serves, active: x.active, total: x.total, ingredients: [],
         instructions: x.instructions ?? [], tags: x.tags ?? [], season_months: x.season_months ?? [], want: x.want ?? {},
-        kid_min_age: x.kid_min_age ?? 0, notes: x.notes ?? "" });
+        kid_min_age: x.kid_min_age ?? 0, notes: x.notes ?? "", credit: x.credit ?? "", url: x.url ?? "" });
       setLines(x.ingredients.map((i) => ({ text: i.name, qty: String(Math.round(i.per_serving * serves * 100) / 100), unit: i.unit })));
       setSteps((x.instructions ?? []).join("\n"));
     }).catch(setError);
@@ -50,6 +69,12 @@ export default function RecipeScreen() {
     try {
       const out = await api.saveRecipe(body, id !== "new" && !copy ? id : undefined);
       setAllergens(out.allergens); setWarning(out.warning);
+      if (useFor && !out.warning) {
+        const [day, meal] = useFor.split(":");
+        await api.change(day, meal, out.saved);
+        router.replace("/");
+        return;
+      }
       if (id === "new" || copy) router.replace({ pathname: "/house/recipe", params: { id: out.saved } } as never);
     } catch (e) {
       const d = e instanceof ApiError ? (e.detail as { unknown?: string[] } | undefined) : undefined;
@@ -67,6 +92,9 @@ export default function RecipeScreen() {
   return (
     <Screen>
       <Header title={id === "new" ? "New recipe" : r.name || "Recipe"} />
+      {useFor ? <View style={[s.card, { backgroundColor: c.greenSoft }]}><Text style={s.body}>Saving puts it on
+        {" "}{DAY_NAME[useFor.split(":")[0]]}'s {useFor.split(":")[1]} (you can undo that from This week).</Text></View> : null}
+      {note ? <View style={[s.card, { backgroundColor: c.amberSoft }]}><Text style={s.body}>{note}</Text></View> : null}
       {allergens.length ? <View style={[s.card, { backgroundColor: c.amberSoft }]}><Text style={s.body}>Contains: {allergens.join(", ")}</Text>
         {warning ? <Text style={s.body}>{warning}</Text> : null}</View> : null}
       <View style={s.card}>
@@ -88,6 +116,7 @@ export default function RecipeScreen() {
             <TextInput style={[s.input, { flex: 1, minWidth: 140 }]} placeholder="ingredient" value={l.text} editable={editable}
               onChangeText={(text) => setLine(i, { text })} />
             {editable ? <Pressable onPress={() => setLines(lines.filter((_, j) => j !== i))}><Text style={{ color: c.red, fontSize: 18 }}>✕</Text></Pressable> : null}
+            {l.hint ? <Text style={[s.muted, { width: "100%" }]}>from: {l.hint}</Text> : null}
           </View>
         ))}
         {editable ? <Button kind="ghost" title="Add an ingredient" onPress={() => setLines([...lines, { text: "", qty: "1", unit: "" }])} /> : null}
@@ -115,7 +144,17 @@ export default function RecipeScreen() {
         <NumberField label="Kids can make it from age (0 = not for kid chefs)" max={18} value={r.kid_min_age}
           onChange={(kid_min_age) => setR({ ...r, kid_min_age })} />
       </View>
-      {editable ? <Button title="Save recipe" busy={busy} onPress={() => save()} disabled={r.name.trim().length < 2} />
+      <View style={s.card}>
+        <Text style={s.h2}>Source</Text>
+        {editable ? <>
+          <Field label="Where it's from" value={r.credit ?? ""} onChangeText={(credit) => setR({ ...r, credit })}
+            placeholder="blank: your name" hint="A person, a cookbook, a website — shown with the recipe." />
+          <Field label="Link (optional)" value={r.url ?? ""} onChangeText={(url) => setR({ ...r, url })} autoCapitalize="none"
+            placeholder="https://…" />
+        </> : <Text style={s.body}>{r.credit || "Lil'Helper"}</Text>}
+        {r.url ? <Button kind="ghost" title="Open the original recipe" onPress={() => Linking.openURL(r.url!)} /> : null}
+      </View>
+      {editable ? <Button title={useFor ? "Save and put it on the plan" : "Save recipe"} busy={busy} onPress={() => save()} disabled={r.name.trim().length < 2} />
         : <Button kind="ghost" title="Copy to my recipes" busy={busy} onPress={() => save(true)} />}
       {editable && id !== "new" ? <Button kind="ghost" title="Remove this recipe" onPress={async () => {
         try { await api.removeRecipe(id); router.back(); } catch (e) { setError(e); } }} /> : null}

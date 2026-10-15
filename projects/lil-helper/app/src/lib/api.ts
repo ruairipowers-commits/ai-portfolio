@@ -79,7 +79,9 @@ export type Me = { user: { id: string; email: string; name: string }; households
 
 export type Entry = { day: string; meal: string; recipe: string; name: string; servings: number; est_cost: number;
   active: number; prep_day: string; double?: boolean; why?: string[]; eaters?: string[];
-  kind?: "cook" | "leftovers" | "freezer"; cook?: string | null; to_freeze?: number };
+  kind?: "cook" | "leftovers" | "freezer"; cook?: string | null; to_freeze?: number;
+  state?: "planned" | "today" | "to_confirm" | "finished" | "leftovers" | "freezer" | "skipped"; date?: string;
+  frozen?: number; original?: { recipe: string; name: string } | null };
 export type Option = { total: number; minutes: number; flags: string[]; storage_used: Record<string, number>;
   stores: { store: string; mode: string; total: number; day?: string | null; time?: string | null; card?: string | null }[] };
 export type Chore = { day: string; job: string; person: string; name: string };
@@ -99,7 +101,7 @@ export type Week = { week_of: string; status: "draft" | "approved"; approved_by?
   choice: string; options: Record<string, Option>; chores: Chore[]; pets: PetWeek[]; savings: Savings | null;
   eating_out: NightOut[]; extras: { buy_ahead?: Ahead[]; buy_ahead_added?: Ahead[]; storage?: Record<string, number>;
     freezer?: { cook_extra?: { day: string; recipe: string; portions: number }[] } };
-  people: Record<string, string>; dinner_times: Record<string, string>; away: Record<string, string[]>;
+  people: Record<string, string>; dinner_times: Record<string, string>; away: Record<string, string[]>; today: string;
   home: Record<string, string[]> };
 export type Order = { store: string; mode: string; handoff: string; total: number; url: string | null; note: string | null;
   share_text?: string; credits: number; day?: string | null; time?: string | null; who?: string | null;
@@ -118,11 +120,18 @@ export type Settings = Record<string, any>;
 export type SettingsView = { settings: Settings; version: string; role: Role; me: string; catalogs: Catalogs };
 
 export type RecipeRow = { id: string; name: string; meal: string; active: number; total: number; tags: string[];
-  source: string; season_months: number[]; want: { times?: number; per_weeks?: number }; kid_min_age?: number | null };
+  source: string; season_months: number[]; want: { times?: number; per_weeks?: number }; kid_min_age?: number | null;
+  credit?: string; url?: string };
 export type RecipeIn = { name: string; meal: string; serves: number; active: number; total: number;
   ingredients: { text?: string; ingredient?: string; qty: number; unit?: string }[]; instructions: string[];
   tags: string[]; season_months: number[]; want: { times?: number; per_weeks?: number }; kid_min_age: number;
-  veg?: number; notes?: string };
+  veg?: number; notes?: string; credit?: string; url?: string };
+export type RecipeDraft = Omit<RecipeIn, "ingredients"> & { ingredients: { text?: string; ingredient?: string; qty: number; unit?: string;
+  line?: string; known?: boolean }[]; unknown?: string[]; check_amounts?: string[]; note?: string };
+export type SearchResult = { results: { title: string; url: string; site: string; snippet: string }[];
+  search_url: string | null; note?: string; sites: string[] };
+export type BookImport = { added: number; skipped_same_name: string[]; failed: { name: string; why: string }[];
+  new_ingredients: string[] };
 export type Special = { id: number; week_of: string; store: string; ingredient: string; name: string; price: number;
   regular: number | null; channel: string; repeat_weekly: number; note?: string };
 export type MoneySummary = { week_of: string; budget: { groceries: number; eating_out: number; total: number };
@@ -151,7 +160,8 @@ export type Forecast = { ingredient: string; name: string; unit: string; storage
   buy_cost: number; end_stock: number;
   prices: { store: string; brand: string; pack: number; price: number; per_unit: number; special: boolean; channel: string }[];
   timeline: { date: string; event: string; stock: number }[]; tips: string[] };
-export type Idea = { recipe: string; name: string; meal: string; have: string[];
+export type Idea = { recipe: string; name: string; meal: string; have: string[]; uses_typed: string[];
+  draft: RecipeDraft | null; credit: string;
   missing: { name: string; qty: number; unit: string; est_cost: number }[]; missing_cost: number; coverage: number;
   uses_soon: string[]; active: number; total: number; servings: number; instructions: string[]; why: string[] };
 export type Storage = { capacity: { fridge_l: number; freezer_l: number; fill_target?: number };
@@ -202,6 +212,11 @@ export const api = {
   night: (day: string, kind: string, week?: string) => post<Week>("/api/week/night", { week, day, kind }),
   away: (day: string, person: string, away: boolean, week?: string) =>
     post<Week>("/api/week/away", { week, day, person, away }),
+  change: (day: string, meal: string, recipe: string, week?: string) =>
+    post<Week & { missing: string[] }>("/api/week/change", { week, day, meal, recipe }),
+  revert: (day: string, meal: string, week?: string) => post<Week>("/api/week/revert", { week, day, meal }),
+  outcome: (day: string, meal: string, outcome: string, frozen = 0, week?: string) =>
+    post<Week>("/api/week/outcome", { week, day, meal, outcome, frozen }),
   ahead: (ingredients: string[], week?: string) => post<{ added: Ahead[] }>("/api/week/ahead", { week, ingredients }),
   approve: (seconds: number, choice: string, week?: string) =>
     post<Week>("/api/week/approve", { week, seconds, choice }),
@@ -220,6 +235,14 @@ export const api = {
   saveRecipe: (r: RecipeIn, id?: string) =>
     post<{ saved: string; allergens: string[]; warning: string | null }>(`/api/recipes${q({ rid: id })}`, r),
   removeRecipe: (id: string) => del<{ removed: string }>(`/api/recipes/${id}`),
+  exportRecipes: () => call<Record<string, unknown>>("/api/recipes/export"),
+  importRecipes: (book: unknown) => post<BookImport>("/api/recipes/import", { book }),
+  shareRecipes: () => post<{ code: string; link: string; recipes: number; note: string }>("/api/recipes/share", {}),
+  stopSharing: () => del<{ stopped: number }>("/api/recipes/share"),
+  previewShared: (code: string) => post<{ household: string; recipes: string[]; same: boolean }>("/api/recipes/shared", { code }),
+  importShared: (code: string) => post<BookImport>("/api/recipes/import-shared", { code }),
+  recipeFromUrl: (url: string) => post<RecipeDraft>("/api/recipes/from-url", { url }),
+  searchRecipes: (query: string, site?: string) => call<SearchResult>(`/api/recipes/search${q({ q: query, site })}`),
   ingredients: (search = "") => call<{ ingredients: { id: string; name: string; unit: string; cat: string;
     source: string }[] }>(`/api/ingredients${q({ q: search })}`),
   addIngredient: (b: { name: string; unit: string; cat: string; allergens: string[] }) =>
@@ -272,10 +295,14 @@ export const api = {
     qty: number; est_cost: number; meals: number }[] }>(`/api/forecast/ingredients${q({ weeks })}`),
   forecast: (ingredient: string, weeks = 4) => call<Forecast>(`/api/forecast${q({ ingredient, weeks })}`),
   cookFrom: (b: { text: string; use_pantry: boolean; meal?: string; day?: string; max_minutes?: number }) =>
-    post<{ ideas: Idea[]; matched: string[]; not_recognised: string[]; servings: number }>("/api/cookfrom", b),
+    post<{ ideas: Idea[]; matched: string[]; not_recognised: string[]; servings: number; uses_everything: boolean;
+      new_recipe: Idea | null; search: string }>("/api/cookfrom", b),
   useIdea: (recipe: string, day: string, meal = "dinner") => post<Week>("/api/cookfrom/use", { recipe, day, meal }),
   storage: () => call<Storage>("/api/storage"),
   addFreezerMeal: (name: string, portions: number) => post<{ added: string }>("/api/storage/freezer", { name, portions }),
+  editFreezerMeal: (id: number, b: { name: string; portions: number; use_by?: string }) =>
+    put<{ saved: number }>(`/api/storage/freezer/${id}`, b),
+  removeFreezerMeal: (id: number) => del<{ removed: number }>(`/api/storage/freezer/${id}`),
 
   // calendar, push, print, savings
   calendarLink: () => call<CalendarLink>("/api/calendar/link"),

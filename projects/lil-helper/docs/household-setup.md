@@ -221,7 +221,7 @@ swap, change a night, add specials and recipes, approve and record spending.
 |---|---|
 | App can't reach the server | `https://helper.agentls.com/api/health` in Safari. If that fails: `docker ps` (running?), the tunnel's public hostname, and `docker network connect` (A4) after any re-create |
 | Tapping the sign-in link doesn't open the app | Long-press → **Copy**, paste into **Opened the email on another device?** |
-| No sign-in email | `docker logs lil-helper`; `RESEND_API_KEY` and `HELPER_MAIL_FROM` in `.env` |
+| No sign-in email | `docker exec lil-helper helper mail-test you@example.com` sends a test and prints exactly what happened. `refused (403)… not verified`: the sender in `HELPER_MAIL_FROM` must be on a domain verified in Resend (resend.com → Domains). `RESEND_API_KEY not set`: add it to `.env` and re-create the container. Also check spam, and that you haven't asked more than 5 times in an hour |
 | "A sign-up code is needed" | Use a code from `HELPER_SIGNUP_CODES`, or ask the admin to invite you |
 | Invite link says "expired" or "for a different email" | Invites last 14 days and only work for the invited address; the admin sends it again from **People** |
 | No notifications | **Home → Calendar and notifications** shows the state; iPhone **Settings → Lil'Helper → Notifications**; `HELPER_PUSH=expo` on the server; the build had push set up (B5) |
