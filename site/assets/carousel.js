@@ -1,11 +1,14 @@
 // Carousels on the home page (the portfolio gallery and the latest posts).
 // Markup (rendered by scripts/mkdocs_hooks.py):
-//   <div class="carousel" data-carousel data-interval="7000" [data-autoheight] aria-roledescription="carousel" aria-label="...">
+//   <div class="carousel" data-carousel data-interval="7000" [data-max-dots="7"] aria-roledescription="carousel" aria-label="...">
 //     <div class="carousel__track"> ...items... </div>
 //   </div>
 // Without JavaScript the track is a horizontally scrollable row with scroll-snap. This adds page dots, previous /
 // next buttons and auto-advance. Auto-advance pauses while the pointer is over it, while anything inside has focus,
 // while the tab is hidden, after the visitor uses the controls, and never runs with prefers-reduced-motion.
+// Height never changes as it advances: tiles stretch to the tallest one (CSS clamps their text). With more pages than
+// fit as dots (data-max-dots, default 7, 5 in a side panel), the dots become a "3 / 15" counter, so the controls
+// never overflow a narrow panel. window.carouselSetup(el) sets up one that was filled in later (e.g. from an API).
 (function () {
   var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -20,8 +23,12 @@
     var prev = button("carousel__arrow", "Previous", "‹");
     var dots = document.createElement("div");
     dots.className = "carousel__dots";
+    var count = document.createElement("span");
+    count.className = "carousel__count";
+    count.setAttribute("aria-live", "polite");
+    var maxDots = parseInt(root.dataset.maxDots || (root.closest(".home-side") ? "5" : "7"), 10);
     var next = button("carousel__arrow", "Next", "›");
-    controls.append(prev, dots, next);
+    controls.append(prev, dots, count, next);
     root.appendChild(controls);
 
     var paused = false, hovering = false, focused = false, timer = null;
@@ -50,8 +57,13 @@
       track.scrollTo({ left: it ? it.offsetLeft - items()[0].offsetLeft : 0, behavior: reduced ? "auto" : "smooth" });
     }
     function drawDots() {
-      var n = pages();
-      if (dots.children.length !== n) {
+      var n = pages(), compact = n > maxDots;
+      dots.hidden = compact;
+      count.hidden = !compact;
+      if (compact) {
+        dots.innerHTML = "";
+        count.textContent = (current() + 1) + " / " + n;
+      } else if (dots.children.length !== n) {
         dots.innerHTML = "";
         for (var i = 0; i < n; i++) {
           var d = button("carousel__dot", "Page " + (i + 1) + " of " + n, "");
@@ -65,10 +77,6 @@
         d.setAttribute("aria-current", i === c ? "true" : "false");
       });
       controls.hidden = n < 2;
-      if (root.hasAttribute("data-autoheight")) {          // fit the tile on show: no gap under a short one
-        var it = items()[c * perPage()];
-        if (it) track.style.height = it.offsetHeight + 4 + "px";
-      }
     }
     function tick() { if (!paused && !hovering && !focused && !document.hidden) go(current() + 1); }
     function startAuto() { if (!reduced && !timer && interval > 0) timer = setInterval(tick, interval); }
@@ -97,6 +105,7 @@
     return b;
   }
 
+  window.carouselSetup = setup;
   function init() { document.querySelectorAll("[data-carousel]").forEach(setup); }
   if (window.document$ && window.document$.subscribe) window.document$.subscribe(init);
   else if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
