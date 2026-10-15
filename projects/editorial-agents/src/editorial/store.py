@@ -77,7 +77,8 @@ class Store:
 
     def topics(self, statuses: tuple[str, ...]) -> list[dict]:
         q = ",".join("?" * len(statuses))
-        return self.query(f"select * from topics where status in ({q}) order by coalesce(rank, 9999), fetched_at desc",
+        return self.query(f"select * from topics where status in ({q}) order by coalesce(rank, 9999), "
+                          "coalesce(nullif(published, ''), fetched_at) desc, id",
                           statuses)
 
     def set_status(self, tid: str, status: str, **fields) -> None:
