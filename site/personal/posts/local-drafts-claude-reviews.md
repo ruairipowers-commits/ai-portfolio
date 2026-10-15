@@ -17,8 +17,8 @@ results table that grows every day.
 <!-- more -->
 
 !!! note "A running experiment"
-    The first measured numbers below come from one task. The [results table](#results-so-far) gains a row with each
-    daily post, which has started from a local-model first draft since 15 October 2026. Until a few weeks of runs
+    The first measured numbers below come from one task. The [results table](#results-so-far) gains a row with every
+    daily run, published or not, starting from a local-model first draft since 15 October 2026. Until a few weeks of runs
     are in, treat it as an early read, not a verdict.
 
 ## The problem
