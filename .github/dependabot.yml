@@ -24,3 +24,5 @@ updates:
     schedule: {interval: weekly}
     ignore:                    # Node base images stay on an LTS line; moving to the next LTS is a deliberate change
       - {dependency-name: node, update-types: ["version-update:semver-major"]}
+      # Python images move with the version CI tests on (3.11); upgrading Python is a deliberate change, not a bump
+      - {dependency-name: python, update-types: ["version-update:semver-major", "version-update:semver-minor"]}

@@ -13,7 +13,9 @@ Read first: `CLAUDE.md`, `factory/style-guide.md`, `projects/editorial-agents/pr
 model's brief), `projects/editorial-agents/prompts/editor.v1.md` (the editor's rubric). Standing rule: never say or
 imply client or employer work; this site is Ruairi's own work, for learning and as examples.
 
-Setup: `pip install -q -e projects/editorial-agents`. Work in `drafts/<slug>/` (git-ignored, never committed).
+Setup: `pip install -q -e projects/editorial-agents`, then `python scripts/routing_log.py merge` (pulls every earlier
+run from the `routing-log` branch into the local log, so the counts below are complete). Work in `drafts/<slug>/`
+(git-ignored, never committed).
 
 ## 1. Take the topic
 
@@ -101,10 +103,15 @@ editorial routing log --arm claude-only --topic <id> --slug <slug> --final draft
 
 Both arms count the brief as Claude's writing, so the comparison is like for like.
 
+Then publish the rows, whatever the gate said: `python scripts/routing_log.py publish`. It pushes them to the
+`routing-log` branch (never `main`), so a held post's run still counts, including the runs where the local draft
+lost. The site rebuilds daily and reads that branch. Then `git checkout -- projects/editorial-agents/metrics/` so the
+log stays out of the post's pull request.
+
 ## 8. Open the pull request
 
-Branch `auto/<slug>` from `main`. Commit `site/blog/posts/<slug>.md` and
-`projects/editorial-agents/metrics/routing-runs.jsonl`, with the usual `Co-Authored-By` trailer. Push. Open the PR with
+Branch `auto/<slug>` from `main`. Commit `site/blog/posts/<slug>.md` only (the run log went to `routing-log` in
+step 7), with the usual `Co-Authored-By` trailer. Push. Open the PR with
 `gh api repos/{owner}/ai-portfolio/pulls` (title = the post title, base `main`). Body:
 
 ```

@@ -1,7 +1,8 @@
 """Local drafts, Claude reviews: the comparison log.
 
-Every routed post run appends one row to `metrics/routing-runs.jsonl` (committed with the post, so the numbers are
-public and auditable). Two arms:
+Every routed post run appends one row to `metrics/routing-runs.jsonl`, and the daily skill pushes it to the repo's
+`routing-log` branch (scripts/routing_log.py) whether or not the post is published, so the numbers are public,
+auditable and include the runs where the local draft lost. Two arms:
 
   claude-only   Claude writes the draft from the sources; the same checks and editor review follow.
   local-review  A local model on the owner's server writes the draft; Claude reviews and edits it.
@@ -154,7 +155,8 @@ def table_md(rows: list[dict] | None = None) -> str:
         foot.append(f"On the {p['topics']} topic{'s' if p['topics'] != 1 else ''} run both ways, a local draft cut what "
                     f"Claude had to write by a median of **{p['median_cut']:.0%}** (range {p['min_cut']:.0%} to "
                     f"{p['max_cut']:.0%}).")
-    foot.append(f"Means per run. Tokens are estimated as characters ÷ {CHARS_PER_TOKEN}, the same way for both arms; "
-                f"the log is [`metrics/routing-runs.jsonl`](https://github.com/{{{{GITHUB_OWNER}}}}/ai-portfolio/blob/"
-                f"main/projects/editorial-agents/metrics/routing-runs.jsonl).")
+    foot.append(f"Means per run. Tokens are estimated as characters ÷ {CHARS_PER_TOKEN}, the same way for both arms. "
+                f"Every run counts, published or not; the log is "
+                f"[`routing-runs.jsonl`](https://github.com/{{{{GITHUB_OWNER}}}}/ai-portfolio/blob/"
+                f"routing-log/routing-runs.jsonl) on the `routing-log` branch.")
     return "\n".join(lines) + "\n\n" + " ".join(foot)
