@@ -3,7 +3,7 @@
 # Reads the blog's search index from $PORTFOLIO_SITE_URL/search/search_index.json at start and every hour.
 # Answers with a local model when OLLAMA_URL points at Ollama (the self-host stack runs one); otherwise it quotes
 # the best passages. No API keys.
-FROM python:3.11-slim
+FROM python:3.14-slim
 # /app must belong to the app user (the activity log lives in /app/warehouse, a Docker volume when self-hosted)
 RUN useradd -m -u 1000 user && install -d -o user -g user /app
 ENV HOME=/home/user PATH=/home/user/.local/bin:$PATH PYTHONUNBUFFERED=1
