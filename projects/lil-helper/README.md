@@ -1,6 +1,6 @@
-# Lil'Helper
+# DinnerPeace
 
-![Lil'Helper](brand/wordmark.png)
+![DinnerPeace](brand/wordmark.png)
 
 **A family meal planner that picks the week's meals, splits the shopping across stores by price and specials, shares
 the cooking and cleanup, and learns how much everyone — the dog included — actually eats.**
@@ -32,7 +32,7 @@ the cooking and cleanup, and learns how much everyone — the dog included — a
   balanced (your time is worth something), fastest.
 - **Hands each list to the app that already does it:** an Instacart shopping-list link, a list shared to the Whole
   Foods app or Reminders, an aisle-ordered list for Trader Joe's (which doesn't sell online). Nothing is bought by
-  Lil'Helper; an adult approves the week first.
+  DinnerPeace; an adult approves the week first.
 - **Shares the jobs:** cook, dishes, set the table, kid helper, feed the dog — fair over four weeks, by who's home
   and what each age can do.
 - **Feeds the dog:** restocks its food with the groceries, and sets aside plain, dog-safe extras from dinner (capped
@@ -51,7 +51,7 @@ the cooking and cleanup, and learns how much everyone — the dog included — a
   much, and where it's cheapest. **Cook from what I've got** turns what's in the kitchen into ideas.
 - **Your own recipes:** ingredients in everyday words, cooking steps, calories per serving, which meals they suit
   (breakfast, lunch, dinner), the months they're in season, how often you'd like them, and where each is from. Every
-  recipe in Lil'Helper's book has steps and calories; use the book and its indicative prices, or turn the book off.
+  recipe in DinnerPeace's book has steps and calories; use the book and its indicative prices, or turn the book off.
   **Your brand, store and price** for any ingredient apply to every plan and list. Add one from the web (search the sites you like, or paste a link: name, ingredients,
   times and a link back come in, ready to check), export and import the book as a file, or share it with another
   household by code.
@@ -74,7 +74,7 @@ the cooking and cleanup, and learns how much everyone — the dog included — a
 - **Reports:** costs (planned against spent), time (cooking, shopping, planning), calories planned per person, and
   who did which jobs.
 - **Voice and Alexa:** the app's microphone (the phone's own speech recogniser) fills any box or answers a question;
-  "Alexa, ask Lil'Helper what's for dinner" works through a skill you add in the Amazon developer console
+  "Alexa, ask DinnerPeace what's for dinner" works through a skill you add in the Amazon developer console
   ([docs/alexa.md](docs/alexa.md)). Requests are matched by rules, not a model; nothing is bought by voice.
 
 The family uses the **phone app** (`app/`, Expo — iPhone first via TestFlight, Android from the same code).
@@ -137,7 +137,7 @@ The same sections, for the CLI and the demo, are in `config/household.example.ya
 | People (birthday or adult/child, allergies, diets, portion, home days, can cook, admin, teen approval, email); pets | `people`, `pets` |
 | Occasions and holidays | `occasions`, `holidays`, `holidays_off` |
 | Weekly buffet (per meal: recipes and portions to keep) | `buffet` |
-| Your brand, store and price per ingredient; use Lil'Helper's book | `ingredient_prefs`, `use_book` |
+| Your brand, store and price per ingredient; use DinnerPeace's book | `ingredient_prefs`, `use_book` |
 | Dinner days and times, breakfasts, lunchboxes, nights off | `meals`, `dinner_times`, `meals.special_nights` |
 | Takeout and eating out: budget and service | `eating_out` |
 | Hands-on minutes by day; styles to prefer or require; kid chef nights; leftover lunches | `prep_minutes`, `styles`, `kid_chef`, `leftovers` |

@@ -1,6 +1,6 @@
-# Production: Lil'Helper in the cloud
+# Production: DinnerPeace in the cloud
 
-Today Lil'Helper runs on one machine at home (the EVO-X1) behind Cloudflare, with sign-up by invite code. That's
+Today DinnerPeace runs on one machine at home (the EVO-X1) behind Cloudflare, with sign-up by invite code. That's
 right for one family and a few testers. Releasing it on the App Store, where anyone can download it, start a
 subscription and set up their own household, needs a hosted service. The code is already multi-household; this is
 the path from here to there.
@@ -65,7 +65,7 @@ been applied to a live account. Costs depend on traffic and model use; the solve
   counts; invited family members never pay.
 - **Lapsed:** read-only (plans and recipes stay viewable, no new drafts) for 30 days, then the admin is asked whether
   to delete or keep.
-- **The welcome wizard** gets the paywall at the "Lil'Helper Family" step: free trial, then monthly or yearly. Show
+- **The welcome wizard** gets the paywall at the "DinnerPeace Family" step: free trial, then monthly or yearly. Show
   price, period and renewal terms on the paywall itself, and link to Terms and the Privacy Policy (Guideline 3.1.2).
 - **Restore purchases** and **Manage subscription** buttons in Home → Account.
 

@@ -13,7 +13,7 @@ export default function Trips() {
       <Header title="Shopping trips" />
       <AdminNote role={set.role} />
       <View style={s.card}>
-        <Text style={s.muted}>No trips set? Lil'Helper picks the cheapest mix of stores and pickup or delivery each week.
+        <Text style={s.muted}>No trips set? DinnerPeace picks the cheapest mix of stores and pickup or delivery each week.
           "Sun before" is the Sunday before the plan's week starts.</Text>
       </View>
       {set.view ? <TripsEditor key={set.view.version} set={set} /> : null}

@@ -15,21 +15,21 @@ def clean(monkeypatch):
 
 def test_own_sender_wins(monkeypatch):
     monkeypatch.setenv("MAIL_FROM", "Another app <shared@example.com>")
-    monkeypatch.setenv("HELPER_MAIL_FROM", "Lil'Helper <mine@example.com>")
-    assert M.mail_from() == "Lil'Helper <mine@example.com>"
+    monkeypatch.setenv("HELPER_MAIL_FROM", "DinnerPeace <mine@example.com>")
+    assert M.mail_from() == "DinnerPeace <mine@example.com>"
 
 
 def test_shared_address_under_this_apps_name(monkeypatch):
     monkeypatch.setenv("MAIL_FROM", "Another app <shared@example.com>")
-    assert M.mail_from() == "Lil'Helper <shared@example.com>"
+    assert M.mail_from() == "DinnerPeace <shared@example.com>"
 
 
 def test_empty_own_value_counts_as_unset(monkeypatch):
     # the deploy compose passes every listed variable, so an unset one arrives as an empty string
     monkeypatch.setenv("HELPER_MAIL_FROM", "")
     monkeypatch.setenv("MAIL_FROM", "shared@example.com")
-    assert M.mail_from() == "Lil'Helper <shared@example.com>"
+    assert M.mail_from() == "DinnerPeace <shared@example.com>"
 
 
 def test_default_when_nothing_set():
-    assert M.mail_from() == "Lil'Helper <helper@example.com>"
+    assert M.mail_from() == "DinnerPeace <helper@example.com>"

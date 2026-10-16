@@ -4,7 +4,7 @@ the youngest age that can make it) and their ingredients, ingredient preferences
 fridge and pantry, and the freezer.
 
 Uploading never deletes anything unless a row says so ("remove" column = yes) and always shows a preview first: what
-would be added, changed and left alone, and any row it couldn't read and why. Lil'Helper's own recipes are in the
+would be added, changed and left alone, and any row it couldn't read and why. DinnerPeace's own recipes are in the
 workbook for reference; edit a copy (give it a new name) to change one.
 """
 from __future__ import annotations
@@ -104,10 +104,10 @@ def export(h: Household, c: Catalog, con) -> bytes:
                          "yes" if o.get("yearly") else "", ""] for o in h.raw.get("occasions") or []])
     rec_rows, ing_rows = [], []
     for r in sorted(c.recipes.values(), key=lambda r: (r.source == "book", r.name)):
-        src = "Lil'Helper" if r.source == "book" else "household"
+        src = "DinnerPeace" if r.source == "book" else "household"
         rec_rows.append([r.id, r.name, src, _csv(r.meals), 4, r.active, r.total, r.kcal or "", r.kid_min_age or "",
                          _csv(t for t in r.tags if t != "kid_can_make"), _csv(r.season_months),
-                         (r.want or {}).get("times", ""), r.credit or ("Lil'Helper" if r.source == "book" else ""),
+                         (r.want or {}).get("times", ""), r.credit or ("DinnerPeace" if r.source == "book" else ""),
                          r.url or "", "\n".join(r.instructions), ""])
         for iid, q in r.ing.items():
             ing = c.ingredients.get(iid)
@@ -282,10 +282,10 @@ def plan_import(h: Household, c: Catalog, con, data: bytes) -> dict:
     for r in _rows(wb, "Recipes"):
         name = str(r.get("name") or "").strip()
         if not name or str(r.get("source") or "").lower().startswith("lil"):
-            continue                                       # Lil'Helper's recipes are reference only
+            continue                                       # DinnerPeace's recipes are reference only
         existing = by_name.get(name.lower())
         if existing is not None and existing.source == "book":
-            problems.append(f"Recipes row {r['_row']}: {name!r} is one of Lil'Helper's recipes; rename your copy")
+            problems.append(f"Recipes row {r['_row']}: {name!r} is one of DinnerPeace's recipes; rename your copy")
             continue
         if _yes(r.get("remove")):
             if existing is not None:

@@ -40,7 +40,7 @@ export default function Book() {
       a.href = URL.createObjectURL(new Blob([text], { type: "application/json" }));
       a.download = "lilhelper-recipes.json"; a.click();
     } else {
-      await Share.share({ title: "Our Lil'Helper recipes", message: text });
+      await Share.share({ title: "Our DinnerPeace recipes", message: text });
     }
     return `Exported ${(book.recipes as unknown[]).length} recipes.`;
   }
@@ -62,7 +62,7 @@ export default function Book() {
         <Button title="Make a sharing code" busy={busy === "share"} onPress={() => run("share", async () => setShare(await api.shareRecipes()))} />
         {share ? <>
           <Text selectable style={[s.body, { fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace", fontSize: 11 }]}>{share.code}</Text>
-          <Button kind="ghost" title="Send the link" onPress={() => Share.share({ message: `Our Lil'Helper recipes: ${share.link}` })} />
+          <Button kind="ghost" title="Send the link" onPress={() => Share.share({ message: `Our DinnerPeace recipes: ${share.link}` })} />
           <Text style={s.muted}>{share.note}</Text>
         </> : null}
         <Button kind="ghost" title="Stop sharing (old codes stop working)" busy={busy === "stop"}

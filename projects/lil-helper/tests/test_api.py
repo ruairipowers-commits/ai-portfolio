@@ -230,7 +230,7 @@ def test_a_refused_email_is_reported_not_swallowed(monkeypatch, tmp_path, caplog
     import httpx
     from lilhelper import outputs
     monkeypatch.setenv("RESEND_API_KEY", "re_test")
-    monkeypatch.setenv("HELPER_MAIL_FROM", "Lil'Helper <helper@unverified.example>")
+    monkeypatch.setenv("HELPER_MAIL_FROM", "DinnerPeace <helper@unverified.example>")
 
     def refuse(*a, **k):
         return httpx.Response(403, json={"message": "The unverified.example domain is not verified."})
@@ -250,5 +250,5 @@ def test_health_says_how_email_goes(server):
 
 def test_a_quoted_sender_from_an_env_file_is_cleaned(monkeypatch):
     from lilhelper import outputs
-    monkeypatch.setenv("HELPER_MAIL_FROM", '"Lil\'Helper <helper@agentls.com>"')
-    assert outputs.mail_from() == "Lil'Helper <helper@agentls.com>"
+    monkeypatch.setenv("HELPER_MAIL_FROM", '"DinnerPeace <helper@agentls.com>"')
+    assert outputs.mail_from() == "DinnerPeace <helper@agentls.com>"

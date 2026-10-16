@@ -1,4 +1,4 @@
-# Terraform starter for Lil'Helper on AWS (see docs/aws-native.md). Not applied to a live account.
+# Terraform starter for DinnerPeace on AWS (see docs/aws-native.md). Not applied to a live account.
 terraform {
   required_providers {
     aws = { source = "hashicorp/aws", version = "~> 5.0" }

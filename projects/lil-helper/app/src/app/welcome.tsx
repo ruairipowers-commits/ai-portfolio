@@ -52,12 +52,12 @@ function Intro({ me, signup, onNext }: { me: Me | null; signup: string; onNext: 
   return (
     <>
       <View style={s.card}>
-        <Text style={s.body}>Lil'Helper plans your family's week of meals around who's home, allergies, what's on
+        <Text style={s.body}>DinnerPeace plans your family's week of meals around who's home, allergies, what's on
           special and your budget; splits the shopping across stores; and shares the cooking and clean-up fairly.</Text>
         <Text style={s.muted}>Signed in as {me?.user.email ?? "…"}</Text>
       </View>
       <View style={s.card}>
-        <View style={s.between}><Text style={s.h2}>Lil'Helper Family</Text><Pill text="Beta: free" /></View>
+        <View style={s.between}><Text style={s.h2}>DinnerPeace Family</Text><Pill text="Beta: free" /></View>
         <Text style={s.body}>One household, everyone in it, unlimited plans, calendar and push updates.</Text>
         <Text style={s.muted}>Subscriptions start with the App Store release; you'll be asked before anything is
           charged, and you can cancel in your App Store settings. {signup === "invite"
@@ -199,7 +199,7 @@ function DinnersStep({ set, next }: { set: S; next: () => void }) {
       </View>
       <View style={s.card}>
         <Text style={s.h2}>Who's usually home for dinner</Text>
-        <Text style={s.muted}>Lil'Helper cooks for whoever's home. You can mark someone out for a night any week.</Text>
+        <Text style={s.muted}>DinnerPeace cooks for whoever's home. You can mark someone out for a night any week.</Text>
         {people.map((p, i) => (
           <Chips key={p.id} label={p.name} options={DAYS.map((d) => ({ id: d, label: DAY_SHORT[d] }))}
             value={p.home ?? [...DAYS]} onChange={(home) => setPeople(people.map((x, j) => j === i ? { ...x, home } : x))} />
@@ -304,7 +304,7 @@ function KitchenStep({ set, next }: { set: S; next: () => void }) {
     <>
       <View style={s.card}>
         <Text style={s.muted}>Roughly how big are your fridge and freezer? A typical family fridge is about 500 L with a
-          200 L freezer. Lil'Helper only buys ahead (sales, bulk packs) what will fit.</Text>
+          200 L freezer. DinnerPeace only buys ahead (sales, bulk packs) what will fit.</Text>
         <NumberField label="Fridge (litres)" step={25} value={sto.fridge_l} onChange={(fridge_l) => setSto({ ...sto, fridge_l })} />
         <NumberField label="Freezer (litres)" step={25} value={sto.freezer_l} onChange={(freezer_l) => setSto({ ...sto, freezer_l })} />
         <Toggle label="Cook extra for the freezer" hint="Doubles a freezes-well dinner now and then, for busy nights."
@@ -333,7 +333,7 @@ function TripsStep({ set, next }: { set: S; next: () => void }) {
     <>
       <View style={s.card}>
         <Text style={s.muted}>When do you usually shop? Add your regular trips and orders, and each one gets its own
-          list (fresh things on the trip closest to when they're cooked). Or skip, and Lil'Helper picks the cheapest
+          list (fresh things on the trip closest to when they're cooked). Or skip, and DinnerPeace picks the cheapest
           way each week.</Text>
       </View>
       <TripsEditor set={set} onSaved={next} />
@@ -351,7 +351,7 @@ function FirstPlan() {
   return (
     <>
       <View style={s.card}>
-        <Text style={s.body}>All set. Lil'Helper drafts next week every Saturday morning; an adult looks it over,
+        <Text style={s.body}>All set. DinnerPeace drafts next week every Saturday morning; an adult looks it over,
           swaps anything, and approves. Nothing is ever bought for you.</Text>
       </View>
       <Button title="Plan this week now" busy={busy} onPress={async () => {

@@ -1,4 +1,4 @@
-"""Streamlit demo for Lil'Helper. Run: `helper ui`. The family's real app is the phone app (app/); this page shows the
+"""Streamlit demo for DinnerPeace. Run: `helper ui`. The family's real app is the phone app (app/); this page shows the
 same engine on a fictional family so anyone can try it.
 
 1 · Input: the household (fictional), the week, budget, weeknight prep limit, how to shop, and try-to-break-it inputs.
@@ -20,7 +20,7 @@ from lilhelper import ai, catalog, demo, evals, outputs, safety, store, telemetr
 from lilhelper.config import DAYS, ROOT, Settings, load_household
 from lilhelper.prices import PriceBook
 
-st.set_page_config(page_title="Lil'Helper", page_icon="🍎", layout="wide")
+st.set_page_config(page_title="DinnerPeace", page_icon="🍎", layout="wide")
 demo.activate_streamlit(ROOT)          # hosted demo: this visitor's own sandbox (no-op locally)
 s = Settings.load()
 
@@ -31,10 +31,10 @@ FLYER_INJECTION = (ROOT / "data" / "flyers" / "stop-and-shop-week.txt").read_tex
                                                                                      # and an instruction line
 
 # ------------------------------------------------------------------ header
-demo.banner(st, ROOT, "Lil'Helper")
+demo.banner(st, ROOT, "DinnerPeace")
 c1, c2 = st.columns([1, 9])
 c1.image(str(ROOT / "brand" / "icon-1024.png"), width=72)
-c2.title("Lil'Helper")
+c2.title("DinnerPeace")
 st.caption("Plans the week's meals, splits the shopping across stores by price and specials, shares the cooking and "
            "cleanup, and feeds the dog too. A solver does the choosing; a model only suggests recipes, reads flyers "
            "and writes one-line notes. Nothing is bought without a person. Fictional family, synthetic prices, "

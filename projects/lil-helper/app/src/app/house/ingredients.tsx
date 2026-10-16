@@ -1,4 +1,4 @@
-// Ingredients: search anything Lil'Helper knows (and your own), and set your brand, store and price for it.
+// Ingredients: search anything DinnerPeace knows (and your own), and set your brand, store and price for it.
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Text, TextInput, View } from "react-native";
@@ -21,8 +21,8 @@ export default function Ingredients() {
     <Screen>
       <Header title="Ingredients" />
       <View style={s.card}>
-        <Toggle label="Use Lil'Helper's recipe book" value={useBook}
-          hint={set.isAdmin ? "Off: plans use only your own recipes. Prices: Lil'Helper's indicative prices are used unless you set your own below."
+        <Toggle label="Use DinnerPeace's recipe book" value={useBook}
+          hint={set.isAdmin ? "Off: plans use only your own recipes. Prices: DinnerPeace's indicative prices are used unless you set your own below."
             : "Only the admin can change this."}
           onChange={(v) => set.isAdmin && set.save("use_book", { ...(set.st.use_book ?? {}), recipes: v })} />
       </View>

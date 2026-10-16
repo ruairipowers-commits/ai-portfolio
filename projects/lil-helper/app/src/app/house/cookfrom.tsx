@@ -1,4 +1,4 @@
-// Cook from what I've got: type what's in the fridge (or just use the pantry Lil'Helper keeps), get ideas ranked by
+// Cook from what I've got: type what's in the fridge (or just use the pantry DinnerPeace keeps), get ideas ranked by
 // how much they use up, and put one on tonight's plan.
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -27,7 +27,7 @@ export default function CookFrom() {
     try { setRes(await api.cookFrom({ text: t, use_pantry: usePantry, meal, day, max_minutes: max })); }
     catch (e) { setError(e); } finally { setBusy(false); }
   }
-  // said by voice (here or from Ask Lil'Helper): search straight away, using only what was said
+  // said by voice (here or from Ask DinnerPeace): search straight away, using only what was said
   useEffect(() => { if (params.text) { setPantry(false); go(String(params.text), false); } }, [params.text]);  // eslint-disable-line react-hooks/exhaustive-deps
   async function use(i: Idea) {
     try { await api.useIdea(i.recipe, day, meal); setDone(`${i.name} is on ${DAY_NAME[day]}'s plan.`); } catch (e) { setError(e); }

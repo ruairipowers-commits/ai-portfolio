@@ -108,7 +108,7 @@ export default function Money() {
       <View style={s.card}>
         <Text style={s.h2}>Read a receipt</Text>
         <Text style={s.muted}>A photo, or paste an emailed receipt. You check it before anything is saved; prices it
-          finds keep Lil'Helper's price list honest.</Text>
+          finds keep DinnerPeace's price list honest.</Text>
         <Button kind="ghost" title="Choose a receipt photo" busy={busy === "rcp"} onPress={() => run("rcp", async () => {
           const pick = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7 });
           if (pick.canceled) return;

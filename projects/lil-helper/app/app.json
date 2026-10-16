@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Lil'Helper",
+    "name": "DinnerPeace",
     "slug": "lil-helper",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "lilhelper",
@@ -37,8 +37,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Lil'Helper reads store flyers you choose so it can find this week's specials.",
-          "cameraPermission": "Lil'Helper reads store flyers you photograph so it can find this week's specials."
+          "photosPermission": "DinnerPeace reads store flyers you choose so it can find this week's specials.",
+          "cameraPermission": "DinnerPeace reads store flyers you photograph so it can find this week's specials."
         }
       ],
       [
@@ -51,8 +51,8 @@
       [
         "expo-speech-recognition",
         {
-          "microphonePermission": "Lil'Helper listens when you tap the microphone, so you can say what you have or ask what's for dinner.",
-          "speechRecognitionPermission": "Lil'Helper turns what you say into text to find recipes and answer questions."
+          "microphonePermission": "DinnerPeace listens when you tap the microphone, so you can say what you have or ask what's for dinner.",
+          "speechRecognitionPermission": "DinnerPeace turns what you say into text to find recipes and answer questions."
         }
       ]
     ],

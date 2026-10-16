@@ -240,7 +240,7 @@ def read_flyer(ctx: AIContext, h: Household, c: Catalog, pb, store_id: str, *, i
             continue
         iid = c.match(it.text)
         if not iid:
-            row["status"], row["why"] = "unmatched", ["not an ingredient Lil'Helper plans with"]
+            row["status"], row["why"] = "unmatched", ["not an ingredient DinnerPeace plans with"]
             out.append(row)
             continue
         row["ingredient"] = iid

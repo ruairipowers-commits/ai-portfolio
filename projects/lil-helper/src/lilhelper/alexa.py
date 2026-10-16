@@ -1,4 +1,4 @@
-"""Alexa: "Alexa, ask Lil'Helper what's for dinner."
+"""Alexa: "Alexa, ask DinnerPeace what's for dinner."
 
 The skill itself lives in the Amazon developer console (docs/alexa.md has the steps); this module is the endpoint it
 calls, and it does the same things as the app's microphone button (voice.py → api.run_voice).
@@ -254,10 +254,10 @@ def handle(req: dict, run) -> dict:
         ((req.get("session") or {}).get("user") or {}).get("accessToken")
     who = linked(token)
     if not who:
-        return speak("First, link Lil'Helper: in the Lil'Helper app go to Settings, then Alexa, and get a code. "
+        return speak("First, link DinnerPeace: in the DinnerPeace app go to Settings, then Alexa, and get a code. "
                      "Then open the Alexa app and link the skill.", card={"type": "LinkAccount"})
     if kind == "LaunchRequest":
-        return speak("Hi, it's Lil'Helper. " + HELP, end=False, reprompt="What would you like?")
+        return speak("Hi, it's DinnerPeace. " + HELP, end=False, reprompt="What would you like?")
     if kind != "IntentRequest":
         return speak("Sorry, I can't do that yet.")
     intent = r.get("intent") or {}
@@ -270,7 +270,7 @@ def handle(req: dict, run) -> dict:
     if not text:
         return speak("Sorry, I didn't catch that. " + HELP, end=False, reprompt="What would you like?")
     out = run(who[0], who[1], text)
-    card = {"type": "Simple", "title": "Lil'Helper", "content": out["say"]}
+    card = {"type": "Simple", "title": "DinnerPeace", "content": out["say"]}
     return speak(out["say"], card=card)
 
 
@@ -292,8 +292,8 @@ async def alexa_endpoint(request: Request) -> JSONResponse:
     return JSONResponse(handle(req, run_as))
 
 
-LINK_PAGE = """<div class='card'><h2>Link Alexa to Lil'Helper</h2>
-<p class='m'>In the Lil'Helper app, open <b>Settings → Alexa</b> and tap <b>Get a code</b>. Type it here.</p>
+LINK_PAGE = """<div class='card'><h2>Link Alexa to DinnerPeace</h2>
+<p class='m'>In the DinnerPeace app, open <b>Settings → Alexa</b> and tap <b>Get a code</b>. Type it here.</p>
 <form method='post' action='{action}'>
 <input type='hidden' name='state' value='{state}'><input type='hidden' name='redirect_uri' value='{redirect}'>
 <p><input name='code' autocomplete='one-time-code' autocapitalize='characters' placeholder='e.g. K7Q2M9XD'

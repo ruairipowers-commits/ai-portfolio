@@ -74,7 +74,7 @@ def looks_like_instruction(text: str) -> bool:
 
 def check_card_name(name: str, pattern: str) -> None:
     if re.search(pattern, name or ""):
-        raise ValueError("That looks like a card number. Lil'Helper only stores a name you'd recognise.")
+        raise ValueError("That looks like a card number. DinnerPeace only stores a name you'd recognise.")
 
 
 def people_for(h: Household, meal: str) -> list[Person]:

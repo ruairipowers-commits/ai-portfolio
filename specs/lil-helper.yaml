@@ -1,11 +1,11 @@
 slug: lil-helper
-title: "Lil'Helper: a family meal planner that picks the week's meals, splits the shopping across stores by price and
+title: "DinnerPeace: a family meal planner that picks the week's meals, splits the shopping across stores by price and
   specials, shares the cooking and cleanup, and learns how much everyone (the dog included) actually eats"
 status: built
 domain: household (family meal planning, grocery shopping, chores); a phone app for the people who run the kitchen
 use_case: >
   Menu planning, shopping and cooking take a family hours a week, and the effort usually lands on one person. Each
-  week Lil'Helper proposes a plan for the meals the household turned on (breakfast, lunch, dinner, per day) from
+  week DinnerPeace proposes a plan for the meals the household turned on (breakfast, lunch, dinner, per day) from
   recipes the family likes, fitted to everyone's needs, the season and local produce, prep-time limits per day, the
   budget and this week's specials. It turns the plan into one shopping list split across stores (Whole Foods, Trader
   Joe's, Costco and others) by price, specials, pickup or delivery fees and credit-card credits, and hands each part to
@@ -170,6 +170,8 @@ decisions:                       # answered by Ruairi, 5 October 2026
   - 'Sign-up: invite codes now, many households; open App Store sign-up with subscriptions at production release'
   - 'Hosting: public behind sign-in via Cloudflare now; a cloud-hosted service for the production release'
   - 'Work in progress may be pushed to feature branches; merging to main needs Ruairi''s OK'
+  - 'Name: DinnerPeace (chosen 16 October 2026; domain dinnerpeace.app). Code ids, bundle id, URL scheme and repo
+    slug stay lil-helper / lilhelper so builds, links and data carry over'
   # answered by Ruairi, 15 October 2026 (v4)
   - 'v4 features: birthdays and child (under 12) / adult on profiles, special occasions (birthdays, holidays,
     anniversaries, own), no jobs on your birthday, breakfast/lunch/dinner recipes with steps and calories, own brand /
@@ -181,7 +183,7 @@ decisions:                       # answered by Ruairi, 5 October 2026
     in the Amazon developer console from docs/alexa.md'
 
 demo:
-  title: Lil'Helper
+  title: DinnerPeace
   emoji: 🍎
   short_description: Family meal planner that splits shopping by price and shares the chores
   server: streamlit
@@ -197,7 +199,7 @@ links:
   repo: ''
   blog: personal/lil-helper
 card:
-  name: Lil'Helper
+  name: DinnerPeace
   problem: Planning a family's meals, shopping across stores and kitchen jobs takes hours a week and lands on one person
   pattern: Workflow (a solver picks meals, stores and jobs; a model only suggests, reads flyers and writes notes)
   stack: OR-Tools CP-SAT, FastAPI, Expo (React Native), WeasyPrint, Ollama
