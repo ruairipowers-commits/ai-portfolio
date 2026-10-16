@@ -1,7 +1,7 @@
 # Status — open items
 
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
-(or delete them) as they're done. Last updated 15 October 2026.
+(or delete them) as they're done. Last updated 16 October 2026.
 
 ## 000000000. Run log on its own branch; Python image bumps off (14 October 2026, night)
 
@@ -188,7 +188,19 @@ whole list. Verified offline: 88 tests, eval gate, governance, mkdocs, app typec
 - [ ] Optional `BRAVE_API_KEY` on the server for in-app recipe search results (without it, search opens the browser).
 - [ ] Not tested against live recipe sites from here (the sandbox can't reach them); parsing is tested on a fixture page.
 
-### Lil'Helper v4 (15 October 2026, branch `agent/claude-lil-helper-v4`, not merged)
+### DinnerPeace: Lil'Helper renamed (16 October 2026, branch `agent/claude-dinnerpeace`)
+
+Everything people see now says DinnerPeace: app name and permission prompts, screens, emails, calendar events, PDFs,
+web pages, Alexa (invocation "dinner peace"), docs, post, wordmark (apple icon unchanged). App version 0.3.0. Kept on
+purpose: repo folder and slug `lil-helper`, Python package `lilhelper`, the `helper` CLI, `HELPER_*` settings, bundle
+id `com.agentls.lilhelper`, link scheme `lilhelper://`, EAS slug — so TestFlight, sign-ins, calendar links and data
+carry over. Domain `dinnerpeace.app` reserved; moving the server to it is a documented option (household-setup.md).
+
+- [ ] Ruairi: merge the PR; on the server `.env`, change `HELPER_MAIL_FROM`'s name to DinnerPeace (it wins over the
+      code); App Store Connect → App Information → Name: DinnerPeace; then the TestFlight build.
+- [ ] Optional: dinnerpeace.app on Cloudflare + `app.dinnerpeace.app` tunnel hostname + Resend domain.
+
+### Lil'Helper v4 (15 October 2026, merged to `main`, PR #46)
 
 Birthdays on profiles (child under 12 / teen / adult follows from them; teens adult portions, approve only if the
 admin allows; no jobs on your birthday); special occasions (birthdays, US holidays on/off, anniversaries, own) feed
@@ -200,7 +212,6 @@ import/export (admin, preview then confirm); voice (app mic via expo-speech-reco
 can cancel setup / sign out. Verified offline: 101 tests, eval gate, governance, mkdocs, app typecheck, browser
 walk-through of every new screen.
 
-- [ ] **Ruairi: review and say "merge"** (merging to `main` needs his OK).
 - [ ] After merge: server rebuild and a **new TestFlight build** (speech recognition is a new native module).
 - [ ] Alexa: create the skill in the Amazon developer console (`docs/alexa.md`), set `HELPER_ALEXA_SKILL_ID`. The
       certificate-chain check couldn't be run against Amazon's real certificate from the sandbox; the console's Test

@@ -43,7 +43,7 @@ export default function ThisWeek() {
       <Screen refreshing={loading} onRefresh={reload}>
         <Text style={s.h1}>{wk ? weekTitle(wk) : "This week"}</Text>
         <View style={s.card}>
-          <Text style={s.body}>No plan yet. Lil'Helper drafts one on Saturday morning, or you can ask for it now.</Text>
+          <Text style={s.body}>No plan yet. DinnerPeace drafts one on Saturday morning, or you can ask for it now.</Text>
           {adult ? <Button title="Plan this week" busy={busy === "draft"} onPress={() => run("draft", () => api.draft(wk))} /> : null}
         </View>
         <View style={s.row}>

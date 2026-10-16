@@ -1,4 +1,4 @@
-"""What leaves Lil'Helper: the Sunday email, a calendar feed for Google (or Apple) Calendar, and fridge PDFs.
+"""What leaves DinnerPeace: the Sunday email, a calendar feed for Google (or Apple) Calendar, and fridge PDFs.
 
 Email goes through Resend when RESEND_API_KEY is set, otherwise it's written to output/outbox/ (offline, CI, demo).
 The calendar is an .ics feed the household subscribes to once — we don't rebuild a calendar app.
@@ -56,11 +56,11 @@ def _esc(t: str) -> str:
 def ics(h: Household, weeks: list[dict], person: str | None = None, links=None, tz: str = "America/New_York") -> str:
     """A calendar feed: dinners at each day's dinner time (who cooks, who does what), lunches from leftovers, nights
     out, batch prep and the shopping trips with their lists. With `person`, only what that person is part of.
-    `links(kind, **kw)` builds signed links back to Lil'Helper (rate the meal, how much was left, change it, the list),
+    `links(kind, **kw)` builds signed links back to DinnerPeace (rate the meal, how much was left, change it, the list),
     which calendar apps show as tappable links in the event's notes."""
     stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     name = h.info.get("name", "Family") + (f" — {h.people[person].name}" if person in h.people else "")
-    out = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Lil'Helper//Meal plan//EN", "CALSCALE:GREGORIAN",
+    out = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//DinnerPeace//Meal plan//EN", "CALSCALE:GREGORIAN",
            "METHOD:PUBLISH", f"X-WR-CALNAME:{_esc(name)} meals", f"X-WR-TIMEZONE:{tz}",
            "REFRESH-INTERVAL;VALUE=DURATION:PT1H", "X-PUBLISHED-TTL:PT1H"]
 
@@ -104,7 +104,7 @@ def ics(h: Household, weeks: list[dict], person: str | None = None, links=None, 
                 who = "; ".join(f"{JOB_LABEL.get(a['job'], a['job'])}: {a['name']}" for a in jobs
                                 if a["day"] == e["day"] and a["job"] != "feed_dog")
                 title = f"🍎 {e['name']}{status}" + (f" — you: {', '.join(mine)}" if mine else "")
-                desc = ([f"Open in Lil'Helper: {links('open', screen='week', day=e['day'])}"] if links else []) + \
+                desc = ([f"Open in DinnerPeace: {links('open', screen='week', day=e['day'])}"] if links else []) + \
                     [who, f"Hands-on {e['active']} min. {'; '.join(e.get('why', []))}"]
                 event(uid(wk, e["day"], "dinner"), at(d, h.dinner_time(e["day"])), 45, title,
                       "\n".join(desc + feedback_lines(wk.isoformat(), e["day"], "dinner")),
@@ -155,7 +155,7 @@ def ics(h: Household, weeks: list[dict], person: str | None = None, links=None, 
                   f"🛒 {o['store_name']} {o['mode'].replace('_', ' ')}{who}",
                   head + "\n\nTHE LIST" + (" (in aisle order)" if o["mode"] == "in_store" else "") + f"\n{items}"
                   + (f"\n\nTick it off on your phone: {list_link}" if list_link else "")
-                  + (f"\nOpen in Lil'Helper: {open_link}" if open_link else ""), list_link)
+                  + (f"\nOpen in DinnerPeace: {open_link}" if open_link else ""), list_link)
     out.append("END:VCALENDAR")
     return "\r\n".join(_fold(x) for x in out) + "\r\n"
 
@@ -207,7 +207,7 @@ def email_html(h: Household, rec: dict, links: dict, notes: dict | None = None) 
 
 def mail_from() -> str:
     """The From line. HELPER_MAIL_FROM wins: this app's own sender, so its mail can be filtered on its own.
-    Otherwise the shared MAIL_FROM / SMTP_FROM address is used under this app's name ("Lil'Helper").
+    Otherwise the shared MAIL_FROM / SMTP_FROM address is used under this app's name ("DinnerPeace").
     """
     own = (os.getenv("HELPER_MAIL_FROM") or "").strip().strip('"').strip("'").strip()   # docker --env-file keeps quotes
     if own:
@@ -215,8 +215,8 @@ def mail_from() -> str:
     for k in ('MAIL_FROM', 'SMTP_FROM'):
         addr = parseaddr(os.getenv(k) or "")[1]
         if "@" in addr:
-            return formataddr(("Lil'Helper", addr))
-    return "Lil'Helper <helper@example.com>"
+            return formataddr(("DinnerPeace", addr))
+    return "DinnerPeace <helper@example.com>"
 
 
 def send_mail(to: str, subject: str, html: str, tag: str, outbox) -> str:
@@ -254,7 +254,7 @@ def send_week_email(h: Household, rec: dict, links: dict, notes: dict | None = N
     telemetry.require_enabled("email")
     cfg = (h.raw.get("outputs") or {}).get("email", {})
     to = cfg.get("to", [])
-    subject = f"Lil'Helper: the week of {dt.date.fromisoformat(rec['plan']['week_of']).strftime('%b %-d')}"
+    subject = f"DinnerPeace: the week of {dt.date.fromisoformat(rec['plan']['week_of']).strftime('%b %-d')}"
     html = email_html(h, rec, links, notes)
     out = []
     for addr in to:

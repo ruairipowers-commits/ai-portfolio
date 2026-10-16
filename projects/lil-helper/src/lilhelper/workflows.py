@@ -98,7 +98,7 @@ def vibe(h: Household, c: Catalog, pb: PriceBook, *, minutes: int, moods: list[s
         out.append({"recipe": r.id, "name": r.name, "active": r.active, "total": r.total, "kcal": r.kcal,
                     "servings": servings, "why": why, "missing": missing,
                     "missing_cost": round(sum(m["est_cost"] for m in missing), 2), "score": round(score, 2),
-                    "credit": r.credit or ("Lil'Helper" if r.source == "book" else "")})
+                    "credit": r.credit or ("DinnerPeace" if r.source == "book" else "")})
     out.sort(key=lambda x: (-x["score"], x["missing_cost"], x["name"]))
     return {"meal": meal, "minutes": minutes, "moods": moods, "servings": servings, "ideas": out[:top],
             "not_recognised": unknown, "mood_names": MOODS}
@@ -138,7 +138,7 @@ def surprise(h: Household, c: Catalog, *, meal: str = "dinner", day: str | None 
         return None
     r = random.Random(seed).choice(pool)
     return {"recipe": r.id, "name": r.name, "active": r.active, "total": r.total, "kcal": r.kcal,
-            "credit": r.credit or ("Lil'Helper" if r.source == "book" else ""), "steps": r.instructions,
+            "credit": r.credit or ("DinnerPeace" if r.source == "book" else ""), "steps": r.instructions,
             "pool": len(pool)}
 
 

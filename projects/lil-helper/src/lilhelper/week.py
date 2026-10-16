@@ -8,7 +8,7 @@ draft:   this week's app changes (who's away, nights switched to takeout) + conf
          buy-ahead suggestions for later weeks' meals on sale now → jobs rota → notes → savings.
 swap:    a person swaps or bans one meal; every other meal is locked and the week re-solves around it.
 approve: a named adult approves (HITL-02); meals go into history, the pantry and freezer are updated, and the
-         hand-offs become available. Nothing is ever bought by Lil'Helper.
+         hand-offs become available. Nothing is ever bought by DinnerPeace.
 """
 from __future__ import annotations
 

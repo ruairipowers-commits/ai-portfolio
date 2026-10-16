@@ -79,7 +79,7 @@ export default function Specials() {
       </View>
       <View style={s.card}>
         <Text style={s.h2}>From a flyer</Text>
-        <Text style={s.muted}>Pick a photo of {name(f.store) || "a store"}'s flyer. Lil'Helper reads it and matches what it
+        <Text style={s.muted}>Pick a photo of {name(f.store) || "a store"}'s flyer. DinnerPeace reads it and matches what it
           can; you confirm.</Text>
         <Button kind="ghost" title="Choose a flyer photo" busy={busy} disabled={!f.store} onPress={readFlyer} />
         {flyer ? (

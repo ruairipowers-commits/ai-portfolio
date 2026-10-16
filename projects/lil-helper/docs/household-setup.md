@@ -1,4 +1,4 @@
-# Setting up Lil'Helper
+# Setting up DinnerPeace
 
 Two parts: **A** runs the server on the EVO-X1 behind your Cloudflare domain (about 30 minutes), **B** puts the app on
 the iPhones through TestFlight (about an hour, most of it waiting for Apple and Expo). Do A first: the app needs the
@@ -8,7 +8,7 @@ app**: the welcome wizard walks you through it, and you invite your family from 
 How it fits together:
 
 ```
-iPhone (Lil'Helper app) ─┐
+iPhone (DinnerPeace app) ─┐
 Calendar apps (feeds)  ──┼─▶ https://helper.agentls.com ─▶ Cloudflare ══ tunnel ══ cloudflared ─▶ lil-helper:8650
 Calendar tap-back links ─┘    (public HTTPS; every request                                         on the EVO-X1
                                except sign-in, health, feeds                                       volume lilhelper-data:
@@ -51,7 +51,7 @@ HELPER_SIGNUP=invite
 HELPER_SIGNUP_CODES=$(openssl rand -hex 6)
 HELPER_PUSH=expo
 RESEND_API_KEY=re_xxxxxxxx
-HELPER_MAIL_FROM=Lil'Helper <helper@agentls.com>
+HELPER_MAIL_FROM=DinnerPeace <helper@agentls.com>
 EOF
 chmod 600 ~/lil-helper-home/.env
 nano ~/lil-helper-home/.env                         # paste your real Resend key
@@ -90,7 +90,7 @@ The scheduler runs inside it: every 15 minutes it checks each household, in its 
 
 ### A4. Put it on the tunnel
 
-The demos' `cloudflared` container already runs a tunnel. Let it reach Lil'Helper by name:
+The demos' `cloudflared` container already runs a tunnel. Let it reach DinnerPeace by name:
 
 ```bash
 NET=$(docker inspect $(docker ps -qf name=cloudflared) -f '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}' | awk '{print $1}')
@@ -126,6 +126,14 @@ cd ~/ai-portfolio && git pull
 cd projects/lil-helper && docker build -t lil-helper . && docker rm -f lil-helper
 # …then the same `docker run -d …` as A3, and `docker network connect "$NET" lil-helper` again.
 ```
+
+**Moving to dinnerpeace.app (when you're ready):** add `dinnerpeace.app` as a site in Cloudflare (change the
+nameservers at the registrar to the two Cloudflare gives you), then in the tunnel add a public hostname
+`app.dinnerpeace.app` → `HTTP` → `lil-helper:8650`, next to the existing `helper.agentls.com` (keep both until every
+phone has the new build). Set `HELPER_PUBLIC_URL=https://app.dinnerpeace.app` in `.env` (sign-in links, calendar
+feeds and Alexa links use it) and re-create the container; change `EXPO_PUBLIC_API_URL` in `app/eas.json` and make
+a new build. For email from the new name, verify `dinnerpeace.app` in Resend (Domains → Add) and set
+`HELPER_MAIL_FROM=DinnerPeace <hello@dinnerpeace.app>`.
 
 **Alexa (optional):** follow [alexa.md](alexa.md) once; it adds `HELPER_ALEXA_SKILL_ID` to `.env`.
 
@@ -182,20 +190,20 @@ service uses it, nothing to put on the server). The build takes 15–25 minutes.
 npx eas-cli@latest submit --platform ios --latest
 ```
 
-If "Lil'Helper" is taken as an App Store name, use something like "Lil'Helper Family" (the home-screen name stays
-"Lil'Helper"). Apple processes the build for 10–30 minutes and emails you.
+If "DinnerPeace" is taken as an App Store name, use something like "DinnerPeace Family" (the home-screen name stays
+"DinnerPeace"). Apple processes the build for 10–30 minutes and emails you.
 
 ### B7. Testers
 
 **App Store Connect → Users and Access → +** → your wife's Apple ID email (role Marketing). Then **Apps →
-Lil'Helper → TestFlight → Internal Testing → +** → a group ("Family") → add her and you → add the build. She
+DinnerPeace → TestFlight → Internal Testing → +** → a group ("Family") → add her and you → add the build. She
 installs **TestFlight**, opens the invite → **Accept** → **Install**.
 
 ---
 
 ## C. First run (in the app)
 
-1. **You:** open Lil'Helper → your email → **Email me a sign-in link** → tap the link. The welcome wizard starts.
+1. **You:** open DinnerPeace → your email → **Email me a sign-in link** → tap the link. The welcome wizard starts.
 2. **Welcome → Start my household:** household name, your first name, time zone (filled in from the phone), and the
    sign-up code from A2. You're the household's **admin**.
 3. **Who's in it:** add your wife (adult, her email → **Add and invite**) and your son (child, age, allergies). Kids
@@ -206,11 +214,11 @@ installs **TestFlight**, opens the invite → **Accept** → **Install**.
    the weekly budget and the most a dinner should cost per serving.
 7. **Kitchen:** fridge and freezer size, cooking extra for the freezer, and a kid chef night.
 8. **Shopping trips:** your regular trips (day, time, store, in store / pickup / delivery, who goes), or skip and let
-   Lil'Helper choose each week.
+   DinnerPeace choose each week.
 9. **Stay in the loop:** **Add to Apple Calendar** (or Google), and **Turn on notifications**.
 10. **Plan this week now.**
 
-**Your wife:** she gets an email "Ruairi invited you to … on Lil'Helper". She installs the app from TestFlight, then
+**Your wife:** she gets an email "Ruairi invited you to … on DinnerPeace". She installs the app from TestFlight, then
 taps **join the household** in the email (or signs in with that email): she lands straight in the household as an
 adult. She does step 9 for her own phone; her calendar shows her dinners, her jobs and the trips she's on.
 
@@ -233,9 +241,9 @@ swap, change a night, add specials and recipes, approve and record spending.
 | No sign-in email | `docker exec lil-helper helper mail-test you@example.com` sends a test and prints exactly what happened. `refused (403)… not verified`: the sender in `HELPER_MAIL_FROM` must be on a domain verified in Resend (resend.com → Domains). `RESEND_API_KEY not set`: add it to `.env` and re-create the container. Also check spam, and that you haven't asked more than 5 times in an hour |
 | "A sign-up code is needed" | Use a code from `HELPER_SIGNUP_CODES`, or ask the admin to invite you |
 | Invite link says "expired" or "for a different email" | Invites last 14 days and only work for the invited address; the admin sends it again from **People** |
-| No notifications | **More → Calendar and notifications** shows the state; iPhone **Settings → Lil'Helper → Notifications**; `HELPER_PUSH=expo` on the server; the build had push set up (B5) |
+| No notifications | **More → Calendar and notifications** shows the state; iPhone **Settings → DinnerPeace → Notifications**; `HELPER_PUSH=expo` on the server; the build had push set up (B5) |
 | Calendar not updating | Apple refreshes subscribed calendars about hourly, Google every few hours. **Make a new private link** if a link was shared by mistake |
 | Container keeps restarting | `docker logs lil-helper` — usually a missing `HELPER_SECRET` |
-| Microphone button missing | It only shows where speech recognition is available: the TestFlight/App Store build (not Expo Go), or Chrome/Safari on the web. iPhone **Settings → Lil'Helper**: Microphone and Speech Recognition on |
-| Alexa says "link Lil'Helper first" | **More → Alexa → Get a code**, then enable the skill in the Alexa app and type the code (ten minutes, once). Each person links their own |
+| Microphone button missing | It only shows where speech recognition is available: the TestFlight/App Store build (not Expo Go), or Chrome/Safari on the web. iPhone **Settings → DinnerPeace**: Microphone and Speech Recognition on |
+| Alexa says "link DinnerPeace first" | **More → Alexa → Get a code**, then enable the skill in the Alexa app and type the code (ten minutes, once). Each person links their own |
 | Weekly email not arriving | The email day and time in settings, and `docker logs lil-helper` |

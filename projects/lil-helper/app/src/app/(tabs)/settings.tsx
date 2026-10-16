@@ -34,7 +34,7 @@ export default function Home() {
           <Text style={s.h2}>Saved so far</Text>
           <Text style={s.body}>{money(sav.dollars_saved)} and {Math.round(sav.minutes_saved / 60)} hours over {sav.weeks.length} {sav.weeks.length === 1 ? "week" : "weeks"}</Text>
           <Text style={s.muted}>Against buying the same list at your usual store at regular prices in one trip, and your
-            own estimate of planning time before Lil'Helper.</Text>
+            own estimate of planning time before DinnerPeace.</Text>
         </View>
       ) : null}
       <View style={s.card}>
@@ -64,7 +64,7 @@ export default function Home() {
       </View>
       <View style={s.card}>
         <Text style={s.h2}>Stay in the loop</Text>
-        <LinkRow icon="🔊" title="Alexa" sub="“Alexa, ask Lil'Helper what's for dinner”" onPress={go("/house/alexa")} />
+        <LinkRow icon="🔊" title="Alexa" sub="“Alexa, ask DinnerPeace what's for dinner”" onPress={go("/house/alexa")} />
         <LinkRow icon="📅" title="Calendar and notifications" sub="Subscribe in your calendar; push updates" onPress={go("/house/calendar")} />
         <LinkRow icon="🖨️" title="Print this week" onPress={() => WebBrowser.openBrowserAsync(`${base}/api/print/week.pdf`)} />
       </View>

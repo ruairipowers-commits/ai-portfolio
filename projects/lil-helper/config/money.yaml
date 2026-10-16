@@ -1,7 +1,7 @@
-# Cards, memberships and partnerships: what they earn or save, so Lil'Helper can count it and say which card to pay
+# Cards, memberships and partnerships: what they earn or save, so DinnerPeace can count it and say which card to pay
 # with. Card and membership terms change often: each template carries the date it was checked and where. A household
 # uses a template by id, overrides any field in its own settings, and adds cards that aren't here.
-# Lil'Helper never stores card numbers (anything that looks like one is refused) — only a name you'd recognise.
+# DinnerPeace never stores card numbers (anything that looks like one is refused) — only a name you'd recognise.
 #
 #   earn            reward rate by spending category (see `categories`); `default` for everything else
 #                   pct: 0.03 = 3% cash back; points: 1 = 1 point per $1, valued at `point_value_cents`

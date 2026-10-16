@@ -1,4 +1,4 @@
-// Find a recipe on the web: search the sites you like (or anywhere), or paste a recipe's link. Lil'Helper reads the
+// Find a recipe on the web: search the sites you like (or anywhere), or paste a recipe's link. DinnerPeace reads the
 // page's recipe details, fills in sensible settings, and opens it for you to check before it goes in your book (with
 // the site's name and a link back).
 import * as WebBrowser from "expo-web-browser";

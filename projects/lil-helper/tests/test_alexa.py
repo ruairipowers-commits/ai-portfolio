@@ -111,7 +111,7 @@ def test_link_and_ask(server, monkeypatch):
     assert len(c.get("/api/alexa", headers=H).json()["links"]) == 1
 
     r = ask(_req("LaunchRequest", token=token))
-    assert r["shouldEndSession"] is False and "Lil'Helper" in r["outputSpeech"]["text"]
+    assert r["shouldEndSession"] is False and "DinnerPeace" in r["outputSpeech"]["text"]
     r = ask(_req(intent=_intent("WhatsForIntent", meal="dinner"), token=token))
     assert r["outputSpeech"]["text"].startswith("Dinner today is")
     r = ask(_req(intent=_intent("CookWithIntent", items="half a chicken, rice and broccoli"), token=token))

@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "lil helper",
+      "invocationName": "dinner peace",
       "intents": [
         {
           "name": "AMAZON.CancelIntent",

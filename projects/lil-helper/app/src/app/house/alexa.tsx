@@ -1,4 +1,4 @@
-// Alexa: link your Amazon Alexa to Lil'Helper with a one-time code, then "Alexa, ask Lil'Helper what's for dinner".
+// Alexa: link your Amazon Alexa to DinnerPeace with a one-time code, then "Alexa, ask DinnerPeace what's for dinner".
 import * as Clipboard from "expo-clipboard";
 import { useCallback, useEffect, useState } from "react";
 import { Text, View } from "react-native";
@@ -20,18 +20,18 @@ export default function Alexa() {
     <Screen>
       <Header title="Alexa" />
       <View style={s.card}>
-        <View style={s.between}><Text style={s.h2}>🔊 Lil'Helper on Alexa</Text>
+        <View style={s.between}><Text style={s.h2}>🔊 DinnerPeace on Alexa</Text>
           {st?.links.length ? <Pill text="Linked" /> : <Pill text="Not linked" tone="amber" />}</View>
-        <Text style={s.muted}>Say “Alexa, ask Lil'Helper…”</Text>
+        <Text style={s.muted}>Say “Alexa, ask DinnerPeace…”</Text>
         {SAY.map((x) => <Text key={x} style={s.body}>• {x}</Text>)}
         <Text style={s.muted}>Alexa answers for you (your jobs, your household). It can't buy anything; a week planned by
           voice waits for an adult to approve it here.</Text>
       </View>
       {st && !st.configured ? <View style={[s.card, { backgroundColor: c.amberSoft }]}><Text style={s.body}>The skill isn't set up
-        on this server yet. Whoever runs your Lil'Helper server can follow docs/alexa.md (about 20 minutes, once).</Text></View> : null}
+        on this server yet. Whoever runs your DinnerPeace server can follow docs/alexa.md (about 20 minutes, once).</Text></View> : null}
       <View style={s.card}>
         <Text style={s.h2}>Link your Alexa</Text>
-        <Text style={s.muted}>1. Get a code here. 2. In the Alexa app: More → Skills & Games → Lil'Helper → Enable, and
+        <Text style={s.muted}>1. Get a code here. 2. In the Alexa app: More → Skills & Games → DinnerPeace → Enable, and
           type the code when asked. Codes work once, for ten minutes.</Text>
         {code ? <View style={{ alignItems: "center", gap: 4 }}>
           <Text selectable style={{ fontSize: 34, fontWeight: "800", letterSpacing: 6, color: c.ink }}>{code.code}</Text>

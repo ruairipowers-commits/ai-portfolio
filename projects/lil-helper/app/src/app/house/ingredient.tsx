@@ -1,4 +1,4 @@
-// One ingredient: Lil'Helper's indicative prices at your stores, and your own choice — the brand you buy, where,
+// One ingredient: DinnerPeace's indicative prices at your stores, and your own choice — the brand you buy, where,
 // and what it costs you. Your choice is used in every plan and shopping list.
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -31,7 +31,7 @@ export default function Ingredient() {
           {d.used_in.length ? <Text style={s.muted}>In: {d.used_in.slice(0, 6).join(", ")}{d.used_in.length > 6 ? "…" : ""}</Text> : null}
         </View>
         <View style={s.card}>
-          <Text style={s.h2}>Lil'Helper's prices</Text>
+          <Text style={s.h2}>DinnerPeace's prices</Text>
           {d.book_prices.length ? d.book_prices.map((b, i) => <Text key={i} style={s.body}>{b.store_name} <Text style={s.muted}>
             {b.brand !== "any" ? `${b.brand} · ` : ""}{b.pack} {d.unit} for {money(b.price)}</Text></Text>)
             : <Text style={s.muted}>No price at your stores yet. Set yours below.</Text>}
@@ -51,7 +51,7 @@ export default function Ingredient() {
           </> : null}
           <Button title="Use this in all our meals" busy={busy} onPress={save} />
           <Saved at={savedAt} />
-          {d.mine ? <Button kind="ghost" title="Go back to Lil'Helper's choice" onPress={async () => {
+          {d.mine ? <Button kind="ghost" title="Go back to DinnerPeace's choice" onPress={async () => {
             try { await api.clearPref(id); setP({ only_store: true }); setD({ ...d, mine: null }); } catch (e) { setError(e); } }} /> : null}
         </View>
       </> : null}

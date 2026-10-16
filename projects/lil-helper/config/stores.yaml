@@ -2,7 +2,7 @@
 # household: set your own (they vary by plan, area and month). `verified` is when you last checked them.
 #   modes      in_store | pickup | delivery; each has a fee, a minimum order, minutes of your time, and the service
 #   markup     some services charge more per item than the shelf price (e.g. 0.15 = 15%)
-#   handoff    how the list leaves Lil'Helper: instacart (a shopping-list link), amazon (a shareable list),
+#   handoff    how the list leaves DinnerPeace: instacart (a shopping-list link), amazon (a shareable list),
 #              print (aisle-ordered list for the store), reminders (Apple Reminders via the share sheet)
 stores:
   whole_foods:

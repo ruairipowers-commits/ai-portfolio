@@ -1,4 +1,4 @@
-// Talks to the Lil'Helper server. The session token is kept in the phone's secure storage (Keychain on iPhone);
+// Talks to the DinnerPeace server. The session token is kept in the phone's secure storage (Keychain on iPhone);
 // on the web build it falls back to localStorage. Nothing else about the household is stored on the phone.
 import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";

@@ -287,7 +287,7 @@ def cmd_mail_test(a) -> int:
     from .config import data_root
     print(f"sender: {outputs.mail_from()}")
     print(f"resend key: {'set' if os.getenv('RESEND_API_KEY') else 'NOT SET (emails go to a file, not to anyone)'}")
-    res = outputs.send_mail(a.to, "Lil'Helper test email", "<p>If you can read this, sign-in emails will arrive.</p>",
+    res = outputs.send_mail(a.to, "DinnerPeace test email", "<p>If you can read this, sign-in emails will arrive.</p>",
                             "test", data_root() / "outbox")
     print(f"result: {res}")
     if res.startswith("failed"):

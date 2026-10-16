@@ -43,7 +43,7 @@ export default function Bulk() {
         <Text style={s.muted}>One workbook with a sheet each for the household, people (birthdays, allergies, portions),
           occasions, your recipes and their ingredients (meals, calories, prep time, the age a kid can make it),
           ingredients (your brand, store and price), the fridge and pantry, and the freezer. The first sheet explains each
-          column. Lil'Helper's own recipes are listed for reference and can't be changed.</Text>
+          column. DinnerPeace's own recipes are listed for reference and can't be changed.</Text>
         <Button title="Download the workbook" busy={busy === "dl"} disabled={!set.isAdmin}
           onPress={() => run("dl", async () => { const { url } = await api.bulkLink(); await Linking.openURL(url); })} />
       </View>

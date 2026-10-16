@@ -6,7 +6,7 @@ household:
   week_starts: monday
   budget_per_week: 260            # groceries incl. the dog, USD; the plan says so if it can't fit
   time_value_per_hour: 20         # what an hour of your time is worth when trading a trip against a delivery fee
-  planning_minutes_before: 75     # your own estimate of a week's planning + list-making before Lil'Helper (baseline)
+  planning_minutes_before: 75     # your own estimate of a week's planning + list-making before DinnerPeace (baseline)
 
 people:
   dana: {name: Dana, age_band: adult, admin: true, portion: 1.0, allergies: [], diet: [], likes: [salmon_rice_broccoli, roast_chicken_potatoes],

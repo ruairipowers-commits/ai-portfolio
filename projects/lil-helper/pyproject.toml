@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "lil-helper"
 version = "0.1.0"
-description = "Lil'Helper: family meal planning, a shopping list split across stores, shared chores and the dog's food"
+description = "DinnerPeace: family meal planning, a shopping list split across stores, shared chores and the dog's food"
 readme = "README.md"
 license = {text = "Apache-2.0"}
 authors = [{ name = "Ruairi Powers" }]

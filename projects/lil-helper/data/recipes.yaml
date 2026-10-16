@@ -236,6 +236,6 @@ kid_can_make:
   chicken_fajitas: 12
   chicken_tacos: 12
 
-# Recipes that freeze well: when there's freezer room, Lil'Helper can cook extra and freeze it for a busy night.
+# Recipes that freeze well: when there's freezer room, DinnerPeace can cook extra and freeze it for a busy night.
 freezes_well: [turkey_chili, beef_bolognese, turkey_meatballs, butternut_soup, lentil_soup, chicken_noodle_soup,
                pumpkin_chili, slow_cooker_chicken_stew, chickpea_curry, egg_muffins]

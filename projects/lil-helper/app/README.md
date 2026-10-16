@@ -1,7 +1,7 @@
-# Lil'Helper — the phone app
+# DinnerPeace — the phone app
 
 Expo (React Native, TypeScript). One codebase for iPhone (first) and Android (later). It talks to the household's own
-Lil'Helper server (`helper serve`); the phone keeps only the sign-in token, in the iPhone Keychain.
+DinnerPeace server (`helper serve`); the phone keeps only the sign-in token, in the iPhone Keychain.
 
 First run: sign in with your email, then the **welcome wizard** sets up a household (people and invites, dinner
 times and who's home, nights off, stores and cards, fridge and freezer, shopping trips, calendar and notifications)
@@ -41,7 +41,7 @@ EAS builds in the cloud.
    signing certificate, the push key (say yes to push notifications) and the app record (`com.agentls.lilhelper`).
 4. `npx eas-cli@latest submit --platform ios --latest` uploads it to App Store Connect.
 5. In App Store Connect → TestFlight, add your wife as an internal tester. She installs **TestFlight** from the App
-   Store, accepts the invite, and installs Lil'Helper.
+   Store, accepts the invite, and installs DinnerPeace.
 
 Sign-in links open the app through the `lilhelper://` scheme. Android later:
 `npx eas-cli@latest build --platform android` from the same code.

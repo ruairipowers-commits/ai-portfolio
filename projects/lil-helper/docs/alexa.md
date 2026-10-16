@@ -1,9 +1,9 @@
-# Lil'Helper on Alexa
+# DinnerPeace on Alexa
 
-"Alexa, ask Lil'Helper what's for dinner." The skill answers from your household's plan, using the same rules as the
+"Alexa, ask DinnerPeace what's for dinner." The skill answers from your household's plan, using the same rules as the
 microphone button in the app. It can't spend money, and planning a week still needs an adult.
 
-What you can say (after "Alexa, ask Lil'Helper…"):
+What you can say (after "Alexa, ask DinnerPeace…"):
 
 | Say | What happens |
 |---|---|
@@ -32,7 +32,7 @@ Unlink** removes it.
 
 You need an Amazon developer account (free) and the server reachable over HTTPS with a real certificate.
 
-1. Go to <https://developer.amazon.com/alexa/console/ask> → **Create Skill**. Name: *Lil'Helper*. Type: **Other →
+1. Go to <https://developer.amazon.com/alexa/console/ask> → **Create Skill**. Name: *DinnerPeace*. Type: **Other →
    Custom**. Hosting: **Provision your own**. Template: **Start from scratch**.
 2. **Build → Interaction Model → JSON Editor**: paste `alexa/interaction-model.json` from this repo. **Save**, then
    **Build skill**.
@@ -47,10 +47,10 @@ You need an Amazon developer account (free) and the server reachable over HTTPS 
    - **Save**.
 6. **Test** tab → set testing to **Development**. Skills in development work on every Echo signed in to your Amazon
    account; you don't have to publish it.
-7. In the Lil'Helper app: **Settings → Alexa → Get a code**. In the Alexa app: **More → Skills & Games → Your Skills
-   → Dev → Lil'Helper → Enable**, type the code. Repeat step 7 for each person with their own Amazon account.
+7. In the DinnerPeace app: **Settings → Alexa → Get a code**. In the Alexa app: **More → Skills & Games → Your Skills
+   → Dev → DinnerPeace → Enable**, type the code. Repeat step 7 for each person with their own Amazon account.
 
-Try: "Alexa, open Lil'Helper", then "what's for dinner".
+Try: "Alexa, open DinnerPeace", then "what's for dinner".
 
 ## Local testing
 
