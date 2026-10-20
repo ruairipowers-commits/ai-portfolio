@@ -228,4 +228,4 @@ def activity_report(h: Household, c: Catalog, *, end: dt.date, weeks: int = 8) -
             "minutes": {"cooking": sum(w["cooking_minutes"] for w in out_weeks),
                         "shopping": sum(w["shopping_minutes"] for w in out_weeks)},
             "note": "Calories are estimates per serving from the recipe book, counted for the meals each person was "
-                    "planned to eat (only meals Lil'Helper plans). Not dietary advice."}
+                    "planned to eat (only meals DinnerPeace plans). Not dietary advice."}

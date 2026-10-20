@@ -172,7 +172,7 @@ def test_calendar_shopping_events_carry_the_whole_list_and_open_the_app(server):
     assert n_lines == sum(len(o["lines"]) for o in shop if o["store"] == "Whole Foods")
     assert "THE LIST" in shop_event and "/open/shopping" in shop_event
     dinner = next(ev for ev in feed.split("BEGIN:VEVENT") if "SUMMARY:🍎" in ev)
-    assert "Open in Lil'Helper: http" in dinner and "URL:http" in dinner
+    assert "Open in DinnerPeace: http" in dinner and "URL:http" in dinner
     page = c.get("/open/week", params={"day": "tue"})
     assert page.status_code == 200 and "lilhelper://week?day=tue" in page.text
     assert c.get("/open/evil").status_code == 404

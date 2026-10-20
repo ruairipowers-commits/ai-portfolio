@@ -131,7 +131,7 @@ export default function RecipeScreen() {
       </View>
       {unknown.length ? (
         <View style={[s.card, { backgroundColor: c.amberSoft }]}>
-          <Text style={s.body}>Lil'Helper doesn't know these yet. Add them as your own ingredients (you can set prices later):</Text>
+          <Text style={s.body}>DinnerPeace doesn't know these yet. Add them as your own ingredients (you can set prices later):</Text>
           {unknown.map((u) => <NewIngredient key={u} name={u} onAdd={addIngredient} />)}
         </View>
       ) : null}
@@ -158,7 +158,7 @@ export default function RecipeScreen() {
             placeholder="blank: your name" hint="A person, a cookbook, a website — shown with the recipe." />
           <Field label="Link (optional)" value={r.url ?? ""} onChangeText={(url) => setR({ ...r, url })} autoCapitalize="none"
             placeholder="https://…" />
-        </> : <Text style={s.body}>{r.credit || "Lil'Helper"}</Text>}
+        </> : <Text style={s.body}>{r.credit || "DinnerPeace"}</Text>}
         {r.url ? <Button kind="ghost" title="Open the original recipe" onPress={() => Linking.openURL(r.url!)} /> : null}
       </View>
       {editable ? <Button title={useFor ? "Save and put it on the plan" : "Save recipe"} busy={busy} onPress={() => save()} disabled={r.name.trim().length < 2} />

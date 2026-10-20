@@ -2958,8 +2958,8 @@
   },
   {
    "slug": "lil-helper",
-   "title": "Lil'Helper: a family meal planner that picks the week's meals, splits the shopping across stores by price and specials, shares the cooking and cleanup, and learns how much everyone (the dog included) actually eats",
-   "name": "Lil'Helper",
+   "title": "DinnerPeace: a family meal planner that picks the week's meals, splits the shopping across stores by price and specials, shares the cooking and cleanup, and learns how much everyone (the dog included) actually eats",
+   "name": "DinnerPeace",
    "emoji": "🍎",
    "status": "built",
    "built": true,
@@ -3015,7 +3015,7 @@
     "DATA-04": {
      "status": "implemented",
      "mark": "✅",
-     "how": "No scraping of stores: prices and specials come from what the household enters or photographs; Instacart through its Developer Platform. Recipes from the web: only a page a person chose, one request, reading the recipe details the site publishes for search engines (schema.org); Lil'Helper keeps the name, ingredients, times, servings, the site's name and a link back — the method stays on the source page. Recipe search uses a search API when the server has a key, otherwise opens the person's own browser. Shared recipe books copy only recipes, with their credit.",
+     "how": "No scraping of stores: prices and specials come from what the household enters or photographs; Instacart through its Developer Platform. Recipes from the web: only a page a person chose, one request, reading the recipe details the site publishes for search engines (schema.org); DinnerPeace keeps the name, ingredients, times, servings, the site's name and a link back — the method stays on the source page. Recipe search uses a search API when the server has a key, otherwise opens the person's own browser. Shared recipe books copy only recipes, with their credit.",
      "configure": "`recipebook.py`, `BRAVE_API_KEY`, `recipe_sources`",
      "options": "A licensed recipe API"
     },

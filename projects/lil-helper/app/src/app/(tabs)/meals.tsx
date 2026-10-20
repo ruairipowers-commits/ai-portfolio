@@ -23,7 +23,7 @@ export default function Meals() {
   return (
     <Screen refreshing={loading} onRefresh={reload}>
       <Text style={s.h1}>After meals</Text>
-      <Text style={s.muted}>How much was eaten? Lil'Helper cooks less of what comes back, and more of what doesn't.</Text>
+      <Text style={s.muted}>How much was eaten? DinnerPeace cooks less of what comes back, and more of what doesn't.</Text>
       {week?.status !== "approved" ? <Text style={s.muted}>Approve the week to start giving feedback.</Text> : null}
       {week?.status === "approved" && meals.map((e) => {
         const key = e.day + e.meal;

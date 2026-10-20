@@ -59,7 +59,7 @@ export function LoopCard() {
   return (
     <>
       <View style={s.card}>
-        <Text style={s.h2}>📅 Your Lil'Helper calendar</Text>
+        <Text style={s.h2}>📅 Your DinnerPeace calendar</Text>
         <Text style={s.muted}>Your dinners, jobs, lunches and shopping trips, in your own calendar. Each dinner has
           one-tap links to rate it and say how much is left. {cal?.note}</Text>
         <Button title="Add to Apple Calendar" disabled={!cal} onPress={() => cal && Linking.openURL(cal.webcal)} />
@@ -74,7 +74,7 @@ export function LoopCard() {
           your shopping trip, and a quick "how was dinner?"</Text>
         {push === "on" ? <Pill text="On for this phone" /> : push === "unsupported"
           ? <Text style={s.muted}>Notifications need the app on a phone.</Text>
-          : push === "denied" ? <Text style={s.muted}>Turned off in iPhone Settings → Lil'Helper → Notifications.</Text>
+          : push === "denied" ? <Text style={s.muted}>Turned off in iPhone Settings → DinnerPeace → Notifications.</Text>
           : <Button title="Turn on notifications" onPress={async () => {
             try { setPush(await enablePush()); } catch (e) { setError(e); } }} />}
       </View>

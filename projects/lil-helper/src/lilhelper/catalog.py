@@ -63,7 +63,7 @@ class Recipe:
     want: dict = field(default_factory=dict)  # how often: {times: 2, per_weeks: 4} → due until had that often
     notes: str = ""
     created_by: str = ""
-    credit: str = ""               # where it's from, shown with the recipe: "Lil'Helper", a person, a website
+    credit: str = ""               # where it's from, shown with the recipe: "DinnerPeace", a person, a website
     url: str = ""                  # link back to the source page
     meals: list[str] = field(default_factory=list)   # every meal it suits (breakfast, lunch, dinner); first = `meal`
     kcal: int = 0                  # estimated calories per serving (0: not known)

@@ -1,6 +1,6 @@
 """Make a meal from what I've got: rank recipes by how much of them is already in the house.
 
-Input: what someone types ("chicken thighs, half a bag of spinach, rice, eggs"), plus the pantry Lil'Helper keeps,
+Input: what someone types ("chicken thighs, half a bag of spinach, rice, eggs"), plus the pantry DinnerPeace keeps,
 optionally flagged "use soon". Every recipe — the book and the household's own — is checked the same way as in a
 plan (allergies of anyone in the house, diets of tonight's eaters, tonight's cooking-time limit), then ranked by code:
 
@@ -11,7 +11,7 @@ plan (allergies of anyone in the house, diets of tonight's eaters, tonight's coo
         + small nudges for likes and kid-friendliness
 
 When you typed something, every idea uses at least one of those things. When nothing in the book uses all of them,
-Lil'Helper also writes a simple new recipe from them (protein + vegetables + a starch, amounts from similar recipes)
+DinnerPeace also writes a simple new recipe from them (protein + vegetables + a starch, amounts from similar recipes)
 that you can save to your book, and offers a web search for a recipe with them.
 
 Staples (oil, salt, flour, spices) count as in the house. Each result says what's missing and what it would cost, and
@@ -115,7 +115,7 @@ def compose(c: Catalog, groups: list[tuple[str, set[str]]], meal: str, eaters, h
     nm = lambda i: c.ingredients[i].name   # noqa: E731
     said = {i: plain(ph) for (ph, _), i in zip(groups, pick)}
     say = lambda i: said.get(i) or nm(i)   # noqa: E731
-    extra = [plain(u) for u in (unknown or [])][:2]          # things Lil'Helper doesn't know yet, likely vegetables
+    extra = [plain(u) for u in (unknown or [])][:2]          # things DinnerPeace doesn't know yet, likely vegetables
     if not (veg or starch or extra):
         return None
     p, v, st = say(protein[0]), [say(i) for i in veg] + extra, (say(starch[0]) if starch else "")
@@ -133,7 +133,7 @@ def compose(c: Catalog, groups: list[tuple[str, set[str]]], meal: str, eaters, h
             "ingredients": [{"ingredient": i, "text": nm(i), "qty": round(q * 4, 2), "unit": c.ingredients[i].unit}
                             for i, q in ing.items()] + [{"text": x, "qty": 1, "unit": "", "known": False} for x in extra],
             "unknown": extra,
-            "instructions": steps, "tags": ["one_pot"], "credit": "Lil'Helper"}
+            "instructions": steps, "tags": ["one_pot"], "credit": "DinnerPeace"}
 
 
 def suggest(h: Household, c: Catalog, pb: PriceBook, *, text: str = "", use_pantry: bool = True,
@@ -190,7 +190,7 @@ def suggest(h: Household, c: Catalog, pb: PriceBook, *, text: str = "", use_pant
             why.append("a favourite")
         ideas.append(Idea(r.id, r.name, meal, got, miss, round(missing_cost, 2), round(coverage, 2), used_soon,
                           r.active, r.total, servings, round(score, 2), list(r.instructions), why, used,
-                          credit=r.credit or ("Lil'Helper" if r.source == "book" else "")))
+                          credit=r.credit or ("DinnerPeace" if r.source == "book" else "")))
     ideas.sort(key=lambda i: (-i.score, i.missing_cost, i.name))
     out = [i.__dict__ for i in ideas[:top]]
     all_used = any(len(i.uses_typed) == len(groups) for i in ideas) if groups else True
@@ -202,7 +202,7 @@ def suggest(h: Household, c: Catalog, pb: PriceBook, *, text: str = "", use_pant
                        d["total"], servings, 0.0, d["instructions"],
                        ["a new recipe from what you listed — save it to your book to plan it"]
                        + ([f"add {', '.join(d['unknown'])} as an ingredient when you save it"] if d["unknown"] else []),
-                       [p for p, _ in groups], draft=d, credit="Lil'Helper").__dict__
+                       [p for p, _ in groups], draft=d, credit="DinnerPeace").__dict__
     words = " ".join(plain(p) for p, _ in groups)
     return {"day": day, "meal": meal, "servings": servings, "max_minutes": limit,
             "matched": sorted(typed), "not_recognised": unknown, "use_soon": sorted(soon), "ideas": out,

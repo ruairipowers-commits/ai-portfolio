@@ -72,7 +72,7 @@ schedule:                                     # APScheduler in the API (HELPER_S
 
 email:
   outbox_dir: output/outbox                   # mock mode writes .eml files here; RESEND_API_KEY sends for real
-  from_env: HELPER_MAIL_FROM                # this app's sender; falls back to the shared MAIL_FROM under the name Lil'Helper
+  from_env: HELPER_MAIL_FROM                # this app's sender; falls back to the shared MAIL_FROM under the name DinnerPeace
 
 governance:
   deprecation_warning_days: 90                # MODEL-03

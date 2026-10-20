@@ -1,4 +1,4 @@
-# Architecture — Lil'Helper
+# Architecture — DinnerPeace
 
 ## Flow
 
@@ -64,7 +64,7 @@ sequenceDiagram
 |---|---|---|---|
 | Who chooses meals and stores | A constraint solver (OR-Tools CP-SAT) in code | Ask a model for a meal plan | Allergies, prep limits, budget and fees are hard rules with numbers; a solver either meets them or says it can't. The model suggests recipes and writes one-line notes, inside a schema |
 | Allergies and the dog | Hard rules in code with hidden-source synonyms ("satay" → peanut, "pesto" → tree nut) and a dog-toxic word list; vet notes blocked the same way | Trust the model to avoid them | A wrong plan can make someone ill. Rules run on every plan, idea, special and dog extra, and a model can't override them |
-| Buying | Hand off to the app that already does it: Instacart shopping-list link (Developer Platform), a list shared to the Whole Foods app or Reminders, an aisle-ordered Trader Joe's list | Place orders from Lil'Helper | Integrate, don't rebuild; and nothing spends money without a person tapping through |
+| Buying | Hand off to the app that already does it: Instacart shopping-list link (Developer Platform), a list shared to the Whole Foods app or Reminders, an aisle-ordered Trader Joe's list | Place orders from DinnerPeace | Integrate, don't rebuild; and nothing spends money without a person tapping through |
 | Specials | A flyer photo the household takes, read by a vision model, confirmed by a person; typo prices flagged | Scrape store websites | Store terms of service; Trader Joe's has no online store or sales; a confirmed special is a fact, a scraped one is a guess |
 | Calendar | A private .ics feed per person (their dinners, jobs, trips), subscribed once in Apple, Google or Outlook; each dinner carries signed one-tap links to rate it and say what's left | Writing events through each calendar's API | One feed works with every calendar app and needs no calendar permissions; the links record feedback only from the page's own request, so link previews can't rate a meal |
 | Accounts | Email sign-in links; one central accounts database; each household in its own folder and database; roles (admin, adult, kid) checked on every request | Passwords; one shared database from day one | Nothing to forget or leak; a household's data can't be reached through another's session, and moving to Postgres with row-level security later keeps the same boundary (docs/aws-native.md) |

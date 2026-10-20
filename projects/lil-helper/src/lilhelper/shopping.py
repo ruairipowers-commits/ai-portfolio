@@ -333,7 +333,7 @@ def handoff_payload(so: StoreOrder, h: Household) -> dict:
     when = f" ({so.day} {so.time})" if so.day and so.time else ""
     if so.handoff == "instacart":
         org = (h.raw.get("brands") or {})
-        return {"title": f"Lil'Helper: {so.store_name}{when}", "link_type": "shopping_list", "expires_in": 7,
+        return {"title": f"DinnerPeace: {so.store_name}{when}", "link_type": "shopping_list", "expires_in": 7,
                 "instructions": [f"Choose {so.store_name} if Instacart suggests another store."],
                 "line_items": [{"name": ln.name, "quantity": ln.packs, "unit": "package",
                                 "display_text": f"{ln.name} ({ln.brand})",
@@ -342,7 +342,7 @@ def handoff_payload(so: StoreOrder, h: Household) -> dict:
                                for ln in so.lines],
                 "landing_page_configuration": {"enable_pantry_items": False}}
     if so.handoff == "amazon":
-        return {"list_name": f"Lil'Helper {so.store_name}{when}",
+        return {"list_name": f"DinnerPeace {so.store_name}{when}",
                 "items": [f"{ln.packs} × {ln.name} ({ln.brand})" for ln in so.lines]}
     return {"aisle_ordered": [f"☐ {ln.packs} × {ln.name} — {ln.brand}{' (special)' if ln.special else ''}"
                               for ln in so.lines]}

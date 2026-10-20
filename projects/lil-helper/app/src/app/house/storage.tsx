@@ -81,7 +81,7 @@ export default function StorageScreen() {
           hint="When a dinner freezes well and there's room." />
         <NumberField label="Keep this many freezer meals" value={fm.keep} max={12} onChange={(keep) => setFm({ ...fm, keep })} />
         <NumberField label="Plan this many weeks ahead" value={ahead} min={1} max={6} onChange={setAhead}
-          hint="Lets Lil'Helper buy ahead when something you'll need is on sale, and forecast ingredients." />
+          hint="Lets DinnerPeace buy ahead when something you'll need is on sale, and forecast ingredients." />
       </View>
       {isAdmin ? <Button title="Save" busy={set.busy} onPress={save} /> : null}
       <Saved at={set.savedAt} />

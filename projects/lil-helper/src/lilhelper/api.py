@@ -46,7 +46,7 @@ SESSION_TTL = 30 * 24 * 3600
 TAP_TTL = 30 * 24 * 3600
 INSTACART = {"development": "https://connect.dev.instacart.tools", "production": "https://connect.instacart.com"}
 
-app = FastAPI(title="Lil'Helper", version=__version__, root_path=os.getenv("ROOT_PATH", ""))
+app = FastAPI(title="DinnerPeace", version=__version__, root_path=os.getenv("ROOT_PATH", ""))
 app.include_router(alexa.router)
 app.add_middleware(CORSMiddleware, allow_origins=os.getenv("HELPER_CORS", "*").split(","), allow_methods=["*"],
                    allow_headers=["*"])
@@ -231,8 +231,8 @@ def auth_request(body: EmailIn, request: Request) -> dict:
     if known or accounts.signup_mode() != "closed" or body.invite:
         q = f"token={sign('link', email, LINK_TTL)}" + (f"&invite={body.invite}" if body.invite else "")
         link = f"{os.getenv('HELPER_APP_LINK', 'lilhelper://signin')}?{q}"
-        _send_email(email, "Your Lil'Helper sign-in link",
-                    f"<p>Tap to sign in to Lil'Helper (valid 15 minutes):</p><p><a href='{html.escape(link)}'>"
+        _send_email(email, "Your DinnerPeace sign-in link",
+                    f"<p>Tap to sign in to DinnerPeace (valid 15 minutes):</p><p><a href='{html.escape(link)}'>"
                     f"{html.escape(link)}</a></p>", "signin")
     return {"sent": True, "message": "Check your email for a sign-in link."}
 
@@ -573,9 +573,9 @@ def invite(body: InviteIn, ctx: Ctx = Depends(member)) -> dict:
     con.close()
     email = accounts.norm_email(body.email)
     link = f"{os.getenv('HELPER_APP_LINK', 'lilhelper://signin')}?token={sign('link', email, accounts.INVITE_DAYS * 24 * 3600)}&invite={code}"
-    _send_email(email, f"{ctx.name} invited you to {h.info.get('name')} on Lil'Helper",
-                f"<p>{html.escape(ctx.name)} added you to <b>{html.escape(h.info.get('name', ''))}</b> on Lil'Helper, "
-                f"the family meal planner.</p><p>Install Lil'Helper, then tap: <a href='{html.escape(link)}'>join "
+    _send_email(email, f"{ctx.name} invited you to {h.info.get('name')} on DinnerPeace",
+                f"<p>{html.escape(ctx.name)} added you to <b>{html.escape(h.info.get('name', ''))}</b> on DinnerPeace, "
+                f"the family meal planner.</p><p>Install DinnerPeace, then tap: <a href='{html.escape(link)}'>join "
                 f"the household</a> (valid {accounts.INVITE_DAYS} days).</p>", "invite")
     return {"invited": email, "person": body.person_id, "role": role}
 
@@ -725,7 +725,7 @@ def run_as(uid: str, hid: str, text: str) -> dict:
     m = accounts.membership(con, uid, hid) if u else None
     con.close()
     if not u or not m:
-        return {"say": "That Alexa link no longer works. Link it again from the Lil'Helper app."}
+        return {"say": "That Alexa link no longer works. Link it again from the DinnerPeace app."}
     rate_limit(f"voice:{uid}", 120)
     tok = set_tenant(hid)
     try:
@@ -766,10 +766,10 @@ def bulk_export(ctx: Ctx = Depends(member)) -> Response:
 def bulk_link(ctx: Ctx = Depends(member)) -> dict:
     """A five-minute download link for the workbook (phones open downloads in the browser, without the session)."""
     need(ctx, "admin")
-    return {"url": f"{public_url()}/bulk/{sign('bulk', f'{ctx.uid}|{ctx.hid}', 300)}/lilhelper.xlsx"}
+    return {"url": f"{public_url()}/bulk/{sign('bulk', f'{ctx.uid}|{ctx.hid}', 300)}/dinnerpeace.xlsx"}
 
 
-@app.get("/bulk/{token}/lilhelper.xlsx")
+@app.get("/bulk/{token}/dinnerpeace.xlsx")
 def bulk_download(token: str) -> Response:
     uid, _, hid = verify("bulk", token).partition("|")
     con = accounts.connect()
@@ -792,7 +792,7 @@ def _workbook() -> Response:
     con.close()
     name = re.sub(r"[^A-Za-z0-9]+", "-", h.info.get("name", "household")).strip("-").lower() or "household"
     return Response(data, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    headers={"Content-Disposition": f'attachment; filename="lilhelper-{name}.xlsx"'})
+                    headers={"Content-Disposition": f'attachment; filename="dinnerpeace-{name}.xlsx"'})
 
 
 @app.post("/api/bulk/import")
@@ -1480,7 +1480,7 @@ def list_recipes(q: str = "", meal: str | None = None, mine: bool = False, ctx: 
         out.append({"id": r.id, "name": r.name, "meal": r.meal, "meals": r.meals, "kcal": r.kcal,
                     "active": r.active, "total": r.total, "tags": r.tags,
                     "source": r.source, "season_months": r.season_months, "want": r.want,
-                    "kid_min_age": r.kid_min_age, "credit": r.credit or ("Lil'Helper" if r.source == "book" else ""),
+                    "kid_min_age": r.kid_min_age, "credit": r.credit or ("DinnerPeace" if r.source == "book" else ""),
                     "url": r.url})
     out.sort(key=lambda r: (r["source"] != "household", r["meal"], r["name"]))
     return {"recipes": out}
@@ -1635,7 +1635,7 @@ def get_recipe(rid: str, ctx: Ctx = Depends(member)) -> dict:
         raise HTTPException(404, "no such recipe")
     return {**r.__dict__, "ingredients": [{"ingredient": i, "name": c.ingredients[i].name, "per_serving": q,
                                            "unit": c.ingredients[i].unit} for i, q in r.ing.items()],
-            "allergens": c.allergens_of(r), "credit": r.credit or ("Lil'Helper" if r.source == "book" else "")}
+            "allergens": c.allergens_of(r), "credit": r.credit or ("DinnerPeace" if r.source == "book" else "")}
 
 
 @app.delete("/api/recipes/{rid}")
@@ -1670,7 +1670,7 @@ class PrefIn(BaseModel):
 
 @app.get("/api/ingredients/{iid}")
 def ingredient_detail(iid: str, ctx: Ctx = Depends(member)) -> dict:
-    """One ingredient: what Lil'Helper's price list says at each of your stores, and your own choice for it."""
+    """One ingredient: what DinnerPeace's price list says at each of your stores, and your own choice for it."""
     h = _hh()
     c = catalog.for_household(h)
     ing = c.ingredients.get(iid)
@@ -1741,7 +1741,7 @@ def add_ingredient(body: IngredientIn, ctx: Ctx = Depends(member)) -> dict:
         raise HTTPException(422, f"allergens: {', '.join(ALLERGENS)}")
     for st, p in body.prices.items():
         if st not in load_stores()["stores"] or float(p.get("price", 0)) <= 0 or float(p.get("pack", 0)) <= 0:
-            raise HTTPException(422, "prices: {store: {pack, price}} for stores Lil'Helper knows")
+            raise HTTPException(422, "prices: {store: {pack, price}} for stores DinnerPeace knows")
     iid = "h_" + re.sub(r"[^a-z0-9]+", "_", body.name.lower()).strip("_")[:40]
     c = catalog.for_household(_hh())
     found = c.text_allergens(body.name)
@@ -2255,7 +2255,7 @@ def calendar_feed(hid: str, uid: str, sig: str) -> Response:
 
 
 PAGE = """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,
-initial-scale=1"><title>Lil'Helper</title><style>body{{font-family:-apple-system,Helvetica,Arial,sans-serif;
+initial-scale=1"><title>DinnerPeace</title><style>body{{font-family:-apple-system,Helvetica,Arial,sans-serif;
 background:#FFF8EC;color:#3A2A1E;max-width:520px;margin:0 auto;padding:24px}}h1{{font-size:22px;margin:0 0 8px}}
 h1 span.l{{color:#D7392A}}h1 span.h{{color:#3E9E3A}}.card{{background:#fff;border:1px solid #F0E2CC;border-radius:14px;
 padding:16px;margin:12px 0}}button,a.b{{display:inline-block;background:#D7392A;color:#fff;border:0;border-radius:12px;
@@ -2276,9 +2276,9 @@ def open_in_app(screen: str, request: Request) -> str:
     app_link = f"lilhelper://{screen}" + (f"?{q}" if q else "")
     label = {"week": "this week's plan", "shopping": "the shopping lists", "book": "the shared recipes",
              "meals": "rate meals", "jobs": "jobs", "money": "money", "signin": "sign in"}[screen]
-    body = (f"<div class='card'><p>Opening Lil'Helper — {html.escape(label)}…</p>"
-            f"<p><a class='b' href='{html.escape(app_link)}'>Open Lil'Helper</a></p>"
-            "<p class='m'>Nothing happening? Open this on the phone where Lil'Helper is installed.</p></div>"
+    body = (f"<div class='card'><p>Opening DinnerPeace — {html.escape(label)}…</p>"
+            f"<p><a class='b' href='{html.escape(app_link)}'>Open DinnerPeace</a></p>"
+            "<p class='m'>Nothing happening? Open this on the phone where DinnerPeace is installed.</p></div>"
             f"<script>location.href={json.dumps(app_link)}</script>")
     return PAGE.format(body=body)
 
@@ -2300,9 +2300,9 @@ def tap(token: str) -> str:
         return PAGE.format(body=body)
     if kind == "change":
         link = f"lilhelper://week?day={d.get('day', '')}"
-        return PAGE.format(body=f"<div class='card'><p>Open Lil'Helper to change {html.escape(d.get('day', '').title())}"
+        return PAGE.format(body=f"<div class='card'><p>Open DinnerPeace to change {html.escape(d.get('day', '').title())}"
                                 f"'s {html.escape(d.get('meal', 'meal'))}.</p><a class='b' href='{link}'>Open "
-                                "Lil'Helper</a></div>")
+                                "DinnerPeace</a></div>")
     if kind == "list":
         tok = set_tenant(d["h"])
         try:
@@ -2312,7 +2312,7 @@ def tap(token: str) -> str:
         finally:
             reset_tenant(tok)
         if not o:
-            return PAGE.format(body="<div class='card'>That list has changed. Open Lil'Helper for the latest.</div>")
+            return PAGE.format(body="<div class='card'>That list has changed. Open DinnerPeace for the latest.</div>")
         items = "".join(f"<li>☐ {ln['packs']} × {html.escape(ln['name'])}</li>" for ln in o["lines"])
         return PAGE.format(body=f"<div class='card'><b>{html.escape(o['store_name'])}</b> "
                                 f"<span class='m'>{html.escape(o['mode'].replace('_', ' '))} · about "
@@ -2391,5 +2391,5 @@ def savings_report(weeks: int = 8, ctx: Ctx = Depends(member)) -> dict:
 
 @app.get("/", response_class=HTMLResponse)
 def root() -> str:
-    return PAGE.format(body="<div class='card'><p>This is the Lil'Helper server the app talks to.</p>"
+    return PAGE.format(body="<div class='card'><p>This is the DinnerPeace server the app talks to.</p>"
                             "<p class='m'>Get the app, then sign in with your email.</p></div>")

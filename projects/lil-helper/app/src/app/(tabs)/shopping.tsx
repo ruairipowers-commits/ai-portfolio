@@ -1,5 +1,5 @@
 // Shopping: one list per store, handed to the app that already does it well — an Instacart link, a list shared to
-// the Whole Foods app or Reminders, or an aisle-ordered list for Trader Joe's. Lil'Helper never buys anything.
+// the Whole Foods app or Reminders, or an aisle-ordered list for Trader Joe's. DinnerPeace never buys anything.
 import * as WebBrowser from "expo-web-browser";
 import { useCallback, useState } from "react";
 import { Share, Text, View } from "react-native";

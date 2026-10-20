@@ -299,7 +299,7 @@ class Household:
         return dict(self.raw.get("freezer_meals") or {})
 
     def sessions(self) -> list[dict]:
-        """Planned shopping trips and orders: [{id, day, time, store, mode, who}]. Empty: Lil'Helper picks."""
+        """Planned shopping trips and orders: [{id, day, time, store, mode, who}]. Empty: DinnerPeace picks."""
         return [dict(s, id=s.get("id") or f"{s['store']}-{s['mode']}-{s['day']}")
                 for s in (self.raw.get("shopping_sessions") or [])]
 

@@ -1,6 +1,6 @@
 // Speech to text. On the phone it uses the system recogniser (Apple / Google) through expo-speech-recognition; on the
 // web build, the browser's own (Chrome, Safari, Edge). Audio goes to the phone's or browser's recogniser, not to
-// Lil'Helper; only the words come to the server. If neither exists (e.g. Expo Go), `available()` is false and the
+// DinnerPeace; only the words come to the server. If neither exists (e.g. Expo Go), `available()` is false and the
 // screens say to use the keyboard's microphone instead.
 import { Platform } from "react-native";
 
@@ -53,7 +53,7 @@ export async function listen(onText: (t: string) => void, onDone: (t: string, er
   const m = nativeModule();
   if (!m) { onDone("", "Use the microphone on the keyboard to talk instead."); return { stop: () => {} }; }
   const perm = await m.requestPermissionsAsync();
-  if (!perm.granted) { onDone("", "Lil'Helper needs the microphone and speech recognition: turn them on in Settings."); return { stop: () => {} }; }
+  if (!perm.granted) { onDone("", "DinnerPeace needs the microphone and speech recognition: turn them on in Settings."); return { stop: () => {} }; }
   let finished = false;
   const subs = [
     m.addListener("result", (e: { results: { transcript: string }[] }) => { last = e.results?.[0]?.transcript ?? last; onText(last); }),
@@ -63,6 +63,6 @@ export async function listen(onText: (t: string) => void, onDone: (t: string, er
   ];
   function cleanup() { subs.forEach((x) => x.remove()); }
   m.start({ lang: "en-US", interimResults: true, continuous: false, addsPunctuation: true,
-    contextualStrings: ["Lil'Helper", "leftovers", "lunchbox", "buffet", "portions"] });
+    contextualStrings: ["DinnerPeace", "leftovers", "lunchbox", "buffet", "portions"] });
   return { stop: () => m.stop() };
 }

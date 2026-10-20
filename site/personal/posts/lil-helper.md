@@ -1,7 +1,7 @@
 ---
 date: 2026-10-06
 slug: lil-helper
-short: "Lil'Helper"
+short: "DinnerPeace"
 categories: [Human in the loop, Security, Evaluation]
 tags: [or-tools, cp-sat, expo, react native, fastapi, instacart, ics, weasyprint, family]
 audience: [Product managers, AI and ML engineers, Students and career changers]
@@ -11,7 +11,7 @@ audience: [Product managers, AI and ML engineers, Students and career changers]
 
 Planning a week of family dinners means juggling who's allergic to what, how long anyone has to cook on a Tuesday,
 which store has salmon on special, whether pickup beats a trip, and whose turn it is to do the dishes. In most
-households that work lands on one person. Lil'Helper does the juggling and hands back a plan, a shopping list split across
+households that work lands on one person. DinnerPeace does the juggling and hands back a plan, a shopping list split across
 stores, a jobs rota and the dog's food — and nothing happens until an adult taps Approve.
 
 <!-- more -->
@@ -68,7 +68,7 @@ them badly, so the brief was to do the planning and hand everything else to the 
   birthdays and holidays coming up; and a microphone ("I have half a chicken, rice and broccoli"). Besides the
   weekly plan there are other ways to decide: plan months ahead and stick to it, *vibe cooking* (time and mood),
   special occasions (the birthday person's favourites, sized for the guests), a weekly buffet of portions kept on
-  hand, and *surprise me*. "Alexa, ask Lil'Helper what's for dinner" works too, through a skill backend that checks
+  hand, and *surprise me*. "Alexa, ask DinnerPeace what's for dinner" works too, through a skill backend that checks
   Amazon's signature on every request.
 - **Gets the data in quickly.** Recipes come from the web with a link back to the source, any planned meal can be
   changed and changed back, and an admin can load the whole household — people, recipes, the brands and prices you
@@ -119,7 +119,7 @@ covers all 30 controls. Five matter most for a tool that knows your children's a
 
 **An adult approves; nothing is bought (HITL-02).** The risk is an app that spends money or serves the wrong meal
 without anyone noticing. A named adult approves each week; a child's sign-in is refused at the API. The shopping
-hand-offs only appear after approval, and they are links and lists a person opens: Lil'Helper has no way to check
+hand-offs only appear after approval, and they are links and lists a person opens: DinnerPeace has no way to check
 out. Specials from a flyer count only once someone confirms them. *Knob:* `week.approve`. *Not built:* a second
 adult's approval above a spend threshold.
 
@@ -176,7 +176,7 @@ step, and a Terraform starter (not applied to a live account) covers the storage
 - **Real models.** I'll run the three jobs on local models on the EVO-X1 (a 14B model for ideas and notes, a vision
   model for flyers), and promote only on a passing eval.
 - **Instacart for real.** The shopping-list payload follows the Developer Platform's documented format. It needs a
-  key, and Instacart, not Lil'Helper, chooses which store the link opens, so the list asks for the right one.
+  key, and Instacart, not DinnerPeace, chooses which store the link opens, so the list asks for the right one.
 - **Allergen safety is only as good as the ingredient list.** The synonym list catches satay and pesto, but a
   packaged sauce with an unlisted ingredient would get through. Labels still need checking.
 - **No live price feed.** Store terms rule out scraping, so prices come from what the household enters or

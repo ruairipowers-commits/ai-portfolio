@@ -115,7 +115,7 @@ def candidates(h: Household, c: Catalog, pb: PriceBook, extra: list[Recipe], his
         if len({r.id for r in own if r.meal == "dinner"}) >= 3:
             pool = own                                     # the household plans from its own recipes only
         else:
-            notes.append("Lil'Helper's recipes are off, but you have fewer than 3 dinners of your own, so they were "
+            notes.append("DinnerPeace's recipes are off, but you have fewer than 3 dinners of your own, so they were "
                          "used this week")
     no_repeat = int(h.raw.get("health", {}).get("no_repeat_days", 0))
     batch_day = h.raw.get("batch_day")

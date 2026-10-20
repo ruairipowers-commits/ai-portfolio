@@ -1,7 +1,7 @@
 """The household's recipe book: save, export, import, share with another household, and add a recipe from the web.
 
 Recipes from the web come from the page's own structured data (schema.org Recipe, which most recipe sites publish
-for search engines). Lil'Helper keeps the name, ingredients, times, servings, the site's name and a link back; the
+for search engines). DinnerPeace keeps the name, ingredients, times, servings, the site's name and a link back; the
 method stays on the source page (it's the author's writing), and the household can add their own notes. Nothing is
 saved until a person has looked at the draft and pressed Save.
 
@@ -97,7 +97,7 @@ def save(con, h: Household, c: Catalog, body: dict, by: str, rid: str | None = N
     house = h.everyone_allergies()
     return {"saved": rid, "allergens": allergens,
             "warning": (f"Contains {', '.join(sorted(set(allergens) & house))}: someone in the house is allergic, so "
-                        "Lil'Helper won't plan it.") if set(allergens) & house else None}
+                        "DinnerPeace won't plan it.") if set(allergens) & house else None}
 
 
 # ---------------------------------------------------------------- export / import
@@ -130,7 +130,7 @@ def import_book(con, h: Household, c: Catalog, book: dict, by: str, credit: str 
     are added as its own; recipes with a name already in the book are skipped (not overwritten)."""
     from . import catalog as catmod
     if not isinstance(book, dict) or book.get("format") != FORMAT:
-        raise RecipeError("that isn't a Lil'Helper recipe file")
+        raise RecipeError("that isn't a DinnerPeace recipe file")
     added_ing = []
     for d in (book.get("ingredients") or [])[:200]:
         name = str(d.get("name") or "").strip().lower()

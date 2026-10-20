@@ -1,4 +1,4 @@
-// The microphone. <MicButton> fills any text box by voice; <VoiceBar> is "ask Lil'Helper": say (or type) what you
+// The microphone. <MicButton> fills any text box by voice; <VoiceBar> is "ask DinnerPeace": say (or type) what you
 // want, the server works out what it means (/api/voice), says what it did, and opens the right screen.
 import { router } from "expo-router";
 import { useRef, useState } from "react";
@@ -48,8 +48,8 @@ export function VoiceBar({ hint = "What's for dinner? · I have chicken and rice
   return (
     <View style={[s.card, { backgroundColor: "#FFFDF8", borderColor: c.green }]}>
       <View style={s.row}>
-        <TextInput style={[s.input, { flex: 1 }]} value={text} onChangeText={setText} placeholder="Ask Lil'Helper…"
-          returnKeyType="send" onSubmitEditing={() => ask(text)} editable={!busy} accessibilityLabel="Ask Lil'Helper" />
+        <TextInput style={[s.input, { flex: 1 }]} value={text} onChangeText={setText} placeholder="Ask DinnerPeace…"
+          returnKeyType="send" onSubmitEditing={() => ask(text)} editable={!busy} accessibilityLabel="Ask DinnerPeace" />
         <MicButton onText={setText} onDone={ask} />
       </View>
       {!reply ? <Text style={s.muted}>{busy ? "Thinking…" : hint}</Text> : (
