@@ -244,6 +244,7 @@ demo:
   - COURSE_MAIL_FROM
   - COURSE_OWNER_EMAIL
   - COURSE_PUBLIC_URL
+  - COURSE_OWNER_API_TOKEN       # the owner API for JobHunt (unset = off)
 
 links:
   repo: ''

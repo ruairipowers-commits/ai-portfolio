@@ -1,0 +1,299 @@
+# Course tags: industry, function and tech, filterable on the catalog and the tracker.
+# Kept here, not in sources/tech/*.md, because `course sources` refreshes those from the site.
+# Courses approved from a suggestion take the suggestion's tags (stored with the course row).
+# The vocabulary matches JobHunt's skills taxonomy so a suggested course arrives already tagged; a tag outside
+# it is still accepted (lowercase words and dashes) and shown.
+vocabulary:
+  industry:
+  - capital-markets
+  - asset-management
+  - banking
+  - fintech
+  - insurance
+  - healthcare
+  - retail
+  - government
+  - technology
+  function:
+  - engineering
+  - data-engineering
+  - analytics
+  - ml-ai
+  - product
+  - architecture
+  - leadership
+  - devops
+  - risk-compliance
+  - quant
+  - operations
+  - sales
+  - public-sector
+  tech:
+  - analytics-tools
+  - architecture
+  - cloud
+  - data-pipelines
+  - databases
+  - devops
+  - finance-data
+  - finance-domain
+  - finance-systems
+  - governance
+  - languages
+  - licences
+  - ml-ai
+  - orchestration
+  - security
+  - streaming
+  - visualization
+  - ways-of-working
+  - web
+courses:
+  airflow:
+    industry: []
+    function:
+    - data-engineering
+    tech:
+    - data-pipelines
+    - orchestration
+  anthropic:
+    industry: []
+    function:
+    - ml-ai
+    tech:
+    - ml-ai
+  aws:
+    industry: []
+    function:
+    - devops
+    - engineering
+    tech:
+    - cloud
+  bedrock:
+    industry: []
+    function:
+    - ml-ai
+    tech:
+    - ml-ai
+    - cloud
+  caddy:
+    industry: []
+    function:
+    - devops
+    tech:
+    - web
+    - devops
+  chartjs:
+    industry: []
+    function:
+    - analytics
+    tech:
+    - visualization
+    - web
+  cloudflare-tunnel:
+    industry: []
+    function:
+    - devops
+    tech:
+    - devops
+    - security
+  dagster:
+    industry: []
+    function:
+    - data-engineering
+    tech:
+    - data-pipelines
+    - orchestration
+  dbt:
+    industry: []
+    function:
+    - data-engineering
+    - analytics
+    tech:
+    - data-pipelines
+  docker:
+    industry: []
+    function:
+    - devops
+    - engineering
+    tech:
+    - devops
+  duckdb:
+    industry: []
+    function:
+    - analytics
+    tech:
+    - databases
+  fastapi:
+    industry: []
+    function:
+    - engineering
+    tech:
+    - web
+  github-actions:
+    industry: []
+    function:
+    - devops
+    tech:
+    - devops
+  hugging-face-spaces:
+    industry: []
+    function:
+    - ml-ai
+    tech:
+    - ml-ai
+    - web
+  jupyter:
+    industry: []
+    function:
+    - analytics
+    - ml-ai
+    tech:
+    - analytics-tools
+  langgraph:
+    industry: []
+    function:
+    - ml-ai
+    tech:
+    - ml-ai
+  mcp:
+    industry: []
+    function:
+    - ml-ai
+    - engineering
+    tech:
+    - ml-ai
+  metricflow:
+    industry: []
+    function:
+    - analytics
+    tech:
+    - analytics-tools
+  mkdocs-material:
+    industry: []
+    function:
+    - engineering
+    tech:
+    - web
+  ollama:
+    industry: []
+    function:
+    - ml-ai
+    tech:
+    - ml-ai
+  openai:
+    industry: []
+    function:
+    - ml-ai
+    tech:
+    - ml-ai
+  oxigraph:
+    industry: []
+    function:
+    - data-engineering
+    tech:
+    - databases
+  pandas:
+    industry: []
+    function:
+    - analytics
+    tech:
+    - analytics-tools
+    - languages
+  pgvector:
+    industry: []
+    function:
+    - ml-ai
+    tech:
+    - databases
+    - ml-ai
+  plotly:
+    industry: []
+    function:
+    - analytics
+    tech:
+    - visualization
+  postgres:
+    industry: []
+    function:
+    - data-engineering
+    tech:
+    - databases
+  prefect:
+    industry: []
+    function:
+    - data-engineering
+    tech:
+    - data-pipelines
+    - orchestration
+  pydantic:
+    industry: []
+    function:
+    - engineering
+    tech:
+    - languages
+  pymupdf:
+    industry: []
+    function:
+    - data-engineering
+    tech:
+    - analytics-tools
+  python:
+    industry: []
+    function:
+    - engineering
+    - data-engineering
+    tech:
+    - languages
+  scikit-learn:
+    industry: []
+    function:
+    - ml-ai
+    tech:
+    - ml-ai
+  seaborn:
+    industry: []
+    function:
+    - analytics
+    tech:
+    - visualization
+  sqlite:
+    industry: []
+    function:
+    - engineering
+    tech:
+    - databases
+  sqlite-fts5:
+    industry: []
+    function:
+    - engineering
+    tech:
+    - databases
+  sqlite-vec:
+    industry: []
+    function:
+    - ml-ai
+    tech:
+    - databases
+    - ml-ai
+  streamlit:
+    industry: []
+    function:
+    - analytics
+    tech:
+    - web
+    - analytics-tools
+  terraform:
+    industry: []
+    function:
+    - devops
+    tech:
+    - devops
+    - cloud
+  typescript:
+    industry: []
+    function:
+    - engineering
+    tech:
+    - languages
+    - web

@@ -63,6 +63,10 @@ moderation:
   model_alias: course-moderator
   max_output_tokens: 600
 
+owner_api:                   # JobHunt (the owner's job-search tool) suggests topics and reads the owner's progress
+  max_suggestions_per_day: 30  # replaces the per-learner limit for API suggestions; moderation + approval still apply
+  # token: COURSE_OWNER_API_TOKEN (32+ characters); unset = the API answers 404
+
 approvals:
   owner_email_env: COURSE_OWNER_EMAIL
   link_ttl_days: 7

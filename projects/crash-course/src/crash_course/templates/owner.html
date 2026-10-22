@@ -12,7 +12,8 @@ levels completed {{ stats.completed }} · levels published {{ stats.published }}
 {% if not pending %}<p class="muted">None waiting.</p>{% endif %}
 {% for g in pending %}{% set a = g.assessment %}
 <div class="card" style="margin-bottom:12px">
-  <p class="q" style="margin:0">#{{ g.id }} “{{ g.text }}”</p>
+  <p class="q" style="margin:0">#{{ g.id }} “{{ g.text }}”{% if g.source == 'owner-api' %} <span class="pill st-unlocked">from JobHunt{% if g.demand %} · demand {{ '%.1f'|format(g.demand) }}{% endif %}</span>{% endif %}</p>
+  {% if g.tags_list %}<p class="small" style="margin:4px 0">{% for t in g.tags_list %}<span class="tag">{{ t }}</span>{% endfor %} <span class="muted">(these become the course's tags)</span></p>{% endif %}
   <p style="margin:6px 0">Agent: <span class="pill {{ 'st-complete' if a.verdict == 'approve-recommended' else ('st-preparing' if a.verdict == 'needs-review' else 'st-locked') }}">{{ a.verdict }}</span>
     {% if a.categories %}<span class="small muted">{{ a.categories|join(', ') }}</span>{% endif %}</p>
   <ul class="small" style="margin:4px 0">{% for r in a.reasons %}<li>{{ r }}</li>{% endfor %}</ul>
