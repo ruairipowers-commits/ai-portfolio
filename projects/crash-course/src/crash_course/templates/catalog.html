@@ -8,8 +8,15 @@
     <option value="">All categories</option>
     {% for c in cats %}<option value="{{ c }}" {{ 'selected' if c == cat }}>{{ c }}</option>{% endfor %}
   </select>
+  {% if tag %}<input type="hidden" name="tag" value="{{ tag }}">{% endif %}
   <button class="btn" type="submit">Search</button>
 </form>
+<div class="tagbar small">
+  {% for kind, tags in tag_groups.items() if tags %}<span class="muted">{{ kind }}:</span>
+    {% for t in tags %}<a class="tag {{ 'on' if t == tag }}" href="{{ R }}/catalog?tag={{ t }}{% if q %}&q={{ q|urlencode }}{% endif %}{% if cat %}&cat={{ cat|urlencode }}{% endif %}">{{ t }}</a>{% endfor %}
+  {% endfor %}
+  {% if tag %}<a class="small" href="{{ R }}/catalog{% if q %}?q={{ q|urlencode }}{% endif %}">clear tag ×</a>{% endif %}
+</div>
 {% if not groups %}<p class="muted">Nothing matches. {% if user %}<a href="{{ R }}/suggest">Suggest it as a topic</a>.{% endif %}</p>{% endif %}
 {% for cat_name, items in groups.items() %}
 <h2>{{ cat_name }}</h2>
@@ -18,6 +25,7 @@
   <div class="card course-card" id="c-{{ c.slug }}">
     <h3><a href="{{ R }}/course/{{ c.slug }}">{{ c.title }}</a></h3>
     <p>{{ c.summary }}</p>
+    {% if c.tag_list() %}<p class="small">{% for t in c.tag_list() %}<a class="tag {{ 'on' if t == tag }}" href="{{ R }}/catalog?tag={{ t }}">{{ t }}</a>{% endfor %}</p>{% endif %}
     <div class="row">
       {% if c.slug in mine %}<a class="btn small ghost" href="{{ R }}/tracker#c-{{ c.slug }}">On your tracker</a>
       {% elif user %}<form class="inline" method="post" action="{{ R }}/enroll"><input type="hidden" name="course" value="{{ c.slug }}"><button class="btn small" type="submit">Sign up</button></form>
