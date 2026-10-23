@@ -1,7 +1,8 @@
 // After meals: one tap for how much was eaten, and a star rating. Portions and restocking learn from this, and the
 // ratings are the "satisfaction" in the savings report.
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { Text } from "@/components/text";
 import { api, DAY_NAME, Entry } from "@/lib/api";
 import { useWeek } from "@/lib/useWeek";
 import { ErrorText, Pill, Screen } from "@/components/ui";

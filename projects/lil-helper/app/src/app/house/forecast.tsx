@@ -1,7 +1,8 @@
 // Ingredient forecast: pick something the next few weeks' plans use; see how much you'll need, what's on hand, which
 // shopping trip to buy it on, how much to buy, and where it's cheapest.
 import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { api, Forecast } from "@/lib/api";
 import { Chips, ErrorText, Header, LinkRow, money, Screen } from "@/components/ui";
 import { s } from "@/lib/theme";

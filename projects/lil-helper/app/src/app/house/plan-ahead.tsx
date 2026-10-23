@@ -2,7 +2,8 @@
 // can still be changed or approved on the Week tab; nothing is bought until a week is approved.
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { Text } from "@/components/text";
 import { api } from "@/lib/api";
 import { Button, Chips, ErrorText, Header, money, Pill, Screen } from "@/components/ui";
 import { s } from "@/lib/theme";

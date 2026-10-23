@@ -1,7 +1,8 @@
 // Meal style: hands-on minutes by day, recipe styles to prefer or require (one-pot Mondays, kid-friendly), kid chef
 // nights, lunchboxes, and cooking a bit extra for tomorrow's lunch.
 import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { DAY_SHORT, DAYS } from "@/lib/api";
 import { useSettings } from "@/lib/useSettings";
 import { AdminNote, Button, Chips, ErrorText, Header, NumberField, Saved, Screen } from "@/components/ui";

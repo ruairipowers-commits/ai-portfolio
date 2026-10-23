@@ -77,7 +77,40 @@ the cooking and cleanup, and learns how much everyone — the dog included — a
   "Alexa, ask DinnerPeace what's for dinner" works through a skill you add in the Amazon developer console
   ([docs/alexa.md](docs/alexa.md)). Requests are matched by rules, not a model; nothing is bought by voice.
 
-The family uses the **phone app** (`app/`, Expo — iPhone first via TestFlight, Android from the same code).
+## Dinner Peace Pro (for personal chefs)
+
+A higher subscription on the chef's own account, in the same app. A chef is a member (role `chef`) of each client
+household, so the family's allergies, likes, brands and week stay in the family's own folder, and the family sees what
+the chef logs in their own app, free.
+
+| Plan | Price | Unlocks |
+|---|---|---|
+| Family Free | $0 | A 7-day plan, an aisle-sorted list, recipes, every allergy and pet rule (never behind a plan) |
+| Dinner Peace Family | $4.99 / month, $39 / year | Planning up to 12 weeks ahead, cook from what I have, fridge calendars, import and export. **Free for any household with a Pro chef in it** |
+| Chef Solo | $29 / month, $290 / year | Up to 3 client homes: the "What do I do next?" cockpit, client dossiers, the numbered container log, reheat cards (4×6 labels, letter page, email), voice logging, client budgets and receipts |
+| Chef Studio | $59 / month, $590 / year | Unlimited homes, one shopping trip across homes with bulk packs split by quantity, card routing (your card → rewards → client invoice, or their card → separate checkout), coverage packs for a backup chef, your branding on labels |
+
+- **Cockpit:** today's kitchens in time order, the next step in each ("Cook beef and broccoli (3 servings) and pack
+  container #3"), the strictest allergy first, containers to use soon, and the next store stop with the card to use.
+- **Voice notes:** "At the Millers. Chucked the leftover lasagna, made 4 portions of short ribs. Freeze two, fridge
+  two. Reheat at 350 for 25 minutes covered. They're out of olive oil." becomes a preview (toss #1, two containers, a
+  reheat card, olive oil on their list); nothing is saved until the chef confirms. Parsed by rules, not a model.
+- **Allergens:** a reheat card or voice note naming something a household member is allergic to is refused until the
+  chef confirms it, and the label then says "Contains: …".
+- **The trip:** chooses up to `max_stops` stores (default 2) by item cost plus the chef's time in each store, merges
+  lines across homes the chef pays for, splits each line's cost by quantity to the cent, and orders stops so the
+  cold things come last. Brand preferences keep a home's lines separate.
+- **Coverage packs:** a link that opens with a password (sent separately) only between its dates; "recipes and
+  routines" leaves out addresses and door codes, "full" includes them.
+- **Billing:** the server decides what each plan unlocks (`plans.py`); a locked feature answers 402 and the app
+  shows the plan page. Plans are set with `helper plans set` until the App Store release, then by the RevenueCat
+  webhook (`/api/billing/revenuecat`).
+
+`helper chef-demo --email you@example.com` sets up a fictional chef on Studio with three client homes.
+
+The family uses the **phone app** (`app/`, Expo — iPhone first via TestFlight, Android from the same code), in the
+Dinner Peace look: sage and kraft, Nunito, the new icon. Chefs get their own tabs (Next, Clients, Shop, Ledger, More)
+with a kraft voice button.
 
 ![The phone app: this week, shopping, jobs](docs/img/app.png) The
 **Streamlit demo** shows the same engine on a fictional family.
@@ -91,6 +124,8 @@ helper simulate --weeks 4     # draft → approve → meal feedback → portions
 helper eval                   # golden-set gate (allergens, dog safety, constraints, shopping, injection)
 helper ui                     # Streamlit demo: input → run → output
 helper serve                  # the API the phone app talks to (http://localhost:8650)
+helper chef-demo --email chef@example.com   # Dinner Peace Pro: a fictional chef with three client homes
+helper plans set chef_studio --email chef@example.com   # turn a plan on (RevenueCat does this in production)
 pytest -q
 cd app && npm install && npx expo start     # the phone app (Expo Go, or press w for web)
 ```

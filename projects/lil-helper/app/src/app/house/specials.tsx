@@ -3,7 +3,8 @@
 import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { Text } from "@/components/text";
 import { api, Special } from "@/lib/api";
 import { Button, Chips, ErrorText, Field, Header, money, Pill, Screen, Toggle } from "@/components/ui";
 import { c, s } from "@/lib/theme";

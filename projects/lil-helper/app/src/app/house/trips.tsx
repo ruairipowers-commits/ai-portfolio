@@ -1,6 +1,7 @@
 // Shopping trips: your regular trips and orders. Each gets its own list, with fresh food on the trip nearest the day
 // it's cooked; the person going gets the list in their calendar and a reminder an hour before.
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { useSettings } from "@/lib/useSettings";
 import { TripsEditor } from "@/components/house";
 import { AdminNote, ErrorText, Header, Saved, Screen } from "@/components/ui";

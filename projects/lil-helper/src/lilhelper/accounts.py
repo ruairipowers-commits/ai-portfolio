@@ -8,6 +8,8 @@ Roles (per household):
   admin   sets the household up and changes its settings, adds and edits people, invites and removes members
   adult   plans, approves, shops, records spending, adds recipes and specials
   kid     sees the week and their jobs, says how much was eaten and rates meals (optional: kids don't need accounts)
+  chef    a personal chef on Dinner Peace Pro (plans.py): reads the household's dossier, plans and shops like an
+          adult, logs containers and reheat cards; changes the family's settings only while no admin has joined
 
 Sign-up (HELPER_SIGNUP): `invite` (default) — a new household needs a sign-up code (HELPER_SIGNUP_CODES), anyone can
 join an existing household they're invited to; `open` — anyone can create a household (the App Store release);
@@ -38,7 +40,8 @@ CREATE TABLE IF NOT EXISTS invites (code TEXT PRIMARY KEY, household_id TEXT, em
 CREATE TABLE IF NOT EXISTS devices (token TEXT PRIMARY KEY, user_id TEXT, household_id TEXT, platform TEXT,
     created TEXT, last_seen TEXT);
 """
-ROLES = ("admin", "adult", "kid")
+ROLES = ("admin", "adult", "kid", "chef")
+MIGRATIONS = [("users", "chef_plan", "TEXT DEFAULT 'none'"), ("users", "chef_plan_until", "TEXT")]
 INVITE_DAYS = 14
 
 
@@ -54,6 +57,9 @@ def connect() -> sqlite3.Connection:
     con.execute("PRAGMA journal_mode=WAL")
     con.execute("PRAGMA busy_timeout=5000")
     con.executescript(SCHEMA)
+    for table, col, decl in MIGRATIONS:
+        if col not in {r["name"] for r in con.execute(f"PRAGMA table_info({table})")}:
+            con.execute(f"ALTER TABLE {table} ADD COLUMN {col} {decl}")
     return con
 
 
@@ -120,7 +126,7 @@ def rotate_feed(con, uid: str) -> str:
 # ---------------------------------------------------------------- households
 def memberships(con, uid: str) -> list[dict]:
     return [dict(r) for r in con.execute(
-        "SELECT m.household_id, m.person_id, m.role, h.name, h.plan FROM members m JOIN households h "
+        "SELECT m.household_id, m.person_id, m.role, h.name, h.plan, h.created_by FROM members m JOIN households h "
         "ON h.id = m.household_id WHERE m.user_id = ? AND h.status = 'active' ORDER BY m.joined", (uid,))]
 
 
@@ -164,8 +170,13 @@ def starter_settings(name: str, region: str, admin_person: dict, timezone: str =
     }
 
 
-def create_household(con, uid: str, name: str, region: str, person: dict, timezone: str = "America/New_York") -> str:
+def create_household(con, uid: str, name: str, region: str, person: dict, timezone: str = "America/New_York",
+                     as_chef: bool = False) -> str:
+    """A new household with the caller as its admin, or (Dinner Peace Pro) a client household a chef sets up for a
+    family: the chef isn't one of the people eating, holds it until the family's admin joins, and the family's
+    first person (`person`) is the one the chef will invite."""
     from .config import parse_household
+    from .plans import new_household_plan
     hid = _id(12)
     pid = person["id"]
     settings = starter_settings(name, region, {**person, "admin": True, "age_band": "adult"}, timezone)
@@ -173,8 +184,10 @@ def create_household(con, uid: str, name: str, region: str, person: dict, timezo
     d = household_dir(hid)
     d.mkdir(parents=True, exist_ok=True)
     (d / "household.yaml").write_text(yaml.safe_dump(settings, sort_keys=False, allow_unicode=True, width=120))
-    con.execute("INSERT INTO households (id, name, created, created_by) VALUES (?,?,?,?)", (hid, name[:60], now(), uid))
-    con.execute("INSERT INTO members VALUES (?,?,?,?,?)", (hid, uid, pid, "admin", now()))
+    con.execute("INSERT INTO households (id, name, created, created_by, plan) VALUES (?,?,?,?,?)",
+                (hid, name[:60], now(), uid, new_household_plan(signup_mode())))
+    con.execute("INSERT INTO members VALUES (?,?,?,?,?)", (hid, uid, None if as_chef else pid,
+                                                          "chef" if as_chef else "admin", now()))
     con.commit()
     return hid
 
@@ -192,8 +205,8 @@ def import_household(con, uid: str, path, admin_person: str) -> str:
     d = household_dir(hid)
     d.mkdir(parents=True, exist_ok=True)
     (d / "household.yaml").write_text(yaml.safe_dump(raw, sort_keys=False, allow_unicode=True, width=120))
-    con.execute("INSERT INTO households (id, name, created, created_by) VALUES (?,?,?,?)",
-                (hid, raw["household"].get("name", "Household")[:60], now(), uid))
+    con.execute("INSERT INTO households (id, name, created, created_by, plan) VALUES (?,?,?,?,?)",
+                (hid, raw["household"].get("name", "Household")[:60], now(), uid, "beta"))
     con.execute("INSERT INTO members VALUES (?,?,?,?,?)", (hid, uid, admin_person, "admin", now()))
     con.commit()
     return hid
@@ -282,6 +295,12 @@ def accept_invite(con, code: str, uid: str, email: str) -> dict:
         raise ValueError("that invitation has expired or was already used")
     if r["email"] != norm_email(email):
         raise ValueError("that invitation is for a different email address")
+    if r["role"] == "chef" and not membership(con, uid, r["household_id"]):
+        from .plans import PlanError, check_new_client
+        try:
+            check_new_client(con, uid)
+        except PlanError as e:
+            raise ValueError(str(e))
     if not membership(con, uid, r["household_id"]):
         con.execute("INSERT INTO members VALUES (?,?,?,?,?)", (r["household_id"], uid, r["person_id"], r["role"], now()))
     con.execute("UPDATE invites SET used_by = ?, used_at = ? WHERE code = ?", (uid, now(), code))

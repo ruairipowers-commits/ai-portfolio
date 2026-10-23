@@ -2,7 +2,8 @@
 // ready-made, or get a second recipe. Anyone on another part comes off the main recipe (and the shopping list).
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, TextInput, View } from "react-native";
+import { Text } from "@/components/text";
 import { api, DAY_NAME, Entry, MealPart, RecipeRow, Week } from "@/lib/api";
 import { Button, Chips, ErrorText, Field, Header, NumberField, Screen } from "@/components/ui";
 import { c, s } from "@/lib/theme";

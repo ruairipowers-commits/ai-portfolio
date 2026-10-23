@@ -2,7 +2,8 @@
 import * as Clipboard from "expo-clipboard";
 import * as Linking from "expo-linking";
 import { useEffect, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { Text } from "@/components/text";
 import { api, DAY_SHORT, DAYS } from "@/lib/api";
 import { enablePush, PushState, pushState } from "@/lib/push";
 import { useSettings } from "@/lib/useSettings";

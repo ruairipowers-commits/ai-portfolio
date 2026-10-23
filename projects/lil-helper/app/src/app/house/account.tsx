@@ -2,7 +2,8 @@
 // admin, delete the household and everything in it.
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { api, Me } from "@/lib/api";
 import { Button, ErrorText, Field, Header, LinkRow, Screen } from "@/components/ui";
 import { s } from "@/lib/theme";

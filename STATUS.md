@@ -1,7 +1,23 @@
 # Status — open items
 
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
-(or delete them) as they're done. Last updated 20 October 2026.
+(or delete them) as they're done. Last updated 23 October 2026.
+
+## 00000000000. Dinner Peace Pro: chef plans in lil-helper (23 October 2026, branch `agent/claude-dinnerpeace-pro`)
+
+Built: plans (Family Free / Family $4.99 / Chef Solo $29 / Chef Studio $59) decided on the server (`plans.py`), a
+`chef` role in client households, the chef engine (`pro.py`: cockpit, dossiers, containers, reheat cards and 4×6 /
+letter PDFs, voice notes by rules, one trip across homes with bulk splits and card routing, ledger, invoices,
+coverage packs), `pro_api.py`, `helper plans` and `helper chef-demo`, the RevenueCat webhook, and the app rebrand to
+the Dinner Peace design system (sage/kraft, Nunito, new icon) with chef tabs and a plan page. Verified offline: 114
+tests, eval 25/25 (must-reject 1.00), governance OK, `mkdocs build --strict`, chef and family screens in Chromium.
+
+- [ ] **Review and merge** the branch (nothing pushed yet without Ruairi's OK).
+- [ ] **App Store billing:** create the six products in App Store Connect and the `family`, `chef_solo`,
+      `chef_studio` entitlements in RevenueCat; set `REVENUECAT_WEBHOOK_AUTH`; add the RevenueCat SDK purchase sheet.
+- [ ] **Website (dinnerpeace.app):** copy lives in `projects/lil-helper/website` once synced from the Mac; claims not
+      built yet: offline SQLite sync, Stripe client-card billing, Walmart export, "concierge support".
+- [ ] Not built: offline use, Stripe, store routing by distance.
 
 ## 0000000000. Four voted topics run by hand; daily task failing on usage limit (20 October 2026)
 

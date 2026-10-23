@@ -1,6 +1,7 @@
 // Dinners: which days, what time each day, nights that aren't cooked, and what takeout and eating out cost.
 import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { DAY_SHORT, DAYS, NIGHT_NAME } from "@/lib/api";
 import { useSettings } from "@/lib/useSettings";
 import { AdminNote, Button, Chips, ErrorText, Field, Header, NumberField, Saved, Screen } from "@/components/ui";

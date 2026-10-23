@@ -2,7 +2,8 @@
 // or paste the link here. An invite link carries the household too, so you land straight in it.
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Image, Text, TextInput, View } from "react-native";
+import { Image, TextInput, View } from "react-native";
+import { Text } from "@/components/text";
 import { api, serverUrl, setServerUrl } from "@/lib/api";
 import { Button, ErrorText, Screen } from "@/components/ui";
 import { c, s } from "@/lib/theme";
@@ -47,9 +48,9 @@ export default function SignIn() {
   return (
     <Screen>
       <View style={{ alignItems: "center", gap: 8, marginTop: 24 }}>
-        <Image source={require("../../assets/icon.png")} style={{ width: 96, height: 96, borderRadius: 22 }} />
-        <Text style={[s.h1, { fontSize: 30 }]}><Text style={{ color: c.red }}>Lil’</Text><Text style={{ color: c.green }}>Helper</Text></Text>
-        <Text style={s.muted}>plan · shop · share the cooking</Text>
+        <Image source={require("../../assets/icon.png")} style={{ width: 96, height: 96, borderRadius: 24 }} />
+        <Text style={[s.h1, { fontSize: 30 }]}>Dinner<Text style={{ color: c.primary }}>Peace</Text></Text>
+        <Text style={s.muted}>calm weeknight dinners · and Pro for personal chefs</Text>
       </View>
       <View style={s.card}>
         <Text style={s.h2}>Sign in or get started</Text>

@@ -1,7 +1,8 @@
 // Surprise me: anything from the recipe book that's safe for the people eating, at random. Spin again if you like.
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { api, DAY_NAME, DAYS } from "@/lib/api";
 import { Button, Chips, ErrorText, Header, Screen } from "@/components/ui";
 import { c, s } from "@/lib/theme";
@@ -23,7 +24,7 @@ export default function Surprise() {
       <Header title="Surprise me" />
       <Chips multi={false} options={["dinner", "lunch", "breakfast"]} value={meal} onChange={([m]) => { setMeal(m); spin(m); }} />
       {r ? (
-        <View style={[s.card, { alignItems: "center", padding: 22, backgroundColor: "#FFFDF8", borderColor: c.amber }]}>
+        <View style={[s.card, { alignItems: "center", padding: 22, backgroundColor: c.card, borderColor: c.amber }]}>
           <Text style={{ fontSize: 44 }}>🎲</Text>
           <Text style={[s.h1, { textAlign: "center" }]}>{r.name}</Text>
           <Text style={s.muted}>{r.total} min · {r.active} hands-on{r.kcal ? ` · ~${r.kcal} kcal` : ""}{r.credit ? ` · ${r.credit}` : ""}</Text>

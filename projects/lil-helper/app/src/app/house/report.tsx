@@ -1,7 +1,8 @@
 // Reports: what food costs (per week, meal and person, planned against spent), time (cooking, shopping, planning),
 // calories planned per person per day, and who did which jobs.
 import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { Activity, api, CostReport, JOB_NAME } from "@/lib/api";
 import { Chips, ErrorText, Header, money, Screen } from "@/components/ui";
 import { c, s } from "@/lib/theme";

@@ -1,7 +1,8 @@
 // Stores, memberships, cards and budget. Card names only (benefits come from the server's card list, each with the
 // date it was last checked); never a card number.
 import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { api } from "@/lib/api";
 import { useSettings } from "@/lib/useSettings";
 import { AdminNote, Button, Chips, ErrorText, Header, money, NumberField, Saved, Screen } from "@/components/ui";

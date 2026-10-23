@@ -1,7 +1,8 @@
 // Ingredients: search anything DinnerPeace knows (and your own), and set your brand, store and price for it.
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Text, TextInput, View } from "react-native";
+import { TextInput, View } from "react-native";
+import { Text } from "@/components/text";
 import { api } from "@/lib/api";
 import { useSettings } from "@/lib/useSettings";
 import { ErrorText, Header, LinkRow, Screen, Toggle } from "@/components/ui";

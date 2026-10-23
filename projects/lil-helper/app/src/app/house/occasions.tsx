@@ -3,7 +3,8 @@
 // plan for that day follows it.
 import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { Text } from "@/components/text";
 import { api, Occasion, OccasionIn, Person } from "@/lib/api";
 import { Button, Chips, ErrorText, Field, Header, money, NumberField, Screen, Toggle } from "@/components/ui";
 import { c, s } from "@/lib/theme";

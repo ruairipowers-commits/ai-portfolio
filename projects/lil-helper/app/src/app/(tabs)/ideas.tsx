@@ -1,6 +1,7 @@
 // Cook: every way to decide what to eat, plus the recipe book.
 import { router } from "expo-router";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { LinkRow, Screen } from "@/components/ui";
 import { VoiceBar } from "@/components/voice";
 import { WayTiles } from "@/components/ways";

@@ -34,7 +34,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import BaseModel, Field
 
-from . import (__version__, accounts, alexa, recipebook, ai, catalog, chores, cookfrom, feedback, forecast, money, notify, outputs,
+from . import (__version__, accounts, alexa, plans, recipebook, ai, catalog, chores, cookfrom, feedback, forecast, money, notify, outputs,
                reports, spend, storage, store, telemetry, week)
 from .config import (ROOT, ALLERGENS, DAYS, DIETS, MEALS, NIGHT_KINDS, HouseholdError, Settings, data_root, load_household,
                      reset_tenant, save_household, set_tenant, stores as load_stores, work_root)
@@ -50,6 +50,15 @@ app = FastAPI(title="DinnerPeace", version=__version__, root_path=os.getenv("ROO
 app.include_router(alexa.router)
 app.add_middleware(CORSMiddleware, allow_origins=os.getenv("HELPER_CORS", "*").split(","), allow_methods=["*"],
                    allow_headers=["*"])
+
+
+@app.exception_handler(plans.PlanError)
+async def _plan_error(request: Request, exc: plans.PlanError):
+    """A feature the caller's plan doesn't have → 402 with what to upgrade to (the app shows the paywall)."""
+    from fastapi.responses import JSONResponse
+    return JSONResponse(status_code=402, content={"detail": {"message": str(exc), "upgrade": exc.needed,
+                                                             "upgrade_label": plans.TIERS[exc.needed]["label"],
+                                                             "feature": exc.feature}})
 
 
 @app.on_event("startup")
@@ -153,9 +162,29 @@ async def member(authorization: str = Header(default="")):
 
 
 def need(ctx: Ctx, role: str) -> None:
+    """kid < adult < admin. A chef (Dinner Peace Pro) acts as an adult, and as the admin only while the family's own
+    admin hasn't joined yet (the chef set the household up for them)."""
+    if ctx.role == "chef":
+        if role == "admin":
+            con = accounts.connect()
+            n = accounts.admin_count(con, ctx.hid)
+            con.close()
+            if n:
+                raise HTTPException(403, "the family's admin changes their settings now; ask them in the app")
+        return
     order = {"kid": 0, "adult": 1, "admin": 2}
     if order.get(ctx.role or "kid", 0) < order[role]:
         raise HTTPException(403, f"only {'an admin' if role == 'admin' else 'an adult'} in the household can do that")
+
+
+def need_plan(ctx: Ctx, feature: str) -> None:
+    """A Family feature: the household's plan (or a Pro chef in it) must have it."""
+    from . import plans
+    con = accounts.connect()
+    try:
+        plans.require_household(con, ctx.hid, feature)
+    finally:
+        con.close()
 
 
 def actor(ctx: Ctx) -> str:
@@ -269,8 +298,14 @@ def me(ctx: Ctx = Depends(signed_in)) -> dict:
     ms = accounts.memberships(con, ctx.uid)
     con.close()
     cur = next((m for m in ms if m["household_id"] == ctx.hid), None)
+    from . import plans
+    con = accounts.connect()
+    chef = plans.chef_plan(con, ctx.uid)
+    hp = plans.household_plan(con, ctx.hid) if cur else None
+    con.close()
     return {"user": {"id": ctx.uid, "email": ctx.email, "name": ctx.name}, "households": ms, "current": cur,
-            "signup": accounts.signup_mode()}
+            "signup": accounts.signup_mode(), "chef_plan": chef, "is_chef": chef != "none" or any(
+                m["role"] == "chef" for m in ms), "household_plan": hp}
 
 
 class SwitchIn(BaseModel):
@@ -759,6 +794,7 @@ _bulk: dict[str, dict] = {}
 def bulk_export(ctx: Ctx = Depends(member)) -> Response:
     """Everything the planner uses, as one Excel workbook."""
     need(ctx, "admin")
+    need_plan(ctx, "bulk")
     return _workbook()
 
 
@@ -766,6 +802,7 @@ def bulk_export(ctx: Ctx = Depends(member)) -> Response:
 def bulk_link(ctx: Ctx = Depends(member)) -> dict:
     """A five-minute download link for the workbook (phones open downloads in the browser, without the session)."""
     need(ctx, "admin")
+    need_plan(ctx, "bulk")
     return {"url": f"{public_url()}/bulk/{sign('bulk', f'{ctx.uid}|{ctx.hid}', 300)}/dinnerpeace.xlsx"}
 
 
@@ -799,6 +836,7 @@ def _workbook() -> Response:
 async def bulk_import(file: UploadFile = File(...), ctx: Ctx = Depends(member)) -> dict:
     """Read an edited workbook and show what it would change. Nothing is saved until you confirm."""
     need(ctx, "admin")
+    need_plan(ctx, "bulk")
     from . import bulk
     data = await file.read()
     if len(data) > 10_000_000:
@@ -1042,6 +1080,7 @@ class AheadPlanIn(BaseModel):
 def plan_ahead(body: AheadPlanIn, ctx: Ctx = Depends(member)) -> dict:
     """Make a plan for the coming weeks (or months) and stick with it: drafts each week that has no plan yet."""
     need(ctx, "adult")
+    need_plan(ctx, "plan_ahead")
     weeks = [_week(body.start) + dt.timedelta(weeks=n) for n in range(body.weeks)]
     out = []
     con = store.connect()
@@ -2112,6 +2151,7 @@ class CookFromIn(BaseModel):
 
 @app.post("/api/cookfrom")
 def cook_from(body: CookFromIn, ctx: Ctx = Depends(member)) -> dict:
+    need_plan(ctx, "cookfrom")
     h = _hh()
     c = catalog.for_household(h)
     return cookfrom.suggest(h, c, PriceBook(h, dt.date.today(), catalog=c), text=body.text, use_pantry=body.use_pantry,
@@ -2359,11 +2399,13 @@ def add_device(body: DeviceIn, ctx: Ctx = Depends(member)) -> dict:
 
 @app.get("/api/print/week.pdf")
 def print_week(week: str | None = None, ctx: Ctx = Depends(member)) -> Response:
+    need_plan(ctx, "print")
     return Response(outputs.week_pdf(_hh(), _stored(_week(week))), media_type="application/pdf")
 
 
 @app.get("/api/print/month.pdf")
 def print_month(month: str | None = None, ctx: Ctx = Depends(member)) -> Response:
+    need_plan(ctx, "print")
     y, mth = map(int, (month or dt.date.today().strftime("%Y-%m")).split("-"))
     con = store.connect()
     weeks = [store.get_week(con, r["week_of"]) for r in con.execute("SELECT week_of FROM weeks ORDER BY week_of")]
@@ -2393,3 +2435,8 @@ def savings_report(weeks: int = 8, ctx: Ctx = Depends(member)) -> dict:
 def root() -> str:
     return PAGE.format(body="<div class='card'><p>This is the DinnerPeace server the app talks to.</p>"
                             "<p class='m'>Get the app, then sign in with your email.</p></div>")
+
+
+# Dinner Peace Pro (the personal-chef app) and plans: last, so its routes can use the dependencies above
+from . import pro_api  # noqa: E402
+app.include_router(pro_api.router)

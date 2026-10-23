@@ -50,6 +50,16 @@ cards:
     verified: 2026-10-11
     source: https://www.americanexpress.com/us/credit-cards/card/blue-cash-everyday/
 
+  amex_gold:
+    name: "Amex Gold"
+    network: amex
+    earn:
+      supermarket: {points: 4, program: amex_membership_rewards, annual_cap: 25000}
+      restaurant: {points: 4, program: amex_membership_rewards}
+      default: {points: 1, program: amex_membership_rewards}
+    verified: 2026-10-23
+    source: https://onemileatatime.com/best-cards-for-groceries/   # third-party summary; confirm with Amex
+
   amex_platinum:
     name: "Amex Platinum"
     network: amex

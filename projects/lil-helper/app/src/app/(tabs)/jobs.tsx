@@ -1,7 +1,8 @@
 // Jobs: who cooks, does dishes, sets the table, helps in the kitchen and feeds the dog, by day. Tap a name to hand
 // the job to someone else who can do it (the server checks ages and who's home).
 import { useEffect, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { Text } from "@/components/text";
 import { api, Chore, DAY_NAME, DAYS, JOB_NAME } from "@/lib/api";
 import { useWeek } from "@/lib/useWeek";
 import { ErrorText, Screen } from "@/components/ui";

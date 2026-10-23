@@ -22,6 +22,10 @@
   helper household create NAME --email E --you N  a household with you as admin (server setup without the app)
   helper household import FILE --email E --person ID   bring an existing household.yaml into an account
   helper household list                          households on this server
+  helper plans set PLAN --email E [--until DATE] a chef plan (none, chef_solo, chef_studio) for that account, or
+               --target HOUSEHOLD_ID for a household plan (free, family, beta); RevenueCat does this in production
+  helper plans show --email E                    a person's chef plan and their households' plans
+  helper chef-demo --email E                     a fictional chef on Chef Studio with three client households
   helper serve | ui                              API (FastAPI) | Streamlit demo
 
   --household ID  (any command) work in that household's folder on this server
@@ -315,6 +319,41 @@ def cmd_household(a) -> int:
     return 0
 
 
+def cmd_plans(a) -> int:
+    from . import accounts, plans
+    con = accounts.connect()
+    if a.action == "show":
+        u = accounts.user_by_email(con, a.email)
+        if not u:
+            print("no account with that email")
+            return 1
+        print(f"{a.email}: chef plan {plans.chef_plan(con, u['id'])}, "
+              f"{len(plans.chef_client_ids(con, u['id']))} client household(s)")
+        for m in accounts.memberships(con, u["id"]):
+            print(f"  {m['household_id']} {m['name']} ({m['role']}): {plans.household_plan(con, m['household_id'])}")
+        return 0
+    try:
+        if a.target:
+            plans.set_household_plan(con, a.target, a.plan, a.until)
+            print(f"household {a.target}: {a.plan}" + (f" until {a.until}" if a.until else ""))
+        else:
+            u = accounts.get_or_create_user(con, a.email)
+            plans.set_chef_plan(con, u["id"], a.plan, a.until)
+            print(f"{a.email}: {a.plan}" + (f" until {a.until}" if a.until else ""))
+    except ValueError as e:
+        print(e)
+        return 2
+    return 0
+
+
+def cmd_chef_demo(a) -> int:
+    from . import chefdemo
+    out = chefdemo.seed(a.email)
+    print(f"{a.email} is on Chef Studio with {len(out['clients'])} client households: "
+          + ", ".join(out["clients"].values()) + ". Sign in to the app with that email.")
+    return 0
+
+
 def cmd_serve(a) -> int:
     import uvicorn
     uvicorn.run("lilhelper.api:app", host=a.host, port=a.port)
@@ -396,6 +435,14 @@ def main(argv: list[str] | None = None) -> int:
     sp.add_argument("--email")
     sp.add_argument("--you", default="Me")
     sp.add_argument("--person")
+    sp = add("plans", cmd_plans)
+    sp.add_argument("action", choices=["set", "show"])
+    sp.add_argument("plan", nargs="?")
+    sp.add_argument("--email")
+    sp.add_argument("--target", help="a household id (household plans)")
+    sp.add_argument("--until", help="UTC date or time the plan ends")
+    sp = add("chef-demo", cmd_chef_demo)
+    sp.add_argument("--email", required=True)
     sp = add("serve", cmd_serve)
     sp.add_argument("--host", default=os.getenv("HOST", "127.0.0.1"))
     sp.add_argument("--port", type=int, default=int(os.getenv("PORT", "8650")))

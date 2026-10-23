@@ -1,5 +1,5 @@
 import Tabs from "expo-router/js-tabs";
-import { Text } from "react-native";
+import { Text } from "@/components/text";
 import { c } from "@/lib/theme";
 
 const icon = (glyph: string) => ({ focused }: { focused: boolean }) =>
@@ -7,8 +7,8 @@ const icon = (glyph: string) => ({ focused }: { focused: boolean }) =>
 
 export default function TabsLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: c.red, tabBarInactiveTintColor: c.muted,
-      tabBarStyle: { backgroundColor: "#FFFDF8", borderTopColor: c.line } }}>
+    <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: c.primary, tabBarInactiveTintColor: c.muted,
+      tabBarStyle: { backgroundColor: c.parchment, borderTopColor: c.line } }}>
       <Tabs.Screen name="index" options={{ title: "Today", tabBarIcon: icon("🌞") }} />
       <Tabs.Screen name="plan" options={{ title: "Week", tabBarIcon: icon("🍎") }} />
       <Tabs.Screen name="ideas" options={{ title: "Cook", tabBarIcon: icon("🍳") }} />

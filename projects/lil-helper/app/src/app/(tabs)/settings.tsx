@@ -3,10 +3,12 @@
 import * as WebBrowser from "expo-web-browser";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { api, Me, serverUrl, signOut } from "@/lib/api";
 import { Button, ErrorText, LinkRow, money, Pill, Screen } from "@/components/ui";
-import { s } from "@/lib/theme";
+import { mode } from "@/lib/mode";
+import { c, s } from "@/lib/theme";
 
 export default function Home() {
   const [me, setMe] = useState<Me | null>(null);
@@ -37,6 +39,18 @@ export default function Home() {
             own estimate of planning time before DinnerPeace.</Text>
         </View>
       ) : null}
+      {me?.is_chef ? (
+        <View style={[s.card, { backgroundColor: c.proSoft, borderColor: "#E5DFD6" }]}>
+          <LinkRow icon="🧑‍🍳" title="Back to your chef cockpit" sub="Dinner Peace Pro" onPress={() => { mode.family = false;
+            router.replace("/chef" as never); }} />
+        </View>) : null}
+      <View style={s.card}>
+        <Text style={s.h2}>Plan</Text>
+        <LinkRow icon="✨" title={me?.household_plan?.via_chef ? "Dinner Peace Family (from your chef)" :
+          me?.household_plan?.plan === "free" ? "Family Free" : "Dinner Peace Family"} sub="Plans for families and personal chefs"
+          onPress={go("/plans")} />
+        <LinkRow icon="🧑‍🍳" title="Your personal chef" sub="What's in the fridge, how to reheat it, invite your chef" onPress={go("/house/chef")} />
+      </View>
       <View style={s.card}>
         <Text style={s.h2}>Household</Text>
         <LinkRow icon="👪" title="People" sub="Add, invite, birthdays, allergies, who's home when" onPress={go("/house/people")} />

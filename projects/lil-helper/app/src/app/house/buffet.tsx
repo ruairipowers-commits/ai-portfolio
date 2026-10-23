@@ -1,7 +1,8 @@
 // Weekly buffet: for a meal you don't want a recipe per day (say breakfasts), keep a few things on hand — N portions
 // of each — and count what's left once a week before shopping. The plan cooks just enough to get back to N.
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, TextInput, View } from "react-native";
+import { Text } from "@/components/text";
 import { api, BuffetItem, RecipeRow } from "@/lib/api";
 import { Button, Chips, ErrorText, Header, NumberField, Screen, Toggle } from "@/components/ui";
 import { c, s } from "@/lib/theme";

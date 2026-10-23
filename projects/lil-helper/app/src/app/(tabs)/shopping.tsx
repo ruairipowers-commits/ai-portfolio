@@ -2,7 +2,8 @@
 // the Whole Foods app or Reminders, or an aisle-ordered list for Trader Joe's. DinnerPeace never buys anything.
 import * as WebBrowser from "expo-web-browser";
 import { useCallback, useState } from "react";
-import { Share, Text, View } from "react-native";
+import { Share, View } from "react-native";
+import { Text } from "@/components/text";
 import { useFocusEffect } from "expo-router";
 import { api, ApiError, DAY_NAME, Order } from "@/lib/api";
 import { Button, ErrorText, money, Pill, Screen } from "@/components/ui";

@@ -2,7 +2,7 @@
   "expo": {
     "name": "DinnerPeace",
     "slug": "lil-helper",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "lilhelper",
@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FFF6E0"
+      "backgroundColor": "#FAF7F2"
     },
     "ios": {
       "supportsTablet": false,
@@ -23,7 +23,7 @@
       "package": "com.agentls.lilhelper",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#FFF6E0"
+        "backgroundColor": "#BECBB9"
       }
     },
     "web": {
@@ -44,17 +44,18 @@
       [
         "expo-notifications",
         {
-          "color": "#D7392A"
+          "color": "#476B55"
         }
       ],
       "expo-document-picker",
       [
         "expo-speech-recognition",
         {
-          "microphonePermission": "DinnerPeace listens when you tap the microphone, so you can say what you have or ask what's for dinner.",
+          "microphonePermission": "DinnerPeace listens when you tap the microphone, so you can say what you have, ask what's for dinner, or (chefs) log what you cooked.",
           "speechRecognitionPermission": "DinnerPeace turns what you say into text to find recipes and answer questions."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": false

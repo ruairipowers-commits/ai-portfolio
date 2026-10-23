@@ -2,7 +2,8 @@
 // the freezer, and freezer meals.
 import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { Text } from "@/components/text";
 import { api, Storage } from "@/lib/api";
 import { useSettings } from "@/lib/useSettings";
 import { AdminNote, Button, ErrorText, Field, Header, NumberField, Pill, Saved, Screen, Toggle } from "@/components/ui";

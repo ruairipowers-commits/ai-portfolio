@@ -1,6 +1,7 @@
 // Calendar and notifications: subscribe once in your own calendar app; it updates itself.
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { api } from "@/lib/api";
 import { LoopCard } from "@/components/house";
 import { Button, ErrorText, Header, Screen } from "@/components/ui";

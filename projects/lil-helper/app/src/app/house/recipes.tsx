@@ -1,7 +1,8 @@
 // Recipes: the household's own first, then the built-in book. Tap to see one; add your own with the + button.
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Text, TextInput, View } from "react-native";
+import { TextInput, View } from "react-native";
+import { Text } from "@/components/text";
 import { api, RecipeRow } from "@/lib/api";
 import { Button, Chips, ErrorText, Header, LinkRow, Screen } from "@/components/ui";
 import { s } from "@/lib/theme";

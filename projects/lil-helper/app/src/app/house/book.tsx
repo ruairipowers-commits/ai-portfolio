@@ -3,7 +3,8 @@
 import * as DocumentPicker from "expo-document-picker";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Platform, Share, Text, TextInput, View } from "react-native";
+import { Platform, Share, TextInput, View } from "react-native";
+import { Text } from "@/components/text";
 import { api, BookImport } from "@/lib/api";
 import { Button, ErrorText, Header, Screen } from "@/components/ui";
 import { c, s } from "@/lib/theme";

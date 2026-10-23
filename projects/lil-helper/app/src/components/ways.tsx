@@ -1,15 +1,16 @@
 // The ways to decide what to eat, as big friendly tiles (Today and the Cook tab).
 import { router } from "expo-router";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { Text } from "@/components/text";
 import { c, s } from "@/lib/theme";
 
 export const WAYS = [
-  { icon: "🗓️", title: "Make a plan", sub: "A week or months ahead, and stick to it", to: "/house/plan-ahead", bg: "#E6F4E1" },
-  { icon: "✨", title: "Vibe cooking", sub: "Your time, your mood, ideas now", to: "/house/vibe", bg: "#FFF3D6" },
-  { icon: "🧺", title: "What I've got", sub: "Use up what's in the kitchen", to: "/house/cookfrom", bg: "#FDE7E3" },
-  { icon: "🎉", title: "Special occasion", sub: "Birthdays, holidays, parties", to: "/house/occasions", bg: "#EDE7FB" },
-  { icon: "🥣", title: "Weekly buffet", sub: "Portions on hand, no daily recipe", to: "/house/buffet", bg: "#E3F1FB" },
-  { icon: "🎲", title: "Surprise me", sub: "Anything from the book", to: "/house/surprise", bg: "#FFF8EC" },
+  { icon: "🗓️", title: "Make a plan", sub: "A week or months ahead, and stick to it", to: "/house/plan-ahead", bg: "#EBF2ED" },
+  { icon: "✨", title: "Vibe cooking", sub: "Your time, your mood, ideas now", to: "/house/vibe", bg: "#FFF2D9" },
+  { icon: "🧺", title: "What I've got", sub: "Use up what's in the kitchen", to: "/house/cookfrom", bg: "#F6EFE6" },
+  { icon: "🎉", title: "Special occasion", sub: "Birthdays, holidays, parties", to: "/house/occasions", bg: "#F4EFE6" },
+  { icon: "🥣", title: "Weekly buffet", sub: "Portions on hand, no daily recipe", to: "/house/buffet", bg: "#EEF1F2" },
+  { icon: "🎲", title: "Surprise me", sub: "Anything from the book", to: "/house/surprise", bg: "#FAF7F2" },
 ] as const;
 
 export function WayTiles({ compact = false }: { compact?: boolean }) {
