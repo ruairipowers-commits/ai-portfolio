@@ -1,7 +1,19 @@
 # Status — open items
 
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
-(or delete them) as they're done. Last updated 16 October 2026.
+(or delete them) as they're done. Last updated 20 October 2026.
+
+## 0000000000. Four voted topics run by hand; daily task failing on usage limit (20 October 2026)
+
+- The "Daily blog post" scheduled task has fired daily but its runs fail with USAGE_LIMIT_REACHED; no post PRs since
+  14 Oct. Its prompt still says to commit routing-runs.jsonl with the post (the skill now pushes it to `routing-log`);
+  updating the prompt needs Ruairi's approval on the Mac.
+- Ran the four voted topics through the full pipeline in a chat session: PRs #50 CoreWeave, #51 vLLM KV transfer,
+  #52 FDE-Gym (ready-to-publish), #53 SageMaker JumpStart (needs-work: originality 3 after one revision).
+- Routing log: 10 rows (4 local-review, 6 claude-only). First paired result: local drafts didn't cut Claude's writing
+  (median -14% on 3 topics); gpt-oss:20b drafts had 11-12 defects each and scored 2 on accuracy before revision.
+  The claude-only arm gets no revision round, so the comparison favours it on writing volume; both arms' first
+  drafts scored 2 on accuracy.
 
 ## 000000000. Run log on its own branch; Python image bumps off (14 October 2026, night)
 
