@@ -169,6 +169,48 @@ children's data under COPPA. The
 [plan](https://github.com/{{GITHUB_OWNER}}/ai-portfolio/blob/main/projects/lil-helper/docs/aws-native.md) lists each
 step, and a Terraform starter (not applied to a live account) covers the storage and scheduler pieces.
 
+## Update, 23 October 2026: Dinner Peace Pro for personal chefs
+
+A personal chef who cooks for several families has the same problem as one household, times the number of
+kitchens, plus receipts to pay back and someone to cover when they're sick. So DinnerPeace now has a higher plan
+for them. **Chef Solo** ($29 a month, up to three homes) and **Chef
+Studio** ($59, any number) sit on the chef's own account; the families they cook for get the family app free.
+
+The design choice I cared most about was where the family's data lives. I didn't build a separate chef app with
+copies of each family's allergies. A chef is a fourth role, `chef`, inside each client household. The allergies, likes,
+brands and the week stay where they were; the chef reads them and adds to them, and the family sees the numbered
+containers and reheating steps the chef left in their own Today screen. The chef's business records (visit days,
+who pays for groceries, door codes, the ledger) live in a database of the chef's own. Every chef request checks that they're
+the chef for that household; that's a golden must-reject case now, along with the rest below.
+
+What the chef gets:
+
+- **"What do I do next?"** Today's kitchens in time order, the next step in each ("Cook beef and broccoli, 3
+  servings, and pack container #3"), the strictest allergy in red, containers to use soon, and the next store stop
+  with the card to pay with.
+- **Voice notes with wet hands.** "At the Millers. Chucked the leftover lasagna, made 4 portions of short ribs.
+  Freeze two, fridge two. Reheat at 350 for 25 minutes covered. They're out of olive oil." That becomes a preview
+  (toss #1, two containers, a reheat card, olive oil on their list), and nothing is saved until the chef taps confirm. Rules
+  do the parsing, as with the family's voice requests: predictable, private and testable. If a dish points to an
+  allergen someone in that house has ("mac and cheese" where a child can't have dairy), the whole note is refused
+  before anything changes, and if the chef confirms it's right, the label says *Contains: dairy*.
+- **One shopping trip across homes (Studio).** It tries every set of up to two stores, scores each one on item cost
+  plus the chef's time in the store, merges lines across the homes the chef pays for, and splits each line by quantity. A 4 lb
+  pack of beef for two homes needing 2.4 and 1.6 lb is 60/40, and the shares add up to the cent (largest remainder).
+  Homes that pay with their own card get their own checkout. At each stop the card that earns the most is picked
+  (Amex Gold at a supermarket, the Costco Visa at Costco), and marking a checkout paid puts each home's share on the
+  ledger, ready to invoice.
+- **Coverage packs (Studio).** If the chef is sick, a backup gets a link that opens only with a password sent
+  separately by text, only between the dates set. By default it leaves out door codes.
+
+The server decides what each plan unlocks; a locked feature answers 402 and the app shows the plan page. Allergy
+and pet rules are never behind a plan. Billing is the part I haven't finished: the RevenueCat webhook and plan
+rules are built and tested, but the in-app purchase sheet waits for App Store Connect products. Until then an admin
+command turns a plan on. The app also moved to the brand's look (sage, kraft and Nunito) with the new icon.
+
+Tested offline: 13 new tests and five new golden cases (`k01`–`k05`), 25 of 25 eval cases passing with must-reject
+recall 1.00, and the chef screens walked through in Chromium on a fictional chef with three homes.
+
 ## What I'd do next / limits
 
 - **Real weeks.** Every number above comes from a simulated family and synthetic prices. The next step is our own
