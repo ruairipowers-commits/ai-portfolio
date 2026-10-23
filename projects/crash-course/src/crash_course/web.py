@@ -25,7 +25,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markdown_it import MarkdownIt
 
-from . import accounts, ai, builder, catalog, checks, demo, jobs, mailer, moderation, quiz, revise, telemetry, tracker
+from . import accounts, ai, builder, catalog, checks, demo, jobs, mailer, moderation, ownerapi, quiz, revise, telemetry, tracker
 from .config import LEVELS, PKG, Settings, root
 from .schemas import Assessment
 from .store import connect, insert, now, one, rows
@@ -128,19 +128,22 @@ def create_app(start_worker: bool = False) -> FastAPI:
         return page(req, "home.html", count=len(courses), cats=cats)
 
     @app.get("/catalog", response_class=HTMLResponse)
-    def catalog_page(req: Request, q: str = "", cat: str = ""):
+    def catalog_page(req: Request, q: str = "", cat: str = "", tag: str = ""):
         with connect() as conn:
             courses = list(catalog.all_courses(conn).values())
             u = me(req)
             mine = {r["course"] for r in rows(conn, "SELECT course FROM enrollments WHERE learner_id=?", u["id"])} if u else set()
         ql = q.strip().lower()[:60]
-        shown = [c for c in courses if (not cat or c.category == cat)
-                 and (not ql or ql in c.title.lower() or ql in c.summary.lower() or ql in c.category.lower())]
+        tag = tag.strip().lower()[:30]
+        shown = [c for c in courses if (not cat or c.category == cat) and (not tag or tag in c.tag_list())
+                 and (not ql or ql in c.title.lower() or ql in c.summary.lower() or ql in c.category.lower()
+                      or any(ql in t for t in c.tag_list()))]
         groups: dict[str, list] = {}
         for c in sorted(shown, key=lambda c: (c.category, c.title.lower())):
             groups.setdefault(c.category, []).append(c)
-        return page(req, "catalog.html", groups=groups, q=q[:60], cat=cat, mine=mine, total=len(courses),
-                    cats=sorted({c.category for c in courses}), user=u)
+        tag_groups = {k: sorted({t for c in courses for t in c.tags.get(k, [])}) for k in catalog.TAG_KINDS}
+        return page(req, "catalog.html", groups=groups, q=q[:60], cat=cat, tag=tag, mine=mine, total=len(courses),
+                    cats=sorted({c.category for c in courses}), tag_groups=tag_groups, user=u)
 
     @app.get("/course/{slug}", response_class=HTMLResponse)
     def course_page(req: Request, slug: str):
@@ -208,7 +211,7 @@ def create_app(start_worker: bool = False) -> FastAPI:
         return go(f"/tracker#c-{course}")
 
     @app.get("/tracker", response_class=HTMLResponse)
-    def tracker_page(req: Request):
+    def tracker_page(req: Request, tag: str = ""):
         u, redirect = need_user(req, "/tracker")
         if redirect:
             return redirect
@@ -216,7 +219,10 @@ def create_app(start_worker: bool = False) -> FastAPI:
             st = tracker.state(conn, s, u["id"])
             mine = rows(conn, "SELECT id, text, status, created_at, course_slug FROM suggestions WHERE learner_id=? "
                               "ORDER BY id DESC LIMIT 10", u["id"])
-        return page(req, "tracker.html", courses=st, suggestions=mine, user=u)
+        tag = tag.strip().lower()[:30]
+        tags = sorted({t for e in st for t in e["course"].tag_list()})
+        shown = [e for e in st if not tag or tag in e["course"].tag_list()]
+        return page(req, "tracker.html", courses=shown, suggestions=mine, user=u, tags=tags, tag=tag, total=len(st))
 
     @app.get("/learn/{slug}/{level}", response_class=HTMLResponse)
     def learn(req: Request, slug: str, level: str):
@@ -529,6 +535,52 @@ def create_app(start_worker: bool = False) -> FastAPI:
         except telemetry.WorkflowDisabled:
             done = "The workflow is paused by the governance console"
         return go(f"/owner?done={quote(done[:200])}")
+
+    # ------------------------------------------------------------ owner API (JobHunt): see ownerapi.py
+    def owner_api(req: Request):
+        ok = ownerapi.token_ok(req.headers.get("authorization"))
+        if ok is None:
+            return JSONResponse({"detail": "Not Found"}, status_code=404)       # disabled: looks like nothing is here
+        allowed = limiter.allow("owner-api", client_ip(req), 120, 3600)    # counts wrong tokens too (no guessing)
+        if not allowed:
+            return JSONResponse({"error": "rate limited"}, status_code=429)
+        if not ok:
+            return JSONResponse({"error": "unauthorized"}, status_code=401)
+        return None
+
+    @app.post("/api/owner/suggestions")
+    async def api_owner_suggest(req: Request):
+        if (r := owner_api(req)) is not None:
+            return r
+        try:
+            body = await req.json()
+            assert isinstance(body, dict)
+        except Exception:
+            return JSONResponse({"error": "JSON object expected"}, status_code=400)
+        with connect() as conn:
+            code, payload = ownerapi.suggest(conn, s, body)
+        return JSONResponse(payload, status_code=code)
+
+    @app.get("/api/owner/suggestions")
+    def api_owner_statuses(req: Request, refs: str = ""):
+        if (r := owner_api(req)) is not None:
+            return r
+        with connect() as conn:
+            return JSONResponse({"suggestions": ownerapi.statuses(conn, refs.split(","))})
+
+    @app.get("/api/owner/progress")
+    def api_owner_progress(req: Request):
+        if (r := owner_api(req)) is not None:
+            return r
+        with connect() as conn:
+            return JSONResponse(ownerapi.progress(conn, s))
+
+    @app.get("/api/owner/catalog")
+    def api_owner_catalog(req: Request):
+        if (r := owner_api(req)) is not None:
+            return r
+        with connect() as conn:
+            return JSONResponse({"courses": ownerapi.catalog_list(conn)})
 
     # ------------------------------------------------------------ health
     @app.get("/api/health")

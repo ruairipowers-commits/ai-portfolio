@@ -72,6 +72,7 @@ def connect(path: Path | None = None):
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA)
+    _add_columns(conn)
     try:
         yield conn
         conn.commit()
@@ -80,6 +81,23 @@ def connect(path: Path | None = None):
         raise
     finally:
         conn.close()
+
+
+# Columns added after the first release; existing databases get them on the next connect.
+COLUMNS = {
+    "courses": {"tags": "TEXT"},                     # {"industry": [...], "function": [...], "tech": [...]}
+    "suggestions": {"source": "TEXT DEFAULT 'learner'", "client_ref": "TEXT", "tags": "TEXT", "demand": "REAL"},
+}
+
+
+def _add_columns(conn) -> None:
+    for table, cols in COLUMNS.items():
+        have = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
+        for name, decl in cols.items():
+            if name not in have:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {decl}")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_suggestions_client_ref ON suggestions(client_ref) "
+                 "WHERE client_ref IS NOT NULL")
 
 
 def one(conn, sql: str, *args) -> dict | None:

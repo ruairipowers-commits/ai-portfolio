@@ -34,6 +34,21 @@ them, and published only after the owner reviews them.
 | Beginner | 1 hour | Recap; 10 core terms; a setup checklist; a 30-minute guided project with checkpoints and "done when"; common mistakes; a cheat sheet; interview questions | 15 questions, pass mark 70% |
 | Intermediate | 4 hours | 4–5 deep-dive modules, each with an exercise and a 5-question check (pass mark 80%); production concerns; alternatives; how this portfolio uses it; a capstone with a rubric; scenario interview questions | 25-question final test, pass mark 75% |
 
+## Tags and the owner API
+
+**Tags.** Every course has industry / function / tech tags (`config/tags.yaml`; courses approved from a suggestion
+take the suggestion's tags). The catalog and the tracker filter by tag.
+
+**Owner API** (for the owner's own tools; JobHunt uses it). `Authorization: Bearer $COURSE_OWNER_API_TOKEN`; unset
+or shorter than 32 characters, the endpoints answer 404.
+
+| Endpoint | Does |
+|---|---|
+| `POST /api/owner/suggestions` | `{topic, tags, docs?, demand?, client_ref}` → a suggestion through the same screen → moderator → owner-approval flow as a learner's (idempotent on `client_ref`; 30 a day) |
+| `GET /api/owner/suggestions?refs=a,b` | status of those suggestions: pending / approved (with the course slug) / rejected / duplicate of a course |
+| `GET /api/owner/progress` | the owner's enrollments and completed levels, by course slug |
+| `GET /api/owner/catalog` | slugs, titles, categories, tags |
+
 ## Quickstart
 
 ```bash
@@ -41,7 +56,7 @@ pip install -e ".[dev]"
 course all          # offline end to end in ~25 s: checks, 12 learners, builds, suggestions, feedback, eval gate
 course serve        # learner site + owner page on http://localhost:8810 (COURSE_SHOW_LINKS=1 shows sign-in links on screen)
 course ui           # the owner's operator app (Streamlit)
-pytest -q           # 67 tests
+pytest -q           # 90 tests
 ```
 
 Owner commands: `course queue`, `course publish --all --reviewer "Your Name"`, `course decide <id> --approve --reviewer

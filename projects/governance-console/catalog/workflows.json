@@ -3634,7 +3634,7 @@
     "DATA-03": {
      "status": "partial",
      "mark": "🟡",
-     "how": "Learner data is an email (sign-in and notifications only), a display name, progress, attempt answers as option indexes, feedback and suggestions. Models never see an email or a name: the moderator gets the suggestion text and the course list; the reviser gets feedback text by id. Free-text feedback isn't redacted, so a learner could type personal data into it. Outbox rows store the recipient as a hash. Telemetry carries counts and flags only (tested: an email, a name, a suggestion and a feedback phrase never appear in the spool).",
+     "how": "Learner data is an email (sign-in and notifications only), a display name, progress, attempt answers as option indexes, feedback and suggestions. Models never see an email or a name: the moderator gets the suggestion text and the course list; the reviser gets feedback text by id. Free-text feedback isn't redacted, so a learner could type personal data into it. Outbox rows store the recipient as a hash. Telemetry carries counts and flags only (tested: an email, a name, a suggestion and a feedback phrase never appear in the spool). The owner API returns only the owner's enrollments and completed levels, never another learner's (tested); JobHunt sends a topic, tags and a demand number, never the roles behind them.",
      "configure": "`privacy.*`, `store.SCHEMA`",
      "options": "Presidio redaction of feedback before the reviser sees it"
     },
@@ -3655,7 +3655,7 @@
     "SEC-01": {
      "status": "implemented",
      "mark": "✅",
-     "how": "`COURSE_SECRET` (session and approval-link signing), `RESEND_API_KEY` and model keys come only from the environment; `.env` is git-ignored. The live image sets `COURSE_REQUIRE_SECRETS=1`, which refuses the development secret (tested). Magic-link tokens are stored as hashes and work once (tested).",
+     "how": "`COURSE_SECRET` (session and approval-link signing), `RESEND_API_KEY` and model keys come only from the environment; `.env` is git-ignored. The live image sets `COURSE_REQUIRE_SECRETS=1`, which refuses the development secret (tested). Magic-link tokens are stored as hashes and work once (tested). The owner API token (`COURSE_OWNER_API_TOKEN`, 32+ characters) is compared in constant time; unset means the API answers 404.",
      "configure": "`.env.example`",
      "options": "Secrets Manager, key rotation job"
     },
@@ -3669,7 +3669,7 @@
     "SEC-03": {
      "status": "not_applicable",
      "mark": "⚪",
-     "how": "No model has tools. The writes that matter (create a course, publish a level, apply edits) are owner actions in code, not model tool calls.",
+     "how": "No model has tools. The writes that matter (create a course, publish a level, apply edits) are owner actions in code, not model tool calls. The owner API (for JobHunt) can only queue a suggestion into the normal moderation + approval flow and read the owner's own progress; it creates, publishes and approves nothing, and wrong tokens count against a rate limit.",
      "configure": "—",
      "options": "—"
     },
@@ -3809,7 +3809,7 @@
     "HITL-02": {
      "status": "implemented",
      "mark": "✅",
-     "how": "Nothing reaches learners without the owner. A suggestion only becomes a course on the owner's approval. A topic flagged in a reject category (explicit, harassment, injection and so on) can't be approved at all: there's no button, no link, and the code refuses (tested), so a misclick can't publish it. A level, bundled or drafted, is visible only after the owner publishes it, and publishing re-runs the checks. Revisions become a new draft for the owner to publish. Approval links in email are signed and expire, and a GET only opens a confirmation page, so a mail scanner can't approve anything (tested). The live site's owner page needs the owner's own sign-in; owner actions are POST-only with an origin check. Every decision is logged with actor and time.",
+     "how": "Nothing reaches learners without the owner. A suggestion only becomes a course on the owner's approval. A topic flagged in a reject category (explicit, harassment, injection and so on) can't be approved at all: there's no button, no link, and the code refuses (tested), so a misclick can't publish it. A level, bundled or drafted, is visible only after the owner publishes it, and publishing re-runs the checks. Revisions become a new draft for the owner to publish. Approval links in email are signed and expire, and a GET only opens a confirmation page, so a mail scanner can't approve anything (tested). The live site's owner page needs the owner's own sign-in; owner actions are POST-only with an origin check. Every decision is logged with actor and time. Suggestions from the owner API are labelled \"from JobHunt\" on /owner and need the same approval; a flagged one can't be approved (tested).",
      "configure": "`approvals.*`, `/owner`",
      "options": "Second approver for security-tooling topics"
     },

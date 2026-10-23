@@ -127,3 +127,10 @@ body.has-bar { padding-top: 88px; }
 .tbl .actions { white-space: nowrap; }
 .tbl .actions form { display: inline; margin: 0; }
 details summary { cursor: pointer; color: var(--link); margin: 6px 0; }
+
+/* course tags (config/tags.yaml): chips on the catalog, course page and tracker */
+.tagbar { margin: 4px 0 18px; display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+.tag { display: inline-block; padding: 1px 9px; border: 1px solid var(--line); border-radius: 999px; font-size: 12px;
+  color: var(--link); text-decoration: none; margin: 0 4px 4px 0; }
+.tag:hover { border-color: var(--link); }
+.tag.on { background: var(--link); color: #fff; border-color: var(--link); }
