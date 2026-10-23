@@ -11,6 +11,7 @@ Learners always get the newest published version; the owner reviews the newest d
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -21,6 +22,24 @@ from .config import LEVELS, data_dir, root
 from .schemas import Level
 
 FRONT = re.compile(r"^---\n(.*?)\n---\n", re.S)
+TAG_KINDS = ("industry", "function", "tech")
+TAG_RX = re.compile(r"^[a-z0-9][a-z0-9-]{0,29}$")
+
+
+def tags_config() -> dict:
+    p = root() / "config" / "tags.yaml"
+    return yaml.safe_load(p.read_text()) if p.exists() else {"vocabulary": {}, "courses": {}}
+
+
+def clean_tags(tags) -> dict:
+    """Only {industry|function|tech: [lowercase-dash words]}, at most 6 per kind: anything else is dropped."""
+    out = {}
+    if isinstance(tags, dict):
+        for k in TAG_KINDS:
+            vals = tags.get(k) or []
+            if isinstance(vals, list):
+                out[k] = [v for v in dict.fromkeys(str(x).strip().lower() for x in vals) if TAG_RX.match(v)][:6]
+    return out
 
 
 @dataclass
@@ -35,6 +54,10 @@ class Course:
     source_md: str = ""
     aliases: list[str] = field(default_factory=list)
     vendor: str = ""
+    tags: dict = field(default_factory=dict)        # {"industry": [...], "function": [...], "tech": [...]}
+
+    def tag_list(self) -> list[str]:
+        return [t for k in TAG_KINDS for t in self.tags.get(k, [])]
 
     @property
     def source_sha(self) -> str:
@@ -75,7 +98,14 @@ def load_source(path: Path) -> Course:
 
 
 def bundled() -> dict[str, Course]:
-    return {p.stem: load_source(p) for p in sorted(sources_dir().glob("*.md")) if p.stem != "index"}
+    tagged = tags_config().get("courses") or {}
+    out = {}
+    for p in sorted(sources_dir().glob("*.md")):
+        if p.stem != "index":
+            c = load_source(p)
+            c.tags = clean_tags(tagged.get(p.stem) or {})
+            out[p.stem] = c
+    return out
 
 
 def all_courses(conn=None) -> dict[str, Course]:
@@ -85,7 +115,8 @@ def all_courses(conn=None) -> dict[str, Course]:
         for r in conn.execute("SELECT * FROM courses WHERE status='active'").fetchall():
             out[r["slug"]] = Course(slug=r["slug"], title=r["title"], category=r["category"] or "Suggested",
                                     summary=r["summary"] or "", docs=r["docs"] or "", source_page=r["docs"] or "",
-                                    source_text=norm(r["source_text"] or ""), source_md=r["source_text"] or "")
+                                    source_text=norm(r["source_text"] or ""), source_md=r["source_text"] or "",
+                                    tags=clean_tags(json.loads(r["tags"]) if r["tags"] else {}))
     return out
 
 

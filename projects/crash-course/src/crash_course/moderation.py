@@ -172,7 +172,7 @@ def decide(conn, s: Settings, sid: int, decision: str, actor: str, title: str = 
         outline = "\n".join(f"- {o}" for o in a.proposed_outline)
         insert(conn, "courses", slug=slug, title=title, category=category, summary=(a.proposed_outline or [""])[0],
                docs=docs or a.official_docs, source_text=(notes or "") + ("\n" + outline if outline else ""),
-               suggestion_id=sid, created_at=now())
+               suggestion_id=sid, created_at=now(), tags=row.get("tags"))     # a suggestion's tags carry over
         jobs.enqueue(conn, "build", slug, "familiar")
     conn.execute("UPDATE suggestions SET status=?, decided_by=?, decided_at=?, decision_note=?, course_slug=? "
                  "WHERE id=?", ("approved" if decision == "approve" else "rejected", actor, now(), notes[:500], slug,
@@ -188,4 +188,6 @@ def parse(row: dict) -> dict:
     out = dict(row)
     out["assessment"] = json.loads(row["assessment"]) if row.get("assessment") else {}
     out["screen"] = json.loads(row["screen"]) if row.get("screen") else {}
+    tags = json.loads(row["tags"]) if row.get("tags") else {}
+    out["tags_list"] = [t for k in ("industry", "function", "tech") for t in (tags.get(k) or [])]
     return out

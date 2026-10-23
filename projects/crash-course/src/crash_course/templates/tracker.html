@@ -5,6 +5,7 @@
 {% if not courses %}
 <div class="card"><p>You haven't signed up for a course yet.</p><p><a class="btn" href="{{ R }}/catalog">Choose a course</a></p></div>
 {% endif %}
+{% if tags %}<div class="tagbar small"><span class="muted">filter:</span>{% for t in tags %}<a class="tag {{ 'on' if t == tag }}" href="{{ R }}/tracker?tag={{ t }}">{{ t }}</a>{% endfor %}{% if tag %}<a class="small" href="{{ R }}/tracker">all {{ total }} courses</a>{% endif %}</div>{% endif %}
 {% for t in courses %}{% set c = t.course %}
 <div class="card track" id="c-{{ c.slug }}">
   <div class="track-head">
