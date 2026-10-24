@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dinner Peace Pro Portal — The Operating System for Personal Chefs</title>
+  <meta name="description" content="Dinner Peace Pro is the mobile-first operations portal for personal chefs managing multiple households. Morning cockpit, batched grocery splitting, card rewards reimbursement, 4x6 thermal reheat labels, and voice-driven field entry.">
+  <link rel="icon" type="image/png" href="assets/FinalIcon.png">
+
+  <!-- Google Fonts: Nunito -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ==========================================================================
+       HEADER & NAVIGATION
+       ========================================================================== -->
+  <header class="site-header">
+    <div class="container nav-container">
+      <a href="#" class="brand-logo">
+        <img src="assets/FinalIcon.png" alt="Dinner Peace Pro Icon" style="image-rendering:-webkit-optimize-contrast;">
+        <span>Dinner<span class="highlight">Peace</span> <span style="font-size:0.8rem; background:var(--kraft-soft); color:var(--kraft-deep); padding:2px 8px; border-radius:999px; border:1px solid #E5DFD6; margin-left:4px;">PRO PORTAL</span></span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="#pro-portal" style="color:var(--kraft-deep); font-weight:900;">⚡ Pro Portal</a></li>
+        <li><a href="#cockpit">Morning Cockpit</a></li>
+        <li><a href="#shopping-ledger">Batched Shopping</a></li>
+        <li><a href="#reheat-engine">4x6 Reheat Labels</a></li>
+        <li><a href="#coverage-pack">Coverage Pack</a></li>
+        <li><a href="#ecosystem">7-Day Flywheel</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+      </ul>
+
+      <div class="nav-cta">
+        <a href="#pro-portal" class="btn btn-pro btn-sm">Launch Portal Demo</a>
+        <a href="#install" class="btn btn-secondary btn-sm" style="display:none; @media(min-width:1024px){display:inline-flex;}">Family App</a>
+        <button class="mobile-toggle" aria-label="Toggle navigation">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       HERO SECTION — PRO PORTAL OPERATIONS ENGINE
+       ========================================================================== -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-content">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <span class="pill pill-pro" style="font-weight:900;">
+            👨‍🍳 OPERATING SYSTEM FOR PERSONAL CHEFS
+          </span>
+          <span class="pill">
+            ⚡ Offline-First &amp; Voice-Driven
+          </span>
+        </div>
+
+        <h1 class="hero-title">
+          The all-in-one Pro Portal for <span class="accent-sage">chefs managing multiple households.</span>
+        </h1>
+
+        <p class="hero-subtitle">
+          Replace fragmented spreadsheets, messy client text threads, and receipt chaos. Dinner Peace Pro unifies your morning prep cockpit, cross-household bulk grocery splitting, credit card rewards reimbursement, 4x6 thermal reheat labels, and backup chef delegation.
+        </p>
+
+        <div class="hero-actions">
+          <a href="#pro-portal" class="btn btn-pro">
+            Launch Interactive Pro Portal
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V8H8"/></svg>
+          </a>
+          <a href="#ecosystem" class="btn btn-secondary">
+            Explore 7-Day Client Flywheel
+          </a>
+        </div>
+
+        <div class="hero-social-proof">
+          <div class="proof-avatars">
+            <span>👨‍🍳</span>
+            <span>🥩</span>
+            <span>🧊</span>
+            <span>🖨️</span>
+          </div>
+          <div class="proof-text">
+            <strong>Engineered for private culinary pros.</strong> Managing 3 to 15+ households with calm, zero-error precision.
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-visual-wrapper">
+        <div class="hero-icon-card">
+          <img src="assets/FinalIcon.png" alt="Dinner Peace Pro High-Resolution Icon" style="image-rendering:-webkit-optimize-contrast;">
+          
+          <div class="floating-badge badge-top-left">
+            <span>⚡</span>
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">Morning Cockpit</div>
+              <div style="font-size:0.9rem; font-weight:800; color:var(--kraft-deep);">Miller Family (1:00 PM)</div>
+            </div>
+          </div>
+
+          <div class="floating-badge badge-bottom-right">
+            <span>🖨️</span>
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">Reheat Engine</div>
+              <div style="font-size:0.9rem; font-weight:800; color:var(--sage-deep);">4x6 Thermal Labels Ready</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       THE CORE INTERACTIVE PRO PORTAL SECTION (PRO_SPEC.md)
+       ========================================================================== -->
+  <section id="pro-portal" class="section pro-portal-section">
+    <div class="container">
+      <div class="section-header">
+        <div style="display:flex; gap:10px; justify-content:center; margin-bottom:12px;">
+          <span class="pill pill-pro" style="font-weight:900;">PRO PORTAL DEMO</span>
+          <span class="pill pill-kraft">LIVE KITCHEN OPERATING SYSTEM</span>
+        </div>
+        <h2 style="font-size: 2.8rem;">Experience the Dinner Peace Pro Portal</h2>
+        <p style="font-size: 1.15rem; color: var(--text-secondary); max-width: 840px;">
+          Explore the 5 core operational modules built directly for personal chefs. Switch between tabs below to test the live cockpit, shopping ledger, thermal label printer, hands-free voice engine, and colleague coverage pack:
+        </p>
+      </div>
+
+      <!-- 5-Module Navigation Bar -->
+      <div class="portal-nav-bar">
+        <button class="portal-nav-tab active" data-portal-target="pane-cockpit">
+          <span>⚡</span> 1. Morning Cockpit ("What's Next?")
+        </button>
+        <button class="portal-nav-tab" data-portal-target="pane-shopping">
+          <span>🛒</span> 2. Batched Shopping &amp; Card Split
+        </button>
+        <button class="portal-nav-tab" data-portal-target="pane-reheat">
+          <span>🖨️</span> 3. Digital Reheat &amp; 4x6 Labels
+        </button>
+        <button class="portal-nav-tab" data-portal-target="pane-voice">
+          <span>🎙️</span> 4. Voice Field Logger
+        </button>
+        <button class="portal-nav-tab" data-portal-target="pane-coverage">
+          <span>🤝</span> 5. Colleague Coverage Pack
+        </button>
+      </div>
+
+      <!-- Portal Cockpit Outer Frame -->
+      <div class="portal-cockpit">
+
+        <!-- ==================================================================
+             PANE 1: THE CHEF'S MORNING COCKPIT (Module 1)
+             ================================================================== -->
+        <div id="pane-cockpit" class="portal-content-pane active">
+          <!-- Critical Hazard Banner -->
+          <div class="hazard-banner">
+            <span style="font-size:1.4rem;">⚠️</span>
+            <div>
+              CRITICAL HAZARD ALERT: Child #2 (Leo Miller, Age 7) has a Severe Tree Nut Allergy (Anaphylactic).
+              <span style="font-weight:600; margin-left:6px; color:#6B1212;">Zero almonds, walnuts, or cross-contact oils allowed in this kitchen.</span>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1.2fr 0.8fr; gap:28px;">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span class="pill" style="background:#E2ECE5; color:#2F4A39;">NEXT UP TODAY</span>
+                <span style="font-size:0.85rem; font-weight:800; color:var(--kraft-deep);">Household Priority #1</span>
+              </div>
+              <h3 style="font-size:1.6rem; margin-bottom:6px;">Miller Household Prep Window</h3>
+              <p style="font-size:0.95rem; color:var(--text-secondary); margin-bottom:18px;">
+                1:00 PM – 4:30 PM · Westport, CT · Gate Code: <strong>#4821</strong> · Weekly Budget: $350
+              </p>
+
+              <!-- Operational Next Step Card -->
+              <div style="background:#FAF7F2; padding:20px; border-radius:var(--radius-md); border:2px solid var(--kraft-deep); margin-bottom:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <span style="font-size:0.82rem; font-weight:900; color:var(--kraft-deep); text-transform:uppercase; letter-spacing:0.06em;">⚡ WHAT DO I NEED TO DO NEXT?</span>
+                  <span class="pill" style="padding:2px 8px; font-size:0.75rem;">Step 3 of 6</span>
+                </div>
+                <div style="font-size:1.15rem; font-weight:900; color:var(--text-primary);">
+                  Sear 4 portions of boneless prime short ribs in Dutch oven #1 &amp; prep mirepoix.
+                </div>
+                <div style="font-size:0.88rem; color:var(--text-muted); margin-top:6px;">
+                  Subsequent Step: Pack Glass Containers #1 &amp; #2 -> Label for Friday dinner -> Drive to Davis Residence (5:00 PM).
+                </div>
+              </div>
+
+              <!-- Quick Client Preferences Grid -->
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div style="background:#FFF; padding:14px; border-radius:var(--radius-sm); border:1px solid var(--border-subtle);">
+                  <div style="font-size:0.78rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Brand Safeguards</div>
+                  <div style="font-weight:700; font-size:0.92rem; color:var(--text-primary); margin-top:2px;">Organic Valley Dairy · Pasture Bird Poultry</div>
+                </div>
+                <div style="background:#FFF; padding:14px; border-radius:var(--radius-sm); border:1px solid var(--border-subtle);">
+                  <div style="font-size:0.78rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Kids Preferences</div>
+                  <div style="font-weight:700; font-size:0.92rem; color:var(--text-primary); margin-top:2px;">Sauce on the side · Loves sweet potatoes</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Today's Multi-Household Schedule Cockpit -->
+            <div style="background:#FAF7F2; padding:24px; border-radius:var(--radius-lg); border:1px solid var(--border-subtle); display:flex; flex-direction:column; justify-content:space-between;">
+              <div>
+                <h4 style="font-size:1.2rem; margin-bottom:14px;">Today's Household Schedule</h4>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                  <div style="background:#FFF; padding:14px; border-radius:var(--radius-md); border:1.5px solid var(--kraft-deep);">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <strong>1:00 PM – 4:30 PM: Miller Family</strong>
+                      <span class="pill" style="font-size:0.75rem; padding:2px 8px;">Active Prep</span>
+                    </div>
+                    <div style="font-size:0.85rem; color:var(--text-secondary); margin-top:4px;">Short ribs, farro salad, carrot ginger soup</div>
+                  </div>
+
+                  <div style="background:#FFF; padding:14px; border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <strong>5:00 PM – 7:30 PM: Davis Residence</strong>
+                      <span style="font-size:0.78rem; font-weight:800; color:var(--text-muted);">Next Location</span>
+                    </div>
+                    <div style="font-size:0.85rem; color:var(--text-secondary); margin-top:4px;">Wild salmon fillets, roasted broccolini (4 adults)</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-top:20px; padding-top:14px; border-top:1px dashed var(--border-subtle); font-size:0.85rem; color:var(--text-muted); text-align:center;">
+                Cockpit Status: <strong>Synced Offline via SQLite</strong> · Next sync in 4m
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================================================================
+             PANE 2: MULTI-HOUSEHOLD BATCHED GROCERY & CARD LEDGER (Module 2)
+             ================================================================== -->
+        <div id="pane-shopping" class="portal-content-pane">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:28px;">
+            <!-- Batched Shopping Run -->
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span class="pill pill-kraft">BATCHED GROCERY OPTIMIZER</span>
+                <span style="font-size:0.85rem; font-weight:800; color:var(--sage-deep);">Saved ~45 mins driving</span>
+              </div>
+              <h3 style="font-size:1.4rem; margin-bottom:6px;">Consolidated Shopping Route</h3>
+              <p style="font-size:0.92rem; color:var(--text-secondary); margin-bottom:18px;">
+                Ingredients aggregated across Miller and Davis households for the next 48 hours.
+              </p>
+
+              <!-- Bulk Split Example -->
+              <div style="background:#FAF7F2; padding:18px; border-radius:var(--radius-md); border:1px solid var(--border-subtle); margin-bottom:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <strong>Costco Wholesale · Bulk Protein Split</strong>
+                  <span class="bulk-split-badge">Bulk Split Engine</span>
+                </div>
+                <div style="font-size:0.95rem; font-weight:800; color:var(--text-primary);">10 lbs Prime Beef Tenderloin · $120.00 Total</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; font-size:0.85rem;">
+                  <div style="background:#FFF; padding:8px 12px; border-radius:6px; border:1px solid #E5DFD6;">
+                    <span>Miller Allocation (60%):</span>
+                    <div style="font-weight:900; color:#2F4A39;">6.0 lbs · $72.00</div>
+                  </div>
+                  <div style="background:#FFF; padding:8px 12px; border-radius:6px; border:1px solid #E5DFD6;">
+                    <span>Davis Allocation (40%):</span>
+                    <div style="font-weight:900; color:#2F4A39;">4.0 lbs · $48.00</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Whole Foods Stop -->
+              <div style="background:#FAF7F2; padding:18px; border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                  <strong>Whole Foods Market · Produce &amp; Dairy</strong>
+                  <span style="font-size:0.82rem; font-weight:800; color:var(--text-muted);">8 items · $64.20</span>
+                </div>
+                <div style="font-size:0.85rem; color:var(--text-secondary);">Organic heirloom carrots, celery root, French cultured butter, pasture-raised eggs.</div>
+              </div>
+            </div>
+
+            <!-- Card Assignment & Reimbursement Ledger -->
+            <div style="background:#FAF7F2; padding:24px; border-radius:var(--radius-lg); border:1px solid var(--border-subtle);">
+              <span class="pill" style="background:#FFF2D9; color:#995B00; margin-bottom:10px;">TRANSACTION ALLOCATION LEDGER</span>
+              <h3 style="font-size:1.4rem; margin-bottom:6px;">Payment Method &amp; Rewards Routing</h3>
+              <p style="font-size:0.92rem; color:var(--text-secondary); margin-bottom:18px;">
+                Earn rewards points on client grocery spending or charge authorized cards on file.
+              </p>
+
+              <!-- Option A: Chef Card -->
+              <div style="background:#FFF; padding:18px; border-radius:var(--radius-md); border:2px solid var(--kraft-deep); margin-bottom:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <strong>Chef Card Reimbursement (Selected)</strong>
+                  <span class="save-badge">Earn 4x Points</span>
+                </div>
+                <div style="font-size:0.88rem; color:var(--text-secondary); margin-top:6px;">
+                  Charged on Chef Amex Gold. Total transaction of $184.20 automatically generates two itemized reimbursement line items:
+                </div>
+                <ul style="margin:8px 0 0 16px; font-size:0.85rem; color:var(--text-primary); font-weight:700;">
+                  <li>Miller Invoice: $118.20 (Status: Auto-Invoiced)</li>
+                  <li>Davis Invoice: $66.00 (Status: Auto-Invoiced)</li>
+                </ul>
+                <div style="margin-top:8px; font-size:0.82rem; color:#8B6A3E; font-weight:800;">
+                  Rewards Logged: +736 Membership Rewards points to Chef Ledger
+                </div>
+              </div>
+
+              <!-- Option B: Client Card -->
+              <div style="background:#FFF; padding:16px; border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <strong>Client Card on File</strong>
+                  <span style="font-size:0.8rem; color:var(--text-muted);">Direct Stripe Bill</span>
+                </div>
+                <p style="font-size:0.84rem; color:var(--text-muted); margin-top:4px;">
+                  Separates items at checkout and charges client cards directly via Stripe.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================================================================
+             PANE 3: DIGITAL REHEAT & 4x6 THERMAL LABEL ENGINE (Module 3)
+             ================================================================== -->
+        <div id="pane-reheat" class="portal-content-pane">
+          <div style="display:grid; grid-template-columns:1.1fr 0.9fr; gap:36px; align-items:center;">
+            <div>
+              <span class="pill pill-glass" style="margin-bottom:10px;">AIRPRINT 4x6 THERMAL ENGINE</span>
+              <h3 style="font-size:1.6rem; margin-bottom:8px;">Print 4x6 Sticky Labels or Send Instant Links</h3>
+              <p style="font-size:0.95rem; color:var(--text-secondary); line-height:1.6; margin-bottom:20px;">
+                Before walking out of the client’s kitchen, Dinner Peace Pro generates branded reheating instructions. Print directly to a 4x6 thermal sticky label for the glass container lid, or send a one-tap SMS/Email link.
+              </p>
+
+              <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:24px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <span class="check-icon pro-check">✓</span>
+                  <span style="font-size:0.95rem; color:var(--text-primary); font-weight:700;">AirPrint formatted for standard 4x6 thermal adhesive labels</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <span class="check-icon pro-check">✓</span>
+                  <span style="font-size:0.95rem; color:var(--text-primary); font-weight:700;">Auto-pushes to client's HouseholdFridgeState with 4-day use-by countdown</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <span class="check-icon pro-check">✓</span>
+                  <span style="font-size:0.95rem; color:var(--text-primary); font-weight:700;">One-tap Send to Client via SMS link or automated email briefing</span>
+                </div>
+              </div>
+
+              <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                <button class="btn btn-pro btn-sm" onclick="alert('AirPrint 4x6 Label sent to thermal printer!');">
+                  🖨️ Print 4x6 Label (AirPrint)
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="alert('Reheating instructions emailed to Miller household!');">
+                  ✉️ Email to Family
+                </button>
+              </div>
+            </div>
+
+            <!-- Simulated 4x6 Thermal Sticky Label -->
+            <div>
+              <div class="thermal-sticky-label">
+                <div class="thermal-header">
+                  <div>
+                    <div style="font-size:1.15rem; font-weight:900; letter-spacing:1px;">DINNER PEACE PRO</div>
+                    <div style="font-size:0.75rem;">CHEF RUAIRI POWERS · CERTIFIED PRIVATE CHEF</div>
+                  </div>
+                  <div style="text-align:right; font-size:0.75rem;">
+                    <strong>PREP: 10/20</strong>
+                  </div>
+                </div>
+
+                <div style="font-size:1.1rem; font-weight:900; margin-bottom:4px;">
+                  BRAISED BEEF SHORT RIBS
+                </div>
+                <div style="font-size:0.8rem; margin-bottom:12px;">
+                  GLASS CONTAINER #1 · SERVES 4 · USE BY: 10/24
+                </div>
+
+                <div style="border:1px solid #000; padding:10px; margin-bottom:12px; font-size:0.82rem; line-height:1.4;">
+                  <strong>REHEAT INSTRUCTIONS (OVEN):</strong><br>
+                  1. PREHEAT OVEN TO 350°F.<br>
+                  2. REMOVE GLASS LID, COVER TIGHTLY WITH FOIL.<br>
+                  3. BAKE FOR 25 MINUTES COVERED UNTIL BROTH SIMMERS.<br>
+                  4. REST 3 MINS. DRIZZLE FRESH JUS BEFORE SERVING.
+                </div>
+
+                <div style="font-size:0.75rem; font-weight:bold;">
+                  HAZARD CHECK: 100% NUT-FREE · GLUTEN-FREE CONFIRMED
+                </div>
+
+                <div class="thermal-barcode"></div>
+                <div style="text-align:center; font-size:0.7rem; letter-spacing:2px;">*DP-MIL-20261020-01*</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================================================================
+             PANE 4: VOICE-DRIVEN FIELD LOGGER (Module 4)
+             ================================================================== -->
+        <div id="pane-voice" class="portal-content-pane">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:28px; align-items:start;">
+            <div>
+              <span class="pill pill-pro" style="margin-bottom:10px;">HANDS-FREE FIELD LOGGER</span>
+              <h3 style="font-size:1.5rem; margin-bottom:6px;">Dictate Directly with Wet &amp; Messy Kitchen Hands</h3>
+              <p style="font-size:0.95rem; color:var(--text-secondary); line-height:1.6; margin-bottom:18px;">
+                Personal chefs work in high-speed, demanding environments with olive oil on their hands. Dinner Peace Pro features a native speech-to-mutation engine that converts unstructured kitchen audio into structured data records.
+              </p>
+
+              <div class="voice-wave-bar" style="margin-bottom:16px;">
+                <div style="display:flex; align-items:center; gap:16px;">
+                  <button id="portal-voice-mic" class="voice-mic-btn" title="Tap to simulate kitchen voice dictation">🎙️</button>
+                  <div>
+                    <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:var(--kraft-deep);">
+                      Live Speech Engine · <span id="portal-voice-waveform" style="display:none; color:#BA5F37;">Processing Audio...</span>
+                    </div>
+                    <div id="portal-voice-transcript" style="font-size:0.92rem; font-weight:700; color:var(--text-primary); margin-top:2px;">
+                      "At the Millers. Chucked the leftover lasagna from Tuesday, made 4 portions of braised short ribs. Freeze two, fridge two. Reheat at 350 for 25 minutes covered. They're out of olive oil."
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style="font-size:0.82rem; color:var(--text-muted); text-align:center;">
+                Tap the microphone button to test real-world chef dictation scenarios.
+              </div>
+            </div>
+
+            <!-- Structured Parser Execution Output -->
+            <div style="background:#FAF7F2; padding:24px; border-radius:var(--radius-lg); border:1.5px solid var(--border-subtle);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <strong style="font-size:1rem; color:var(--text-primary);">Structured JSON Extraction &amp; Database Actions</strong>
+                <span class="pill" style="font-size:0.75rem; padding:2px 8px;">Executed</span>
+              </div>
+
+              <div id="portal-voice-output" style="display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; align-items:center; gap:8px; font-size:0.88rem; color:#2F4A39; font-weight:700;">
+                  <span>✓ Discarded: Tuesday Lasagna (Miller Fridge)</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; font-size:0.88rem; color:#2F4A39; font-weight:700;">
+                  <span>✓ Logged: Braised Short Ribs (2 Frozen, 2 Refrigerator / Glass Container #1 &amp; #2)</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; font-size:0.88rem; color:#2F4A39; font-weight:700;">
+                  <span>✓ Generated: 4x6 Thermal Reheat Label (Oven 350°F · 25 min covered)</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; font-size:0.88rem; color:#2F4A39; font-weight:700;">
+                  <span>✓ Appended: Extra Virgin Olive Oil to Miller upcoming grocery list</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================================================================
+             PANE 5: COVERAGE & BACKUP CHEF HANDOFF (Module 5)
+             ================================================================== -->
+        <div id="pane-coverage" class="portal-content-pane">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:28px; align-items:start;">
+            <div>
+              <span class="pill pill-kraft" style="margin-bottom:10px;">DELEGATION &amp; BACKUP CHEFS</span>
+              <h3 style="font-size:1.5rem; margin-bottom:6px;">Time-Expiring "Coverage Pack" Handoff</h3>
+              <p style="font-size:0.95rem; color:var(--text-secondary); line-height:1.6; margin-bottom:18px;">
+                When you travel, get sick, or attend catering events, Dinner Peace Pro auto-compiles an encrypted, password-protected Coverage Pack for your substitute chef.
+              </p>
+
+              <div style="background:#FAF7F2; padding:18px; border-radius:var(--radius-md); border:1px solid var(--border-subtle); margin-bottom:16px;">
+                <div style="font-weight:800; font-size:0.95rem; color:var(--text-primary); margin-bottom:6px;">
+                  Active Delegation: Substitute Chef Sarah Jenkins
+                </div>
+                <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">
+                  Coverage Window: Thursday, Oct 22 – Friday, Oct 23 · Households: Miller &amp; Henderson
+                </div>
+                <div style="display:flex; gap:10px;">
+                  <button class="btn btn-pro btn-sm" onclick="alert('Generated secure 48-hour access token for Sarah Jenkins!');">
+                    🔒 Generate 48-Hour Secure Link
+                  </button>
+                  <button class="btn btn-secondary btn-sm" onclick="alert('Downloading password-protected Coverage Pack PDF...');">
+                    📄 Download PDF Pack
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Coverage Pack Dossier Preview -->
+            <div class="coverage-pack-box">
+              <div style="border-bottom:1px solid #D6CBB8; padding-bottom:8px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                <strong style="color:var(--kraft-deep); font-size:0.95rem;">CONFIDENTIAL COVERAGE BRIEF</strong>
+                <span style="font-size:0.75rem; font-weight:800; color:var(--text-muted);">EXP: 48 HOURS</span>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:10px; font-size:0.85rem;">
+                <div>
+                  <strong>Kitchen Access &amp; Gate Codes:</strong>
+                  <div style="color:var(--text-secondary);">Miller: Gate #4821, Keypad back door *9902 · Alarm disarm on arrival.</div>
+                </div>
+
+                <div>
+                  <strong>Mandatory Allergen Safeguards:</strong>
+                  <div style="color:#BA3737; font-weight:800;">Leo Miller (Age 7): Severe Tree Nut Allergy · No cross-contact.</div>
+                </div>
+
+                <div>
+                  <strong>Pre-Approved Menus &amp; Vendor Slips:</strong>
+                  <div style="color:var(--text-secondary);">Whole Foods order #8812 ready for pickup at Westport customer service.</div>
+                </div>
+
+                <div>
+                  <strong>Emergency Contact:</strong>
+                  <div style="color:var(--text-secondary);">Chef Ruairi Mobile: (203) 555-0192 · Client Cell: (203) 555-0841</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       THE 7-DAY HOUSEHOLD FLYWHEEL SECTION (THE TROJAN HORSE STRATEGY)
+       ========================================================================== -->
+  <section id="ecosystem" class="section ecosystem-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="pill pill-pro">The Kitchen Trojan Horse Strategy</span>
+        <h2>How Dinner Peace &amp; Dinner Peace Pro Work Together</h2>
+        <p>Personal chefs bring Dinner Peace into client homes. Families use it every day of the week. Here is how the complete 7-day culinary ecosystem creates effortless household calm:</p>
+      </div>
+
+      <div class="flywheel-grid">
+        <div class="flywheel-step-card">
+          <div class="step-num-badge pro">1</div>
+          <span class="pill pill-kraft" style="align-self:flex-start;">Days 1–3: The Chef Engine</span>
+          <h3>Your Chef Preps in Glass Containers</h3>
+          <p>
+            Personal chefs use <strong>Dinner Peace Pro</strong> to organize multi-household schedules, respect strict allergies, buy groceries with card rewards, and prep fresh, wholesome meals. They pack labeled glass containers (#1 to #6) right into the client's fridge.
+          </p>
+          <div class="pro-subtext">Chef logs leftovers &amp; sets 1-tap reheating temperatures</div>
+        </div>
+
+        <div class="flywheel-step-card">
+          <div class="step-num-badge bridge">2</div>
+          <span class="pill pill-glass" style="align-self:flex-start;">The Household Hand-Off</span>
+          <h3>The Family Opens Their Digital Fridge</h3>
+          <p>
+            The family downloads the free <strong>Dinner Peace</strong> app because their chef invites them. They see exactly what was cooked, when each container expires, and tap for exact oven or stovetop reheating temperatures. No more lost notes or texting back and forth.
+          </p>
+          <div class="pro-subtext">Zero acquisition friction: the chef invites the family</div>
+        </div>
+
+        <div class="flywheel-step-card">
+          <div class="step-num-badge">3</div>
+          <span class="pill" style="align-self:flex-start;">Days 4–7: The Family Bridge</span>
+          <h3>Peace for the Rest of the Week</h3>
+          <p>
+            Personal chefs rarely cook 7 days a week. On the remaining 4 to 5 nights, <strong>Dinner Peace takes over</strong>. Because the app is already on the parents' phones, they use it to plan easy weeknight dinners, generate aisle-sorted grocery runs, and clear out the pantry.
+          </p>
+          <div class="pro-subtext">One unified app for chef-prepped and home-cooked nights</div>
+        </div>
+      </div>
+
+      <div class="flywheel-banner">
+        <div class="flywheel-side">
+          <span class="pill pill-kraft" style="align-self:flex-start;">For Personal Chefs</span>
+          <h4 style="font-size:1.3rem;">Scale Your Business &amp; Delight Clients</h4>
+          <p style="font-size:0.92rem; color:var(--text-secondary);">
+            Hand your clients a Michelin-grade digital experience. Automate card rewards chargebacks, coordinate backup chefs when you travel, and become an indispensable part of their household routine.
+          </p>
+        </div>
+
+        <div class="flywheel-center-arrow">
+          <span>⇄</span>
+          <span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); font-weight:800;">7-Day Harmony</span>
+        </div>
+
+        <div class="flywheel-side">
+          <span class="pill" style="align-self:flex-start;">For Families</span>
+          <h4 style="font-size:1.3rem;">Total Mealtime Sanity 365 Days a Year</h4>
+          <p style="font-size:0.92rem; color:var(--text-secondary);">
+            Whether you have a private chef cooking twice a week, prep on Sundays, or cook every evening from scratch, Dinner Peace keeps your fridge organized, dietary rules safe, and dinner stress at zero.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       SAMPLE WEEKLY PLAN (Inspired by Recipeace.ca)
+       ========================================================================== -->
+  <section id="sample-plan" class="section sample-plan-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="pill">Interactive Preview</span>
+        <h2>See how peaceful a week can feel</h2>
+        <p>Explore an authentic weekly plan bridging chef-prepared meals with easy family weeknight dinners.</p>
+      </div>
+
+      <div class="plan-dashboard-card">
+        <div class="plan-stats-bar">
+          <div class="stat-item">
+            <span class="label">Avg. Cal / Day</span>
+            <span id="plan-avg-cal" class="val">1,560</span>
+            <span class="sub">target: 1,600 cal</span>
+          </div>
+          <div class="stat-item">
+            <span class="label">Avg. Protein</span>
+            <span id="plan-avg-protein" class="val">94g</span>
+            <span class="sub">target: 95g protein</span>
+          </div>
+          <div class="stat-item">
+            <span class="label">Meals Planned</span>
+            <span class="val">21 / 21</span>
+            <span class="sub">100% complete week</span>
+          </div>
+          <div class="stat-item">
+            <span class="label">Dinner Peace Status</span>
+            <span class="val" style="color:var(--kraft-deep);">On Track</span>
+            <span class="sub">Chef &amp; Family Harmony</span>
+          </div>
+        </div>
+
+        <div class="day-tabs">
+          <button class="day-tab-btn active" data-day="monday">Mon</button>
+          <button class="day-tab-btn" data-day="tuesday">Tue</button>
+          <button class="day-tab-btn" data-day="wednesday">Wed</button>
+          <button class="day-tab-btn" data-day="thursday">Thu</button>
+          <button class="day-tab-btn" data-day="friday">Fri</button>
+          <button class="day-tab-btn" data-day="saturday">Sat</button>
+          <button class="day-tab-btn" data-day="sunday">Sun</button>
+        </div>
+
+        <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+          <h3 id="plan-date-header" style="font-size: 1.25rem; font-weight: 800;">Monday, Oct 19</h3>
+          <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 700;">Showing 3 Balanced Meals</span>
+        </div>
+
+        <div class="meals-grid">
+          <!-- Dynamically populated by app.js -->
+        </div>
+
+        <div style="margin-top: 36px; padding: 24px; background: var(--sage-soft); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+          <div>
+            <h4 style="font-size: 1.15rem; color: var(--sage-deep); margin-bottom: 4px;">Make this meal plan yours</h4>
+            <p style="font-size: 0.92rem; color: var(--text-secondary); margin: 0;">Dinner Peace tunes every recipe to your dietary targets, kids' preferences, and ingredients on hand.</p>
+          </div>
+          <a href="#install" class="btn btn-primary btn-sm" style="white-space: nowrap;">Create Free Plan</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       PRICING & SUBSCRIPTION SECTION (WITH PRO PORTAL PRICING)
+       ========================================================================== -->
+  <section id="pricing" class="section pricing-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="pill pill-kraft">Transparent Plans</span>
+        <h2>Simple, peaceful pricing</h2>
+        <p>Choose the subscription designed for your professional chef practice or household.</p>
+      </div>
+
+      <!-- Audience Switcher -->
+      <div class="pricing-audience-toggle">
+        <button id="audience-chef-btn" class="audience-btn active">For Personal Chefs (Pro Portal)</button>
+        <button id="audience-family-btn" class="audience-btn">For Families</button>
+      </div>
+
+      <!-- Monthly / Annual Toggle -->
+      <div class="billing-toggle-wrapper">
+        <span id="label-monthly" class="toggle-label active">Billed Monthly</span>
+        <label class="billing-switch">
+          <input type="checkbox" id="billing-toggle">
+          <span class="switch-slider"></span>
+        </label>
+        <span id="label-annual" class="toggle-label">
+          Billed Annually
+          <span class="save-badge">Save 20%</span>
+        </span>
+      </div>
+
+      <!-- Pricing Grid: FOR PERSONAL CHEFS (PRO PORTAL) -->
+      <div id="pricing-grid-chef" class="pricing-grid">
+        <!-- Chef Solo Tier -->
+        <div class="pricing-card">
+          <div class="pricing-header">
+            <h3>Chef Solo Portal</h3>
+            <p>For independent personal chefs managing up to 3 active client households.</p>
+          </div>
+
+          <div class="pricing-price">
+            <span id="chef-price-1" class="amount">$29</span>
+            <span id="chef-cycle-1" class="cycle">/ month</span>
+          </div>
+          <div class="pricing-note">Includes free client app access for all 3 client households.</div>
+
+          <ul class="feature-list">
+            <li><span class="check-icon pro-check">✓</span> <strong>Up to 3 active client households (Free client apps)</strong></li>
+            <li><span class="check-icon pro-check">✓</span> Morning Cockpit ("What Do I Do Next?" dashboard)</li>
+            <li><span class="check-icon pro-check">✓</span> Client allergy, favorite meal &amp; brand dossiers</li>
+            <li><span class="check-icon pro-check">✓</span> Household budget &amp; grocery receipt tracking</li>
+            <li><span class="check-icon pro-check">✓</span> Glass meal prep container (#1–#6) fridge logs</li>
+            <li><span class="check-icon pro-check">✓</span> 4x6 thermal sticky labels &amp; email reheating cards</li>
+            <li><span class="check-icon pro-check">✓</span> Hands-free kitchen voice logging</li>
+          </ul>
+
+          <a href="#pro-portal" class="btn btn-secondary" style="width: 100%;">Start Chef Solo Trial</a>
+        </div>
+
+        <!-- Chef Studio Tier (Unlimited) -->
+        <div class="pricing-card featured-pro">
+          <span class="featured-pill pro-pill">Personal Chef Standard</span>
+
+          <div class="pricing-header">
+            <h3>Chef Studio Pro Portal</h3>
+            <p>For busy private culinary pros scaling client homes, card rewards &amp; backup chefs.</p>
+          </div>
+
+          <div class="pricing-price">
+            <span id="chef-price-2" class="amount">$59</span>
+            <span id="chef-cycle-2" class="cycle">/ month</span>
+          </div>
+          <div class="pricing-note">Unlimited households. All client families connect for free.</div>
+
+          <ul class="feature-list">
+            <li><span class="check-icon pro-check">✓</span> <strong>Everything in Chef Solo, plus:</strong></li>
+            <li><span class="check-icon pro-check">✓</span> <strong>Unlimited client households &amp; free client onboarding</strong></li>
+            <li><span class="check-icon pro-check">✓</span> Cross-household bulk protein &amp; grocery splitting</li>
+            <li><span class="check-icon pro-check">✓</span> Card rewards routing + automated client expense invoices</li>
+            <li><span class="check-icon pro-check">✓</span> Password-protected 48-hour colleague coverage packs</li>
+            <li><span class="check-icon pro-check">✓</span> Custom chef branding on 4x6 labels &amp; client emails</li>
+            <li><span class="check-icon pro-check">✓</span> Offline-first SQLite database synchronization</li>
+            <li><span class="check-icon pro-check">✓</span> Dedicated personal chef concierge support</li>
+          </ul>
+
+          <a href="#pro-portal" class="btn btn-pro" style="width: 100%;">Start Chef Studio Trial</a>
+        </div>
+      </div>
+
+      <!-- Pricing Grid: FOR FAMILIES -->
+      <div id="pricing-grid-family" class="pricing-grid" style="display: none;">
+        <!-- Free Tier -->
+        <div class="pricing-card">
+          <div class="pricing-header">
+            <h3>Peaceful Starter</h3>
+            <p>Everything you need to bring calm back to your kitchen every single week.</p>
+          </div>
+
+          <div class="pricing-price">
+            <span class="amount">$0</span>
+            <span class="cycle">/ free forever</span>
+          </div>
+          <div class="pricing-note">No credit card required. Free account forever.</div>
+
+          <ul class="feature-list">
+            <li><span class="check-icon">✓</span> 7-day weekly meal planning</li>
+            <li><span class="check-icon">✓</span> Automated aisle-sorted grocery lists</li>
+            <li><span class="check-icon">✓</span> Up to 25 tracked pantry items</li>
+            <li><span class="check-icon">✓</span> Curated wholesome recipe catalog</li>
+            <li><span class="check-icon">✓</span> Basic allergy &amp; diet preferences</li>
+            <li><span class="check-icon">✓</span> Connect to your personal chef for free</li>
+          </ul>
+
+          <a href="#install" class="btn btn-secondary" style="width: 100%;">Get Started Free</a>
+        </div>
+
+        <!-- Paid Tier (Pro Family) -->
+        <div class="pricing-card featured">
+          <span class="featured-pill">Most Peaceful Choice</span>
+
+          <div class="pricing-header">
+            <h3>Dinner Peace Family</h3>
+            <p>The complete family dinner sanctuary with automated grocery orders &amp; multi-user sync.</p>
+          </div>
+
+          <div class="pricing-price">
+            <span id="pro-price-val" class="amount">$4.99</span>
+            <span id="pro-cycle-val" class="cycle">/ month</span>
+          </div>
+          <div id="pricing-note-text" class="pricing-note">Billed monthly. Cancel anytime with one tap.</div>
+
+          <ul class="feature-list">
+            <li><span class="check-icon">✓</span> <strong>Everything in Starter, plus:</strong></li>
+            <li><span class="check-icon">✓</span> Unlimited multi-week auto planning (up to 12 weeks)</li>
+            <li><span class="check-icon">✓</span> Multi-caregiver &amp; partner household sync</li>
+            <li><span class="check-icon">✓</span> "Cook From What I Have" intelligent pantry matching</li>
+            <li><span class="check-icon">✓</span> Strict multi-allergen cross-checking &amp; verification</li>
+            <li><span class="check-icon">✓</span> 1-tap grocery delivery export (Instacart, Walmart, Whole Foods)</li>
+            <li><span class="check-icon">✓</span> Printable kitchen meal boards &amp; grocery slips</li>
+            <li><span class="check-icon">✓</span> Priority peaceful support</li>
+          </ul>
+
+          <a href="#install" class="btn btn-primary" style="width: 100%;">Start 14-Day Free Trial</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       INSTALL & PLATFORMS SECTION
+       ========================================================================== -->
+  <section id="install" class="section install-section">
+    <div class="container">
+      <div class="install-box">
+        <div>
+          <span class="pill">Available Everywhere</span>
+          <h2 style="font-size: 2.4rem; margin: 12px 0 16px;">Access Dinner Peace Pro on any device</h2>
+          <p style="font-size: 1.05rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 24px;">
+            Open the full desktop Pro Portal on your laptop for morning planning, use the mobile app in client kitchens for voice dictation and 4x6 label printing, and stay in sync completely offline.
+          </p>
+
+          <div class="install-buttons">
+            <a href="#pro-portal" class="store-btn" style="background:var(--kraft-deep);">
+              <span class="store-icon">⚡</span>
+              <div class="store-text">
+                <small>Open in any browser</small>
+                <strong>Web Pro Portal (Full Suite)</strong>
+              </div>
+            </a>
+
+            <a href="#" class="store-btn">
+              <span class="store-icon"></span>
+              <div class="store-text">
+                <small>Download on the</small>
+                <strong>Apple App Store (iOS)</strong>
+              </div>
+            </a>
+
+            <a href="#" class="store-btn">
+              <span class="store-icon">▶</span>
+              <div class="store-text">
+                <small>Get it on</small>
+                <strong>Google Play (Android)</strong>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <div class="qr-code-box">
+          <div class="qr-placeholder">
+            <svg viewBox="0 0 100 100" fill="var(--text-primary)">
+              <rect x="10" y="10" width="24" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="4"/>
+              <rect x="16" y="16" width="12" height="12" rx="2" fill="currentColor"/>
+              <rect x="66" y="10" width="24" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="4"/>
+              <rect x="72" y="16" width="12" height="12" rx="2" fill="currentColor"/>
+              <rect x="10" y="66" width="24" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="4"/>
+              <rect x="16" y="72" width="12" height="12" rx="2" fill="currentColor"/>
+              <circle cx="48" cy="18" r="3"/>
+              <circle cx="48" cy="30" r="3"/>
+              <circle cx="38" cy="48" r="3"/>
+              <circle cx="50" cy="50" r="4" fill="var(--sage-deep)"/>
+              <circle cx="62" cy="48" r="3"/>
+              <circle cx="78" cy="48" r="3"/>
+              <circle cx="48" cy="68" r="3"/>
+              <circle cx="48" cy="80" r="3"/>
+              <circle cx="68" cy="68" r="3"/>
+              <circle cx="80" cy="80" r="3"/>
+            </svg>
+          </div>
+          <div>
+            <h4 style="font-size: 1.1rem; margin-bottom: 4px;">Instant Mobile Link</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Point your iPhone or Android camera to open your personal chef portal.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       ABOUT & STORY SECTION — THE PRO PORTAL FOUNDING VISION
+       ========================================================================== -->
+  <section id="about" class="section about-section">
+    <div class="container about-grid">
+      <div class="about-image-card">
+        <img src="assets/FinalIcon.png" alt="Dinner Peace Story" style="image-rendering:-webkit-optimize-contrast;">
+        <p style="font-size: 0.9rem; font-weight: 700; color: var(--text-muted);">Crafted with love for wholesome families &amp; private culinary pros.</p>
+      </div>
+
+      <div class="about-content">
+        <span class="pill pill-kraft">Our Philosophy</span>
+        <h2>Personal chefs deserve professional operating tools</h2>
+        <p>
+          Private chefs don't just cook food. They run complex multi-household logistics: navigating diverse dietary minefields, managing separate grocery budgets, timing multi-client prep days, and leaving behind clear instructions so families can enjoy their meals.
+        </p>
+        <p>
+          Until now, chefs had to stitch together spreadsheets, text messages, receipt shoeboxes, and handwritten masking tape. We built the <strong>Dinner Peace Pro Portal</strong> to replace that chaos with calm, voice-driven precision.
+        </p>
+        <p>
+          And by handing their clients the connected <strong>Dinner Peace</strong> companion app, chefs become an indispensable, beloved presence in their clients' kitchens 7 days a week.
+        </p>
+
+        <div class="values-chips">
+          <div class="value-chip">⚡ Morning Cockpit Focus</div>
+          <div class="value-chip">🎙️ 100% Hands-Free Voice</div>
+          <div class="value-chip">🖨️ 4x6 Thermal Labeling</div>
+          <div class="value-chip">🔄 7-Day Household Harmony</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       SUPPORT & FAQ SECTION
+       ========================================================================== -->
+  <section id="support" class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="pill">Help &amp; Answers</span>
+        <h2>Frequently asked questions</h2>
+        <p>Everything you need to know about the Pro Portal, offline sync, and client management.</p>
+      </div>
+
+      <div class="faq-grid">
+        <div class="accordion-list">
+          <div class="accordion-item active">
+            <div class="accordion-header">
+              <span>What is the Dinner Peace Pro Portal?</span>
+              <span class="accordion-icon">+</span>
+            </div>
+            <div class="accordion-body">
+              The Dinner Peace Pro Portal is a mobile-first operating system designed specifically for personal chefs managing multiple households. It unifies client profile dossiers, batched multi-store shopping runs, bulk protein splitting, credit card rewards reimbursement tracking, 4x6 thermal sticky label printing, and hands-free voice field entry.
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <div class="accordion-header">
+              <span>Does the Pro Portal work offline in kitchens and store basements?</span>
+              <span class="accordion-icon">+</span>
+            </div>
+            <div class="accordion-body">
+              Yes! We built the Pro Portal with an offline-first architecture (SQLite/WatermelonDB). Whether you are prepping in a basement kitchen with zero cellular reception or shopping in a reinforced concrete grocery store, your morning cockpit, client dossiers, and voice dictations work seamlessly and sync automatically once reconnected.
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <div class="accordion-header">
+              <span>How does 4x6 thermal sticky label printing work?</span>
+              <span class="accordion-icon">+</span>
+            </div>
+            <div class="accordion-body">
+              Dinner Peace Pro connects directly to wireless AirPrint thermal label printers (such as Rollo, Brother, or Phomemo) to print high-contrast, waterproof 4x6 adhesive labels for glass container lids. Each label details the dish name, container number, use-by date, allergen status, and exact oven/stovetop reheat temperatures.
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <div class="accordion-header">
+              <span>How does card rewards routing and client reimbursement work?</span>
+              <span class="accordion-icon">+</span>
+            </div>
+            <div class="accordion-body">
+              If you prefer to earn points or cashback on your personal/business cards (like Amex Gold for 4x groceries or Chase Sapphire), Dinner Peace Pro automatically itemizes receipts and generates automated reimbursement invoices per household. Alternatively, you can charge authorized client cards stored securely on file via Stripe.
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <div class="accordion-header">
+              <span>What is the Coverage Pack for substitute chefs?</span>
+              <span class="accordion-icon">+</span>
+            </div>
+            <div class="accordion-body">
+              When you travel or take time off, you can generate a password-protected, 48-hour time-expiring "Coverage Pack" link or PDF for a trusted colleague. It provides temporary access to client gate codes, alarm instructions, emergency numbers, allergen matrices, and daily recipe workflows without exposing sensitive financial records.
+            </div>
+          </div>
+        </div>
+
+        <div class="support-card">
+          <span class="pill pill-kraft" style="align-self: flex-start;">Personal Chef Concierge</span>
+          <h3>Need help or onboarding?</h3>
+          <p style="font-size: 0.95rem; color: var(--text-secondary);">
+            Our dedicated chef concierge is available to help you set up your client households. Reach out anytime at <a href="mailto:support@dinnerpeace.app" style="color: var(--sage-deep); font-weight: 800; text-decoration: underline;">support@dinnerpeace.app</a> or send a quick message below.
+          </p>
+
+          <form id="support-form">
+            <div class="form-group">
+              <label for="contact-name">Your Name</label>
+              <input type="text" id="contact-name" placeholder="Chef Ruairi Powers" required>
+            </div>
+
+            <div class="form-group" style="margin-top: 12px;">
+              <label for="contact-email">Email Address</label>
+              <input type="email" id="contact-email" placeholder="chef@example.com" required>
+            </div>
+
+            <div class="form-group" style="margin-top: 12px;">
+              <label for="contact-msg">How can we help?</label>
+              <textarea id="contact-msg" rows="3" placeholder="Tell us about your households or request a custom onboarding walkthrough..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-pro btn-sm" style="margin-top: 16px; width: 100%;">
+              Send Message
+            </button>
+          </form>
+
+          <div id="form-success-message" style="display:none; padding:12px; border-radius:var(--radius-sm); background:var(--sage-soft); color:var(--sage-deep); font-weight:700; font-size:0.9rem; text-align:center;">
+            Thank you! Your message has been sent. We'll reply shortly.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       FOOTER
+       ========================================================================== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="#" class="brand-logo" style="color:#FFF;">
+            <img src="assets/FinalIcon.png" alt="Dinner Peace Logo" style="image-rendering:-webkit-optimize-contrast;">
+            <span>Dinner<span style="color:var(--sage-light);">Peace</span></span>
+          </a>
+          <p>The operating system for personal chefs and 7-day culinary harmony for client households.</p>
+          <div style="font-size: 0.85rem; color: #8C8278;">
+            dinnerpeace.app · All rights reserved.
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4>Pro Portal Suite</h4>
+          <ul>
+            <li><a href="#cockpit">Morning Cockpit</a></li>
+            <li><a href="#shopping-ledger">Batched Grocery &amp; Cards</a></li>
+            <li><a href="#reheat-engine">4x6 Thermal Labels</a></li>
+            <li><a href="#coverage-pack">Coverage Packs</a></li>
+            <li><a href="#pricing">Chef Pricing Plans</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Support &amp; Legal</h4>
+          <ul>
+            <li><a href="#support">Chef Concierge</a></li>
+            <li><a href="mailto:support@dinnerpeace.app">Contact Us</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Ecosystem</h4>
+          <ul>
+            <li><a href="#ecosystem">The 7-Day Flywheel</a></li>
+            <li><a href="#about">Our Philosophy</a></li>
+            <li><a href="https://recipeace.ca/" target="_blank" rel="noopener">ReciPeace Inspiration</a></li>
+            <li><a href="#install">Mobile Apps</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>© 2026 Dinner Peace &amp; Dinner Peace Pro Portal. Breathe easy — kitchen operations are under control.</div>
+        <div style="display: flex; gap: 16px;">
+          <span>Designed with warmth &amp; culinary precision</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Interactive Scripts -->
+  <script src="voice-engine.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
