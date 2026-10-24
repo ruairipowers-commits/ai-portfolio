@@ -74,8 +74,11 @@ tests, eval 25/25 (must-reject 1.00), governance OK, `mkdocs build --strict`, ch
 - **Ruairi merges every post** (decision 14 Oct): the daily-post skill opens a PR labelled `ready-to-publish` or
   `needs-work` and never merges; CLAUDE.md, gate, skill, site copy updated (branch `agent/claude-owner-merges`).
 - **Daily task paused** (trigger "Daily blog post"): the EVO-X1 `ollama_generate` tool goes through the Mac's
-  Claude app, which times out at 60 s, and a ~1,200-word draft takes longer. Fix chosen: a start-job / fetch-result
-  tool in the EVO-X1 MCP server (needs `evo-x1-mcp` from Ruairi). Re-enable the task after.
+  Claude app, which times out at 60 s, and a ~1,200-word draft takes longer. Fix built: `ollama_job_start` /
+  `ollama_job_result` in the EVO-X1 MCP server (infra-setups PR #1); the daily-post skill now uses them and logs
+  Ollama's exact token counts. To re-enable: merge infra-setups #1, on the EVO-X1 `cd ~/dev-sandbox && git pull &&
+  ./evo-x1-mcp/redploy-mcp.sh`, restart Claude Desktop on the Mac, then switch the task back on (its prompt also
+  needs updating to name the job tools; that needs Ruairi's approval on the Mac).
 - **Weekly task paused**; replaced by the daily one.
 - **Today's three posts** (AesCode, GreenWAM, supermarket fridge hack) were Claude-written after the local bridge timed
   out: draft PRs #29–#31 for Ruairi; logged as claude-only baseline runs (PR #28).
