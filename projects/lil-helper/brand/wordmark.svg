@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" role="img" aria-label="DinnerPeace">
-  <title>DinnerPeace</title>
-  <image href="icon.svg" x="16" y="16" width="288" height="288"/>
-  <text x="336" y="196" font-family="'Nunito','Quicksand','Varela Round',system-ui,sans-serif" font-weight="800"
-        font-size="120" fill="#C8301E">Dinner<tspan fill="#3E9E3A">Peace</tspan></text>
-  <text x="342" y="262" font-family="'Nunito',system-ui,sans-serif" font-weight="600" font-size="40" fill="#6B4423">
-    plan · shop · share the cooking</text>
-</svg>

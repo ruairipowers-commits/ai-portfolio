@@ -3,48 +3,21 @@
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
 (or delete them) as they're done. Last updated 24 October 2026.
 
-## 0000000000000. PR #56 open; passport and location privacy added (24 October 2026)
+## 00000000000000. lil-helper (DinnerPeace) moved to the private repo (24 October 2026)
 
-- **PR #56** (`agent/claude-dinnerpeace-pro`): v5 Pro, v6, and v7 (passport.py: fuzzy coordinates, Household Food
-  Passport, ClientEngagement, PassportAccessService; 130 tests, eval 28/28). Waiting for Ruairi to merge.
-- [ ] `MARKETPLACE_SPEC.md` wasn't in the Mac's Claude folder; v7 was built from the kickoff prompt. Reconcile with
-      the spec once it's there.
-- [ ] Branches with unmerged work (not lil-helper): `agent/claude-owner-merges` (daily-post background Ollama jobs,
-      70 behind main), `spec/job-copilot` (draft spec, superseded by JobHunt?), `crash-course` (old spec draft; the
-      built version is on main). Open PRs besides #56: #53 (post, needs-work), #6 (Dependabot actions).
-
-## 000000000000. lil-helper v6 (24 October 2026, same branch `agent/claude-dinnerpeace-pro`)
-
-Built: card wallet (rewards, caps, limits, expiry, store ranking, credits, next best card), delivery services
-(config/delivery.yaml; DashPass, Uber One, Walmart+ added to money.yaml), home address with location and optional
-geocoding (`HELPER_GEOCODER`), owner console and billing (`billing.py`, `/owner`, `HELPER_OWNER_EMAILS`), marketplace
-(`market.py`: chef profiles, household listings, requests to meet, hire, switch chef), installable desktop web app
-(manifest, service worker, sidebar layout). Website copied into `projects/lil-helper/website` and its claims aligned
-(no pantry limit, allergens free, no offline/Stripe/48-hour claims). Verified: 122 tests, eval 27/27, Chromium at
-phone and desktop sizes.
-
-- [ ] **Write the website changes back to the Mac** (`index.html`, `app.js`, `README.md`): the Mac was offline at the end
-      of the session; the files are in the repo copy.
-- [ ] **Host the web app** somewhere (e.g. app.dinnerpeace.app) so the desktop install has a home; set
-      `HELPER_CORS` and the API URL for it.
-- [ ] Production env: `HELPER_OWNER_EMAILS`, `HELPER_GEOCODER` (+ `HELPER_GEOCODER_CONTACT` for Nominatim).
-- [ ] Website still promises a "14-day free trial" and "concierge/priority support": Ruairi's call.
-
-## 00000000000. Dinner Peace Pro: chef plans in lil-helper (23 October 2026, branch `agent/claude-dinnerpeace-pro`)
-
-Built: plans (Family Free / Family $4.99 / Chef Solo $29 / Chef Studio $59) decided on the server (`plans.py`), a
-`chef` role in client households, the chef engine (`pro.py`: cockpit, dossiers, containers, reheat cards and 4×6 /
-letter PDFs, voice notes by rules, one trip across homes with bulk splits and card routing, ledger, invoices,
-coverage packs), `pro_api.py`, `helper plans` and `helper chef-demo`, the RevenueCat webhook, and the app rebrand to
-the Dinner Peace design system (sage/kraft, Nunito, new icon) with chef tabs and a plan page. Verified offline: 114
-tests, eval 25/25 (must-reject 1.00), governance OK, `mkdocs build --strict`, chef and family screens in Chromium.
-
-- [ ] **Review and merge** the branch (nothing pushed yet without Ruairi's OK).
-- [ ] **App Store billing:** create the six products in App Store Connect and the `family`, `chef_solo`,
-      `chef_studio` entitlements in RevenueCat; set `REVENUECAT_WEBHOOK_AUTH`; add the RevenueCat SDK purchase sheet.
-- [ ] **Website (dinnerpeace.app):** copy lives in `projects/lil-helper/website` once synced from the Mac; claims not
-      built yet: offline SQLite sync, Stripe client-card billing, Walmart export, "concierge support".
-- [ ] Not built: offline use, Stripe, store routing by distance.
+Branch `agent/claude-lil-helper-private`: `projects/lil-helper` and `specs/lil-helper.yaml` removed; the code, spec,
+open items and history now live in `ai-portfolio-private` (branch `agent/claude-lil-helper-move`, brought over with
+git filter-repo). The post stays public with its architecture inlined, no demo and no code links; the
+Personal projects page lists it as an entry with a write-up only.
+- [ ] Ruairi: merge the private branch first, then this one. Then on the EVO-X1, rebuild the household server from
+      the private clone (its `docs/household-setup.md`); the demo host drops `/lil-helper/` on its next update.
+- [ ] **History rewrite not done.** The code is still in this repo's history (first commit 9fb8902, 5 Oct). Rewriting
+      would also rewrite these branches with unmerged work: `agent/claude-owner-merges`, `auto/sagemaker-jumpstart-2026-review`
+      (PR #53), `crash-course`, `dependabot/github_actions/actions-aa9a3c2d2f` (PR #6), `spec/job-copilot`
+      (`routing-log` is unaffected), plus the clones on the EVO-X1 and the Mac. GitHub's `refs/pull/*` copies of
+      closed PRs (59) keep the old commits regardless unless GitHub Support purges them. Merge or close those
+      branches, confirm the local clones are clean, then decide.
+- [ ] Branches with unmerged work: as above. Open PRs: #53 (post, needs-work), #6 (Dependabot actions).
 
 ## 0000000000. Four voted topics run by hand; daily task failing on usage limit (20 October 2026)
 
@@ -190,87 +163,6 @@ costs (approval required), industry trend, orbit crowding; model summaries check
 - [ ] **Costs:** approve or reject the two real entries (NASA OIG SLS/Orion $4.1bn per launch; SpaceX rideshare
       $6,500/kg, Mar 2023) in the app or `launches approve <id> --reviewer "Ruairi Powers"`; add more with sources.
 - [ ] Not run: Terraform (not installed), Prefect `serve` (flows import-checked only), real models.
-
-## 000. Lil'Helper (new personal project, built 6 October 2026)
-
-`projects/lil-helper` (Python engine + API + Streamlit demo, and `app/`, the Expo phone app) +
-`site/personal/posts/lil-helper.md`. Decisions (5 Oct): personal tier; real iPhone app through TestFlight, Android
-later; services Instacart+, Prime (Whole Foods), Costco; Google Calendar via .ics feed. Verified offline: 48 tests,
-8-week simulation, eval gate 16/16 (must-reject recall 1.00), governance check, apply_access --check, demo and phone
-app (web build at iPhone size) checked in a browser, app typecheck. Merged to `main` on 7 October with Ruairi's
-go-ahead.
-
-- [ ] **Household server on the EVO-X1:** `docker build -t lil-helper projects/lil-helper` and run with `.env`
-      (`HELPER_SECRET` from `openssl rand -hex 32`, `RESEND_API_KEY`, `MAIL_FROM`) and the real
-      `config/household.yaml` mounted read-only (never committed). Decide how the phone reaches it: a public
-      hostname behind the magic-link sign-in, or Tailscale on her iPhone.
-- [ ] **TestFlight:** Apple Developer account, then `app/README.md` steps (`eas init`, set `EXPO_PUBLIC_API_URL`,
-      `eas build --platform ios`, `eas submit`, add her as an internal tester).
-- [ ] **Instacart Developer Platform key** (`INSTACART_API_KEY`) for one-tap delivery links; development first.
-- [ ] **Real data:** the family's recipes, store prices (`data/prices.yaml`, `verified` dates), then four real weeks
-      and update the post's results table (all numbers today are simulated).
-- [ ] **Real models:** `local-qwen` for ideas/notes and a local vision model for flyers; `helper eval --alias
-      helper-candidate`, promote on a pass.
-- [ ] **Public demo:** `git pull && ./update.sh` builds `Dockerfile.space` (`/lil-helper/`, mock only).
-- [ ] Options documented, not built: two-adult approval above a spend threshold, automated retention pruning.
-### Lil'Helper v2 (built 11–14 October 2026, merged to `main` 15 October)
-
-Accounts and many households (admin/adult/kid roles, invites, welcome wizard, in-app settings), custom recipes,
-specials by store and channel, shopping trips, dinner times and attendance, takeout/eat-out/leftovers/freezer
-nights, kid chef, cards and partnerships, spending import (statements, receipts), budget and cost reports, cost per
-serving range, fridge/freezer space and buy-ahead, cook from what I've got, ingredient forecast, per-person calendar
-feeds with one-tap feedback, Expo push, a 15-minute scheduler tick per household. Verified offline: 71 tests, eval
-gate 20/20, 8-week simulation, governance and access checks, mkdocs --strict, app typecheck, and the web build
-walked through at iPhone size (wizard → first plan → approve → specials, recipe, forecast, money, calendar).
-
-- [ ] **Server:** follow the new `docs/household-setup.md` (Cloudflare hostname `helper.agentls.com`, sign-up code,
-      `HELPER_PUSH=expo`); import the v1 household file if you set one up.
-- [ ] **TestFlight build** with push (say yes to push notifications in `eas build`); push and Apple/Google calendar
-      subscribe are untested on a real phone.
-- [ ] **Not done:** the Streamlit demo still shows v1 screens only; the App Store release work (AWS + RevenueCat +
-      privacy) is planned in `docs/aws-native.md`, not built.
-
-### Lil'Helper v3 (15 October 2026, merged to `main`)
-
-Builds on `agent/claude-lil-helper-mail` (email fixes, Create household button). Change any planned meal (existing,
-new, or from the web) with undo; meals move planned → today → what happened (eaten / leftovers / portions frozen /
-skipped); freezer items editable, use-by-first planning; recipes: credit + link, add from the web (schema.org;
-method stays at the source), export/import file, share with a household by code; cook-from ranks by what you typed
-and writes a new recipe when nothing uses it all; calendar events link into the app and shopping events carry the
-whole list. Verified offline: 88 tests, eval gate, governance, mkdocs, app typecheck, browser walk-through.
-
-- [ ] New TestFlight build and server rebuild (both from `main`).
-- [ ] Optional `BRAVE_API_KEY` on the server for in-app recipe search results (without it, search opens the browser).
-- [ ] Not tested against live recipe sites from here (the sandbox can't reach them); parsing is tested on a fixture page.
-
-### DinnerPeace: Lil'Helper renamed (16 October 2026, branch `agent/claude-dinnerpeace`)
-
-Everything people see now says DinnerPeace: app name and permission prompts, screens, emails, calendar events, PDFs,
-web pages, Alexa (invocation "dinner peace"), docs, post, wordmark (apple icon unchanged). App version 0.3.0. Kept on
-purpose: repo folder and slug `lil-helper`, Python package `lilhelper`, the `helper` CLI, `HELPER_*` settings, bundle
-id `com.agentls.lilhelper`, link scheme `lilhelper://`, EAS slug — so TestFlight, sign-ins, calendar links and data
-carry over. Domain `dinnerpeace.app` reserved; moving the server to it is a documented option (household-setup.md).
-
-- [ ] Ruairi: merge the PR; on the server `.env`, change `HELPER_MAIL_FROM`'s name to DinnerPeace (it wins over the
-      code); App Store Connect → App Information → Name: DinnerPeace; then the TestFlight build.
-- [ ] Optional: dinnerpeace.app on Cloudflare + `app.dinnerpeace.app` tunnel hostname + Resend domain.
-
-### Lil'Helper v4 (15 October 2026, merged to `main`, PR #46)
-
-Birthdays on profiles (child under 12 / teen / adult follows from them; teens adult portions, approve only if the
-admin allows; no jobs on your birthday); special occasions (birthdays, US holidays on/off, anniversaries, own) feed
-the plan; recipes suit breakfast/lunch/dinner with steps and calories for the whole book; own brand/store/price per
-ingredient; book recipes on/off; meals with parts (cook / leftovers / ready-made); Today home tab; Make a plan (up to
-12 weeks), Vibe cooking, Occasions, Weekly buffet, Surprise me; Reports (cost, time, calories, jobs); bulk Excel
-import/export (admin, preview then confirm); voice (app mic via expo-speech-recognition / Web Speech, rules-based
-`/api/voice`); Alexa skill backend (`alexa.py`, `docs/alexa.md`, `alexa/interaction-model.json`). Welcome screen
-can cancel setup / sign out. Verified offline: 101 tests, eval gate, governance, mkdocs, app typecheck, browser
-walk-through of every new screen.
-
-- [ ] After merge: server rebuild and a **new TestFlight build** (speech recognition is a new native module).
-- [ ] Alexa: create the skill in the Amazon developer console (`docs/alexa.md`), set `HELPER_ALEXA_SKILL_ID`. The
-      certificate-chain check couldn't be run against Amazon's real certificate from the sandbox; the console's Test
-      tab is the first live check.
 
 ## 000a. Data marketplace & lifecycle platform (featured, built 6 October 2026)
 
