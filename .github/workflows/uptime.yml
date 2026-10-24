@@ -17,8 +17,8 @@ jobs:
     timeout-minutes: 10
     env: {HAS_SMTP: "${{ secrets.SMTP_HOST != '' }}"}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with: {python-version: "3.11"}
       - run: pip install pyyaml
       - name: check the blog and every demo
