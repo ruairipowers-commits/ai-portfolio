@@ -179,6 +179,26 @@ def apply_revenuecat(con, event: dict) -> dict:
         return {"applied": False, "reason": f"ignored {kind}"}
     best_chef = max((e for e in ents if e in CHEF_PLANS), key=lambda p: TIERS[p]["rank"], default=None)
     changed = []
+    if kind in STARTS and until:
+        # keep the owner's subscription list in step (the App Store charges its own prices)
+        from . import billing
+        interval = "yearly" if "year" in str(event.get("product_id", "")).lower() or "annual" in str(
+            event.get("product_id", "")).lower() else "monthly"
+        exp_dt = dt.datetime.fromisoformat(until)
+        paid = event.get("price")
+        if best_chef:
+            billing.subscribe(con, "chef", uid, best_chef, interval, "revenuecat", renews=exp_dt,
+                              price_now=float(paid) if paid is not None else None, by="revenuecat")
+        if "family" in ents:
+            for r in con.execute("SELECT household_id FROM members WHERE user_id = ? AND role = 'admin'", (uid,)).fetchall():
+                billing.subscribe(con, "household", r["household_id"], "family", interval, "revenuecat", renews=exp_dt,
+                                  price_now=float(paid) if paid is not None else None, by="revenuecat")
+    if kind in ENDS:
+        from . import billing
+        billing.setup(con)
+        con.execute("UPDATE subscriptions SET status = 'ended' WHERE source = 'revenuecat' AND status = 'active' AND "
+                    "(subject = ? OR subject IN (SELECT household_id FROM members WHERE user_id = ? AND role = 'admin'))",
+                    (uid, uid))
     if best_chef:
         set_chef_plan(con, uid, "none" if kind in ENDS else best_chef, None if kind in ENDS else until)
         changed.append(("chef", "none" if kind in ENDS else best_chef))
@@ -190,11 +210,15 @@ def apply_revenuecat(con, event: dict) -> dict:
     return {"applied": True, "changed": changed}
 
 
-def catalog() -> dict:
-    """For the paywall: every tier, its prices and what it unlocks."""
+def catalog(con=None) -> dict:
+    """For the paywall: every tier, its prices (the owner's current list prices) and what it unlocks."""
     out = {}
     for k, t in TIERS.items():
         if k in ("beta", "none"):
             continue
         out[k] = {**t, "features": [FEATURE_NAMES[f] for f, need in FEATURES.items() if has(k, f)]}
+        if con is not None and k in ("family", "chef_solo", "chef_studio"):
+            from . import billing
+            p = billing.price(con, k)
+            out[k].update(monthly=p["monthly"], yearly=p["yearly"], savings_pct=p["savings_pct"])
     return out

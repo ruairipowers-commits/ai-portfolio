@@ -71,8 +71,9 @@ def plan_catalog(ctx=Depends(signed_in)) -> dict:
     chef = plans.chef_plan(con, ctx.uid)
     hp = plans.household_plan(con, ctx.hid) if ctx.hid else None
     n = len(plans.chef_client_ids(con, ctx.uid))
+    tiers = plans.catalog(con)
     con.close()
-    return {"tiers": plans.catalog(), "chef_plan": chef, "household": hp, "clients": n,
+    return {"tiers": tiers, "chef_plan": chef, "household": hp, "clients": n,
             "client_limit": plans.client_limit(chef),
             "billing": "revenuecat" if os.getenv("REVENUECAT_WEBHOOK_AUTH") else "admin",
             "terms_url": os.getenv("HELPER_TERMS_URL", "https://dinnerpeace.app/#support"),

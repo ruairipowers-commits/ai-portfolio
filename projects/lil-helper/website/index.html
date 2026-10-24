@@ -57,7 +57,7 @@
             👨‍🍳 OPERATING SYSTEM FOR PERSONAL CHEFS
           </span>
           <span class="pill">
-            ⚡ Offline-First &amp; Voice-Driven
+            🎙️ Voice-Driven · Phone &amp; Desktop
           </span>
         </div>
 
@@ -229,7 +229,7 @@
               </div>
 
               <div style="margin-top:20px; padding-top:14px; border-top:1px dashed var(--border-subtle); font-size:0.85rem; color:var(--text-muted); text-align:center;">
-                Cockpit Status: <strong>Synced Offline via SQLite</strong> · Next sync in 4m
+                Cockpit Status: <strong>Up to date</strong> · 3 homes today
               </div>
             </div>
           </div>
@@ -310,10 +310,10 @@
               <div style="background:#FFF; padding:16px; border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                   <strong>Client Card on File</strong>
-                  <span style="font-size:0.8rem; color:var(--text-muted);">Direct Stripe Bill</span>
+                  <span style="font-size:0.8rem; color:var(--text-muted);">Separate checkout</span>
                 </div>
                 <p style="font-size:0.84rem; color:var(--text-muted); margin-top:4px;">
-                  Separates items at checkout and charges client cards directly via Stripe.
+                  Keeps that client’s items in their own checkout, paid with the card they gave you.
                 </p>
               </div>
             </div>
@@ -471,8 +471,8 @@
                   Coverage Window: Thursday, Oct 22 – Friday, Oct 23 · Households: Miller &amp; Henderson
                 </div>
                 <div style="display:flex; gap:10px;">
-                  <button class="btn btn-pro btn-sm" onclick="alert('Generated secure 48-hour access token for Sarah Jenkins!');">
-                    🔒 Generate 48-Hour Secure Link
+                  <button class="btn btn-pro btn-sm" onclick="alert('Generated a password-protected coverage pack for Sarah Jenkins (opens only on the dates you set)!');">
+                    🔒 Generate Coverage Pack Link
                   </button>
                   <button class="btn btn-secondary btn-sm" onclick="alert('Downloading password-protected Coverage Pack PDF...');">
                     📄 Download PDF Pack
@@ -485,7 +485,7 @@
             <div class="coverage-pack-box">
               <div style="border-bottom:1px solid #D6CBB8; padding-bottom:8px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
                 <strong style="color:var(--kraft-deep); font-size:0.95rem;">CONFIDENTIAL COVERAGE BRIEF</strong>
-                <span style="font-size:0.75rem; font-weight:800; color:var(--text-muted);">EXP: 48 HOURS</span>
+                <span style="font-size:0.75rem; font-weight:800; color:var(--text-muted);">EXPIRES: FRI</span>
               </div>
 
               <div style="display:flex; flex-direction:column; gap:10px; font-size:0.85rem;">
@@ -676,7 +676,7 @@
         </label>
         <span id="label-annual" class="toggle-label">
           Billed Annually
-          <span class="save-badge">Save 20%</span>
+          <span class="save-badge">Save up to 35%</span>
         </span>
       </div>
 
@@ -728,9 +728,9 @@
             <li><span class="check-icon pro-check">✓</span> <strong>Unlimited client households &amp; free client onboarding</strong></li>
             <li><span class="check-icon pro-check">✓</span> Cross-household bulk protein &amp; grocery splitting</li>
             <li><span class="check-icon pro-check">✓</span> Card rewards routing + automated client expense invoices</li>
-            <li><span class="check-icon pro-check">✓</span> Password-protected 48-hour colleague coverage packs</li>
+            <li><span class="check-icon pro-check">✓</span> Password-protected, expiring coverage packs for a backup chef</li>
             <li><span class="check-icon pro-check">✓</span> Custom chef branding on 4x6 labels &amp; client emails</li>
-            <li><span class="check-icon pro-check">✓</span> Offline-first SQLite database synchronization</li>
+            <li><span class="check-icon pro-check">✓</span> Find families near you who are looking for a chef</li>
             <li><span class="check-icon pro-check">✓</span> Dedicated personal chef concierge support</li>
           </ul>
 
@@ -756,9 +756,14 @@
           <ul class="feature-list">
             <li><span class="check-icon">✓</span> 7-day weekly meal planning</li>
             <li><span class="check-icon">✓</span> Automated aisle-sorted grocery lists</li>
-            <li><span class="check-icon">✓</span> Up to 25 tracked pantry items</li>
+            <li><span class="check-icon">✓</span> Unlimited pantry tracking</li>
+            <li><span class="check-icon">✓</span> Multi-caregiver &amp; partner household sync</li>
+            <li><span class="check-icon">✓</span> Allergen checks for everyone, always free</li>
+            <li><span class="check-icon">✓</span> Card wallet: rewards, caps and the next best card</li>
+            <li><span class="check-icon">✓</span> Delivery hand-offs: Instacart, Amazon, DoorDash, Uber Eats, Walmart</li>
+            <li><span class="check-icon">✓</span> Find a personal chef near you</li>
             <li><span class="check-icon">✓</span> Curated wholesome recipe catalog</li>
-            <li><span class="check-icon">✓</span> Basic allergy &amp; diet preferences</li>
+            <li><span class="check-icon">✓</span> Allergy &amp; diet profiles for everyone</li>
             <li><span class="check-icon">✓</span> Connect to your personal chef for free</li>
           </ul>
 
@@ -771,7 +776,7 @@
 
           <div class="pricing-header">
             <h3>Dinner Peace Family</h3>
-            <p>The complete family dinner sanctuary with automated grocery orders &amp; multi-user sync.</p>
+            <p>The complete family dinner sanctuary: plan months ahead, cook from what you have, print it for the fridge.</p>
           </div>
 
           <div class="pricing-price">
@@ -783,10 +788,8 @@
           <ul class="feature-list">
             <li><span class="check-icon">✓</span> <strong>Everything in Starter, plus:</strong></li>
             <li><span class="check-icon">✓</span> Unlimited multi-week auto planning (up to 12 weeks)</li>
-            <li><span class="check-icon">✓</span> Multi-caregiver &amp; partner household sync</li>
             <li><span class="check-icon">✓</span> "Cook From What I Have" intelligent pantry matching</li>
-            <li><span class="check-icon">✓</span> Strict multi-allergen cross-checking &amp; verification</li>
-            <li><span class="check-icon">✓</span> 1-tap grocery delivery export (Instacart, Walmart, Whole Foods)</li>
+            <li><span class="check-icon">✓</span> Import and export everything as one spreadsheet</li>
             <li><span class="check-icon">✓</span> Printable kitchen meal boards &amp; grocery slips</li>
             <li><span class="check-icon">✓</span> Priority peaceful support</li>
           </ul>
@@ -807,22 +810,22 @@
           <span class="pill">Available Everywhere</span>
           <h2 style="font-size: 2.4rem; margin: 12px 0 16px;">Access Dinner Peace Pro on any device</h2>
           <p style="font-size: 1.05rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 24px;">
-            Open the full desktop Pro Portal on your laptop for morning planning, use the mobile app in client kitchens for voice dictation and 4x6 label printing, and stay in sync completely offline.
+            Install DinnerPeace on your Mac or PC for planning on a big screen (in Chrome or Edge choose Install; in Safari choose Add to Dock), and use the phone app in client kitchens for voice notes and 4x6 labels. Everything stays in step through your account.
           </p>
 
           <div class="install-buttons">
             <a href="#pro-portal" class="store-btn" style="background:var(--kraft-deep);">
               <span class="store-icon">⚡</span>
               <div class="store-text">
-                <small>Open in any browser</small>
-                <strong>Web Pro Portal (Full Suite)</strong>
+                <small>Install from your browser</small>
+                <strong>Desktop app (Mac &amp; PC)</strong>
               </div>
             </a>
 
             <a href="#" class="store-btn">
               <span class="store-icon"></span>
               <div class="store-text">
-                <small>Download on the</small>
+                <small>Coming to the</small>
                 <strong>Apple App Store (iOS)</strong>
               </div>
             </a>
@@ -830,7 +833,7 @@
             <a href="#" class="store-btn">
               <span class="store-icon">▶</span>
               <div class="store-text">
-                <small>Get it on</small>
+                <small>Coming to</small>
                 <strong>Google Play (Android)</strong>
               </div>
             </a>
@@ -908,7 +911,7 @@
       <div class="section-header">
         <span class="pill">Help &amp; Answers</span>
         <h2>Frequently asked questions</h2>
-        <p>Everything you need to know about the Pro Portal, offline sync, and client management.</p>
+        <p>Everything you need to know about the Pro Portal, finding clients, and client management.</p>
       </div>
 
       <div class="faq-grid">
@@ -925,11 +928,11 @@
 
           <div class="accordion-item">
             <div class="accordion-header">
-              <span>Does the Pro Portal work offline in kitchens and store basements?</span>
+              <span>How do chefs and families find each other?</span>
               <span class="accordion-icon">+</span>
             </div>
             <div class="accordion-body">
-              Yes! We built the Pro Portal with an offline-first architecture (SQLite/WatermelonDB). Whether you are prepping in a basement kitchen with zero cellular reception or shopping in a reinforced concrete grocery store, your morning cockpit, client dossiers, and voice dictations work seamlessly and sync automatically once reconnected.
+              Families can say they’re looking for a chef and what they’d pay; Pro chefs list a profile with their rates, what they cook and how far they travel. Each side searches by distance and sends a request to meet. Until a request is accepted, chefs see only the family’s town, how many people and children, and the allergens to cook around — never names or a street address. Switching chefs is fine at any time.
             </div>
           </div>
 
@@ -949,7 +952,7 @@
               <span class="accordion-icon">+</span>
             </div>
             <div class="accordion-body">
-              If you prefer to earn points or cashback on your personal/business cards (like Amex Gold for 4x groceries or Chase Sapphire), Dinner Peace Pro automatically itemizes receipts and generates automated reimbursement invoices per household. Alternatively, you can charge authorized client cards stored securely on file via Stripe.
+              If you prefer to earn points or cashback on your personal/business cards (like Amex Gold for 4x groceries or Chase Sapphire), Dinner Peace Pro automatically itemizes receipts and generates automated reimbursement invoices per household. Or a client can pay with their own card: their items go through a separate checkout. Dinner Peace never stores card numbers.
             </div>
           </div>
 
@@ -959,7 +962,7 @@
               <span class="accordion-icon">+</span>
             </div>
             <div class="accordion-body">
-              When you travel or take time off, you can generate a password-protected, 48-hour time-expiring "Coverage Pack" link or PDF for a trusted colleague. It provides temporary access to client gate codes, alarm instructions, emergency numbers, allergen matrices, and daily recipe workflows without exposing sensitive financial records.
+              When you travel or take time off, you can generate a password-protected "Coverage Pack" link that opens only between the dates you choose (1 to 31 days) for a trusted colleague. It provides temporary access to client gate codes, alarm instructions, emergency numbers, allergen matrices, and daily recipe workflows without exposing sensitive financial records.
             </div>
           </div>
         </div>

@@ -41,6 +41,7 @@ export default function ChefMore() {
         <LinkRow icon="✨" title="Your plan" sub={h ? `${h.label}${h.client_limit != null ? ` · up to ${h.client_limit} homes` : " · unlimited homes"}` : ""}
           onPress={() => router.push("/plans" as never)} />
         <LinkRow icon="🧑‍🤝‍🧑" title="Coverage packs" sub="A backup chef's password-protected, expiring brief" onPress={() => router.push("/chef/coverage" as never)} />
+        <LinkRow icon="🔎" title="Find households" sub="Your public profile, families nearby, requests to meet" onPress={() => router.push("/chef/find" as never)} />
         <LinkRow icon="🎙️" title="Voice note" sub="Log fridge, reheat cards and their list hands-free" onPress={() => router.push("/chef/voice" as never)} />
       </View>
       <View style={s.card}>

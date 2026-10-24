@@ -177,6 +177,7 @@ def dossier(h: Household) -> dict:
                             "text": f"{p['name']}{' (child)' if p['kid'] else ''}: {a.replace('_', ' ')} allergy"})
     hazards.sort(key=lambda x: (not x["kid"], x["allergen"]))
     return {"name": h.info.get("name"), "people": people, "hazards": hazards, "brands": brands,
+            "address": h.raw.get("address") or {},
             "allergens": sorted(h.everyone_allergies()), "pets": [{"name": pt.name} for pt in h.pets.values()],
             "budget_per_week": h.info.get("budget_per_week")}
 
@@ -743,8 +744,7 @@ def build_trip(uid: str, homes: list[dict], billing: dict[str, str], date: dt.da
             if co["paid_by"] == "chef":
                 pick = money.best_card(ch, st["store"], "in_store", co["total"], used=used)
                 co.update({"card": pick.card, "card_name": pick.name, "card_note": pick.note, "rewards": pick.earned})
-                if pick.card:
-                    used[(pick.card, pick.category)] = used.get((pick.card, pick.category), 0) + co["total"]
+                money.add_use(used, pick, co["total"])
             else:
                 co.update({"card": None, "card_name": "client's card", "card_note": "separate checkout", "rewards": 0.0})
             per = {}

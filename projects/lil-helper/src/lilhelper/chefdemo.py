@@ -93,5 +93,25 @@ def seed(email: str, today: dt.date | None = None) -> dict:
                               containers=[1], prepared=y)
             hc.close()
     db.close()
+    # the marketplace: the chef's public profile, and a family nearby that is looking for a chef
+    from . import market
+    market.save_profile(con, u["id"], display_name="Chef Ruairi", business="Ruairi's Kitchen", listed=True,
+                        bio="Weeknight family dinners, allergy-aware, glass containers labelled and ready to reheat.",
+                        cuisines=["italian", "mediterranean", "kid_friendly", "meal_prep"], rate_per_visit=225,
+                        radius_miles=20, address={"city": "Westport", "state": "CT", "zip": "06880",
+                                                  "lat": 41.1415, "lon": -73.3579})
+    fam = accounts.get_or_create_user(con, "sam.nguyen@example.com", "Sam Nguyen")
+    if not any(m["name"] == "Nguyen household" for m in accounts.memberships(con, fam["id"])):
+        nh = accounts.create_household(con, fam["id"], "Nguyen household", "northeast-us",
+                                       {"id": "sam", "name": "Sam Nguyen", "email": "sam.nguyen@example.com"})
+        with tenant(nh):
+            raw = load_household().raw
+            raw["people"]["kim"] = {"name": "Kim", "age_band": "adult"}
+            raw["people"]["bo"] = {"name": "Bo", "age_band": "kid", "age": 7, "allergies": ["peanut", "sesame"]}
+            raw["address"] = {"line1": "40 Post Rd", "city": "Fairfield", "state": "CT", "zip": "06824",
+                              "lat": 41.1408, "lon": -73.2637}
+            save_household(raw)
+        market.save_listing(con, nh, open=True, budget_per_week=450, visits_per_week=2, cuisines=["asian", "healthy"],
+                            note="Two weeknight dinners for four; our son can't have peanuts or sesame.")
     con.close()
     return {"user": u["id"], "clients": out}

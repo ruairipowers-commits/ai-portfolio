@@ -356,6 +356,14 @@ def validate_household(raw: dict, s: "Settings") -> None:
     for c in raw.get("cards", []) or []:
         if pat.search(str(c)):
             raise HouseholdError("A card field looks like a card number. Use a name you'd recognise, never the number.")
+        if isinstance(c, dict):
+            _check_card(c, raw)
+    bad = set(raw.get("delivery_services") or []) - set(delivery()["services"])
+    if bad:
+        raise HouseholdError(f"unknown delivery services {sorted(bad)}")
+    _check_address(raw.get("address"))
+    if sum(1 for c in raw.get("cards", []) or [] if isinstance(c, dict) and c.get("primary")) > 1:
+        raise HouseholdError("only one card can be your primary card")
     if not isinstance(raw.get("household"), dict) or not isinstance(raw.get("people"), dict) or not raw["people"]:
         raise HouseholdError("settings need a household section and at least one person")
     for site in raw.get("recipe_sources") or []:
@@ -468,10 +476,60 @@ def validate_household(raw: dict, s: "Settings") -> None:
             raise HouseholdError(f"storage {k}: 0–5000 litres")
 
 
+def _check_address(a) -> None:
+    if not a:
+        return
+    if not isinstance(a, dict):
+        raise HouseholdError("the address is a set of fields: line1, city, state, zip")
+    for k in ("line1", "line2", "city", "state", "zip"):
+        if a.get(k) is not None and len(str(a[k])) > 120:
+            raise HouseholdError(f"address {k} is too long")
+    if a.get("zip") and not re.fullmatch(r"\d{5}(-\d{4})?", str(a["zip"])):
+        raise HouseholdError("a US ZIP code is 5 digits (or ZIP+4)")
+    if a.get("state") and not re.fullmatch(r"[A-Za-z]{2}", str(a["state"])):
+        raise HouseholdError("use the two-letter state, like CT")
+    for k, lo, hi in (("lat", -90, 90), ("lon", -180, 180)):
+        if a.get(k) is not None and not lo <= float(a[k]) <= hi:
+            raise HouseholdError(f"address {k} is out of range")
+
+
+def _check_card(c: dict, raw: dict) -> None:
+    name = c.get("name") or c.get("template") or c.get("id") or "a card"
+    if not (c.get("id") or c.get("template")) or not re.fullmatch(r"[a-z0-9_]{1,40}", str(c.get("id") or c.get("template"))):
+        raise HouseholdError(f"{name}: needs an id (lowercase letters, numbers, _)")
+    if c.get("last4") and not re.fullmatch(r"\d{4}", str(c["last4"])):
+        raise HouseholdError(f"{name}: last 4 digits only, never the full number")
+    if c.get("expires"):
+        m = re.fullmatch(r"(20\d\d)-(0[1-9]|1[0-2])", str(c["expires"]))
+        if not m:
+            raise HouseholdError(f"{name}: expiry is year and month, like 2028-07")
+    for k in ("credit_limit", "monthly_limit"):
+        if c.get(k) not in (None, "") and not 0 < float(c[k]) <= 1_000_000:
+            raise HouseholdError(f"{name}: {k.replace('_', ' ')} must be a positive amount")
+    for st in c.get("stores") or []:
+        if st not in (raw.get("stores") or []) and st not in stores()["stores"]:
+            raise HouseholdError(f"{name}: unknown store {st!r}")
+    for cat, rule in (c.get("earn") or {}).items():
+        if not isinstance(rule, dict) or not ("pct" in rule or "points" in rule):
+            raise HouseholdError(f"{name}: each reward needs pct (0.03 = 3%) or points per dollar")
+        v = float(rule.get("pct", rule.get("points", 0)))
+        if not 0 <= v <= (0.2 if "pct" in rule else 20):
+            raise HouseholdError(f"{name}: a {cat} reward of {v} doesn't look right")
+        if rule.get("annual_cap") not in (None, "") and float(rule["annual_cap"]) <= 0:
+            raise HouseholdError(f"{name}: an annual cap must be positive")
+    for cr in c.get("credits") or []:
+        if not cr.get("name") or not 0 <= float(cr.get("monthly", 0)) <= 500:
+            raise HouseholdError(f"{name}: each credit needs a name and a monthly amount")
+
+
 class Settings(dict):
     @classmethod
     def load(cls) -> "Settings":
         return cls(_read(ROOT / "config" / "settings.yaml"))
+
+
+def delivery() -> dict:
+    return _read(ROOT / "config" / "delivery.yaml", fresh=False)
 
 
 def stores() -> dict:

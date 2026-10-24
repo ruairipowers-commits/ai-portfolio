@@ -1,5 +1,6 @@
 // Your personal chef: what they left in the fridge (numbered containers, use-by), how to reheat each dish, and
 // inviting your chef if they're not here yet. Free on every plan.
+import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
 import { Text } from "@/components/text";
@@ -55,6 +56,7 @@ export default function ChefConnection() {
             try { await pro.inviteChef(email.trim()); setMsg(`Invitation sent to ${email.trim()}`); setEmail(""); } catch (e) { setError(e); }
           }} />
         </View>) : null}
+      <Button kind="ghost" title={f?.chefs.length ? "🔎 Find or switch chef" : "🔎 Find a chef near you"} onPress={() => router.push("/house/find-chef" as never)} />
       {msg ? <Pill text={msg} /> : null}
       <ErrorText error={error} />
     </Screen>

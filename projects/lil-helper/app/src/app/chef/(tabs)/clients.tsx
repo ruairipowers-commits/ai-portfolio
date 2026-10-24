@@ -49,6 +49,7 @@ export default function Clients() {
           <Text style={s.body}>{h!.label} runs up to {h!.client_limit} homes.</Text>
           <Button kind="pro" title="See Chef Studio" onPress={() => router.push({ pathname: "/plans", params: { focus: "chef_studio" } } as never)} />
         </View>) : <Button kind="pro" title="Add a client household" onPress={() => router.push("/chef/new-client" as never)} />}
+      <Button kind="ghost" title="🔎 Find households looking for a chef" onPress={() => router.push("/chef/find" as never)} />
       <ErrorText error={error} />
     </Screen>
   );

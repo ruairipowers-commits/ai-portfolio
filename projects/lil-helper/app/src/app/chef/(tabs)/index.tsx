@@ -2,7 +2,7 @@
 // use, then the rest of today's homes and the week ahead. One glance between kitchens; everything else is a tap away.
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "@/components/text";
 import { Cockpit, DAY_SHORT, Kitchen, pro } from "@/lib/api";
@@ -46,6 +46,7 @@ function Hero({ k }: { k: Kitchen }) {
 }
 
 export default function ChefNext() {
+  const { width } = useWindowDimensions();
   const [d, setD] = useState<Cockpit | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
@@ -58,7 +59,7 @@ export default function ChefNext() {
   const earlier = d ? d.kitchens.filter((k) => k.done) : [];
   return (
     <SafeAreaView style={s.screen} edges={["top"]}>
-      <ScrollView contentContainerStyle={[s.pad, { paddingBottom: 110 }]}>
+      <ScrollView contentContainerStyle={[s.pad, { paddingBottom: 110 }, width > 900 && { width: 860, alignSelf: "center", paddingTop: 28 }]}>
         <View style={s.between}>
           <View style={{ flex: 1 }}>
             <Text style={[s.h1, { fontSize: 26 }]}>{greet(d?.chef ?? "")}</Text>

@@ -34,7 +34,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import BaseModel, Field
 
-from . import (__version__, accounts, alexa, plans, recipebook, ai, catalog, chores, cookfrom, feedback, forecast, money, notify, outputs,
+from . import (__version__, accounts, alexa, billing, plans, recipebook, ai, catalog, chores, cookfrom, feedback, forecast, money, notify, outputs,
                reports, spend, storage, store, telemetry, week)
 from .config import (ROOT, ALLERGENS, DAYS, DIETS, MEALS, NIGHT_KINDS, HouseholdError, Settings, data_root, load_household,
                      reset_tenant, save_household, set_tenant, stores as load_stores, work_root)
@@ -304,7 +304,7 @@ def me(ctx: Ctx = Depends(signed_in)) -> dict:
     hp = plans.household_plan(con, ctx.hid) if cur else None
     con.close()
     return {"user": {"id": ctx.uid, "email": ctx.email, "name": ctx.name}, "households": ms, "current": cur,
-            "signup": accounts.signup_mode(), "chef_plan": chef, "is_chef": chef != "none" or any(
+            "signup": accounts.signup_mode(), "chef_plan": chef, "is_owner": billing.is_owner(ctx.email), "is_chef": chef != "none" or any(
                 m["role"] == "chef" for m in ms), "household_plan": hp}
 
 
@@ -433,7 +433,7 @@ SECTIONS = {"household", "meals", "dinner_times", "prep_minutes", "batch_day", "
             "home_store", "memberships", "cards", "suggestions", "chores", "outputs", "styles", "kid_chef", "leftovers",
             "eating_out", "cost_per_serving", "storage", "freezer_meals", "shopping_sessions", "pets",
             "plan_ahead_weeks", "recipe_sources", "occasions", "holidays", "holidays_off", "buffet",
-            "ingredient_prefs", "use_book"}
+            "ingredient_prefs", "use_book", "delivery_services", "address"}
 
 
 class SectionIn(BaseModel):
@@ -1376,6 +1376,7 @@ def shopping(week: str | None = None, choice: str | None = None, ctx: Ctx = Depe
         lines = "\n".join(f"{ln['packs']} × {ln['name']}" + (f" ({ln['brand']})" if ln.get("brand") else "")
                           for ln in o["lines"])
         item["share_text"] = lines
+        item["also_via"] = household_api.handoffs(h, o, lines)
         if o["handoff"] == "amazon":
             item["note"] = "Share to the Amazon or Whole Foods app, or to Reminders"
         elif o["handoff"] != "instacart":
@@ -2438,5 +2439,8 @@ def root() -> str:
 
 
 # Dinner Peace Pro (the personal-chef app) and plans: last, so its routes can use the dependencies above
-from . import pro_api  # noqa: E402
+from . import household_api, market_api, owner_api, pro_api  # noqa: E402
+app.include_router(market_api.router)
 app.include_router(pro_api.router)
+app.include_router(owner_api.router)
+app.include_router(household_api.router)

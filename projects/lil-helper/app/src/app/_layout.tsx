@@ -11,7 +11,7 @@ import { mode } from "@/lib/mode";
 import { listenForTaps } from "@/lib/push";
 import { c } from "@/lib/theme";
 
-const OPEN = new Set(["signin", "welcome", "plans"]);
+const OPEN = new Set(["signin", "welcome", "plans", "owner"]);
 
 export default function RootLayout() {
   const segments = useSegments();

@@ -198,8 +198,8 @@ def tick_all(now: dt.datetime | None = None) -> dict[str, list[str]]:
     """Run `tick` for every household on this server (or the single local one if there are no accounts)."""
     con = accounts.connect()
     hs = accounts.households(con)
+    out = {"billing": billing_tick(con, now)}
     con.close()
-    out = {}
     if not hs:
         out["local"] = tick(now)
         return out
@@ -210,6 +210,26 @@ def tick_all(now: dt.datetime | None = None) -> dict[str, list[str]]:
             except Exception as e:                      # one household's problem never stops the others
                 out[row["id"]] = [f"error: {type(e).__name__}"]
     return out
+
+
+def billing_tick(con, now: dt.datetime | None = None) -> list[str]:
+    """Renew subscriptions that are due, and email anyone whose price goes up at a renewal in the next 30 days."""
+    import html
+    from . import billing, outputs
+    from .config import data_root
+    at = now.astimezone(dt.timezone.utc) if now and now.tzinfo else (now.replace(tzinfo=dt.timezone.utc) if now else None)
+    done = [f"renewed {r['id']}" for r in billing.renew_due(con, at)]
+    for s in billing.notices_due(con, at):
+        if s["who"]["email"]:
+            body = (f"<p>Your {html.escape(billing.plans.TIERS[s['plan']]['label'])} plan for "
+                    f"{html.escape(s['who']['name'])} renews on {s['renews'][:10]} at "
+                    f"${s['next_price']:.2f} ({s['interval']}), up from ${float(s['price']):.2f}.</p>"
+                    "<p>You can change or cancel it any time before then in the app (More, then Plans).</p>")
+            outputs.send_mail(s["who"]["email"], "Your DinnerPeace plan's price at renewal", body, "price-notice",
+                              data_root() / "outbox")
+        billing.mark_noticed(con, s["id"], s["renews"])
+        done.append(f"noticed {s['id']}")
+    return done
 
 
 def start():

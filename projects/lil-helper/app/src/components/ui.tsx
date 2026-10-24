@@ -1,16 +1,19 @@
 import { router } from "expo-router";
 import React, { ReactNode, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Switch, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Switch, TextInput, View, useWindowDimensions } from "react-native";
 import { Text } from "@/components/text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ApiError } from "@/lib/api";
 import { c, s } from "@/lib/theme";
 
-export function Screen({ children, refreshing, onRefresh }: { children: ReactNode; refreshing?: boolean;
-  onRefresh?: () => void }) {
+export function Screen({ children, refreshing, onRefresh, wide: allowWide }: { children: ReactNode; refreshing?: boolean;
+  onRefresh?: () => void; wide?: boolean }) {
+  // On a desktop or tablet the content sits in a readable column (wider for screens that ask for it)
+  const { width } = useWindowDimensions();
+  const max = allowWide ? 1280 : 820;
   return (
     <SafeAreaView style={s.screen} edges={["top"]}>
-      <ScrollView contentContainerStyle={s.pad}
+      <ScrollView contentContainerStyle={[s.pad, width > max + 48 && { width: max, alignSelf: "center", paddingTop: 28 }]}
         refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} /> : undefined}>
         {children}
       </ScrollView>
@@ -62,7 +65,7 @@ export function Field({ label, hint, ...props }: { label: string; hint?: string 
   return (
     <View style={{ gap: 4 }}>
       <Text style={s.label}>{label}</Text>
-      <TextInput style={s.input} placeholderTextColor={c.muted} {...props} />
+      <TextInput style={s.input} placeholderTextColor={c.muted} accessibilityLabel={label} {...props} />
       {hint ? <Text style={s.muted}>{hint}</Text> : null}
     </View>
   );
@@ -169,4 +172,12 @@ export function AdminNote({ role }: { role?: string | null }) {
   if (!role || role === "admin") return null;
   return <View style={[s.card, { backgroundColor: c.amberSoft }]}>
     <Text style={s.body}>Only the household's admin can change these settings. You can see them, and ask.</Text></View>;
+}
+
+/** Two fields side by side on a wide screen, stacked on a phone. */
+export function Pair({ children }: { children: ReactNode }) {
+  const { width } = useWindowDimensions();
+  const kids = React.Children.toArray(children);
+  if (width < 600) return <View style={{ gap: 8 }}>{kids}</View>;
+  return <View style={[s.row, { alignItems: "flex-start" }]}>{kids.map((k, i) => <View key={i} style={{ flex: 1 }}>{k}</View>)}</View>;
 }

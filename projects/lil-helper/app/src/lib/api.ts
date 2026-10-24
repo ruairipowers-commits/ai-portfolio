@@ -76,7 +76,7 @@ export type SessionInfo = { session: string; user: { id: string; email: string; 
   households: Membership[] };
 export type HouseholdPlan = { plan: string; own: string; via_chef: boolean };
 export type Me = { user: { id: string; email: string; name: string }; households: Membership[];
-  current: Membership | null; signup: "invite" | "open" | "closed"; chef_plan?: string; is_chef?: boolean;
+  current: Membership | null; signup: "invite" | "open" | "closed"; chef_plan?: string; is_chef?: boolean; is_owner?: boolean;
   household_plan?: HouseholdPlan | null };
 
 export type Entry = { day: string; meal: string; recipe: string; name: string; servings: number; est_cost: number;
@@ -493,6 +493,88 @@ export const pro = {
   fridge: () => call<FamilyFridge>("/api/household/fridge"),
   fridgeDone: (id: number, status: "eaten" | "tossed") => post<{ closed: number }>(`/api/household/fridge/${id}`, { status }),
   inviteChef: (email: string) => post<{ invited: string }>("/api/household/chef-invite", { email }),
+};
+
+// ---- v6: wallet, delivery, address, owner console, marketplace
+export type EarnRule = { pct?: number; points?: number; program?: string; annual_cap?: number | null };
+export type CardCredit = { name: string; monthly: number; applies_to?: string[]; december_extra?: number; used?: number };
+export type CardIn = { id?: string; template?: string; name?: string; issuer?: string; network?: string; last4?: string;
+  expires?: string; earn?: Record<string, EarnRule>; credit_limit?: number | null; monthly_limit?: number | null;
+  stores?: string[]; primary?: boolean; credits?: CardCredit[]; active?: boolean };
+export type CardStatus = { id: string; name: string; issuer: string; network: string; last4: string; expires: string;
+  expires_in_days: number | null; warn: string; primary: boolean; stores: string[]; active: boolean; template: string;
+  credit_limit: number | null; monthly_limit: number | null; month_spent: number; month_left: number | null;
+  caps: { category: string; rate: number; spent: number; cap: number | null; left: number | null; pct_used: number | null;
+    next_best?: string | null }[]; earn: Record<string, EarnRule>; verified: string; credits: CardCredit[] };
+export type Wallet = { cards: CardStatus[]; where: { store: string; store_name: string; mode: string; card: string | null;
+  card_name: string; per_100: number; note: string }[];
+  templates: { id: string; name: string; issuer: string; network: string; earn: Record<string, EarnRule>;
+    credits: CardCredit[]; verified: string }[]; categories: string[]; stores: { id: string; name: string }[];
+  services: { id: string; name: string }[] };
+export type DeliveryService = { id: string; name: string; kinds: string[]; url: string; note: string; handoff: string;
+  on: boolean; membership: { id: string | null; name: string; on: boolean; price_per_month: number | null;
+    waive: { minimum?: number } | null; verified: string } };
+export type Address = { line1?: string; line2?: string; city?: string; state?: string; zip?: string; lat?: number;
+  lon?: number; source?: string };
+export type PriceRow = { plan: string; label: string; monthly: number; yearly: number; savings_pct: number;
+  effective: string | null; subscribers: number; scheduled: { monthly: number; yearly: number; effective: string } | null;
+  history: { monthly: number; yearly: number; effective: string; set_by: string }[] };
+export type Subscription = { id: string; kind: "chef" | "household"; subject: string; plan: string;
+  interval: "monthly" | "yearly"; price: number; policy: "grandfather" | "current_price" | "custom";
+  custom_price: number | null; started: string; renews: string; status: string; source: string; next_price: number;
+  change: number; who: { name: string; email: string } };
+export type OwnerView = { prices: PriceRow[]; subscriptions: Subscription[]; renewals: Subscription[];
+  history: { ts: string; sub: string; event: string; detail: string; by: string }[];
+  totals: { active: number; monthly_revenue: number; grandfathered: number; price_rises_next_30_days: number };
+  policies: string[]; store_note: string };
+export type PublicChef = { uid: string; name: string; business: string; bio: string; cuisines: string[];
+  rate_per_visit: number | null; rate_hourly: number | null; place: string; miles: number | null; radius_miles: number;
+  full: boolean; clients: number; request?: string | null; your_chef?: boolean };
+export type PublicHousehold = { household_id?: string; place: string; miles: number | null; people: number; kids: number;
+  allergens: string[]; diets: string[]; budget_per_week: number | null; budget_per_visit: number | null;
+  visits_per_week: number | null; cuisines: string[]; note: string; start: string | null; request?: string | null };
+export type MeetRequest = { id: string; from_kind: "chef" | "household"; chef_uid: string; hid: string; message: string;
+  proposed: string; status: string; created: string; by_uid: string };
+export type Listing = { open: boolean; budget_per_week: number | null; budget_per_visit: number | null;
+  visits_per_week: number | null; cuisines: string[]; note: string; start: string | null };
+export type ChefProfile = { display_name: string; business?: string; bio?: string; cuisines: string[];
+  rate_per_visit?: number | null; rate_hourly?: number | null; radius_miles: number; address: Address; listed: boolean;
+  accepting: boolean };
+
+export const v6 = {
+  wallet: () => call<Wallet>("/api/wallet"),
+  saveCards: (cards: (CardIn | string)[]) => put<Wallet>("/api/wallet/cards", { cards }),
+  primary: (id: string) => post<Wallet>(`/api/wallet/cards/${id}/primary`, {}),
+  delivery: () => call<{ services: DeliveryService[]; takeout_service: string | null }>("/api/delivery"),
+  saveDelivery: (b: { services: string[]; memberships: string[]; takeout_service?: string | null }) =>
+    put<{ services: DeliveryService[]; takeout_service: string | null }>("/api/delivery", b),
+  address: () => call<{ address: Address; geocoder: string | null }>("/api/household/address"),
+  saveAddress: (a: Address) => put<{ address: Address }>("/api/household/address", a),
+  reverse: (lat: number, lon: number) => call<{ address: Address }>(`/api/geo/reverse${q({ lat, lon })}`),
+  owner: () => call<OwnerView>("/api/owner"),
+  setPrice: (plan: string, b: { monthly: number; yearly?: number; annual_discount_pct?: number; effective?: string; note?: string }) =>
+    put<{ monthly: number; yearly: number }>(`/api/owner/prices/${plan}`, b),
+  editSub: (id: string, b: Partial<{ policy: string; custom_price: number; interval: string; plan: string; status: string }>) =>
+    put<Subscription>(`/api/owner/subscriptions/${id}`, b),
+  bulk: (plan: string, policy: string) => post<{ changed: number }>("/api/owner/subscriptions/bulk", { plan, policy }),
+  newSub: (b: { email: string; plan: string; interval: string; source: string; policy: string }) =>
+    post<Subscription>("/api/owner/subscriptions", b),
+  renewNow: () => post<{ renewed: unknown[] }>("/api/owner/renew", {}),
+  listing: () => call<{ listing: Listing; preview: PublicHousehold; has_address: boolean; cuisines: string[] }>("/api/market/listing"),
+  saveListing: (b: Partial<Listing>) => put<{ listing: Listing; preview: PublicHousehold; has_address: boolean; cuisines: string[] }>("/api/market/listing", b),
+  findChefs: (radius = 25, cuisine?: string) => call<{ chefs: PublicChef[]; place: string }>(`/api/market/chefs${q({ radius, cuisine })}`),
+  askChef: (chef_uid: string, message: string, proposed = "") => post<MeetRequest>("/api/market/chef-requests", { chef_uid, message, proposed }),
+  householdRequests: () => call<{ requests: (MeetRequest & { chef: PublicChef; contact: { name: string; email: string; business: string } | null })[] }>("/api/market/household-requests"),
+  profile: () => call<{ profile: ChefProfile; plan: string; cuisines: string[] }>("/api/market/profile"),
+  saveProfile: (b: Partial<ChefProfile>) => put<{ profile: ChefProfile }>("/api/market/profile", b),
+  findHouseholds: (radius = 25, cuisine?: string) => call<{ households: PublicHousehold[] }>(`/api/market/households${q({ radius, cuisine })}`),
+  askHousehold: (household_id: string, message: string, proposed = "") => post<MeetRequest>("/api/market/requests", { household_id, message, proposed }),
+  chefRequests: () => call<{ requests: (MeetRequest & { household: PublicHousehold | null; contact: { household: string; name: string; email: string; place: string } | null })[] }>("/api/market/requests"),
+  respond: (id: string, accept: boolean) => post<MeetRequest>(`/api/market/requests/${id}/respond`, { accept }),
+  withdraw: (id: string) => del<{ withdrawn: string }>(`/api/market/requests/${id}`),
+  hire: (id: string) => post<{ invited: string }>(`/api/market/requests/${id}/hire`, {}),
+  myChefs: () => call<{ chefs: { uid: string; name: string; email: string; since: string }[] }>("/api/household/chefs"),
+  removeChef: (uid: string) => del<{ removed: string }>(`/api/household/chefs/${uid}`),
 };
 
 export const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;

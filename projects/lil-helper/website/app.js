@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
         annualLabel?.classList.add('active');
         if (priceDisplay) priceDisplay.textContent = '$39';
         if (cycleDisplay) cycleDisplay.textContent = '/ year ($3.25/mo)';
-        if (pricingNote) pricingNote.textContent = 'Billed annually at $39/yr. Save 20% compared to monthly.';
+        if (pricingNote) pricingNote.textContent = 'Billed annually at $39/yr. Save 35% compared to monthly.';
 
         if (chefPrice1) chefPrice1.textContent = '$24';
         if (chefCycle1) chefCycle1.textContent = '/ month (billed $290/yr)';

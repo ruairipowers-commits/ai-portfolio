@@ -73,6 +73,9 @@ The marketing and platform architecture are built on a symbiotic, two-sided dist
 * **Aisle-Sorted Grocery Runs**: Automatically generated, store-sectioned grocery lists.
 * **Pantry-First Cooking**: "Cook From What You Have" suggestions to reduce food waste.
 * **Allergen & Picky-Eater Safety**: Allergy safeguards and kid-friendly portions.
+* **Card Wallet**: Every card's rewards, yearly caps, limits, expiry and delivery credits, with the next best card when a bonus runs out.
+* **Delivery Services**: Instacart, Amazon/Whole Foods, DoorDash, Uber Eats, Walmart and Grubhub hand-offs.
+* **Find a Chef**: Search personal chefs near your home, ask to meet, hire or switch chefs.
 * **Chef Connection (Free)**: Receive meal prep logs, container tracking, and reheating instructions directly from your private chef.
 
 ---
@@ -86,6 +89,7 @@ The marketing and platform architecture are built on a symbiotic, two-sided dist
 * **Print or Email Reheating Instructions**: Countertop kitchen cards or instant email guides with oven/stovetop temperatures.
 * **Cross-Household Shopping & Card Rewards**: Consolidate grocery runs across multiple homes into one route; pay with chef rewards card to earn points and auto-generate client chargebacks (or charge client card on file).
 * **Colleague Delegation & Away Plans**: Temporary backup chef access or auto-emailed workflow plans for vacation/sick coverage.
+* **Find Families**: Households near you looking for a chef, what they'd pay, and requests to meet.
 * **"What Do I Do Next?" Home Dashboard**: Clutter-free home screen showing today's priority kitchen, immediate next prep step, or next store stop.
 * **100% Hands-Free Kitchen Voice Control (`voice-engine.js`)**: Dictate notes, fridge logs, or receipts hands-free while cooking.
 

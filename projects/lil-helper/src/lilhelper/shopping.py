@@ -307,8 +307,7 @@ def split(h: Household, c: Catalog, pb: PriceBook, items: list[Need], s: Setting
         store_pct, store_cap, _ = money.store_reward(h, st)
         so.card, so.card_name, so.card_note = pick.card, pick.name, pick.note
         so.rewards = round(pick.earned + (so.items_cost + so.markup) * store_pct, 2)
-        if pick.card:
-            used[(pick.card, pick.category)] = used.get((pick.card, pick.category), 0.0) + amount
+        money.add_use(used, pick, amount)
         so.credits = so.rewards
         so.total = round(amount - so.credits, 2)
         so.payload = handoff_payload(so, h)
