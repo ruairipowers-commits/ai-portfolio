@@ -49,7 +49,6 @@ projects:
   - editorial-agents        # topic scout, weekly writer + editor, subscriptions (personal project)
   - daily-puzzle            # daily AI puzzle agents (personal project)
   - speaking-coach          # filler-word and transcript coach (personal project)
-  - lil-helper              # family meal planner, shopping split, chores, the dog (personal project)
   - launch-tracker          # every launch to space from public data (personal project)
   - crash-course            # 15-min / 1-hour / 4-hour courses on every tool here, owner-approved (personal project)
 
@@ -62,7 +61,6 @@ personal_projects:
   - editorial-agents
   - daily-puzzle
   - speaking-coach
-  - lil-helper
   - launch-tracker
   - crash-course
   - title: Loan default prediction (MIT capstone)
@@ -75,6 +73,13 @@ personal_projects:
     try_label: Open in Colab (read-only)
     result: "Defaults caught: 61% → 81%"
     result_basis: "logistic-regression baseline → tuned, explainable decision tree; 1,192 held-out loans"
+  - title: DinnerPeace (family meal planner)   # code in the private repo since 24 Oct 2026; write-up public, no demo
+    summary: Planning a family's meals, shopping across stores and kitchen jobs takes hours a week and lands on one person
+    pattern: Workflow (a solver picks meals, stores and jobs; a model only suggests, reads flyers and writes notes)
+    stack: OR-Tools CP-SAT, FastAPI, Expo (React Native), WeasyPrint, Ollama
+    post: personal/posts/lil-helper.md
+    result: "$23 a week saved, 0 unsafe plans over 8 simulated weeks"
+    result_basis: "offline, mock model, fictional family and synthetic prices; eval gate 28 of 28, must-reject recall 1.00"
   - title: Private AI workbench (EVO-X1)
     summary: Local models, notebooks and creative tools on a mini PC, with a clear line between what stays home and what reaches the cloud
     pattern: Self-hosted local models + MCP tools
