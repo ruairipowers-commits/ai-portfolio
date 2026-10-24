@@ -60,9 +60,17 @@ been applied to a live account. Costs depend on traffic and model use; the solve
 - **Apple requires In-App Purchase** for a digital subscription unlocked in an iOS app (Guideline 3.1.1). Use
   StoreKit 2 through **RevenueCat** (its React Native SDK works in Expo development builds) or `expo-iap`; RevenueCat
   also handles Android billing, receipts and the paywall.
-- **Entitlement lives on the server:** App Store Server Notifications V2 (or RevenueCat webhooks) mark a household
-  `active`, `grace` or `lapsed` in the `households.plan` column that already exists. Only the admin's subscription
-  counts; invited family members never pay.
+- **Entitlement lives on the server (built):** `plans.py` decides what each plan unlocks; the RevenueCat webhook
+  (`POST /api/billing/revenuecat`, checked against `REVENUECAT_WEBHOOK_AUTH`) sets `households.plan` (Family) or
+  `users.chef_plan` (Chef Solo / Studio) with `plan_until` from the event's expiration. Entitlement ids in RevenueCat:
+  `family`, `chef_solo`, `chef_studio`; the app logs in to RevenueCat with our user id. Only the admin's (or a Pro
+  chef's) subscription counts; invited family members never pay, and a household with a Pro chef gets Family free.
+- **Prices and renewals:** the owner console keeps list prices and each subscriber's renewal policy (grandfather,
+  list price, custom). For App Store subscribers, mirror a price change in App Store Connect and pick "keep the
+  current price for existing subscribers" for the ones you grandfather; web (`direct`) and `comp` subscriptions follow
+  the console exactly.
+- **Products to create in App Store Connect:** Family monthly $4.99 / yearly $39; Chef Solo $29 / $290; Chef Studio
+  $59 / $590 (one subscription group per audience so a chef can upgrade Solo → Studio in place).
 - **Lapsed:** read-only (plans and recipes stay viewable, no new drafts) for 30 days, then the admin is asked whether
   to delete or keep.
 - **The welcome wizard** gets the paywall at the "DinnerPeace Family" step: free trial, then monthly or yearly. Show
@@ -87,7 +95,8 @@ been applied to a live account. Costs depend on traffic and model use; the solve
 ## Before submitting to the App Store
 
 - [ ] Hosted service in AWS with RLS, backups, and an uptime check on `/api/health`
-- [ ] Subscriptions through RevenueCat, server entitlement, paywall in the wizard, restore and manage buttons
+- [x] Server entitlement and the plan page (prices, terms, privacy links) — `plans.py`, `app/src/app/plans.tsx`
+- [ ] RevenueCat SDK in a development build, the purchase sheet, restore and manage buttons; products in App Store Connect
 - [ ] Privacy policy and terms pages; App Privacy questions answered; children's handling as above
 - [ ] Sign-in links through SES; Universal Links (`https://helper.agentls.com/signin`) so emailed links open the app
       instead of a custom scheme

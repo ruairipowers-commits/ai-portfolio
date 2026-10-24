@@ -3,7 +3,8 @@
 // original back later.
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Text, TextInput, View } from "react-native";
+import { TextInput, View } from "react-native";
+import { Text } from "@/components/text";
 import { api, DAY_NAME, Entry, RecipeRow } from "@/lib/api";
 import { Button, Chips, ErrorText, Header, LinkRow, Screen } from "@/components/ui";
 import { c, s } from "@/lib/theme";

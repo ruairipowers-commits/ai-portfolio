@@ -70,12 +70,14 @@ const del = <T>(path: string, body?: unknown) =>
   call<T>(path, { method: "DELETE", body: body === undefined ? undefined : JSON.stringify(body) });
 
 // ---- types (mirror src/lilhelper/api.py)
-export type Role = "admin" | "adult" | "kid";
+export type Role = "admin" | "adult" | "kid" | "chef";
 export type Membership = { household_id: string; person_id: string; role: Role; name: string; plan?: string };
 export type SessionInfo = { session: string; user: { id: string; email: string; name: string }; household: string | null;
   households: Membership[] };
+export type HouseholdPlan = { plan: string; own: string; via_chef: boolean };
 export type Me = { user: { id: string; email: string; name: string }; households: Membership[];
-  current: Membership | null; signup: "invite" | "open" | "closed" };
+  current: Membership | null; signup: "invite" | "open" | "closed"; chef_plan?: string; is_chef?: boolean; is_owner?: boolean;
+  household_plan?: HouseholdPlan | null };
 
 export type Entry = { day: string; meal: string; recipe: string; name: string; servings: number; est_cost: number;
   active: number; prep_day: string; double?: boolean; why?: string[]; eaters?: string[];
@@ -387,6 +389,217 @@ export const api = {
 
   savings: () => call<{ weeks: { week_of: string; dollars_saved: number; minutes_saved: number; rating: number | null }[];
     dollars_saved: number; minutes_saved: number }>("/api/savings"),
+};
+
+// ---- Dinner Peace Pro (src/lilhelper/pro_api.py)
+export type Tier = { kind: "household" | "chef"; rank: number; label: string; monthly: number; yearly: number;
+  clients?: number | null; blurb: string; features: string[] };
+export type Plans = { tiers: Record<string, Tier>; chef_plan: string; household: HouseholdPlan | null; clients: number;
+  client_limit: number | null; billing: "revenuecat" | "admin"; terms_url: string; privacy_url: string };
+export type Visit = { day: string; arrive: string; leave: string; covers: string[] };
+export type ChefClient = { household_id: string; name: string; priority: number; billing: string; budget: number | null;
+  visits: Visit[]; spent_this_week: number };
+export type ChefHome = { plan: string; label: string; client_limit: number | null; clients: ChefClient[]; cards: string[];
+  stores: string[]; memberships: string[]; branding: { business: string; footer: string; custom: boolean };
+  features: Record<string, boolean> };
+export type Dish = { day: string; meal: string; name: string; recipe: string; servings: number; ready: boolean };
+export type Kitchen = { household_id: string; name: string; arrive: string; leave: string; covers: string[];
+  priority: number; dishes: Dish[]; ready: number; next: string; hazard: string | null; hazards: string[];
+  containers_in: number; expiring: string[]; shopping: string[]; plan_status: string | null; done?: boolean };
+export type Cockpit = { date: string; homes_today: number; kitchens: Kitchen[]; now: Kitchen | null; chef: string;
+  plan: string; studio: boolean; trip_id: string | null;
+  next_stop: { store: string; items: number; pay: { with: string; note: string; total: number }[] } | null;
+  upcoming: { date: string; day: string; household_id: string; name: string; arrive: string }[];
+  clients: { household_id: string; name: string; priority: number; billing: string; visits: Visit[] }[] };
+export type Container = { id: number; number: number; dish: string; portions: number; location: string; prepared: string;
+  use_by: string; days_left: number; warn: string; card: string | null };
+export type ReheatCard = { id: string; prepared: string; meal: string; method: string; temp_f: number | null;
+  minutes: number; covered: boolean; notes: string; containers: number[]; contains: string[]; steps: string[];
+  use_by: string | null };
+export type Dossier = { name: string; hazards: { person: string; allergen: string; kid: boolean; text: string }[];
+  people: { id: string; name: string; kid: boolean; age: number | null; allergies: string[]; diet: string[];
+    likes: string[]; dislikes: string[] }[]; brands: Record<string, string>; allergens: string[];
+  budget_per_week: number | null };
+export type ClientRecord = { priority: number; billing: string; client_card: string | null; budget: number | null;
+  visits: Visit[]; address: string; gate_code: string; access_notes: string; emergency: string; notes: string };
+export type ClientDetail = { household_id: string; name: string; dossier: Dossier; client: ClientRecord;
+  containers: Container[]; cards: ReheatCard[]; list: { id: number; name: string; qty: number; unit: string }[];
+  spent_this_week: number; family_joined: boolean; invites: { email: string; expires: string }[] };
+export type VoiceAction = { kind: "toss" | "eaten" | "made" | "reheat" | "shop"; what?: string; match?: string | null;
+  dish?: string; portions?: number; containers?: { location: string; portions: number }[]; method?: string;
+  temp_f?: number | null; minutes?: number; covered?: boolean; meal?: string | null; item?: string;
+  allergens?: string[]; warning?: string };
+export type VoicePreview = { household: string | null; household_name: string | null; actions: VoiceAction[];
+  unparsed: string[]; flags: string[]; say: string };
+export type Share = { household_id: string; name: string; qty: number; cost: number; pct: number };
+export type TripLine = { ingredient: string; name: string; brand: string; packs: number; pack: number; unit: string;
+  price_each: number; cost: number; special: boolean; bulk: boolean; shares: Share[] };
+export type Checkout = { paid_by: "chef" | "client"; household_id: string | null; household_name: string;
+  lines: TripLine[]; total: number; card: string | null; card_name: string; card_note: string; rewards: number;
+  per_home: { household_id: string; name: string; amount: number }[]; recorded?: boolean; actual?: number };
+export type Trip = { id?: string; status?: string; date: string; total: number; rewards: number; bulk_lines: number;
+  minutes: number; flags: string[]; unavailable: string[];
+  stops: { store: string; store_name: string; total: number; checkouts: Checkout[] }[];
+  homes: { household_id: string; name: string; amount: number; billing: string }[] };
+export type ChefShopping = { start: string; days: number; studio: boolean; trip: Trip | null;
+  per_home: { household_id: string; name: string; visits: string[];
+    items: { name: string; qty: number; unit: string; brand: string | null; for: string[] }[] }[] };
+export type LedgerRow = { id: number; household_id: string; name: string; date: string; store: string; amount: number;
+  card: string; paid_by: string; rewards: number; status: string; note: string; invoice_id: string | null };
+export type Ledger = { rows: LedgerRow[]; totals: { pending: number; rewards: number }; names: Record<string, string>;
+  budgets: Record<string, { budget: number | null; spent: number }>;
+  invoices: { id: string; household_id: string; created: string; total: number; status: string }[] };
+export type CoveragePack = { id: string; sub_name: string; sub_email: string; start: string; end: string;
+  households: string[]; level: string; created: string; revoked: number; opened: number; url: string };
+export type FamilyFridge = { containers: Container[]; cards: ReheatCard[]; chefs: string[]; plan: HouseholdPlan };
+
+export const pro = {
+  plans: () => call<Plans>("/api/plans"),
+  home: () => call<ChefHome>("/api/chef"),
+  settings: (b: Partial<{ cards: string[]; stores: string[]; memberships: string[]; business: string; footer: string }>) =>
+    put<ChefHome>("/api/chef/settings", b),
+  cockpit: () => call<Cockpit>("/api/chef/cockpit"),
+  newClient: (b: { family_name: string; contact_name: string; contact_email?: string; invite?: boolean }) =>
+    post<{ household_id: string; invited: string | null }>("/api/chef/clients", b),
+  client: (hid: string) => call<ClientDetail>(`/api/chef/clients/${hid}`),
+  editClient: (hid: string, b: Partial<ClientRecord>) => put<ClientRecord>(`/api/chef/clients/${hid}`, b),
+  addContainer: (hid: string, b: { dish: string; portions: number; location: string; number?: number }) =>
+    post<Container>(`/api/chef/clients/${hid}/containers`, b),
+  closeContainer: (hid: string, id: number, status: "eaten" | "tossed") =>
+    post<{ closed: number }>(`/api/chef/clients/${hid}/containers/${id}/close`, { status }),
+  addCard: (hid: string, b: { meal: string; method: string; minutes: number; temp_f?: number | null; covered?: boolean;
+    notes?: string; containers?: number[]; confirm?: boolean }) => post<ReheatCard>(`/api/chef/clients/${hid}/reheat`, b),
+  cardLink: (hid: string, size: "4x6" | "letter", ids?: string) =>
+    post<{ url: string }>(`/api/chef/clients/${hid}/reheat/link${q({ size, ids })}`, {}),
+  emailCards: (hid: string, ids?: string) => post<{ sent_to: number }>(`/api/chef/clients/${hid}/reheat/email${q({ ids })}`, {}),
+  voice: (text: string, household_id?: string) => post<VoicePreview>("/api/chef/voice", { text, household_id }),
+  voiceApply: (household_id: string, actions: VoiceAction[], confirm_allergen = false) =>
+    post<{ tossed: string[]; eaten: string[]; containers: Container[]; cards: ReheatCard[]; shopping: unknown[];
+      skipped: string[] }>("/api/chef/voice/apply", { household_id, actions, confirm_allergen }),
+  shopping: (days = 3) => call<ChefShopping>(`/api/chef/shopping${q({ days })}`),
+  saveTrip: (days = 3) => post<Trip>("/api/chef/trips", { days }),
+  trip: (id: string) => call<Trip>(`/api/chef/trips/${id}`),
+  paid: (id: string, b: { store: string; paid_by: string; household_id?: string | null; actual?: number }) =>
+    post<{ ledger: unknown[] }>(`/api/chef/trips/${id}/paid`, b),
+  ledger: () => call<Ledger>("/api/chef/ledger"),
+  receipt: (b: { household_id: string; store: string; amount: number; card?: string; note?: string }) =>
+    post<{ id: number }>("/api/chef/ledger", b),
+  invoice: (household_id: string) => post<{ id: string; total: number }>("/api/chef/invoices", { household_id }),
+  invoicePaid: (id: string) => post<{ paid: string }>(`/api/chef/invoices/${id}/paid`, {}),
+  coverage: () => call<{ packs: CoveragePack[] }>("/api/chef/coverage"),
+  newCoverage: (b: { sub_name: string; sub_email: string; start: string; end: string; households: string[];
+    level: string; password: string }) => post<CoveragePack>("/api/chef/coverage", b),
+  revokeCoverage: (id: string) => del<{ revoked: string }>(`/api/chef/coverage/${id}`),
+  fridge: () => call<FamilyFridge>("/api/household/fridge"),
+  fridgeDone: (id: number, status: "eaten" | "tossed") => post<{ closed: number }>(`/api/household/fridge/${id}`, { status }),
+  inviteChef: (email: string) => post<{ invited: string }>("/api/household/chef-invite", { email }),
+};
+
+// ---- v6: wallet, delivery, address, owner console, marketplace
+export type EarnRule = { pct?: number; points?: number; program?: string; annual_cap?: number | null };
+export type CardCredit = { name: string; monthly: number; applies_to?: string[]; december_extra?: number; used?: number };
+export type CardIn = { id?: string; template?: string; name?: string; issuer?: string; network?: string; last4?: string;
+  expires?: string; earn?: Record<string, EarnRule>; credit_limit?: number | null; monthly_limit?: number | null;
+  stores?: string[]; primary?: boolean; credits?: CardCredit[]; active?: boolean };
+export type CardStatus = { id: string; name: string; issuer: string; network: string; last4: string; expires: string;
+  expires_in_days: number | null; warn: string; primary: boolean; stores: string[]; active: boolean; template: string;
+  credit_limit: number | null; monthly_limit: number | null; month_spent: number; month_left: number | null;
+  caps: { category: string; rate: number; spent: number; cap: number | null; left: number | null; pct_used: number | null;
+    next_best?: string | null }[]; earn: Record<string, EarnRule>; verified: string; credits: CardCredit[] };
+export type Wallet = { cards: CardStatus[]; where: { store: string; store_name: string; mode: string; card: string | null;
+  card_name: string; per_100: number; note: string }[];
+  templates: { id: string; name: string; issuer: string; network: string; earn: Record<string, EarnRule>;
+    credits: CardCredit[]; verified: string }[]; categories: string[]; stores: { id: string; name: string }[];
+  services: { id: string; name: string }[] };
+export type DeliveryService = { id: string; name: string; kinds: string[]; url: string; note: string; handoff: string;
+  on: boolean; membership: { id: string | null; name: string; on: boolean; price_per_month: number | null;
+    waive: { minimum?: number } | null; verified: string } };
+export type Address = { line1?: string; line2?: string; city?: string; state?: string; zip?: string; lat?: number;
+  lon?: number; source?: string };
+export type PriceRow = { plan: string; label: string; monthly: number; yearly: number; savings_pct: number;
+  effective: string | null; subscribers: number; scheduled: { monthly: number; yearly: number; effective: string } | null;
+  history: { monthly: number; yearly: number; effective: string; set_by: string }[] };
+export type Subscription = { id: string; kind: "chef" | "household"; subject: string; plan: string;
+  interval: "monthly" | "yearly"; price: number; policy: "grandfather" | "current_price" | "custom";
+  custom_price: number | null; started: string; renews: string; status: string; source: string; next_price: number;
+  change: number; who: { name: string; email: string } };
+export type OwnerView = { prices: PriceRow[]; subscriptions: Subscription[]; renewals: Subscription[];
+  history: { ts: string; sub: string; event: string; detail: string; by: string }[];
+  totals: { active: number; monthly_revenue: number; grandfathered: number; price_rises_next_30_days: number };
+  policies: string[]; store_note: string };
+export type PublicChef = { uid: string; name: string; business: string; bio: string; cuisines: string[];
+  rate_per_visit: number | null; rate_hourly: number | null; place: string; miles: number | null; radius_miles: number;
+  full: boolean; clients: number; request?: string | null; your_chef?: boolean };
+export type PublicHousehold = { household_id?: string; place: string; miles: number | null; people: number; kids: number;
+  allergens: string[]; diets: string[]; budget_per_week: number | null; budget_per_visit: number | null;
+  visits_per_week: number | null; cuisines: string[]; note: string; start: string | null; request?: string | null };
+export type MeetRequest = { id: string; from_kind: "chef" | "household"; chef_uid: string; hid: string; message: string;
+  proposed: string; status: string; created: string; by_uid: string };
+export type Listing = { open: boolean; budget_per_week: number | null; budget_per_visit: number | null;
+  visits_per_week: number | null; cuisines: string[]; note: string; start: string | null };
+export type ChefProfile = { display_name: string; business?: string; bio?: string; cuisines: string[];
+  rate_per_visit?: number | null; rate_hourly?: number | null; radius_miles: number; address: Address; listed: boolean;
+  accepting: boolean };
+
+export type Engagement = { id: string; chef_uid: string; household_id: string; status: "inquiry" | "trial_scheduled" |
+  "active" | "paused" | "ended" | "declined"; trial_at: string | null; started: string | null; ended: string | null;
+  rate_per_visit: number | null; request_id: string | null; name?: string; household?: string | null; address_shared?: boolean };
+export type FoodPassport = { household_name: string; version: string; allergens: string[]; kitchen_notes: string;
+  people: { first_name: string; child: boolean; age: number | null; allergies: string[]; diet: string[]; likes: string[];
+    dislikes: string[] }[]; brands: Record<string, string>; pets: string[] };
+export type PrivateLocation = { street: string; unit: string; city: string; state: string; zip: string; gate_code: string;
+  access_notes: string };
+export type PassportView = { household_id: string; public: { city: string; state: string }; passport: FoodPassport | null;
+  location: PrivateLocation | null; engagement: Engagement | null; access: { passport: boolean; address: boolean } };
+
+export const passport = {
+  mine: () => call<{ passport: FoodPassport; location: PrivateLocation; engagements: Engagement[];
+    grants: { chef_uid: string; name: string; granted: string; revoked: string | null }[];
+    access_log: { ts: string; viewer: string; name: string; parts: string }[] }>("/api/household/passport"),
+  grant: (chef_uid: string) => post<{ granted: string }>("/api/household/passport/grants", { chef_uid }),
+  revoke: (chef_uid: string) => del<{ revoked: string }>(`/api/household/passport/grants/${chef_uid}`),
+  view: (hid: string) => call<PassportView>(`/api/passport/${hid}`),
+  engagements: () => call<{ engagements: Engagement[] }>("/api/engagements"),
+  move: (id: string, status: string, trial_at?: string) => put<Engagement & { invited: string | null }>(`/api/engagements/${id}`, { status, trial_at }),
+  exportUrl: async () => `${await serverUrl()}/api/household/passport/export`,
+};
+
+export const v6 = {
+  wallet: () => call<Wallet>("/api/wallet"),
+  saveCards: (cards: (CardIn | string)[]) => put<Wallet>("/api/wallet/cards", { cards }),
+  primary: (id: string) => post<Wallet>(`/api/wallet/cards/${id}/primary`, {}),
+  delivery: () => call<{ services: DeliveryService[]; takeout_service: string | null }>("/api/delivery"),
+  saveDelivery: (b: { services: string[]; memberships: string[]; takeout_service?: string | null }) =>
+    put<{ services: DeliveryService[]; takeout_service: string | null }>("/api/delivery", b),
+  address: () => call<{ address: Address; access: { gate_code?: string; notes?: string; kitchen_notes?: string };
+    geocoder: string | null }>("/api/household/address"),
+  saveAddress: (a: Address & { gate_code?: string; access_notes?: string; kitchen_notes?: string }) =>
+    put<{ address: Address; access: { gate_code?: string; notes?: string; kitchen_notes?: string } }>("/api/household/address", a),
+  reverse: (lat: number, lon: number) => call<{ address: Address }>(`/api/geo/reverse${q({ lat, lon })}`),
+  owner: () => call<OwnerView>("/api/owner"),
+  setPrice: (plan: string, b: { monthly: number; yearly?: number; annual_discount_pct?: number; effective?: string; note?: string }) =>
+    put<{ monthly: number; yearly: number }>(`/api/owner/prices/${plan}`, b),
+  editSub: (id: string, b: Partial<{ policy: string; custom_price: number; interval: string; plan: string; status: string }>) =>
+    put<Subscription>(`/api/owner/subscriptions/${id}`, b),
+  bulk: (plan: string, policy: string) => post<{ changed: number }>("/api/owner/subscriptions/bulk", { plan, policy }),
+  newSub: (b: { email: string; plan: string; interval: string; source: string; policy: string }) =>
+    post<Subscription>("/api/owner/subscriptions", b),
+  renewNow: () => post<{ renewed: unknown[] }>("/api/owner/renew", {}),
+  listing: () => call<{ listing: Listing; preview: PublicHousehold; has_address: boolean; cuisines: string[] }>("/api/market/listing"),
+  saveListing: (b: Partial<Listing>) => put<{ listing: Listing; preview: PublicHousehold; has_address: boolean; cuisines: string[] }>("/api/market/listing", b),
+  findChefs: (radius = 25, cuisine?: string) => call<{ chefs: PublicChef[]; place: string }>(`/api/market/chefs${q({ radius, cuisine })}`),
+  askChef: (chef_uid: string, message: string, proposed = "") => post<MeetRequest>("/api/market/chef-requests", { chef_uid, message, proposed }),
+  householdRequests: () => call<{ requests: (MeetRequest & { chef: PublicChef; contact: { name: string; email: string; business: string } | null })[] }>("/api/market/household-requests"),
+  profile: () => call<{ profile: ChefProfile; plan: string; cuisines: string[] }>("/api/market/profile"),
+  saveProfile: (b: Partial<ChefProfile>) => put<{ profile: ChefProfile }>("/api/market/profile", b),
+  findHouseholds: (radius = 25, cuisine?: string) => call<{ households: PublicHousehold[] }>(`/api/market/households${q({ radius, cuisine })}`),
+  askHousehold: (household_id: string, message: string, proposed = "") => post<MeetRequest>("/api/market/requests", { household_id, message, proposed }),
+  chefRequests: () => call<{ requests: (MeetRequest & { household: PublicHousehold | null; contact: { household: string; name: string; email: string; place: string } | null })[] }>("/api/market/requests"),
+  respond: (id: string, accept: boolean) => post<MeetRequest>(`/api/market/requests/${id}/respond`, { accept }),
+  withdraw: (id: string) => del<{ withdrawn: string }>(`/api/market/requests/${id}`),
+  hire: (id: string) => post<{ invited: string }>(`/api/market/requests/${id}/hire`, {}),
+  myChefs: () => call<{ chefs: { uid: string; name: string; email: string; since: string }[] }>("/api/household/chefs"),
+  removeChef: (uid: string) => del<{ removed: string }>(`/api/household/chefs/${uid}`),
 };
 
 export const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;

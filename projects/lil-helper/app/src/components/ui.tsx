@@ -1,14 +1,19 @@
 import { router } from "expo-router";
 import React, { ReactNode, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Switch, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Switch, TextInput, View, useWindowDimensions } from "react-native";
+import { Text } from "@/components/text";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ApiError } from "@/lib/api";
 import { c, s } from "@/lib/theme";
 
-export function Screen({ children, refreshing, onRefresh }: { children: ReactNode; refreshing?: boolean;
-  onRefresh?: () => void }) {
+export function Screen({ children, refreshing, onRefresh, wide: allowWide }: { children: ReactNode; refreshing?: boolean;
+  onRefresh?: () => void; wide?: boolean }) {
+  // On a desktop or tablet the content sits in a readable column (wider for screens that ask for it)
+  const { width } = useWindowDimensions();
+  const max = allowWide ? 1280 : 820;
   return (
     <SafeAreaView style={s.screen} edges={["top"]}>
-      <ScrollView contentContainerStyle={s.pad}
+      <ScrollView contentContainerStyle={[s.pad, width > max + 48 && { width: max, alignSelf: "center", paddingTop: 28 }]}
         refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} /> : undefined}>
         {children}
       </ScrollView>
@@ -17,27 +22,38 @@ export function Screen({ children, refreshing, onRefresh }: { children: ReactNod
 }
 
 export function Button({ title, onPress, disabled, busy, kind = "primary" }: { title: string; onPress: () => void;
-  disabled?: boolean; busy?: boolean; kind?: "primary" | "ghost" }) {
-  const primary = kind === "primary";
+  disabled?: boolean; busy?: boolean; kind?: "primary" | "ghost" | "pro" }) {
+  const primary = kind !== "ghost";
   return (
     <Pressable accessibilityRole="button" onPress={onPress} disabled={disabled || busy}
-      style={({ pressed }) => [primary ? s.btn : s.ghost, { opacity: disabled ? 0.45 : pressed ? 0.8 : 1 }]}>
-      {busy ? <ActivityIndicator color={primary ? "#fff" : c.ink} />
+      style={({ pressed }) => [primary ? s.btn : s.ghost, kind === "pro" ? s.btnPro : null,
+        pressed && primary ? { backgroundColor: kind === "pro" ? "#6F5130" : c.primaryDark } : null,
+        { opacity: disabled ? 0.45 : pressed ? 0.92 : 1 }]}>
+      {busy ? <ActivityIndicator color={primary ? c.onPrimary : c.ink} />
         : <Text style={primary ? s.btnText : s.ghostText}>{title}</Text>}
     </Pressable>
   );
 }
 
-export function Pill({ text, tone = "green" }: { text: string; tone?: "green" | "red" | "amber" }) {
-  const bg = tone === "green" ? c.greenSoft : tone === "red" ? c.redSoft : c.amberSoft;
-  const fg = tone === "green" ? c.green : tone === "red" ? c.red : c.amber;
+export function Pill({ text, tone = "green" }: { text: string; tone?: "green" | "red" | "amber" | "pro" }) {
+  const bg = tone === "green" ? c.greenSoft : tone === "red" ? c.redSoft : tone === "pro" ? c.proSoft : c.amberSoft;
+  const fg = tone === "green" ? c.primaryDark : tone === "red" ? "#A83A33" : tone === "pro" ? c.pro : c.amber;
   return <View style={[s.pill, { backgroundColor: bg }]}><Text style={{ color: fg, fontSize: 12, fontWeight: "700" }}>{text}</Text></View>;
 }
 
 export function ErrorText({ error }: { error: unknown }) {
   if (!error) return null;
+  const upgrade = error instanceof ApiError && error.status === 402
+    ? (error.detail as { upgrade?: string; upgrade_label?: string } | undefined) : undefined;
+  if (upgrade) {
+    return <View style={[s.card, { backgroundColor: c.proSoft, borderColor: c.kraftLight }]}>
+      <Text style={[s.body, { color: c.ink }]}>✨ {error instanceof Error ? error.message : ""}</Text>
+      <Button kind="pro" title={`See ${upgrade.upgrade_label ?? "plans"}`}
+        onPress={() => router.push({ pathname: "/plans", params: { focus: upgrade.upgrade ?? "" } } as never)} />
+    </View>;
+  }
   return <View style={[s.card, { backgroundColor: c.redSoft, borderColor: c.redSoft }]}>
-    <Text style={[s.body, { color: c.red }]}>{error instanceof Error ? error.message : String(error)}</Text>
+    <Text style={[s.body, { color: "#A83A33" }]}>{error instanceof Error ? error.message : String(error)}</Text>
   </View>;
 }
 
@@ -49,7 +65,7 @@ export function Field({ label, hint, ...props }: { label: string; hint?: string 
   return (
     <View style={{ gap: 4 }}>
       <Text style={s.label}>{label}</Text>
-      <TextInput style={s.input} placeholderTextColor={c.muted} {...props} />
+      <TextInput style={s.input} placeholderTextColor={c.muted} accessibilityLabel={label} {...props} />
       {hint ? <Text style={s.muted}>{hint}</Text> : null}
     </View>
   );
@@ -114,7 +130,8 @@ export function Toggle({ label, value, onChange, hint }: { label: string; value:
         <Text style={s.body}>{label}</Text>
         {hint ? <Text style={s.muted}>{hint}</Text> : null}
       </View>
-      <Switch value={value} onValueChange={onChange} trackColor={{ true: c.green, false: c.line }} />
+      <Switch value={value} onValueChange={onChange} trackColor={{ true: c.primary, false: c.line }} thumbColor={c.card}
+        {...({ activeThumbColor: c.card } as object)} />
     </View>
   );
 }
@@ -139,7 +156,7 @@ export function Header({ title, back = true, right }: { title: string; back?: bo
     <View style={s.between}>
       {back ? <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() =>
         router.canGoBack() ? router.back() : router.replace("/settings")} style={{ paddingRight: 8 }}>
-        <Text style={[s.h2, { color: c.red }]}>‹ Back</Text></Pressable> : null}
+        <Text style={[s.h2, { color: c.primary }]}>‹ Back</Text></Pressable> : null}
       <Text style={[s.h1, { flex: 1, textAlign: back ? "center" : "left" }]} numberOfLines={1}>{title}</Text>
       {right ?? (back ? <View style={{ width: 56 }} /> : null)}
     </View>
@@ -155,4 +172,12 @@ export function AdminNote({ role }: { role?: string | null }) {
   if (!role || role === "admin") return null;
   return <View style={[s.card, { backgroundColor: c.amberSoft }]}>
     <Text style={s.body}>Only the household's admin can change these settings. You can see them, and ask.</Text></View>;
+}
+
+/** Two fields side by side on a wide screen, stacked on a phone. */
+export function Pair({ children }: { children: ReactNode }) {
+  const { width } = useWindowDimensions();
+  const kids = React.Children.toArray(children);
+  if (width < 600) return <View style={{ gap: 8 }}>{kids}</View>;
+  return <View style={[s.row, { alignItems: "flex-start" }]}>{kids.map((k, i) => <View key={i} style={{ flex: 1 }}>{k}</View>)}</View>;
 }

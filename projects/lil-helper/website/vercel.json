@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "name": "dinner-peace-web",
+  "alias": ["dinnerpeace.app"],
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}

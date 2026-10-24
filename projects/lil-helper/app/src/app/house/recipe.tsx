@@ -3,7 +3,8 @@
 import * as Linking from "expo-linking";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, TextInput, View } from "react-native";
+import { Text } from "@/components/text";
 import { api, ApiError, DAY_NAME, RecipeIn } from "@/lib/api";
 import { takeDraft } from "@/lib/handoff";
 import { Button, Chips, ErrorText, Field, Header, NumberField, Screen } from "@/components/ui";

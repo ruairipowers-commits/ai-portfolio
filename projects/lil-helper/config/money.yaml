@@ -36,12 +36,14 @@ point_value_cents:
 cards:
   example_grocery_card:           # fictional, for the demo household
     name: "Example grocery card"
+    issuer: "Example Bank"
     network: visa
     earn: {supermarket: {pct: 0.03}, default: {pct: 0.01}}
     verified: null
 
   amex_blue_cash_everyday:
     name: "Amex Blue Cash Everyday"
+    issuer: "American Express"
     network: amex
     earn:
       supermarket: {pct: 0.03, annual_cap: 6000}
@@ -50,8 +52,20 @@ cards:
     verified: 2026-10-11
     source: https://www.americanexpress.com/us/credit-cards/card/blue-cash-everyday/
 
+  amex_gold:
+    name: "Amex Gold"
+    issuer: "American Express"
+    network: amex
+    earn:
+      supermarket: {points: 4, program: amex_membership_rewards, annual_cap: 25000}
+      restaurant: {points: 4, program: amex_membership_rewards}
+      default: {points: 1, program: amex_membership_rewards}
+    verified: 2026-10-23
+    source: https://onemileatatime.com/best-cards-for-groceries/   # third-party summary; confirm with Amex
+
   amex_platinum:
     name: "Amex Platinum"
+    issuer: "American Express"
     network: amex
     earn: {default: {points: 1, program: amex_membership_rewards}}
     credits:
@@ -62,12 +76,14 @@ cards:
 
   amex_delta_reserve:
     name: "Amex Delta SkyMiles Reserve"
+    issuer: "American Express"
     network: amex
     earn: {default: {points: 1, program: delta_skymiles}}   # groceries assumed at the base rate: check your terms
     verified: null
 
   costco_anywhere_visa:
     name: "Costco Anywhere Visa (Citi)"
+    issuer: "Citi"
     network: visa
     earn:
       warehouse_club: {pct: 0.02}
@@ -92,6 +108,27 @@ memberships:
     waive_fee: {store: whole_foods, modes: [delivery], minimum: 25}
     verified: 2026-10-11
     source: https://www.aboutamazon.com/news/retail/amazon-grocery-delivery-subscription-prime-member-ebt-customers
+  dashpass:
+    name: DashPass (DoorDash)
+    price_per_month: 9.99
+    waive_fee: {service: doordash, minimum: 12}
+    verified: 2026-10-24
+    source: https://www.shopback.com/blog/savings/us-uber-one-vs-doordash-dashpass-vs-instacart-plus-2026-delivery
+  uber_one:
+    name: Uber One
+    price_per_month: 9.99
+    waive_fee: {service: uber_eats, minimum: 15}
+    verified: 2026-10-24
+    source: https://www.shopback.com/blog/savings/us-uber-one-vs-doordash-dashpass-vs-instacart-plus-2026-delivery
+  walmart_plus:
+    name: Walmart+
+    price_per_month: 12.95
+    waive_fee: {service: walmart, minimum: 35}
+    verified: 2026-10-24
+    source: https://www.shopback.com/blog/savings/us-uber-one-vs-doordash-dashpass-vs-instacart-plus-2026-delivery
+  grubhub_plus:
+    name: Grubhub+
+    verified: null
   costco:
     name: Costco membership
     verified: null

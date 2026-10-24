@@ -2,7 +2,8 @@
 // and every step after the first can be skipped and changed later under Home → Settings.
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { api, DAY_SHORT, DAYS, Me, Person, PersonIn, signOut } from "@/lib/api";
 import { useSettings } from "@/lib/useSettings";
 import { LoopCard, TripsEditor } from "@/components/house";

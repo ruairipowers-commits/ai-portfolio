@@ -74,6 +74,32 @@ cases:
   - id: s05-special-channel
     tags: [prices]
     why: an in-store-only special lowers the in-store price and leaves pickup and delivery prices alone
+  # Dinner Peace Pro (v5)
+  - id: k01-chef-isolation
+    tags: [pro, security, must_reject]
+    why: a chef sees only the households they are the chef for
+  - id: k02-plan-gate
+    tags: [pro]
+    why: a fourth client, the trip across homes and coverage packs are refused on Chef Solo
+  - id: k03-bulk-split
+    tags: [pro, money]
+    why: a bulk pack bought for two homes is split by quantity, and the shares add up to the line cost to the cent
+  - id: k04-voice-allergen
+    tags: [pro, safety, must_reject]
+    why: a dictated reheat card for pesto pasta (pine nuts) in a house with a tree-nut allergy is refused, not saved
+  - id: k05-coverage-expiry
+    tags: [pro, security, must_reject]
+    why: a coverage pack opens with the right password inside its dates, and not with a wrong one or after it ends
+  - id: m01-market-privacy
+    tags: [market, privacy, must_reject]
+    why: a household looking for a chef shows its town, size, children count and allergens — no names or street
+  - id: w01-card-number-refused
+    tags: [money, privacy, must_reject]
+    why: a card's last-4 field or name holding a full card number is refused
+  - id: l01-address-follows-engagement
+    tags: [market, privacy, security, must_reject]
+    why: a street address and gate code reach a chef only while the engagement is trial_scheduled or active — not at
+      inquiry, not through a passport grant, not after it ends; public points are fuzzed
 
 # Flyer reading accuracy: what each printed line should map to (None = not a plannable ingredient).
 flyers:

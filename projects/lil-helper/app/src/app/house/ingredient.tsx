@@ -2,7 +2,8 @@
 // and what it costs you. Your choice is used in every plan and shopping list.
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { api, IngredientDetail, IngredientPref } from "@/lib/api";
 import { Button, Chips, ErrorText, Field, Header, money, NumberField, Saved, Screen, Toggle } from "@/components/ui";
 import { s } from "@/lib/theme";

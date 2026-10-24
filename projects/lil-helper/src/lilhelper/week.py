@@ -311,7 +311,7 @@ def draft(week_of: dt.date, *, h: Household | None = None, s: Settings | None = 
         if e.recipe.startswith("sugg_") and e.kind == "cook":
             r = next(r for r in suggested if r.id == e.recipe)
             items = _add_recipe(items, c, r, e.servings, pantry, DAYS.index(e.prep_day))
-    ytd = spend.ytd_used(con, week_of.year)
+    ytd = spend.ytd_used(con, week_of.year, week_of.month)
     options = _options(h, c, pb, items, s, free, ytd)
     if budget and choice in options and options[choice].total > budget and plan.entries:
         # re-plan once with the food estimate scaled down by the overshoot, then keep whichever is cheaper

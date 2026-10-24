@@ -2,7 +2,8 @@
 // how much they use up, and put one on tonight's plan.
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Text, TextInput, View } from "react-native";
+import { TextInput, View } from "react-native";
+import { Text } from "@/components/text";
 import { api, DAY_NAME, DAYS, Idea } from "@/lib/api";
 import { giveDraft } from "@/lib/handoff";
 import { Button, Chips, ErrorText, Header, money, NumberField, Screen, Toggle } from "@/components/ui";

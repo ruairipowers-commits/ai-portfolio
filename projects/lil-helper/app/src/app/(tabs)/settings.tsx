@@ -3,10 +3,12 @@
 import * as WebBrowser from "expo-web-browser";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { api, Me, serverUrl, signOut } from "@/lib/api";
 import { Button, ErrorText, LinkRow, money, Pill, Screen } from "@/components/ui";
-import { s } from "@/lib/theme";
+import { mode } from "@/lib/mode";
+import { c, s } from "@/lib/theme";
 
 export default function Home() {
   const [me, setMe] = useState<Me | null>(null);
@@ -37,13 +39,32 @@ export default function Home() {
             own estimate of planning time before DinnerPeace.</Text>
         </View>
       ) : null}
+      {me?.is_owner ? (
+        <View style={s.card}><LinkRow icon="🛠️" title="Owner console" sub="Plan prices, subscriptions, renewals" onPress={go("/owner")} /></View>) : null}
+      {me?.is_chef ? (
+        <View style={[s.card, { backgroundColor: c.proSoft, borderColor: "#E5DFD6" }]}>
+          <LinkRow icon="🧑‍🍳" title="Back to your chef cockpit" sub="Dinner Peace Pro" onPress={() => { mode.family = false;
+            router.replace("/chef" as never); }} />
+        </View>) : null}
+      <View style={s.card}>
+        <Text style={s.h2}>Plan</Text>
+        <LinkRow icon="✨" title={me?.household_plan?.via_chef ? "Dinner Peace Family (from your chef)" :
+          me?.household_plan?.plan === "free" ? "Family Free" : "Dinner Peace Family"} sub="Plans for families and personal chefs"
+          onPress={go("/plans")} />
+        <LinkRow icon="🧑‍🍳" title="Your personal chef" sub="What's in the fridge, how to reheat it, invite your chef" onPress={go("/house/chef")} />
+        <LinkRow icon="🛂" title="Food passport" sub="What chefs see, who can see it, trials and hiring" onPress={go("/house/passport")} />
+        <LinkRow icon="🔎" title="Find a chef" sub="Chefs near you, what you'd pay, ask to meet, switch chefs" onPress={go("/house/find-chef")} />
+      </View>
       <View style={s.card}>
         <Text style={s.h2}>Household</Text>
         <LinkRow icon="👪" title="People" sub="Add, invite, birthdays, allergies, who's home when" onPress={go("/house/people")} />
         <LinkRow icon="🎉" title="Special occasions" sub="Birthdays, anniversaries, holidays" onPress={go("/house/occasions")} />
         <LinkRow icon="🍽️" title="Dinners" sub="Days, times, nights off, takeout and eating out" onPress={go("/house/dinners")} />
         <LinkRow icon="🥗" title="Meal style" sub="Prep time, one-pot nights, kid chef, leftovers for lunch" onPress={go("/house/style")} />
-        <LinkRow icon="🛒" title="Stores, cards and budget" sub="Where you shop, memberships, cards, cost per serving" onPress={go("/house/stores")} />
+        <LinkRow icon="📍" title="Home address" sub="Typed, or from your location" onPress={go("/house/address")} />
+        <LinkRow icon="🛒" title="Stores and budget" sub="Where you shop, memberships, cost per serving" onPress={go("/house/stores")} />
+        {adult ? <LinkRow icon="💳" title="Cards" sub="Rewards, caps, limits, expiry, credits; which card where" onPress={go("/house/wallet")} /> : null}
+        <LinkRow icon="🚚" title="Delivery services" sub="Instacart, DoorDash, Uber Eats, Amazon, Walmart, Grubhub" onPress={go("/house/delivery")} />
         <LinkRow icon="🗓️" title="Shopping trips" sub="When you shop, where, and who goes" onPress={go("/house/trips")} />
         <LinkRow icon="🧊" title="Fridge and freezer" sub="Space, freezer meals, buying ahead" onPress={go("/house/storage")} />
       </View>

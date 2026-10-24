@@ -2,8 +2,9 @@
 // coming up, and a microphone to ask anything. Kept short on purpose: everything else is a tap away.
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Pressable, Text, View } from "react-native";
-import { api, ApiError, JOB_NAME, Today, TodayTask } from "@/lib/api";
+import { Pressable, View } from "react-native";
+import { Text } from "@/components/text";
+import { api, ApiError, FamilyFridge, JOB_NAME, pro, Today, TodayTask } from "@/lib/api";
 import { Button, ErrorText, Pill, Screen } from "@/components/ui";
 import { VoiceBar } from "@/components/voice";
 import { WayTiles } from "@/components/ways";
@@ -28,10 +29,12 @@ function nextMeal(meals: Today["meals"]) {
 
 export default function TodayScreen() {
   const [t, setT] = useState<Today | null>(null);
+  const [fridge, setFridge] = useState<FamilyFridge | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
   const load = useCallback(async () => {
     setLoading(true);
+    pro.fridge().then(setFridge).catch(() => setFridge(null));
     try { setT(await api.today()); setError(null); }
     catch (e) { if (!(e instanceof ApiError && e.status === 409)) setError(e); }
     finally { setLoading(false); }
@@ -54,7 +57,7 @@ export default function TodayScreen() {
         <Text style={s.muted}>{date}</Text>
       </View>
       {t?.birthday ? (
-        <View style={[s.card, { backgroundColor: "#FDE7E3", borderColor: c.red, alignItems: "center" }]}>
+        <View style={[s.card, { backgroundColor: c.proSoft, borderColor: c.kraft, alignItems: "center" }]}>
           <Text style={{ fontSize: 36 }}>🎂🎈</Text>
           <Text style={s.h2}>Happy birthday!</Text>
           <Text style={s.body}>No jobs for you today.</Text>
@@ -106,6 +109,15 @@ export default function TodayScreen() {
             </Pressable>))}
         </View>
       ) : null}
+
+      {fridge && fridge.containers.length ? (
+        <Pressable onPress={() => router.push("/house/chef" as never)} accessibilityRole="button"
+          style={[s.card, { backgroundColor: c.proSoft, borderColor: "#E5DFD6" }]}>
+          <Text style={[s.label, { color: c.pro }]}>From {fridge.chefs[0] ?? "your chef"}</Text>
+          <Text style={s.h2}>🧊 {fridge.containers.length} {fridge.containers.length === 1 ? "container" : "containers"} in the fridge</Text>
+          <Text style={s.muted}>{fridge.containers.slice(0, 3).map((b) => `#${b.number} ${b.dish}${b.warn ? ` (${b.warn})` : ""}`).join(" · ")}</Text>
+          <Text style={{ color: c.pro, fontWeight: "800" }}>How to reheat ›</Text>
+        </Pressable>) : null}
 
       <VoiceBar />
 

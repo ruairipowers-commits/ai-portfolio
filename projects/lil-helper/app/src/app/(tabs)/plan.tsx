@@ -2,7 +2,8 @@
 // button sends how long you spent here, which is the "time" half of the savings report.
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { Text } from "@/components/text";
 import { api, DAY_NAME, DAYS, Entry, NIGHT_NAME, NightOut, Week } from "@/lib/api";
 import { useWeek } from "@/lib/useWeek";
 import { Button, Chips, ErrorText, money, Pill, Screen } from "@/components/ui";
@@ -187,7 +188,7 @@ function MealRow({ e, week, adult, approved, busy, onSwap, onChange, onUndo, onO
             <Text key={i} style={s.muted}>{p.kind === "leftovers" ? "🥡" : p.kind === "ready" ? "🥫" : "🍳"} {p.name ?? p.food ?? p.recipe}
               {p.eaters?.length ? ` · ${p.eaters.map((x) => week.people[x] ?? x).join(", ")}` : ""}</Text>))}
           {e.original ? (
-            <Text style={s.muted}>Changed from {e.original.name} · {adult ? <Text style={{ color: c.red, fontWeight: "700" }}
+            <Text style={s.muted}>Changed from {e.original.name} · {adult ? <Text style={{ color: c.primary, fontWeight: "700" }}
               onPress={onUndo} accessibilityRole="button">Undo</Text> : null}</Text>
           ) : null}
         </View>

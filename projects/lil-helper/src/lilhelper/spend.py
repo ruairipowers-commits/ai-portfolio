@@ -52,13 +52,16 @@ def _ref(*parts) -> str:
     return hashlib.sha256("|".join(str(p) for p in parts).encode()).hexdigest()[:20]
 
 
-def ytd_used(con, year: int) -> dict[tuple[str, str], float]:
-    """This calendar year's spend per (card, reward category), for annual caps."""
+def ytd_used(con, year: int, month: int | None = None) -> dict[tuple[str, str], float]:
+    """This calendar year's spend per (card, reward category), for annual caps; with `month`, also that month's
+    spend per card under (card, money.MONTH), for spending limits."""
     out: dict[tuple[str, str], float] = {}
-    for r in con.execute("SELECT card, store, amount FROM spend WHERE date >= ? AND date < ? AND card IS NOT NULL",
+    for r in con.execute("SELECT card, store, amount, date FROM spend WHERE date >= ? AND date < ? AND card IS NOT NULL",
                          (f"{year}-01-01", f"{year + 1}-01-01")):
         key = (r["card"], money.category(r["store"] or ""))
         out[key] = out.get(key, 0.0) + float(r["amount"])
+        if month and str(r["date"])[5:7] == f"{month:02d}":
+            out[(r["card"], money.MONTH)] = out.get((r["card"], money.MONTH), 0.0) + float(r["amount"])
     return out
 
 

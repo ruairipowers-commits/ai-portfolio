@@ -1,7 +1,8 @@
 // People: everyone in the household, whether they've joined the app, and the way to add or invite someone.
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { api, Person, Role } from "@/lib/api";
 import { Button, ErrorText, Header, LinkRow, Screen } from "@/components/ui";
 import { s } from "@/lib/theme";

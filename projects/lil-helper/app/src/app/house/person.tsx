@@ -1,7 +1,8 @@
 // One person: details (admin), their own likes and dislikes (themselves), invite to the app, remove.
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { api, DAY_SHORT, DAYS, Person, PersonIn, RecipeRow, Role } from "@/lib/api";
 import { Button, Chips, ErrorText, Field, Header, NumberField, Pill, Saved, Screen, Toggle } from "@/components/ui";
 import { s } from "@/lib/theme";

@@ -41,6 +41,12 @@ CREATE TABLE IF NOT EXISTS freezer (id INTEGER PRIMARY KEY, recipe TEXT, name TE
 CREATE TABLE IF NOT EXISTS outcomes (week_of TEXT, day TEXT, meal TEXT, outcome TEXT, frozen REAL, by TEXT, ts TEXT,
     PRIMARY KEY (week_of, day, meal));
 CREATE TABLE IF NOT EXISTS book_shares (code TEXT PRIMARY KEY, created TEXT, by TEXT, revoked INTEGER DEFAULT 0);
+CREATE TABLE IF NOT EXISTS containers (id INTEGER PRIMARY KEY, number INTEGER, dish TEXT, portions REAL, location TEXT,
+    prepared TEXT, use_by TEXT, status TEXT DEFAULT 'in', closed TEXT, card TEXT, by TEXT, ts TEXT);
+CREATE TABLE IF NOT EXISTS reheat_cards (id TEXT PRIMARY KEY, prepared TEXT, meal TEXT, method TEXT, temp_f INTEGER,
+    minutes INTEGER, covered INTEGER, notes TEXT, containers TEXT, contains TEXT, by TEXT, ts TEXT);
+CREATE TABLE IF NOT EXISTS chef_list (id INTEGER PRIMARY KEY, ingredient TEXT, name TEXT, qty REAL, unit TEXT,
+    note TEXT, done INTEGER DEFAULT 0, by TEXT, ts TEXT);
 """
 
 

@@ -2,7 +2,8 @@
 // want, the server works out what it means (/api/voice), says what it did, and opens the right screen.
 import { router } from "expo-router";
 import { useRef, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, TextInput, View } from "react-native";
+import { Text } from "@/components/text";
 import { api, VoiceReply } from "@/lib/api";
 import { available, listen, Listen } from "@/lib/speech";
 import { c, s } from "@/lib/theme";
@@ -22,7 +23,7 @@ export function MicButton({ onText, onDone, size = 44 }: { onText: (t: string) =
     <View style={{ alignItems: "center" }}>
       <Pressable accessibilityRole="button" accessibilityLabel={on ? "Stop listening" : "Talk"} onPress={toggle}
         style={{ width: size, height: size, borderRadius: size / 2, alignItems: "center", justifyContent: "center",
-          backgroundColor: on ? c.red : c.greenSoft, borderWidth: 1, borderColor: on ? c.red : c.green }}>
+          backgroundColor: on ? c.carrot : c.primarySoft, borderWidth: 1, borderColor: on ? c.carrot : c.sage }}>
         <Text style={{ fontSize: size * 0.45 }}>{on ? "⏹" : "🎤"}</Text>
       </Pressable>
       {msg ? <Text style={[s.muted, { maxWidth: 160, textAlign: "center" }]}>{msg}</Text> : null}
@@ -46,7 +47,7 @@ export function VoiceBar({ hint = "What's for dinner? · I have chicken and rice
   }
   const to = reply?.screen ? SCREEN[reply.screen] : null;
   return (
-    <View style={[s.card, { backgroundColor: "#FFFDF8", borderColor: c.green }]}>
+    <View style={[s.card, { backgroundColor: c.card, borderColor: c.sageLight }]}>
       <View style={s.row}>
         <TextInput style={[s.input, { flex: 1 }]} value={text} onChangeText={setText} placeholder="Ask DinnerPeace…"
           returnKeyType="send" onSubmitEditing={() => ask(text)} editable={!busy} accessibilityLabel="Ask DinnerPeace" />
@@ -57,7 +58,7 @@ export function VoiceBar({ hint = "What's for dinner? · I have chicken and rice
           <Text style={s.muted}>“{reply.heard}”</Text>
           <Text style={s.body}>💬 {reply.say}</Text>
           {to ? <Pressable onPress={() => router.push({ pathname: to as never, params: reply.params })}>
-            <Text style={{ color: c.red, fontWeight: "700" }}>Open ›</Text></Pressable> : null}
+            <Text style={{ color: c.primary, fontWeight: "700" }}>Open ›</Text></Pressable> : null}
         </View>
       )}
     </View>

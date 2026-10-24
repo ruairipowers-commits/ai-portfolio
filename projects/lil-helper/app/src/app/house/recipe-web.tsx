@@ -4,7 +4,8 @@
 import * as WebBrowser from "expo-web-browser";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Text, TextInput, View } from "react-native";
+import { TextInput, View } from "react-native";
+import { Text } from "@/components/text";
 import { api, SearchResult } from "@/lib/api";
 import { giveDraft } from "@/lib/handoff";
 import { Button, Chips, ErrorText, Field, Header, LinkRow, Screen } from "@/components/ui";

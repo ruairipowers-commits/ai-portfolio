@@ -1,7 +1,50 @@
 # Status — open items
 
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
-(or delete them) as they're done. Last updated 20 October 2026.
+(or delete them) as they're done. Last updated 24 October 2026.
+
+## 0000000000000. PR #56 open; passport and location privacy added (24 October 2026)
+
+- **PR #56** (`agent/claude-dinnerpeace-pro`): v5 Pro, v6, and v7 (passport.py: fuzzy coordinates, Household Food
+  Passport, ClientEngagement, PassportAccessService; 130 tests, eval 28/28). Waiting for Ruairi to merge.
+- [ ] `MARKETPLACE_SPEC.md` wasn't in the Mac's Claude folder; v7 was built from the kickoff prompt. Reconcile with
+      the spec once it's there.
+- [ ] Branches with unmerged work (not lil-helper): `agent/claude-owner-merges` (daily-post background Ollama jobs,
+      70 behind main), `spec/job-copilot` (draft spec, superseded by JobHunt?), `crash-course` (old spec draft; the
+      built version is on main). Open PRs besides #56: #53 (post, needs-work), #6 (Dependabot actions).
+
+## 000000000000. lil-helper v6 (24 October 2026, same branch `agent/claude-dinnerpeace-pro`)
+
+Built: card wallet (rewards, caps, limits, expiry, store ranking, credits, next best card), delivery services
+(config/delivery.yaml; DashPass, Uber One, Walmart+ added to money.yaml), home address with location and optional
+geocoding (`HELPER_GEOCODER`), owner console and billing (`billing.py`, `/owner`, `HELPER_OWNER_EMAILS`), marketplace
+(`market.py`: chef profiles, household listings, requests to meet, hire, switch chef), installable desktop web app
+(manifest, service worker, sidebar layout). Website copied into `projects/lil-helper/website` and its claims aligned
+(no pantry limit, allergens free, no offline/Stripe/48-hour claims). Verified: 122 tests, eval 27/27, Chromium at
+phone and desktop sizes.
+
+- [ ] **Write the website changes back to the Mac** (`index.html`, `app.js`, `README.md`): the Mac was offline at the end
+      of the session; the files are in the repo copy.
+- [ ] **Host the web app** somewhere (e.g. app.dinnerpeace.app) so the desktop install has a home; set
+      `HELPER_CORS` and the API URL for it.
+- [ ] Production env: `HELPER_OWNER_EMAILS`, `HELPER_GEOCODER` (+ `HELPER_GEOCODER_CONTACT` for Nominatim).
+- [ ] Website still promises a "14-day free trial" and "concierge/priority support": Ruairi's call.
+
+## 00000000000. Dinner Peace Pro: chef plans in lil-helper (23 October 2026, branch `agent/claude-dinnerpeace-pro`)
+
+Built: plans (Family Free / Family $4.99 / Chef Solo $29 / Chef Studio $59) decided on the server (`plans.py`), a
+`chef` role in client households, the chef engine (`pro.py`: cockpit, dossiers, containers, reheat cards and 4×6 /
+letter PDFs, voice notes by rules, one trip across homes with bulk splits and card routing, ledger, invoices,
+coverage packs), `pro_api.py`, `helper plans` and `helper chef-demo`, the RevenueCat webhook, and the app rebrand to
+the Dinner Peace design system (sage/kraft, Nunito, new icon) with chef tabs and a plan page. Verified offline: 114
+tests, eval 25/25 (must-reject 1.00), governance OK, `mkdocs build --strict`, chef and family screens in Chromium.
+
+- [ ] **Review and merge** the branch (nothing pushed yet without Ruairi's OK).
+- [ ] **App Store billing:** create the six products in App Store Connect and the `family`, `chef_solo`,
+      `chef_studio` entitlements in RevenueCat; set `REVENUECAT_WEBHOOK_AUTH`; add the RevenueCat SDK purchase sheet.
+- [ ] **Website (dinnerpeace.app):** copy lives in `projects/lil-helper/website` once synced from the Mac; claims not
+      built yet: offline SQLite sync, Stripe client-card billing, Walmart export, "concierge support".
+- [ ] Not built: offline use, Stripe, store routing by distance.
 
 ## 0000000000. Four voted topics run by hand; daily task failing on usage limit (20 October 2026)
 

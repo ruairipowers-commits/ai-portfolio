@@ -209,6 +209,8 @@ def run(alias: str | None = None) -> dict:
     online = [o.unit for o in pb_ch.offers("broccoli", "whole_foods", "delivery")]
     before = [o.unit for o in pb.offers("broccoli", "whole_foods", "delivery")]
     case("s05-special-channel", inst < min(before) and online == before, f"in store {inst} online {online}")
+    for cid, ok, detail, must in pro_cases():
+        case(cid, ok, detail, must)
     passed_n = sum(r["passed"] for r in results)
     metrics = {
         "cases_passed": passed_n, "cases_total": len(results),
@@ -235,6 +237,135 @@ def run(alias: str | None = None) -> dict:
     telemetry.emit("eval", status="ok" if gate else "failed", model=alias or "", cost_usd=ctx.cost,
                    records_in=len(results), records_out=passed_n, detail=metrics)
     return rep
+
+
+def pro_cases() -> list[tuple[str, bool, str, bool]]:
+    """Dinner Peace Pro (k01–k05), on a throwaway server folder: who sees what, plan gates, money, allergens, expiry."""
+    import os
+    from fastapi import HTTPException
+    from . import accounts, plans, pro, pro_api
+    from .config import tenant
+    out = []
+    old = os.environ.get("HELPER_DATA")
+    with tempfile.TemporaryDirectory() as d:
+        os.environ["HELPER_DATA"] = d
+        try:
+            con = accounts.connect()
+            a = accounts.get_or_create_user(con, "chef-a@example.com")["id"]
+            b = accounts.get_or_create_user(con, "chef-b@example.com")["id"]
+            plans.set_chef_plan(con, a, "chef_solo")
+            plans.set_chef_plan(con, b, "chef_solo")
+            ha = [accounts.create_household(con, a, f"A{n}", "northeast-us", {"id": "p", "name": "P"}, as_chef=True)
+                  for n in range(3)]
+            con.close()
+            try:
+                pro_api._client_of(b, ha[0])
+                seen = True
+            except HTTPException:
+                seen = False
+            out.append(("k01-chef-isolation", not seen and pro_api._client_of(a, ha[0]) == "A0",
+                        "chef B asked for chef A's client", True))
+            con = accounts.connect()
+            gates = []
+            for fn in (lambda: plans.check_new_client(con, a), lambda: plans.require_chef(con, a, "batch_trip"),
+                       lambda: plans.require_chef(con, a, "coverage")):
+                try:
+                    fn()
+                    gates.append(False)
+                except plans.PlanError:
+                    gates.append(True)
+            con.close()
+            out.append(("k02-plan-gate", all(gates), f"refused={gates}", False))
+            homes = [{"household_id": "x00001", "name": "X", "need": {"ground_beef": {"qty": 2.4, "brand": None, "for": []}}},
+                     {"household_id": "y00002", "name": "Y", "need": {"ground_beef": {"qty": 1.6, "brand": None, "for": []}}}]
+            db = pro.chef_db(a)
+            pro.put_setting(db, "stores", ["costco"])
+            db.close()
+            trip = pro.build_trip(a, homes, {}, dt.date(2026, 10, 19))
+            lines = [ln for s in trip["stops"] for co in s["checkouts"] for ln in co["lines"]]
+            sums = all(round(sum(x["cost"] for x in ln["shares"]), 2) == ln["cost"] for ln in lines)
+            out.append(("k03-bulk-split", sums and lines and lines[0]["bulk"],
+                        f"shares={[x['cost'] for x in lines[0]['shares']] if lines else []}", False))
+            with tenant(ha[0]):
+                from .config import load_household, save_household
+                raw = load_household().raw
+                raw["people"]["kid"] = {"name": "Kid", "age_band": "kid", "age": 8, "allergies": ["tree_nut"]}
+                save_household(raw)
+                h = load_household()
+                hc = store.connect()
+                note = pro.parse_note("made 4 portions of pesto pasta, fridge four. reheat at 350 for 20 minutes", {})
+                try:
+                    pro.apply_note(h, hc, note, "eval")
+                    refused = False
+                except pro.ProError:
+                    refused = True
+                saved = (hc.execute("SELECT COUNT(*) AS n FROM reheat_cards").fetchone()["n"]
+                         + hc.execute("SELECT COUNT(*) AS n FROM containers").fetchone()["n"])
+                hc.close()
+            out.append(("k04-voice-allergen", refused and saved == 0, "pesto (pine nuts) for a tree-nut allergy", True))
+            db = pro.chef_db(a)
+            today = dt.date.today()
+            row = pro.make_coverage(db, "Sub", "sub@example.com", today, today + dt.timedelta(days=1), [ha[0]],
+                                    "view_recipes_and_routines", "correct-horse")
+            checks = []
+            for pw, day in (("wrong-horse", today), ("correct-horse", today + dt.timedelta(days=5))):
+                try:
+                    pro.coverage_open(db, row["id"], pw, day)
+                    checks.append(False)
+                except pro.ProError:
+                    checks.append(True)
+            good = pro.coverage_open(db, row["id"], "correct-horse", today)["id"] == row["id"]
+            db.close()
+            out.append(("k05-coverage-expiry", all(checks) and good, f"refused={checks}", True))
+            # v6: what a chef sees of a household that's looking, and card fields
+            from . import market
+            from .config import HouseholdError, parse_household
+            with tenant(ha[1]):
+                raw = load_household().raw
+                raw["people"]["zoe"] = {"name": "Zoe", "age_band": "kid", "age": 6, "allergies": ["peanut"]}
+                raw["address"] = {"line1": "12 Orchard Lane", "city": "Westport", "state": "CT", "zip": "06880"}
+                save_household(raw)
+                pub = market.public_household(load_household(), {"budget_per_week": 300, "budget_per_visit": None,
+                                                                 "visits_per_week": 2, "cuisines": [], "note": "",
+                                                                 "start": None}, 3.2)
+            leak = [w for w in ("Zoe", "Orchard", "P") if w in json.dumps({k: v for k, v in pub.items() if k != "note"})]
+            out.append(("m01-market-privacy", not leak and pub["kids"] == 1 and pub["allergens"] == ["peanut"],
+                        f"leaked={leak}", True))
+            refused = 0
+            for card in ({"id": "x", "name": "X", "last4": "4111111111111111"}, {"id": "y", "name": "4111 1111 1111 1111"}):
+                try:
+                    r2 = copy.deepcopy(raw)
+                    r2["cards"] = [card]
+                    parse_household(r2)
+                except HouseholdError:
+                    refused += 1
+            out.append(("w01-card-number-refused", refused == 2, f"refused {refused} of 2", True))
+            # the street and gate code follow the engagement, not a grant
+            from . import passport
+            with tenant(ha[1]):
+                raw = load_household().raw
+                raw["access"] = {"gate_code": "4417#"}
+                save_household(raw)
+            con = accounts.connect()
+            svc = passport.PassportAccessService(con)
+            seen = []
+            e = passport.open_engagement(con, b, ha[1], "inquiry")
+            passport.grant(con, ha[1], b, "eval")
+            seen.append(svc.can_see_address(b, ha[1]))                 # inquiry + passport grant → no
+            passport.move(con, e.id, "trial_scheduled", trial_at="2026-11-03T16:00")
+            seen.append(svc.can_see_address(b, ha[1]))                 # trial → yes
+            passport.move(con, e.id, "declined")
+            seen.append(svc.can_see_address(b, ha[1]))                 # declined → no
+            fz = passport.generate_fuzzy_coordinates(41.14153, -73.35791, ha[1])
+            con.close()
+            out.append(("l01-address-follows-engagement", seen == [False, True, False] and fz != (41.142, -73.358),
+                        f"address visible at inquiry/trial/declined = {seen}", True))
+        finally:
+            if old is None:
+                os.environ.pop("HELPER_DATA", None)
+            else:
+                os.environ["HELPER_DATA"] = old
+    return out
 
 
 def latest_passed(model: str) -> bool:

@@ -1,7 +1,8 @@
 // Alexa: link your Amazon Alexa to DinnerPeace with a one-time code, then "Alexa, ask DinnerPeace what's for dinner".
 import * as Clipboard from "expo-clipboard";
 import { useCallback, useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { api } from "@/lib/api";
 import { Button, ErrorText, Header, Pill, Screen } from "@/components/ui";
 import { c, s } from "@/lib/theme";

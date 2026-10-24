@@ -1,10 +1,12 @@
 // Stores, memberships, cards and budget. Card names only (benefits come from the server's card list, each with the
 // date it was last checked); never a card number.
 import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { api } from "@/lib/api";
 import { useSettings } from "@/lib/useSettings";
-import { AdminNote, Button, Chips, ErrorText, Header, money, NumberField, Saved, Screen } from "@/components/ui";
+import { router } from "expo-router";
+import { AdminNote, Button, Chips, ErrorText, Header, LinkRow, money, NumberField, Saved, Screen } from "@/components/ui";
 import { s } from "@/lib/theme";
 
 type Best = Awaited<ReturnType<typeof api.cards>>;
@@ -15,14 +17,13 @@ export default function Stores() {
   const [stores, setStores] = useState<string[]>([]);
   const [home, setHome] = useState("");
   const [mem, setMem] = useState<string[]>([]);
-  const [cards, setCards] = useState<string[]>([]);
   const [budget, setBudget] = useState(200);
   const [hour, setHour] = useState(20);
   const [cost, setCost] = useState<{ min: number; max: number }>({ min: 0, max: 6 });
   const [best, setBest] = useState<Best | null>(null);
   useEffect(() => {
     if (!set.view) return;
-    setStores(st.stores ?? []); setHome(st.home_store ?? ""); setMem(st.memberships ?? []); setCards(st.cards ?? []);
+    setStores(st.stores ?? []); setHome(st.home_store ?? ""); setMem(st.memberships ?? []);
     setBudget(st.household?.budget_per_week ?? 200); setHour(st.household?.time_value_per_hour ?? 20);
     setCost({ min: st.cost_per_serving?.min ?? 0, max: st.cost_per_serving?.max ?? 6 });
     if (role !== "kid") api.cards().then(setBest).catch(() => {});
@@ -30,7 +31,7 @@ export default function Stores() {
 
   async function save() {
     const hs = stores.includes(home) ? home : stores[0];
-    for (const [k, v] of [["stores", stores], ["home_store", hs], ["memberships", mem], ["cards", cards],
+    for (const [k, v] of [["stores", stores], ["home_store", hs], ["memberships", mem],
       ["household", { ...st.household, budget_per_week: budget, time_value_per_hour: hour }],
       ["cost_per_serving", cost]] as const) {
       if (!(await set.save(k, v))) return;
@@ -39,7 +40,7 @@ export default function Stores() {
   }
   return (
     <Screen>
-      <Header title="Stores, cards and budget" />
+      <Header title="Stores and budget" />
       <AdminNote role={role} />
       <View style={s.card}>
         <Chips label="Where you shop" options={(cat?.stores ?? []).map((x) => ({ id: x.id, label: x.name }))} value={stores} onChange={setStores} />
@@ -49,7 +50,7 @@ export default function Stores() {
         <Chips label="Memberships" options={(cat?.memberships ?? []).map((x) => ({ id: x.id, label: x.name }))} value={mem} onChange={setMem} />
         <Text style={s.muted}>Prime brings Whole Foods member deals; Instacart+ and Amazon's grocery subscription waive
           delivery fees over their minimums; Costco needs a membership.</Text>
-        <Chips label="Cards" options={(cat?.cards ?? []).map((x) => ({ id: x.id, label: x.name }))} value={cards} onChange={setCards} />
+        <LinkRow icon="💳" title="Cards" sub="Add and edit cards: rewards, caps, limits, expiry, credits" onPress={() => router.push("/house/wallet" as never)} />
       </View>
       <View style={s.card}>
         <NumberField label="Weekly grocery budget" prefix="$" step={10} value={budget} onChange={setBudget} />

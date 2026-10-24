@@ -71,13 +71,25 @@ sequenceDiagram
 | Changing an approved week | Applied in place: a night switched to takeout drops that dinner (the food stays in the pantry), who's home updates the eaters, nights out are re-costed; never re-shops | Re-plan the week | The shopping is done; re-planning would change what was bought |
 | The phone app | Expo (React Native): iPhone via TestFlight first, Android from the same code | Native Swift; a web app on the home screen | One codebase for both phones, real push and secure storage, no Mac needed to build (EAS) |
 | Where data lives | Now: one server at home (the EVO-X1) behind Cloudflare, SQLite per household. For the App Store: AWS with Postgres and row-level security | Hosted from day one | One family and a few testers don't need a cloud bill; the code is already multi-household, so the move is a storage swap, not a rewrite |
+| Pro (personal chefs) | A `chef` role in each client household plus the chef's own database (clients, cards, trips, ledger, coverage) | A separate chef app with copies of each family's data | One source of truth for allergies and the week; the family sees the chef's containers and reheat cards for free, and a chef reaches only households they're a member of |
+| What a plan unlocks | Decided on the server (`plans.py`), 402 with the plan to upgrade to; safety rules are never behind a plan | Gate features in the app | An app can be changed; the server can't be talked round. A lapsed plan falls back without deleting anything |
+| The trip across homes | Exhaustive search over store subsets (≤ `max_stops`) on item cost + the chef's time; cost shares by quantity with largest-remainder cents | Another CP-SAT model | Four stores and two stops is at most ten subsets: plain code is exact, fast and easy to read; shares that add up to the cent matter more than a cleverer route |
+| Voice notes | Rules turn a sentence into a preview; a person confirms; allergens checked before any change | A model extracting JSON | Predictable, private and testable, like the family's voice requests; a refused note leaves nothing half-saved |
+| Which card | The household's own order per store, then its primary card, falling to the next best when a bonus cap is used up, a limit would be passed or the card has expired | Always the highest-earning card | People have reasons (a card they're paying down, a sign-up bonus); the rules respect them and still say when the bonus has run out |
+| Plan prices | A price book with effective dates in the server; each subscription keeps its price and a renewal policy (grandfather, list price, custom) | Hard-coded prices | The owner can change prices without a release and decide who keeps the old one; App Store prices are mirrored, since Apple charges its own |
+| Finding each other | Distance worked out on the server from saved points (or ZIP), public listings with no names or streets, contacts only after a request is accepted | Showing addresses or a map of households | Families with children are listing themselves to strangers; the least that lets a chef decide is a town, a size and the allergens |
+| Address privacy | A stable fuzzy point per household (grid snap + keyed offset) for everything public; the real address released by engagement status, not by grants | Rounding distances, or fresh random noise per request | Rounding alone leaks under trilateration from moved search points; fresh noise averages away over repeated queries; a fixed keyed offset does neither |
+| Desktop | The Expo web build as an installable web app (manifest + service worker) with a sidebar on wide screens | Electron or Tauri wrappers | One codebase, no installers to sign, and it installs from Chrome, Edge or Safari; a native wrapper can come later |
 | Reproducibility | One solver worker, fixed seeds | Parallel search | The same inputs give the same plan, so a test or a savings number can be repeated (at ~6 s a week, inside the 10 s target) |
 <!-- --8<-- [end:decisions] -->
 
 ## What's next
 
-- **App Store release:** hosted service, subscriptions through RevenueCat, privacy policy and children's handling —
+- **App Store release:** hosted service, subscriptions through RevenueCat (the webhook and plan rules are built; the
+  purchase sheet in the app and the App Store Connect products are not), privacy policy and children's handling —
   the plan and checklist are in [aws-native.md](aws-native.md).
+- **Pro, next:** charging a client's card on file (Stripe), offline use in kitchens and store basements (a local
+  SQLite copy that syncs), and real store routing by distance.
 - **Real models on the EVO-X1:** `local-qwen` for ideas and notes, a local vision model for flyers and receipts; run
   `helper eval --alias helper-candidate` and promote only on a pass.
 - **Instacart for real:** a Developer Platform key turns delivery lists into one-tap links.

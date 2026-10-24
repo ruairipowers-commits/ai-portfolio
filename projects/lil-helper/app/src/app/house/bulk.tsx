@@ -4,7 +4,8 @@
 import * as DocumentPicker from "expo-document-picker";
 import * as Linking from "expo-linking";
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/text";
 import { api, BulkChanges, BulkPreview } from "@/lib/api";
 import { useSettings } from "@/lib/useSettings";
 import { AdminNote, Button, ErrorText, Header, Screen } from "@/components/ui";

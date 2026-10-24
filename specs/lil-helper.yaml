@@ -107,6 +107,28 @@ functional_requirements:
     calendar feed (.ics) and push notification'
   - 'FR-6 Feedback and savings: one-tap "how much was eaten" per meal and a 1–5 rating; portions and replenishment
     adjust; weekly and monthly report of dollars saved, time saved and satisfaction, each against its baseline'
+  - 'FR-7 Plans (v5, Dinner Peace Pro): Family Free and Family ($4.99) on the household; Chef Solo ($29, up to 3
+    client households) and Chef Studio ($59, unlimited) on the chef''s own account; the server decides what each
+    unlocks; a household with a Pro chef in it gets Family free; invited family members never pay'
+  - 'FR-8 Chef role and cockpit: a chef is a member of each client household (reads the dossier — allergies, likes,
+    dislikes, brands — logs containers and reheat cards, can''t change the family''s admin settings); a "What do I
+    do next?" home across every client: today''s kitchens in time order, the next step, the strictest allergy, the
+    next store stop and which card to use there'
+  - 'FR-9 Chef operations: numbered container log with use-by countdowns in the client''s fridge; reheat cards as a 4×6
+    label or letter page PDF, or emailed to the client; voice notes turned into fridge, reheat and shopping changes by
+    rules (a person confirms); Studio adds one shopping trip across client homes with bulk lines split by each home''s
+    quantity, a card ledger (chef card → rewards estimate → per-client expense invoice; client card → separate
+    checkouts per client) and a password-protected, expiring coverage pack for a backup chef'
+  - 'FR-10 (v6) Cards, delivery, place: a card wallet per household (issuer, expiry, rewards and caps, limits, store
+    ranking, delivery credits; next best card when a bonus runs out), delivery services with memberships, and a home
+    address typed or from the device''s location'
+  - 'FR-11 (v6) Owner console: list prices per plan with yearly savings and effective dates; subscriptions with
+    grandfather / list price / custom renewal; 30 days'' notice of a price rise'
+  - 'FR-12 (v6) Marketplace: families list what they''d pay and search chefs nearby; Pro chefs list a profile and
+    search families; requests to meet, hiring and switching chefs; no names or streets before a request is accepted'
+  - 'FR-13 (v7) Location privacy and the Food Passport: fuzzy public coordinates per household; a portable Household
+    Food Passport the family grants, revokes and exports; client engagements (inquiry, trial_scheduled, active,
+    paused, ended, declined); street address and gate code only while trial_scheduled or active'
 non_functional_requirements:
   - 'NFR-1 Safety: zero plans containing a listed allergen (including hidden sources via an ingredient synonym list)
     and zero dog extras on the toxic list (grapes/raisins, onion, garlic, chocolate, xylitol, macadamia, alcohol,
@@ -153,6 +175,14 @@ golden_cases:
   - {id: c01-fair-rota, expected: 'jobs within 1 per person per week', tags: [chores]}
   - {id: f01-portion-learning, expected: 'leftovers 3 weeks running → portion reduced', tags: [feedback]}
   - {id: a01-flyer-injection, expected: 'no instruction followed; allergen still excluded', tags: [adversarial]}
+  - {id: k01-chef-isolation, expected: 'a chef sees only the households they are a member of', tags: [pro, security, must_reject]}
+  - {id: k02-plan-gate, expected: 'Studio-only features refused on Solo; a fourth client refused on Solo', tags: [pro]}
+  - {id: k03-bulk-split, expected: 'bulk cost shares sum to the line cost to the cent', tags: [pro, money]}
+  - {id: k04-voice-allergen, expected: 'a dictated reheat card naming a household allergen is flagged, not saved', tags: [pro, safety, must_reject]}
+  - {id: l01-address-follows-engagement, expected: 'address only at trial_scheduled or active', tags: [market, privacy, must_reject]}
+  - {id: m01-market-privacy, expected: 'a public household listing has no names, ages or street', tags: [market, privacy, must_reject]}
+  - {id: w01-card-number-refused, expected: 'a full card number in any card field is refused', tags: [money, privacy, must_reject]}
+  - {id: k05-coverage-expiry, expected: 'coverage pack refused after it expires or with the wrong password', tags: [pro, security, must_reject]}
 
 decisions:                       # answered by Ruairi, 5 October 2026
   - 'Tier: personal project (post in site/personal/posts)'
@@ -181,6 +211,18 @@ decisions:                       # answered by Ruairi, 5 October 2026
   - 'Teens (12-17): adult portions, not admin, approve spending only if the admin allows'
   - 'Alexa: build the skill backend here (verified endpoint, account linking by app code); Ruairi creates the skill
     in the Amazon developer console from docs/alexa.md'
+  # answered by Ruairi, 23 October 2026 (v5, Dinner Peace Pro)
+  - 'Dinner Peace Pro as a higher subscription, from PRO_SPEC.md; tiers match the website (Family Free / Family
+    $4.99 / Chef Solo $29 up to 3 homes / Chef Studio $59 unlimited + bulk split, card routing, coverage packs)'
+  - 'Rebrand the app to the Dinner Peace design system (sage and kraft, Nunito, the new icon)'
+  - 'Marketing website (dinnerpeace.app) kept in the repo under projects/lil-helper/website and on the Mac'
+  - 'Billing in production through RevenueCat / App Store; until then an admin command sets plans. Stripe client
+    cards and offline sync are later'
+  # answered by Ruairi, 24 October 2026 (v6)
+  - 'Household card wallet with next-best card; no pantry limit; home address from location or typed; owner-managed
+    plan prices with grandfathering or upcharging at renewal; installable desktop app with a wider layout; delivery
+    services (Instacart, DoorDash, Uber Eats...); allergen checks free; switching chefs; finding chefs and households
+    nearby with requests to meet'
 
 demo:
   title: DinnerPeace
