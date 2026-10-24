@@ -186,12 +186,15 @@ class AddressIn(BaseModel):
     lat: float | None = Field(default=None, ge=-90, le=90)
     lon: float | None = Field(default=None, ge=-180, le=180)
     source: str = Field(default="typed", max_length=20)
+    gate_code: str | None = Field(default=None, max_length=40)
+    access_notes: str | None = Field(default=None, max_length=400)
+    kitchen_notes: str | None = Field(default=None, max_length=600)
 
 
 @router.get("/api/household/address")
 def get_address(ctx=Depends(member)) -> dict:
     h = _api()._hh()
-    return {"address": h.raw.get("address") or {}, "geocoder": geo._mode() or None}
+    return {"address": h.raw.get("address") or {}, "access": h.raw.get("access") or {}, "geocoder": geo._mode() or None}
 
 
 @router.put("/api/household/address")
@@ -199,7 +202,8 @@ def set_address(body: AddressIn, ctx=Depends(member)) -> dict:
     """Typed, or from the phone's location. Missing parts are filled by the geocoder when one is set up."""
     a = _api()
     a.need(ctx, "admin")
-    addr = {k: v for k, v in body.model_dump().items() if v not in (None, "")}
+    extra = {k: getattr(body, k) for k in ("gate_code", "access_notes", "kitchen_notes")}
+    addr = {k: v for k, v in body.model_dump().items() if v not in (None, "") and k not in extra}
     addr["state"] = addr.get("state", "").upper() or None
     if addr.get("lat") is not None and not addr.get("line1"):
         found = geo.reverse(addr["lat"], addr["lon"])
@@ -212,11 +216,20 @@ def set_address(body: AddressIn, ctx=Depends(member)) -> dict:
     addr = {k: v for k, v in addr.items() if v not in (None, "")}
     raw = a._hh().raw
     raw["address"] = addr
+    acc = dict(raw.get("access") or {})
+    for k, v in (("gate_code", extra["gate_code"]), ("notes", extra["access_notes"]), ("kitchen_notes", extra["kitchen_notes"])):
+        if v is not None:
+            acc[k] = v.strip()
+    raw["access"] = {k: v for k, v in acc.items() if v}
     try:
         save_household(raw)
     except (HouseholdError, ValueError) as e:
         raise HTTPException(422, str(e))
-    return {"address": addr}
+    from . import accounts, passport
+    con = accounts.connect()
+    passport.refresh_location(con, ctx.hid, addr)
+    con.close()
+    return {"address": addr, "access": raw["access"]}
 
 
 @router.get("/api/geo/reverse")

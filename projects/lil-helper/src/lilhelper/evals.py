@@ -340,6 +340,26 @@ def pro_cases() -> list[tuple[str, bool, str, bool]]:
                 except HouseholdError:
                     refused += 1
             out.append(("w01-card-number-refused", refused == 2, f"refused {refused} of 2", True))
+            # the street and gate code follow the engagement, not a grant
+            from . import passport
+            with tenant(ha[1]):
+                raw = load_household().raw
+                raw["access"] = {"gate_code": "4417#"}
+                save_household(raw)
+            con = accounts.connect()
+            svc = passport.PassportAccessService(con)
+            seen = []
+            e = passport.open_engagement(con, b, ha[1], "inquiry")
+            passport.grant(con, ha[1], b, "eval")
+            seen.append(svc.can_see_address(b, ha[1]))                 # inquiry + passport grant → no
+            passport.move(con, e.id, "trial_scheduled", trial_at="2026-11-03T16:00")
+            seen.append(svc.can_see_address(b, ha[1]))                 # trial → yes
+            passport.move(con, e.id, "declined")
+            seen.append(svc.can_see_address(b, ha[1]))                 # declined → no
+            fz = passport.generate_fuzzy_coordinates(41.14153, -73.35791, ha[1])
+            con.close()
+            out.append(("l01-address-follows-engagement", seen == [False, True, False] and fz != (41.142, -73.358),
+                        f"address visible at inquiry/trial/declined = {seen}", True))
         finally:
             if old is None:
                 os.environ.pop("HELPER_DATA", None)

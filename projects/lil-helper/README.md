@@ -130,6 +130,13 @@ profile and a family nearby that is looking for a chef.
   (rates, cuisines, how far they travel). Each side searches by distance and asks to meet; contacts are shared only
   when the other side accepts. Chefs see a family's town, size, number of children and allergens — no names or
   street. Families hire after meeting and can switch chefs any time.
+- **Food passport, location privacy, engagements (`passport.py`):** a household's public point is made once by
+  `generate_fuzzy_coordinates` (snapped to a ~1 km grid, then moved 300–900 m in a direction fixed per household,
+  3 decimals), and every distance shown to someone else is measured to that point in whole miles. The Household Food
+  Passport (allergies first, diets, likes, dislikes, brands, kitchen notes) is shared with a chef only when the family
+  grants it, and can be downloaded and taken to any chef. A `ClientEngagement` runs inquiry → trial_scheduled →
+  active (→ paused) → ended; `PassportAccessService` gives the street, gate code and access notes only while it is
+  trial_scheduled or active, logs every read the family can see, and even strips them from a paused chef's settings.
 - **No pantry limit**, and allergen checks are free on every plan.
 - **Desktop:** the web build installs as an app (Chrome/Edge: Install; Safari: Add to Dock) with a sidebar and wider
   layout on big screens.

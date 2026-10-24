@@ -96,6 +96,10 @@ cases:
   - id: w01-card-number-refused
     tags: [money, privacy, must_reject]
     why: a card's last-4 field or name holding a full card number is refused
+  - id: l01-address-follows-engagement
+    tags: [market, privacy, security, must_reject]
+    why: a street address and gate code reach a chef only while the engagement is trial_scheduled or active — not at
+      inquiry, not through a passport grant, not after it ends; public points are fuzzed
 
 # Flyer reading accuracy: what each printed line should map to (None = not a plannable ingredient).
 flyers:

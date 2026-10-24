@@ -108,8 +108,7 @@ export default function FindChef() {
               <Button kind="ghost" title="Decline" onPress={act(() => v6.respond(r.id, false), "Declined")} />
             </View> : null}
             {r.status === "pending" && r.from_kind === "household" ? <Button kind="ghost" title="Withdraw" onPress={act(() => v6.withdraw(r.id), "Withdrawn")} /> : null}
-            {r.status === "accepted" && !mine.some((m) => m.uid === r.chef_uid) ? <Button kind="pro" title={mine.length ? "Hire (switch to this chef)" : "Hire this chef"}
-              onPress={act(() => v6.hire(r.id), "Invitation sent")} /> : null}
+            {r.status === "accepted" ? <Button kind="ghost" title="Trial, hiring and your food passport ›" onPress={() => router.push("/house/passport" as never)} /> : null}
           </View>))}
       </View> : null}
       <View style={s.card}>

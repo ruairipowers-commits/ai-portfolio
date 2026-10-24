@@ -1,7 +1,7 @@
 // Find households (Dinner Peace Pro): your public chef profile, households near you that are looking for a chef and
 // what they'd pay, requests to meet, and replies. You see a household's town, size and allergens — names and
 // contacts only after they accept.
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { View } from "react-native";
 import { Text } from "@/components/text";
@@ -91,6 +91,7 @@ export default function FindHouseholds() {
             </View>
             <Text style={s.muted}>“{r.message}”</Text>
             {r.contact ? <Text style={s.body}>✉️ {r.contact.household}: {r.contact.name} · {r.contact.email}</Text> : null}
+            {r.status === "accepted" ? <Button kind="ghost" title="Open household (passport, trial)" onPress={() => router.push({ pathname: "/chef/household", params: { id: r.hid } } as never)} /> : null}
             {r.status === "pending" && r.from_kind === "household" ? <View style={s.row}>
               <Button kind="pro" title="Accept and share contacts" onPress={act(() => v6.respond(r.id, true), "Accepted")} />
               <Button kind="ghost" title="Decline" onPress={act(() => v6.respond(r.id, false), "Declined")} />

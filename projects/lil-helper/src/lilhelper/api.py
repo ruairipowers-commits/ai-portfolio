@@ -404,7 +404,15 @@ def _catalogs() -> dict:
 @app.get("/api/household/settings")
 def get_settings(ctx: Ctx = Depends(member)) -> dict:
     h = _hh()
-    return {"settings": h.raw, "version": _version(), "role": ctx.role, "me": ctx.person, "catalogs": _catalogs()}
+    raw = h.raw
+    if ctx.role == "chef":
+        from . import passport
+        con = accounts.connect()
+        ok = passport.PassportAccessService(con).can_see_address(ctx.uid, ctx.hid)
+        con.close()
+        if not ok:                                   # a paused or ended chef doesn't get the address this way either
+            raw = {k: v for k, v in raw.items() if k not in ("address", "access")}
+    return {"settings": raw, "version": _version(), "role": ctx.role, "me": ctx.person, "catalogs": _catalogs()}
 
 
 class SettingsIn(BaseModel):
@@ -2439,7 +2447,8 @@ def root() -> str:
 
 
 # Dinner Peace Pro (the personal-chef app) and plans: last, so its routes can use the dependencies above
-from . import household_api, market_api, owner_api, pro_api  # noqa: E402
+from . import household_api, market_api, owner_api, passport_api, pro_api  # noqa: E402
+app.include_router(passport_api.router)
 app.include_router(market_api.router)
 app.include_router(pro_api.router)
 app.include_router(owner_api.router)

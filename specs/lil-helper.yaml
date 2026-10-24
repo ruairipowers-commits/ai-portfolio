@@ -126,6 +126,9 @@ functional_requirements:
     grandfather / list price / custom renewal; 30 days'' notice of a price rise'
   - 'FR-12 (v6) Marketplace: families list what they''d pay and search chefs nearby; Pro chefs list a profile and
     search families; requests to meet, hiring and switching chefs; no names or streets before a request is accepted'
+  - 'FR-13 (v7) Location privacy and the Food Passport: fuzzy public coordinates per household; a portable Household
+    Food Passport the family grants, revokes and exports; client engagements (inquiry, trial_scheduled, active,
+    paused, ended, declined); street address and gate code only while trial_scheduled or active'
 non_functional_requirements:
   - 'NFR-1 Safety: zero plans containing a listed allergen (including hidden sources via an ingredient synonym list)
     and zero dog extras on the toxic list (grapes/raisins, onion, garlic, chocolate, xylitol, macadamia, alcohol,
@@ -176,6 +179,7 @@ golden_cases:
   - {id: k02-plan-gate, expected: 'Studio-only features refused on Solo; a fourth client refused on Solo', tags: [pro]}
   - {id: k03-bulk-split, expected: 'bulk cost shares sum to the line cost to the cent', tags: [pro, money]}
   - {id: k04-voice-allergen, expected: 'a dictated reheat card naming a household allergen is flagged, not saved', tags: [pro, safety, must_reject]}
+  - {id: l01-address-follows-engagement, expected: 'address only at trial_scheduled or active', tags: [market, privacy, must_reject]}
   - {id: m01-market-privacy, expected: 'a public household listing has no names, ages or street', tags: [market, privacy, must_reject]}
   - {id: w01-card-number-refused, expected: 'a full card number in any card field is refused', tags: [money, privacy, must_reject]}
   - {id: k05-coverage-expiry, expected: 'coverage pack refused after it expires or with the wrong password', tags: [pro, security, must_reject]}

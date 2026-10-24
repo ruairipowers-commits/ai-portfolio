@@ -541,6 +541,29 @@ export type ChefProfile = { display_name: string; business?: string; bio?: strin
   rate_per_visit?: number | null; rate_hourly?: number | null; radius_miles: number; address: Address; listed: boolean;
   accepting: boolean };
 
+export type Engagement = { id: string; chef_uid: string; household_id: string; status: "inquiry" | "trial_scheduled" |
+  "active" | "paused" | "ended" | "declined"; trial_at: string | null; started: string | null; ended: string | null;
+  rate_per_visit: number | null; request_id: string | null; name?: string; household?: string | null; address_shared?: boolean };
+export type FoodPassport = { household_name: string; version: string; allergens: string[]; kitchen_notes: string;
+  people: { first_name: string; child: boolean; age: number | null; allergies: string[]; diet: string[]; likes: string[];
+    dislikes: string[] }[]; brands: Record<string, string>; pets: string[] };
+export type PrivateLocation = { street: string; unit: string; city: string; state: string; zip: string; gate_code: string;
+  access_notes: string };
+export type PassportView = { household_id: string; public: { city: string; state: string }; passport: FoodPassport | null;
+  location: PrivateLocation | null; engagement: Engagement | null; access: { passport: boolean; address: boolean } };
+
+export const passport = {
+  mine: () => call<{ passport: FoodPassport; location: PrivateLocation; engagements: Engagement[];
+    grants: { chef_uid: string; name: string; granted: string; revoked: string | null }[];
+    access_log: { ts: string; viewer: string; name: string; parts: string }[] }>("/api/household/passport"),
+  grant: (chef_uid: string) => post<{ granted: string }>("/api/household/passport/grants", { chef_uid }),
+  revoke: (chef_uid: string) => del<{ revoked: string }>(`/api/household/passport/grants/${chef_uid}`),
+  view: (hid: string) => call<PassportView>(`/api/passport/${hid}`),
+  engagements: () => call<{ engagements: Engagement[] }>("/api/engagements"),
+  move: (id: string, status: string, trial_at?: string) => put<Engagement & { invited: string | null }>(`/api/engagements/${id}`, { status, trial_at }),
+  exportUrl: async () => `${await serverUrl()}/api/household/passport/export`,
+};
+
 export const v6 = {
   wallet: () => call<Wallet>("/api/wallet"),
   saveCards: (cards: (CardIn | string)[]) => put<Wallet>("/api/wallet/cards", { cards }),
@@ -548,8 +571,10 @@ export const v6 = {
   delivery: () => call<{ services: DeliveryService[]; takeout_service: string | null }>("/api/delivery"),
   saveDelivery: (b: { services: string[]; memberships: string[]; takeout_service?: string | null }) =>
     put<{ services: DeliveryService[]; takeout_service: string | null }>("/api/delivery", b),
-  address: () => call<{ address: Address; geocoder: string | null }>("/api/household/address"),
-  saveAddress: (a: Address) => put<{ address: Address }>("/api/household/address", a),
+  address: () => call<{ address: Address; access: { gate_code?: string; notes?: string; kitchen_notes?: string };
+    geocoder: string | null }>("/api/household/address"),
+  saveAddress: (a: Address & { gate_code?: string; access_notes?: string; kitchen_notes?: string }) =>
+    put<{ address: Address; access: { gate_code?: string; notes?: string; kitchen_notes?: string } }>("/api/household/address", a),
   reverse: (lat: number, lon: number) => call<{ address: Address }>(`/api/geo/reverse${q({ lat, lon })}`),
   owner: () => call<OwnerView>("/api/owner"),
   setPrice: (plan: string, b: { monthly: number; yearly?: number; annual_discount_pct?: number; effective?: string; note?: string }) =>

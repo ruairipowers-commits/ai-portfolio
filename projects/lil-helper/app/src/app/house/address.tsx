@@ -36,10 +36,14 @@ async function nativeReverse(lat: number, lon: number): Promise<Address> {
 
 export default function AddressScreen() {
   const [a, setA] = useState<Address>({});
+  const [gate, setGate] = useState("");
+  const [access, setAccess] = useState("");
+  const [kitchen, setKitchen] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<unknown>(null);
-  useEffect(() => { v6.address().then((r) => setA(r.address)).catch(setError); }, []);
+  useEffect(() => { v6.address().then((r) => { setA(r.address); setGate(r.access?.gate_code ?? "");
+    setAccess(r.access?.notes ?? ""); setKitchen(r.access?.kitchen_notes ?? ""); }).catch(setError); }, []);
   const set = (p: Partial<Address>) => setA({ ...a, ...p });
   async function useLocation() {
     setBusy(true); setError(null); setMsg(null);
@@ -53,7 +57,8 @@ export default function AddressScreen() {
   }
   async function save() {
     setError(null);
-    try { setA((await v6.saveAddress(a)).address); setMsg("Saved"); } catch (e) { setError(e); }
+    try { setA((await v6.saveAddress({ ...a, gate_code: gate, access_notes: access, kitchen_notes: kitchen })).address); setMsg("Saved"); }
+    catch (e) { setError(e); }
   }
   return (
     <Screen>
@@ -71,8 +76,16 @@ export default function AddressScreen() {
         </View>
         {a.lat != null ? <Text style={s.muted}>📍 Located ({a.lat.toFixed(3)}, {a.lon?.toFixed(3)})</Text> : null}
       </View>
-      <Text style={s.muted}>Your chef sees the full address. People searching for households only see your town and
-        roughly how far away you are.</Text>
+      <View style={s.card}>
+        <Text style={s.h2}>For your chef</Text>
+        <Field label="Gate or door code" value={gate} onChangeText={setGate} />
+        <Field label="How to get in" value={access} onChangeText={setAccess} placeholder="Side door; the dog is friendly" />
+        <Field label="Kitchen notes (in your food passport)" value={kitchen} onChangeText={setKitchen} multiline
+          placeholder="Plates on the second shelf; induction hob" />
+      </View>
+      <Text style={s.muted}>🔒 Your street, gate code and how to get in are shared only with a chef whose trial is
+        scheduled or who works for you, and only while that lasts. People searching see your town and a rough
+        distance (from a point moved up to a kilometre from your home).</Text>
       <Button title="Save address" onPress={save} disabled={!a.city && !a.zip} />
       {msg ? <Pill text={msg} /> : null}
       <ErrorText error={error} />

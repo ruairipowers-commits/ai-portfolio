@@ -189,6 +189,9 @@ def create_household(con, uid: str, name: str, region: str, person: dict, timezo
     con.execute("INSERT INTO members VALUES (?,?,?,?,?)", (hid, uid, None if as_chef else pid,
                                                           "chef" if as_chef else "admin", now()))
     con.commit()
+    if as_chef:
+        from . import passport
+        passport.open_engagement(con, uid, hid, "active")
     return hid
 
 
@@ -303,6 +306,13 @@ def accept_invite(con, code: str, uid: str, email: str) -> dict:
             raise ValueError(str(e))
     if not membership(con, uid, r["household_id"]):
         con.execute("INSERT INTO members VALUES (?,?,?,?,?)", (r["household_id"], uid, r["person_id"], r["role"], now()))
+        if r["role"] == "chef":
+            from . import passport
+            e = passport.engagement(con, uid, r["household_id"])
+            if e and e.status != "active":
+                passport.move(con, e.id, "active")
+            elif not e:
+                passport.open_engagement(con, uid, r["household_id"], "active")
     con.execute("UPDATE invites SET used_by = ?, used_at = ? WHERE code = ?", (uid, now(), code))
     con.commit()
     return dict(r)

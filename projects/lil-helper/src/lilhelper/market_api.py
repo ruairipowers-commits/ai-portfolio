@@ -109,7 +109,7 @@ def find_households(radius: float = 25, cuisine: str | None = None, ctx=Depends(
                 h = load_household()
         except Exception:
             continue
-        d = geo.distance(p["address"], h.raw.get("address"))
+        d = market.public_distance(p["address"], h.raw.get("address"), r["hid"])
         if d is None or d > min(radius, p["radius_miles"]):
             continue
         lst = market.listing(con, r["hid"])
@@ -169,7 +169,7 @@ def chef_requests(ctx=Depends(signed_in)) -> dict:
             lst = market.listing(con, r["hid"]) or {"budget_per_week": None, "budget_per_visit": None,
                                                     "visits_per_week": None, "cuisines": [], "note": "", "start": None}
             p = market.profile(con, ctx.uid) or {"address": {}}
-            item["household"] = market.public_household(h, lst, geo.distance(p["address"], h.raw.get("address")))
+            item["household"] = market.public_household(h, lst, market.public_distance(p["address"], h.raw.get("address"), r["hid"]))
             if r["status"] == "accepted":
                 ad = _admins(con, r["hid"])
                 item["contact"] = {"household": _hname(con, r["hid"]), "name": ad[0]["name"] if ad else "",
@@ -304,6 +304,9 @@ def respond(rid: str, body: RespondIn, ctx=Depends(signed_in)) -> dict:
             if not m or m["role"] != "admin":
                 raise PermissionError
         out = market.respond(con, rid, body.accept, ctx.uid)
+        if body.accept:
+            from . import passport
+            passport.open_engagement(con, r["chef_uid"], r["hid"], "inquiry", request_id=rid)
     except PermissionError:
         con.close()
         raise HTTPException(403, "that request wasn't sent to you")
@@ -373,5 +376,8 @@ def remove_chef(uid: str, ctx=Depends(member)) -> dict:
         con.close()
         raise HTTPException(404, "that person isn't your chef")
     accounts.remove_member(con, ctx.hid, uid)
+    from . import passport
+    passport.end_all(con, uid, ctx.hid)
+    passport.revoke(con, ctx.hid, uid)
     con.close()
     return {"removed": uid}

@@ -3,6 +3,16 @@
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
 (or delete them) as they're done. Last updated 24 October 2026.
 
+## 0000000000000. PR #56 open; passport and location privacy added (24 October 2026)
+
+- **PR #56** (`agent/claude-dinnerpeace-pro`): v5 Pro, v6, and v7 (passport.py: fuzzy coordinates, Household Food
+  Passport, ClientEngagement, PassportAccessService; 130 tests, eval 28/28). Waiting for Ruairi to merge.
+- [ ] `MARKETPLACE_SPEC.md` wasn't in the Mac's Claude folder; v7 was built from the kickoff prompt. Reconcile with
+      the spec once it's there.
+- [ ] Branches with unmerged work (not lil-helper): `agent/claude-owner-merges` (daily-post background Ollama jobs,
+      70 behind main), `spec/job-copilot` (draft spec, superseded by JobHunt?), `crash-course` (old spec draft; the
+      built version is on main). Open PRs besides #56: #53 (post, needs-work), #6 (Dependabot actions).
+
 ## 000000000000. lil-helper v6 (24 October 2026, same branch `agent/claude-dinnerpeace-pro`)
 
 Built: card wallet (rewards, caps, limits, expiry, store ranking, credits, next best card), delivery services

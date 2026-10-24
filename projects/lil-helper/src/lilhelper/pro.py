@@ -177,7 +177,6 @@ def dossier(h: Household) -> dict:
                             "text": f"{p['name']}{' (child)' if p['kid'] else ''}: {a.replace('_', ' ')} allergy"})
     hazards.sort(key=lambda x: (not x["kid"], x["allergen"]))
     return {"name": h.info.get("name"), "people": people, "hazards": hazards, "brands": brands,
-            "address": h.raw.get("address") or {},
             "allergens": sorted(h.everyone_allergies()), "pets": [{"name": pt.name} for pt in h.pets.values()],
             "budget_per_week": h.info.get("budget_per_week")}
 

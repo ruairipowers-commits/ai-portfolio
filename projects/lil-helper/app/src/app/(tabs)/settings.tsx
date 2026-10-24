@@ -52,6 +52,7 @@ export default function Home() {
           me?.household_plan?.plan === "free" ? "Family Free" : "Dinner Peace Family"} sub="Plans for families and personal chefs"
           onPress={go("/plans")} />
         <LinkRow icon="🧑‍🍳" title="Your personal chef" sub="What's in the fridge, how to reheat it, invite your chef" onPress={go("/house/chef")} />
+        <LinkRow icon="🛂" title="Food passport" sub="What chefs see, who can see it, trials and hiring" onPress={go("/house/passport")} />
         <LinkRow icon="🔎" title="Find a chef" sub="Chefs near you, what you'd pay, ask to meet, switch chefs" onPress={go("/house/find-chef")} />
       </View>
       <View style={s.card}>

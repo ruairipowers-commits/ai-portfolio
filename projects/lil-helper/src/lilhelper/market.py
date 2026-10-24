@@ -80,8 +80,19 @@ def _public_chef(con, p: dict, miles: float | None) -> dict:
     n = len(plans.chef_client_ids(con, p["uid"]))
     return {"uid": p["uid"], "name": p["display_name"], "business": p["business"], "bio": p["bio"],
             "cuisines": p["cuisines"], "rate_per_visit": p["rate_per_visit"], "rate_hourly": p["rate_hourly"],
-            "place": geo.place(p["address"]), "miles": round(miles) if miles is not None else None,
+            "place": geo.place(p["address"]), "miles": max(1, round(miles)) if miles is not None else None,
             "radius_miles": p["radius_miles"], "full": cap is not None and n >= cap, "clients": n}
+
+
+def public_distance(own: dict | None, other: dict | None, other_seed: str) -> float | None:
+    """Distance from your own (exact) place to someone else's fuzzy point, in whole miles (min 1); by ZIP without
+    points. Using the other side's fuzzy point means repeating searches from moved places can't pin them down."""
+    from .passport import fuzzy_miles, generate_fuzzy_coordinates
+    pa, pb = geo.point(own), geo.point(other)
+    if pa and pb:
+        return fuzzy_miles(pa, generate_fuzzy_coordinates(pb[0], pb[1], other_seed))
+    d = geo.distance({"zip": (own or {}).get("zip")}, {"zip": (other or {}).get("zip")})
+    return None if d is None else max(1, round(d))
 
 
 def search_chefs(con, home: dict, radius: float = 25, cuisine: str | None = None) -> list[dict]:
@@ -92,7 +103,7 @@ def search_chefs(con, home: dict, radius: float = 25, cuisine: str | None = None
         p = profile(con, r["uid"])
         if plans.chef_plan(con, p["uid"]) == "none":
             continue
-        d = geo.distance(home, p["address"])
+        d = public_distance(home, p["address"], p["uid"])
         if d is None or d > min(radius, p["radius_miles"]):
             continue
         if cuisine and cuisine not in p["cuisines"]:
@@ -132,7 +143,7 @@ def listing(con, hid: str) -> dict | None:
 def public_household(h, lst: dict, miles: float | None) -> dict:
     """What a chef sees before the family accepts: no names, no ages, no street."""
     people = list(h.people.values())
-    return {"place": geo.place(h.raw.get("address")), "miles": round(miles) if miles is not None else None,
+    return {"place": geo.place(h.raw.get("address")), "miles": max(1, round(miles)) if miles is not None else None,
             "people": len(people), "kids": sum(p.is_kid for p in people),
             "allergens": sorted(h.everyone_allergies()),
             "diets": sorted({d for p in people for d in p.diet}),
