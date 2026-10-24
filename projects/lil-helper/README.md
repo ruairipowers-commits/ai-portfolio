@@ -106,7 +106,33 @@ the chef logs in their own app, free.
   shows the plan page. Plans are set with `helper plans set` until the App Store release, then by the RevenueCat
   webhook (`/api/billing/revenuecat`).
 
-`helper chef-demo --email you@example.com` sets up a fictional chef on Studio with three client homes.
+`helper chef-demo --email you@example.com` sets up a fictional chef on Studio with three client homes, a public chef
+profile and a family nearby that is looking for a chef.
+
+## v6: cards, delivery, address, the owner console, finding each other, desktop
+
+- **Cards (More → Cards):** add and edit each card — company, network, last four digits at most, expiry month,
+  rewards per category with yearly caps, credit limit and your own monthly limit, the stores it's your first choice
+  at (in order), monthly delivery and dining credits, primary. The order picks your card for each store unless its
+  bonus for the year is used up, it would go over a limit, or it has expired; then the next best card takes over and
+  the note says why. Each card shows this year's spend against each cap and this month's against its limit.
+- **Delivery services:** Instacart, Amazon (Whole Foods and Fresh), DoorDash, Uber Eats, Walmart, Grubhub, with
+  memberships (Instacart+, DashPass, Uber One, Walmart+) waiving fees over their minimums. Shopping lists offer the
+  household's services as other ways to get an order; only Instacart takes a list directly, the rest get it shared.
+- **Home address:** typed, or from the phone's or browser's location (it asks). `HELPER_GEOCODER=census|nominatim`
+  fills in the missing half; without it, places are matched by ZIP.
+- **Owner console (`/owner`, for emails in `HELPER_OWNER_EMAILS`):** list prices per plan, monthly and yearly (a
+  yearly price, or a discount on 12 months), price changes on a date, every subscription with what it renews at —
+  keep its price (grandfather), the list price at renewal (upcharge), or a custom price — bulk grandfathering,
+  giving someone a plan, and the renewals coming up. Subscribers whose price rises get an email 30 days before.
+  App Store subscribers pay App Store Connect's prices, so the console says to mirror changes there.
+- **Find a chef / find households:** families say they're looking and what they'd pay; Pro chefs list a profile
+  (rates, cuisines, how far they travel). Each side searches by distance and asks to meet; contacts are shared only
+  when the other side accepts. Chefs see a family's town, size, number of children and allergens — no names or
+  street. Families hire after meeting and can switch chefs any time.
+- **No pantry limit**, and allergen checks are free on every plan.
+- **Desktop:** the web build installs as an app (Chrome/Edge: Install; Safari: Add to Dock) with a sidebar and wider
+  layout on big screens.
 
 The family uses the **phone app** (`app/`, Expo — iPhone first via TestFlight, Android from the same code), in the
 Dinner Peace look: sage and kraft, Nunito, the new icon. Chefs get their own tabs (Next, Clients, Shop, Ledger, More)

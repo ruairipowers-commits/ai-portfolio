@@ -317,6 +317,29 @@ def pro_cases() -> list[tuple[str, bool, str, bool]]:
             good = pro.coverage_open(db, row["id"], "correct-horse", today)["id"] == row["id"]
             db.close()
             out.append(("k05-coverage-expiry", all(checks) and good, f"refused={checks}", True))
+            # v6: what a chef sees of a household that's looking, and card fields
+            from . import market
+            from .config import HouseholdError, parse_household
+            with tenant(ha[1]):
+                raw = load_household().raw
+                raw["people"]["zoe"] = {"name": "Zoe", "age_band": "kid", "age": 6, "allergies": ["peanut"]}
+                raw["address"] = {"line1": "12 Orchard Lane", "city": "Westport", "state": "CT", "zip": "06880"}
+                save_household(raw)
+                pub = market.public_household(load_household(), {"budget_per_week": 300, "budget_per_visit": None,
+                                                                 "visits_per_week": 2, "cuisines": [], "note": "",
+                                                                 "start": None}, 3.2)
+            leak = [w for w in ("Zoe", "Orchard", "P") if w in json.dumps({k: v for k, v in pub.items() if k != "note"})]
+            out.append(("m01-market-privacy", not leak and pub["kids"] == 1 and pub["allergens"] == ["peanut"],
+                        f"leaked={leak}", True))
+            refused = 0
+            for card in ({"id": "x", "name": "X", "last4": "4111111111111111"}, {"id": "y", "name": "4111 1111 1111 1111"}):
+                try:
+                    r2 = copy.deepcopy(raw)
+                    r2["cards"] = [card]
+                    parse_household(r2)
+                except HouseholdError:
+                    refused += 1
+            out.append(("w01-card-number-refused", refused == 2, f"refused {refused} of 2", True))
         finally:
             if old is None:
                 os.environ.pop("HELPER_DATA", None)

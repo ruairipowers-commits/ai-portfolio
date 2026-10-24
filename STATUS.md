@@ -1,7 +1,24 @@
 # Status — open items
 
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
-(or delete them) as they're done. Last updated 23 October 2026.
+(or delete them) as they're done. Last updated 24 October 2026.
+
+## 000000000000. lil-helper v6 (24 October 2026, same branch `agent/claude-dinnerpeace-pro`)
+
+Built: card wallet (rewards, caps, limits, expiry, store ranking, credits, next best card), delivery services
+(config/delivery.yaml; DashPass, Uber One, Walmart+ added to money.yaml), home address with location and optional
+geocoding (`HELPER_GEOCODER`), owner console and billing (`billing.py`, `/owner`, `HELPER_OWNER_EMAILS`), marketplace
+(`market.py`: chef profiles, household listings, requests to meet, hire, switch chef), installable desktop web app
+(manifest, service worker, sidebar layout). Website copied into `projects/lil-helper/website` and its claims aligned
+(no pantry limit, allergens free, no offline/Stripe/48-hour claims). Verified: 122 tests, eval 27/27, Chromium at
+phone and desktop sizes.
+
+- [ ] **Write the website changes back to the Mac** (`index.html`, `app.js`, `README.md`): the Mac was offline at the end
+      of the session; the files are in the repo copy.
+- [ ] **Host the web app** somewhere (e.g. app.dinnerpeace.app) so the desktop install has a home; set
+      `HELPER_CORS` and the API URL for it.
+- [ ] Production env: `HELPER_OWNER_EMAILS`, `HELPER_GEOCODER` (+ `HELPER_GEOCODER_CONTACT` for Nominatim).
+- [ ] Website still promises a "14-day free trial" and "concierge/priority support": Ruairi's call.
 
 ## 00000000000. Dinner Peace Pro: chef plans in lil-helper (23 October 2026, branch `agent/claude-dinnerpeace-pro`)
 

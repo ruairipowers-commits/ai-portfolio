@@ -65,6 +65,10 @@ been applied to a live account. Costs depend on traffic and model use; the solve
   `users.chef_plan` (Chef Solo / Studio) with `plan_until` from the event's expiration. Entitlement ids in RevenueCat:
   `family`, `chef_solo`, `chef_studio`; the app logs in to RevenueCat with our user id. Only the admin's (or a Pro
   chef's) subscription counts; invited family members never pay, and a household with a Pro chef gets Family free.
+- **Prices and renewals:** the owner console keeps list prices and each subscriber's renewal policy (grandfather,
+  list price, custom). For App Store subscribers, mirror a price change in App Store Connect and pick "keep the
+  current price for existing subscribers" for the ones you grandfather; web (`direct`) and `comp` subscriptions follow
+  the console exactly.
 - **Products to create in App Store Connect:** Family monthly $4.99 / yearly $39; Chef Solo $29 / $290; Chef Studio
   $59 / $590 (one subscription group per audience so a chef can upgrade Solo → Studio in place).
 - **Lapsed:** read-only (plans and recipes stay viewable, no new drafts) for 30 days, then the admin is asked whether

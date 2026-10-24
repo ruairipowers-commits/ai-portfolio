@@ -90,6 +90,12 @@ cases:
   - id: k05-coverage-expiry
     tags: [pro, security, must_reject]
     why: a coverage pack opens with the right password inside its dates, and not with a wrong one or after it ends
+  - id: m01-market-privacy
+    tags: [market, privacy, must_reject]
+    why: a household looking for a chef shows its town, size, children count and allergens — no names or street
+  - id: w01-card-number-refused
+    tags: [money, privacy, must_reject]
+    why: a card's last-4 field or name holding a full card number is refused
 
 # Flyer reading accuracy: what each printed line should map to (None = not a plannable ingredient).
 flyers:

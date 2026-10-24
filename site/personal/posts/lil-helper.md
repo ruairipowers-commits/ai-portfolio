@@ -211,6 +211,23 @@ command turns a plan on. The app also moved to the brand's look (sage, kraft and
 Tested offline: 13 new tests and five new golden cases (`k01`–`k05`), 25 of 25 eval cases passing with must-reject
 recall 1.00, and the chef screens walked through in Chromium on a fictional chef with three homes.
 
+## Update, 24 October 2026: cards, delivery, finding each other, desktop
+
+Each household now keeps a card wallet: issuer, expiry, rewards with yearly caps, limits, the stores each card is
+first choice at, and delivery credits. The rule I liked writing was the hand-off: the household's own pick wins at
+a store until its bonus for the year runs out, it would pass a limit, or it expires, and then the next best card
+takes over with a note saying which and why. Delivery services (Instacart, DoorDash, Uber Eats, Amazon, Walmart,
+Grubhub) are now a household setting; only Instacart takes a list from another app, so the rest get the list shared.
+
+The bigger change is that chefs and families can find each other. A family says it's looking and what it would pay;
+a Pro chef lists a profile with rates and how far they travel; each side searches by distance and asks to meet.
+Before a request is accepted, a chef sees a town, a distance in whole miles, how many people and children, and the
+allergens to cook around: no names, ages or street. That's a must-reject golden case now. On my side there's an
+owner console: list prices with yearly savings and start dates, and for every subscriber a renewal policy (keep
+their price, move to the list price, or a custom one), with a 30-day email before any rise. App Store subscribers
+pay Apple's prices, so the console reminds me to mirror changes in App Store Connect. And the web build now
+installs as a desktop app with a sidebar.
+
 ## What I'd do next / limits
 
 - **Real weeks.** Every number above comes from a simulated family and synthetic prices. The next step is our own

@@ -119,6 +119,13 @@ functional_requirements:
     rules (a person confirms); Studio adds one shopping trip across client homes with bulk lines split by each home''s
     quantity, a card ledger (chef card → rewards estimate → per-client expense invoice; client card → separate
     checkouts per client) and a password-protected, expiring coverage pack for a backup chef'
+  - 'FR-10 (v6) Cards, delivery, place: a card wallet per household (issuer, expiry, rewards and caps, limits, store
+    ranking, delivery credits; next best card when a bonus runs out), delivery services with memberships, and a home
+    address typed or from the device''s location'
+  - 'FR-11 (v6) Owner console: list prices per plan with yearly savings and effective dates; subscriptions with
+    grandfather / list price / custom renewal; 30 days'' notice of a price rise'
+  - 'FR-12 (v6) Marketplace: families list what they''d pay and search chefs nearby; Pro chefs list a profile and
+    search families; requests to meet, hiring and switching chefs; no names or streets before a request is accepted'
 non_functional_requirements:
   - 'NFR-1 Safety: zero plans containing a listed allergen (including hidden sources via an ingredient synonym list)
     and zero dog extras on the toxic list (grapes/raisins, onion, garlic, chocolate, xylitol, macadamia, alcohol,
@@ -169,6 +176,8 @@ golden_cases:
   - {id: k02-plan-gate, expected: 'Studio-only features refused on Solo; a fourth client refused on Solo', tags: [pro]}
   - {id: k03-bulk-split, expected: 'bulk cost shares sum to the line cost to the cent', tags: [pro, money]}
   - {id: k04-voice-allergen, expected: 'a dictated reheat card naming a household allergen is flagged, not saved', tags: [pro, safety, must_reject]}
+  - {id: m01-market-privacy, expected: 'a public household listing has no names, ages or street', tags: [market, privacy, must_reject]}
+  - {id: w01-card-number-refused, expected: 'a full card number in any card field is refused', tags: [money, privacy, must_reject]}
   - {id: k05-coverage-expiry, expected: 'coverage pack refused after it expires or with the wrong password', tags: [pro, security, must_reject]}
 
 decisions:                       # answered by Ruairi, 5 October 2026
@@ -205,6 +214,11 @@ decisions:                       # answered by Ruairi, 5 October 2026
   - 'Marketing website (dinnerpeace.app) kept in the repo under projects/lil-helper/website and on the Mac'
   - 'Billing in production through RevenueCat / App Store; until then an admin command sets plans. Stripe client
     cards and offline sync are later'
+  # answered by Ruairi, 24 October 2026 (v6)
+  - 'Household card wallet with next-best card; no pantry limit; home address from location or typed; owner-managed
+    plan prices with grandfathering or upcharging at renewal; installable desktop app with a wider layout; delivery
+    services (Instacart, DoorDash, Uber Eats...); allergen checks free; switching chefs; finding chefs and households
+    nearby with requests to meet'
 
 demo:
   title: DinnerPeace
