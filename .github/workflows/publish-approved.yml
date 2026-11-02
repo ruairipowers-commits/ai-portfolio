@@ -1,0 +1,27 @@
+# Publishes the posts Ruairi approved from their emails: one a day, oldest approval first (scripts/publish_approved.py).
+# Hourly it mirrors his decisions as `approved` / `archived` labels; from 13:00 UTC each run also merges one approved
+# post if none was merged today (so a delayed scheduled run is caught up) and starts the site build. Running it by
+# hand publishes at any hour, but never more than one post a day.
+# Secrets: EDITORIAL_URL (the editorial service's public base URL). The service holds no GitHub credentials; this
+# workflow's own token does the merge, and only for a draft-post PR that adds exactly one post file.
+name: publish-approved
+on:
+  schedule:
+    - cron: "20 * * * *"
+  workflow_dispatch:
+permissions: {contents: write, pull-requests: write, issues: write, actions: write}
+concurrency: {group: publish-approved, cancel-in-progress: false}
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: label decisions, merge today's approved post
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          EDITORIAL_URL: ${{ secrets.EDITORIAL_URL }}
+          PUBLISH_PER_DAY: "1"
+          PUBLISH_FROM_HOUR: "13"
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: python3 scripts/publish_approved.py

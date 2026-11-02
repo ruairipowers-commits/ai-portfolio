@@ -6,7 +6,8 @@ the owner picks or dismisses from a daily email. Each day (`.claude/skills/daily
 **local model** on the owner's server drafts a post from the top topic, Claude reviews and edits it, an independent
 **editor** scores it, and **code decides** the label (`editorial gate`): every check passes and every editor score
 is ≥ 4 → `ready-to-publish`; anything else → `needs-work`. Either way it's a pull request, tagged **AutoPublished**,
-and **nothing publishes until the owner merges it**. Every run
+and **nothing publishes without the owner's decision**: its email carries the whole post with Approve / Archive links,
+and a workflow merges one approved post a day (archived posts can be approved later). Every run
 is logged to compare local drafting against Claude writing (`metrics/routing-runs.jsonl`). Readers can subscribe and
 get an email when a post goes live.
 
@@ -25,7 +26,7 @@ make serve   # queue page + pick / dismiss + scheduler on http://localhost:8810
 |---|---|
 | **Intended use** | Suggest blog topics and draft posts for the owner's own site, for the owner to approve |
 | **Not for** | Publishing without the owner's review; anything presented as client or employer work; copying sources |
-| **Decides** | Nothing on its own. Code labels each post ready or needs-work (`editorial gate`); the owner picks or dismisses topics and merges (or withholds) every post |
+| **Decides** | Nothing on its own. Code labels each post ready or needs-work (`editorial gate`); the owner picks or dismisses topics and approves or archives every post (or merges it by hand) |
 | **Data** | Public titles, summaries and links from official APIs and feeds; subscriber email addresses (double opt-in) |
 | **Owner** | Ruairi Powers |
 | **Risk tier** | Medium: publishes under the owner's name; emails real people |
@@ -43,10 +44,18 @@ make serve   # queue page + pick / dismiss + scheduler on http://localhost:8810
 - **Daily post**: `.claude/skills/daily-post/SKILL.md`, a scheduled Claude task. Claude researches and writes a
   brief; the local model (`prompts/local-writer.v1.md`, on the EVO-X1) drafts; Claude reviews and edits; a separate
   editor subagent scores it against `prompts/editor.v1.md`; `editorial gate` labels the PR `ready-to-publish` or
-  `needs-work` (with `draft-post`); the owner merges. `editorial routing` logs each run.
+  `needs-work` (with `draft-post`); the owner approves or archives it from its email. Each run tops up to five
+  posts approved or waiting (`posts` in `config/settings.yaml`). `editorial routing` logs each run.
 - **Weekly post** (`.claude/skills/weekly-post/SKILL.md`): the earlier, review-only path; its scheduled task is paused.
-- **Draft email**: `.github/workflows/draft-post.yml` → `scripts/draft_email.py`.
-- **Publish**: merge. The scout marks the topic published from the PR (`github_sync.py`, public API, read-only).
+- **Post email** (`postmail.py`): the service emails each new draft-post PR once, found in the same read-only GitHub
+  sync: the whole post (read at the PR's head commit), the scorecard, and Approve / Archive links signed with the
+  service's own secret (valid 90 days, single-use, confirmation page first). An approval lapses if the PR changes
+  after it. The older GitHub-side email (`draft-post.yml` → `scripts/draft_email.py`) is skipped when the repo variable
+  `POST_EMAIL_BY_SERVICE` is `true`.
+- **Publish**: `.github/workflows/publish-approved.yml` → `scripts/publish_approved.py` reads `GET /api/decisions`,
+  labels PRs `approved` / `archived`, and at 13:20 UTC merges the oldest approved post (only a draft-post PR that adds
+  exactly one post file) and starts the site build. The service still holds no GitHub credentials; the workflow's own
+  token merges. Merging a PR by hand also publishes. `github_sync.py` marks the topic published from the PR.
 - **Subscribers**: the site assistant (`projects/site-assistant/src/siteassistant/subscribers.py`).
 
 ## Configure

@@ -1,13 +1,15 @@
 ---
 name: daily-post
-description: Daily blog post from the top of the editorial queue — a local model on the EVO-X1 drafts it, Claude reviews and edits it, code gates it, and it opens a pull request for Ruairi to merge (ready-to-publish or needs-work), tagged AutoPublished. Logs the local-vs-Claude comparison. Used by the daily scheduled task.
+description: Daily blog posts from the top of the editorial queue, enough to keep five approved-or-waiting posts in hand — a local model on the EVO-X1 drafts each, Claude reviews and edits it, code gates it, and it opens a pull request that emails Ruairi the post with Approve / Archive links (ready-to-publish or needs-work), tagged AutoPublished. Logs the local-vs-Claude comparison. Used by the daily scheduled task.
 ---
 
-# Daily post: local draft → Claude review → code gate → pull request for Ruairi
+# Daily posts: local draft → Claude review → code gate → pull request → Ruairi approves or archives from the email
 
 You are the **reviewer**, not the writer. A local model on Ruairi's EVO-X1 writes the first draft; you research,
 brief it, review and edit its draft, and a separate **editor** subagent scores the result. **Code decides** whether it's
-ready (`editorial gate`). Either way it arrives as a pull request: **Ruairi merges every post**, and you never merge.
+ready (`editorial gate`). Either way it arrives as a pull request, and the editorial service emails Ruairi the whole
+post with **Approve** and **Archive** links. Nothing publishes without his decision: `publish-approved.yml` merges one
+approved post a day, oldest approval first (his decision, 2 November 2026). You never merge.
 
 Read first: `CLAUDE.md`, `factory/style-guide.md`, `projects/editorial-agents/prompts/local-writer.v1.md` (the local
 model's brief), `projects/editorial-agents/prompts/editor.v1.md` (the editor's rubric). Standing rule: never say or
@@ -17,13 +19,23 @@ Setup: `pip install -q -e projects/editorial-agents`, then `python scripts/routi
 run from the `routing-log` branch into the local log, so the counts below are complete). Work in `drafts/<slug>/`
 (git-ignored, never committed).
 
+## 0. How many posts this run
+
+Ruairi wants an approved post ready every day, so keep **five** posts in hand (`posts.buffer` in
+`projects/editorial-agents/config/settings.yaml`): open PRs labelled `draft-post` and not labelled `archived` (approved,
+or waiting for his decision). `gh api "repos/{owner}/ai-portfolio/pulls?state=open&per_page=100"` and count them.
+Write `min(buffer - count, posts.max_new_per_run)` posts this run (at most two), each through steps 1–8 in turn.
+Zero: stop; nothing to report.
+
 ## 1. Take the topic
 
-- Fetch the queue (`EDITORIAL_QUEUE_URL` from the task prompt, a `queue.md`; never write that URL into any file) with
-  WebFetch, verbatim. The first topic is next: Ruairi's picks first, then readers' votes, then rank. Note its `id`,
-  title, link, summary, angle, sectors and votes.
+- Read the queue with the EVO-X1 tool `mcp__remote-devices__evo-x1__editorial_queue` (it reads the editorial service on
+  that machine, so no web fetch or approval prompt is needed). Only if that tool is missing and someone is in the chat,
+  fall back to WebFetch on `EDITORIAL_QUEUE_URL` from the prompt; never write that URL into any file. Take the Markdown
+  verbatim. The first topic is next: Ruairi's picks first, then readers' votes, then rank. Note its `id`, title, link,
+  summary, angle, sectors and votes.
 - Skip a topic that already has a PR: `gh api "repos/{owner}/ai-portfolio/pulls?state=all&per_page=50"` and look
-  for `Topic: <id>` in any body. Take the next one.
+  for `Topic: <id>` in any body (and any topic you've written earlier in this run). Take the next one.
 - Queue unreachable or empty: **stop** and report why. Never invent a topic.
 - Slug: short, lowercase, hyphenated, not already used under `site/`. Date: today (UTC).
 
@@ -132,13 +144,17 @@ Local model: <model> · <seconds> s · defects found in review: <n> · rewritten
 Gate: PUBLISH | HOLD — <reasons if held>
 ```
 
-- **Gate said PUBLISH:** label the PR `draft-post` **and** `ready-to-publish` (create labels if missing). The
-  `draft-post` workflow emails Ruairi; merging publishes it.
+- **Gate said PUBLISH:** label the PR `draft-post` **and** `ready-to-publish` (create labels if missing).
 - **Gate said HOLD:** label the PR `draft-post` **and** `needs-work`, with the gate's reasons at the top of the body.
 
-Never merge any PR, never push to `main` directly, never change files other than the post and the run log.
+Either way the editorial service emails Ruairi the whole post with Approve / Archive links within ~30 minutes (they act on the
+`Topic:` line, so keep it exactly as above). He may approve a held post; that's his call.
+
+Never merge any PR, never push to `main` directly, never change files other than the post and the run log. Never touch
+the `approved` / `archived` labels: `publish-approved.yml` sets them from his decisions.
 
 ## 9. Finish
 
-Final message: the topic and its votes, the PR link, READY or HELD (and why), the local model's time and the
-review's defect count, whether the comparison arm ran, and anything left out for lack of a source.
+Final message: how many posts were in hand and how many this run wrote; for each, the topic and its votes, the PR
+link, READY or HELD (and why), the local model's time and the review's defect count, whether the comparison arm ran,
+and anything left out for lack of a source.

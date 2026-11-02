@@ -67,8 +67,8 @@ def test_digest_shows_votes_and_next_topic(scouted, monkeypatch):
         c.post(f"/api/queue/{tid}/vote", headers={"user-agent": ua})
     mail = digest.render(store)
     assert "2 new reader votes" in mail["subject"]
-    assert "Next to publish" in mail["html"] and "2 votes (+2 new)" in mail["html"]
-    assert mail["text"].startswith("1. [NEXT]")
+    assert "Next to write" in mail["html"] and "2 votes (+2 new)" in mail["html"]
+    assert "\n1. [NEXT]" in mail["text"]          # after the publishing line
     digest.send(store)
     assert "new reader vote" not in digest.render(store)["subject"]     # counted once, then not "new" any more
 

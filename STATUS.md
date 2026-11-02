@@ -1,7 +1,31 @@
 # Status — open items
 
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
-(or delete them) as they're done. Last updated 24 October 2026.
+(or delete them) as they're done. Last updated 2 November 2026.
+
+## 000000000000000. Approve / archive posts from the email; one approved post a day (2 November 2026)
+
+Ruairi's decisions (2 Nov): keep the EVO-X1 local draft; keep **5** posts approved or waiting; approve or archive each
+post from its email; GitHub merges the oldest approved post daily; the run reads the queue through an EVO-X1 tool.
+Branch `agent/claude-email-approval`:
+- The editorial service emails each new draft-post PR (`postmail.py`, in its read-only GitHub sync): the whole post
+  plus signed Approve / Archive links (90 days, single-use, confirmation page; the secret stays on the service). An
+  approval lapses if the PR changes after it. The service records the click (`approved` / `archived`, `GET
+  /api/decisions`); its daily email shows the publishing line, warns when nothing is approved, and lists archived
+  posts with fresh Approve links.
+- `publish-approved.yml` (13:20 UTC; hourly for labels only) merges the oldest approved draft-post PR that adds one post
+  file, then starts the site build. The service still has no GitHub credentials.
+- daily-post skill: tops up to 5 open posts (at most 2 a run); reads the queue with the EVO-X1 `editorial_queue` tool.
+- Why: on 1 Nov the scheduled run couldn't WebFetch the queue (the approval prompt timed out twice); no post.
+- [ ] Ruairi: add repo secret `EDITORIAL_URL` (the service's public base URL) and repo variable
+      `POST_EMAIL_BY_SERVICE=true` (stops the duplicate GitHub-side draft email), merge, redeploy the editorial
+      service on the EVO-X1.
+- [ ] Ruairi: add the `editorial_queue` tool to infra-setups (file + steps from the chat of 2 Nov; this session could
+      not attach infra-setups or open dev-sandbox), redeploy the EVO-X1 MCP server, restart Claude Desktop.
+- [ ] Update the "Daily blog post" scheduled task's prompt (needs approval on the Mac): drop the queue URL, say "keep
+      five posts in hand", Approve/Archive replaces merging.
+- [ ] If `main` has branch protection that requires a review, the workflow's merge is refused (it warns and tries the
+      next); allow GitHub Actions to merge, or the publish step stays manual.
 
 ## 00000000000000. lil-helper (DinnerPeace) moved to the private repo (24 October 2026)
 

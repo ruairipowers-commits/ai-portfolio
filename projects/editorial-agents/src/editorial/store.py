@@ -1,7 +1,8 @@
 """SQLite store: candidate topics (one row each, with status), owner actions, runs.
 
 Topic status: candidate → queued (in the top N) → picked / dismissed by the owner → drafted (a draft PR exists) →
-published (merged). Readers vote on queued topics (one vote per anonymous visitor per topic per day); votes order the
+approved or archived by the owner (signed links in the post's email) → published (the publish workflow merged it, oldest
+approval first, one a day). Readers vote on queued topics (one vote per anonymous visitor per topic per day); votes order the
 queue after the owner's picks, so the most-wanted topic is written next. Also: escalated (failed the injection screen), expired (too old), similar (too close to a
 published post or a better queue topic). Every owner action is a row in `actions` (HITL-02).
 """
@@ -102,6 +103,28 @@ class Store:
         for r in rows:
             r["votes"] = votes.get(r["id"], 0)
         return sorted(rows, key=lambda r: (r["status"] != "picked", -r["votes"], r.get("rank") or 9999))
+
+    # ---- drafted posts and the owner's decisions on them
+    def posts(self) -> dict[str, list[dict]]:
+        """Open draft posts by state. Each row has its PR (number, url, title) and when the owner decided.
+        `approved` is in publishing order: the oldest approval publishes next."""
+        out: dict[str, list[dict]] = {"drafted": [], "approved": [], "archived": []}
+        for t in self.topics(("drafted", "approved", "archived")):
+            t["pr"] = self.get_kv(f"pr:{t['id']}") or {}
+            last = self.query("select ts from actions where topic_id = ? and action in ('approve', 'archive') "
+                              "order by ts desc, rowid desc limit 1", (t["id"],))
+            t["decided_at"] = last[0]["ts"] if last else ""
+            t["sha"] = self.decision_sha(t["id"])
+            out[t["status"]].append(t)
+        out["approved"].sort(key=lambda t: t["decided_at"])
+        return out
+
+    def decision_sha(self, tid: str) -> str:
+        """The PR head commit the owner's latest approve / archive was made on ('' if unknown)."""
+        r = self.query("select detail from actions where topic_id = ? and action in ('approve', 'archive') "
+                       "order by ts desc, rowid desc limit 1", (tid,))
+        d = r[0]["detail"] if r else {}
+        return ((d or {}).get("pr") or {}).get("sha", "") if isinstance(d, dict) else ""
 
     # ---- reader votes
     def vote(self, tid: str, visitor: str) -> bool:

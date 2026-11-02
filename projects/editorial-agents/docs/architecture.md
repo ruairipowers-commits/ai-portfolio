@@ -19,8 +19,10 @@ flowchart LR
   O -- "signed link HITL-02" --> Q
   Q -- "queue.md" --> W
   E1 -- "draft PR" --> GH["GitHub PR<br/>label draft-post"]
-  GH -- "email: intro,<br/>scorecard, links" --> O
-  O -- "merge = publish HITL-02" --> SITE["Blog"]
+  GH -- "email: whole post,<br/>Approve / Archive" --> O
+  O -- "signed link HITL-02" --> Q
+  Q -- "decisions" --> PUB["publish-approved<br/>workflow, daily"]
+  PUB -- "merge oldest approved" --> SITE["Blog"]
   SITE -- "new post" --> SA -- "intro + link" --> SUB(("Subscribers"))
   GH -. "drafted / published" .-> Q
 ```

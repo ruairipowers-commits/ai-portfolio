@@ -1,6 +1,7 @@
 # Emails Ruairi when a draft post's pull request is opened (by the weekly writer task) with the label `draft-post`:
 # the intro, the editor's scorecard, and links to review & approve (merge), read the draft, or improve it with Claude.
-# Merging is the only way a draft is published. Secrets: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM,
+# Superseded by the editorial service's post email (Approve / Archive links): set the repo variable
+# POST_EMAIL_BY_SERVICE=true to skip this one. Secrets: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM,
 # ALERT_EMAIL (the same ones the uptime check uses).
 name: draft-post
 on:
@@ -11,6 +12,7 @@ jobs:
   email:
     # once per PR: when it's opened already labelled, or when the label is added later; never for forks
     if: >-
+      vars.POST_EMAIL_BY_SERVICE != 'true' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       ((github.event.action == 'opened' && contains(github.event.pull_request.labels.*.name, 'draft-post')) ||
        (github.event.action == 'labeled' && github.event.label.name == 'draft-post'))

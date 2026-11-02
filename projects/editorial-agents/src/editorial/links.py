@@ -1,4 +1,5 @@
-"""Signed, expiring, single-use links for the owner's Pick / Dismiss buttons in the topic email (HITL-02, SEC-01).
+"""Signed, expiring, single-use links for the owner's buttons (HITL-02, SEC-01): Pick / Dismiss in the topic email,
+Approve / Archive in each draft post's email (postmail.py). The secret never leaves this service.
 
 The link only opens a confirmation page; the change happens on a POST from that page. Email security scanners
 follow GET links in messages, so a GET that changed state would pick topics on its own.
@@ -13,13 +14,15 @@ import time
 
 from .config import link_secret, settings
 
-ACTIONS = ("pick", "dismiss", "unpick")
+ACTIONS = ("pick", "dismiss", "unpick", "approve", "archive")
+POST_ACTIONS = ("approve", "archive")       # act on a drafted post, not a queued topic
 
 
 def sign(topic_id: str, action: str, ttl_days: int | None = None, now: float | None = None) -> str:
     if action not in ACTIONS:
         raise ValueError(action)
-    exp = int((now or time.time()) + 86400 * (ttl_days or settings()["links"]["ttl_days"]))
+    days = ttl_days or settings()["links"]["post_ttl_days" if action in POST_ACTIONS else "ttl_days"]
+    exp = int((now or time.time()) + 86400 * days)
     payload = f"{topic_id}|{action}|{exp}|{secrets.token_hex(6)}"
     mac = hmac.new(link_secret(), payload.encode(), hashlib.sha256).hexdigest()[:32]
     return base64.urlsafe_b64encode(f"{payload}|{mac}".encode()).decode().rstrip("=")

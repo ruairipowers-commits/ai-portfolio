@@ -121,7 +121,7 @@ def gate(post: str | Path, editor: dict, sources_dir: str | Path | None = None,
          published: list[str] | None = None, min_score: int = 4) -> dict:
     """The ready-to-publish decision, made by code: every code check passes, every editor criterion scores at least
     `min_score` and the editor calls it publishable, the post is tagged AutoPublished, and its disclosure says it
-    passed every automated check. Either way the owner merges (HITL-02); this decides the label and his email."""
+    passed every automated check. Either way the owner decides (HITL-02: approve / archive from the email); this decides the label."""
     r = review(post, sources_dir, published)
     meta, _ = _split(Path(post).read_text())
     reasons = [f"code check failed: {c['criterion']} ({c['detail']})" for c in r["checks"] if not c["passed"]]
