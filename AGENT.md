@@ -31,7 +31,8 @@ This file governs all AI agents acting as developers on this repository (Claude,
 - **Offline & reproducible:** Everything must run offline with a mock model; never claim an execution result you did not run.
 - **Safety barrier:** Do not push to GitHub, merge to `main`, or publish repos without explicit approval in the conversation.
   This includes posts: the `daily-post` skill opens a pull request with the gate's verdict and never merges it.
-  Ruairi merges every post (his decision, 14 October 2026).
+  Ruairi decides every post: he approves or archives it from its email (signed links), and `publish-approved.yml`
+  merges only approved posts, one a day (his decisions, 14 October and 2 November 2026). Agents never merge.
 
 ---
 

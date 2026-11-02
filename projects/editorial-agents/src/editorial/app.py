@@ -4,8 +4,10 @@
     GET  /queue.md         the same as plain Markdown, for the weekly writer to read
     GET  /api/queue        JSON (with readers' vote counts; the blog's "Upcoming topics" reads this)
     POST /api/queue/{id}/vote  a reader's vote: one per anonymous visitor per topic per day (CORS: the blog only)
-    GET  /act?t=…          confirmation page for a signed Pick / Dismiss link from the owner's email
+    GET  /act?t=…          confirmation page for a signed Pick / Dismiss (topic email) or Approve / Archive (post email) link
     POST /act              applies it (single-use; recorded with who/when — HITL-02)
+    GET  /api/decisions    the owner's approve / archive decisions on open draft posts, read by the publish workflow
+                           (.github/workflows/publish-approved.yml), which merges the oldest approved post each day
     GET  /api/health
 
 The scheduler (EDITORIAL_SCHEDULER=1, on in the image) refills the queue daily, emails the list (with votes) and syncs
@@ -147,6 +149,32 @@ def _safe_rerank(store: Store) -> None:
         store.run("rerank", "error", {"error": f"{type(ex).__name__}: {ex}"})
 
 
+def _fresh(store: Store, topic: dict, action: str) -> dict:
+    """A post's email can arrive before the 30-minute GitHub sync has seen its pull request: sync once, then."""
+    if action in links.POST_ACTIONS and topic["status"] not in ("drafted", "approved", "archived", "published"):
+        try:
+            github_sync.sync(store)
+        except Exception as ex:  # noqa: BLE001 — the page then says the PR isn't open; the link still works later
+            store.run("github_sync", "error", {"error": f"{type(ex).__name__}: {ex}"[:300]})
+        topic = store.topic(topic["id"]) or topic
+    return topic
+
+
+def _not_allowed(topic: dict, action: str) -> str:
+    """Why this action can't apply to the topic in its current state ('' if it can)."""
+    st = topic["status"]
+    if action in links.POST_ACTIONS:
+        if st == "published":
+            return "This post is already published."
+        if st not in ("drafted", "approved", "archived"):
+            return "This post's pull request isn't open (it may have been closed)."
+        if st == {"approve": "approved", "archive": "archived"}[action]:
+            return f"This post is already {st}."
+    elif st in ("drafted", "approved", "archived", "published"):
+        return "This topic already has a post; use the Approve / Archive links in the post's email."
+    return ""
+
+
 def create_app(store: Store | None = None, background: bool | None = None) -> FastAPI:
     store = store or Store()
     link_secret()                                   # refuse to start without the secret in the live service
@@ -209,6 +237,16 @@ def create_app(store: Store | None = None, background: bool | None = None) -> Fa
                  "reviews it; code checks it, and I read and approve every post before it goes live.</p>")
         return page("Blog topic queue", intro + rows)
 
+    @app.get("/api/decisions")
+    def api_decisions():
+        """Open draft posts the owner approved (publishing order) or archived. Public: PR numbers on a public repo.
+        Only the owner's signed links change it; the workflow still checks each PR before it merges."""
+        p = store.posts()
+        row = lambda t: {"topic_id": t["id"], "pr": (t["pr"] or {}).get("number"), "sha": t["sha"],
+                         "decided_at": t["decided_at"]}
+        return {"approved": [row(t) for t in p["approved"]], "archived": [row(t) for t in p["archived"]],
+                "waiting": [row(t) for t in p["drafted"]]}
+
     @app.get("/act", response_class=HTMLResponse)
     def act_confirm(t: str = ""):
         try:
@@ -218,8 +256,19 @@ def create_app(store: Store | None = None, background: bool | None = None) -> Fa
         topic = store.topic(v["topic_id"])
         if not topic:
             return page("Topic not found", "<p>It may have expired from the queue.</p>")
-        verb = {"pick": "Pick this topic for a post", "dismiss": "Dismiss this topic", "unpick": "Unpick this topic"}
-        return page(verb[v["action"]] + "?", f"<p><a href='{e(topic['url'])}'>{e(topic['title'])}</a></p>"
+        verb = {"pick": "Pick this topic for a post", "dismiss": "Dismiss this topic", "unpick": "Unpick this topic",
+                "approve": "Approve this post for publishing", "archive": "Archive this post"}
+        topic = _fresh(store, topic, v["action"])
+        if (problem := _not_allowed(topic, v["action"])):
+            return page("Can't do that now", f"<p>{e(problem)}</p>")
+        pr = store.get_kv(f"pr:{topic['id']}") or {}
+        what = (f"<p>Post: <a href='{e(pr['url'])}'>{e(pr.get('title') or topic['title'])}</a></p>" if pr.get("url")
+                else f"<p><a href='{e(topic['url'])}'>{e(topic['title'])}</a></p>")
+        note = {"approve": "<p>It joins the publishing line: one approved post goes live each day, oldest approval "
+                           "first.</p>",
+                "archive": "<p>The pull request stays open, labelled archived. Approve it later from this email or "
+                           "the daily topic email.</p>"}.get(v["action"], "")
+        return page(verb[v["action"]] + "?", what + note +
                     f"<form method=post action='{BASE}/act'><input type=hidden name=t value='{e(t)}'>"
                     f"<button>{verb[v['action']]}</button></form>")
 
@@ -229,16 +278,24 @@ def create_app(store: Store | None = None, background: bool | None = None) -> Fa
             v = links.verify(t)
         except ValueError as ex:
             return page("Link not valid", f"<p>{e(str(ex))}.</p>")
-        if not store.use_nonce(v["nonce"]):
-            return page("Already done", "<p>This link has already been used.</p>")
         topic = store.topic(v["topic_id"])
         if not topic:
             return page("Topic not found", "")
-        new = {"pick": "picked", "dismiss": "dismissed", "unpick": "queued"}[v["action"]]
-        store.set_status(topic["id"], new, rank=None if new == "dismissed" else topic.get("rank"))
-        store.action(topic["id"], v["action"], "owner (signed email link)")
+        topic = _fresh(store, topic, v["action"])
+        if (problem := _not_allowed(topic, v["action"])):
+            return page("Can't do that now", f"<p>{e(problem)}</p>")
+        if not store.use_nonce(v["nonce"]):
+            return page("Already done", "<p>This link has already been used.</p>")
+        new = {"pick": "picked", "dismiss": "dismissed", "unpick": "queued", "approve": "approved",
+               "archive": "archived"}[v["action"]]
+        if v["action"] in links.POST_ACTIONS:
+            store.set_status(topic["id"], new)
+        else:
+            store.set_status(topic["id"], new, rank=None if new == "dismissed" else topic.get("rank"))
+        store.action(topic["id"], v["action"], "owner (signed email link)", {"pr": store.get_kv(f"pr:{topic['id']}")})
         telemetry.record("owner_" + v["action"], event_type="feedback", actor="owner", items=1)
-        threading.Thread(target=_safe_rerank, args=(store,), daemon=True).start()   # refill to N now
+        if v["action"] not in links.POST_ACTIONS:
+            threading.Thread(target=_safe_rerank, args=(store,), daemon=True).start()   # refill to N now
         return page("Done", f"<p>{e(topic['title'])} is now <b>{new}</b>. "
                     f"<a href='{BASE}/'>See the queue</a> · {e(public_url())}</p>")
 

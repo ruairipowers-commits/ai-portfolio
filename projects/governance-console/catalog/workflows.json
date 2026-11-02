@@ -2256,8 +2256,8 @@
     "HITL-02": {
      "status": "implemented",
      "mark": "✅",
-     "how": "Topics: the owner's picks first (signed links, recorded), then readers' votes. Posts: nothing publishes until the owner merges the pull request (his decision, 14 Oct 2026, recorded in CLAUDE.md). Code (`editorial gate`) labels each daily post `ready-to-publish` or `needs-work` from the code checks and the independent editor's scores, so the owner knows which to read first. The service host has no write access to the repo.",
-     "configure": "`review.gate`, `.claude/skills/daily-post`",
+     "how": "Topics: the owner's picks first (signed links, recorded), then readers' votes. Posts: nothing publishes without the owner's decision: he approves or archives each post from its email (signed, expiring, single-use links, recorded in `actions`), and `publish-approved.yml` merges only approved posts, one a day, and only a draft-post PR that adds one post file (his decisions, 14 Oct and 2 Nov 2026, recorded in CLAUDE.md). Code (`editorial gate`) labels each daily post `ready-to-publish` or `needs-work` from the code checks and the independent editor's scores, so the owner knows which to read first. The service host has no write access to the repo; the workflow's own token merges.",
+     "configure": "`review.gate`, `.claude/skills/daily-post`, `app.py /act`, `scripts/publish_approved.py`",
      "options": "—"
     },
     "HITL-03": {

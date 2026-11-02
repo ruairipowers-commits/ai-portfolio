@@ -42,7 +42,7 @@ and as examples.
 | Capability | Evidence on this site |
 |---|---|
 | **Production data pipelines** | [EOD heartbeat](blog/posts/eod-heartbeat.md): Airflow and dbt on Postgres, with 28 dbt tests gating every run. [Alt-data triage](blog/posts/altdata-triage.md): each vendor's sample data scored in dbt before a model drafts anything |
-| **Agents with human approval** | [Trade-ops exception agent](blog/posts/trade-ops-exceptions.md): read-only tools over MCP; nothing is written until a named analyst approves. [Editorial agents](personal/posts/editorial-agents.md): a writer and an independent editor; only my merge publishes |
+| **Agents with human approval** | [Trade-ops exception agent](blog/posts/trade-ops-exceptions.md): read-only tools over MCP; nothing is written until a named analyst approves. [Editorial agents](personal/posts/editorial-agents.md): a writer and an independent editor; only my approval publishes |
 | **Retrieval (RAG)** | [Research Q&A](blog/posts/research-qa-rag.md): entitlements enforced inside retrieval, cited answers, a refusal when the evidence isn't there. The **Ask** button on this site |
 | **Evaluation** | A golden set and an eval gate in CI for every project; [choosing the Ask model](personal/posts/choosing-the-ask-model.md) measured three local models before picking one |
 | **AI governance** | [The standard](blog/posts/governance.md) every project maps to; the [governance console](blog/posts/governance-console.md) with a kill switch; [a leader's guide](blog/posts/questions-for-your-ai-team.md) to questioning an AI team |

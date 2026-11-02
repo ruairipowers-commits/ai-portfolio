@@ -26,11 +26,16 @@ schedule:                    # times in America/New_York; the service's own sche
   digest_time: "06:10"
   github_sync_minutes: 30    # mark topics drafted / published from the blog repo's pull requests (public API)
   writer: "daily, ~10:00"    # informational: the daily-post skill runs as a scheduled Claude task, not here
+posts:                       # the owner's decision (2 Nov 2026): approve or archive each post from its email
+  buffer: 5                  # the daily writer tops up to this many open posts (approved + waiting for a decision)
+  max_new_per_run: 2         # but writes at most this many in one run
+  publish_per_day: 1         # .github/workflows/publish-approved.yml merges this many approved posts a day
 votes:
   per_hour: 30               # a visitor's votes per hour across all topics (one per topic per day counts)
 
 links:
   ttl_days: 14               # pick / dismiss links in the email expire
+  post_ttl_days: 90          # approve / archive links in a draft post's email (an archived post can be approved later)
 
 sources:                     # official APIs and RSS only: no scraping, no LinkedIn (terms forbid it)
   huggingface_papers: {enabled: true, url: "https://huggingface.co/api/daily_papers", limit: 40}
