@@ -3,6 +3,8 @@ whose post is never merged (the runs where the local draft lost).
 
   python scripts/routing_log.py merge     # union origin/routing-log into the checkout's log (site build, skill start)
   python scripts/routing_log.py publish   # push the checkout's rows to origin/routing-log (skill, after logging)
+  python scripts/routing_log.py save-queue FILE   # keep a copy of the topic queue on routing-log (skill, step 1)
+  python scripts/routing_log.py queue     # print that copy and its age, for a run that can't reach the EVO-X1
 
 The checkout's file is projects/editorial-agents/metrics/routing-runs.jsonl. Rows are deduplicated on their whole
 content, so running either command twice changes nothing. `publish` never touches main: it commits to `routing-log`
@@ -11,14 +13,18 @@ in a temporary worktree and pushes that branch only.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 LOG = ROOT / "projects" / "editorial-agents" / "metrics" / "routing-runs.jsonl"
 BRANCH, FILE = "routing-log", "routing-runs.jsonl"
+QUEUE = "queue.md"
+QUEUE_MAX_DAYS = 7      # an older copy is too stale to pick a topic from
 
 
 def git(*args: str, cwd: Path = ROOT, check: bool = True) -> subprocess.CompletedProcess:
@@ -56,7 +62,7 @@ def merge() -> int:
     return 0
 
 
-def publish() -> int:
+def publish(queue: str | None = None) -> int:
     branch = remote_log()
     with tempfile.TemporaryDirectory() as tmp:
         wt = Path(tmp) / "wt"
@@ -76,16 +82,51 @@ def publish() -> int:
             if not readme.exists():
                 readme.write_text("# routing-log\n\nOne row per daily post run, local-vs-Claude comparison. Written by "
                                   "`scripts/routing_log.py publish`; read by the site build. Not merged into main.\n")
-            git("add", FILE, "README.md", cwd=wt)
+            files = [FILE, "README.md"]
+            if queue is not None:   # the topic queue as the EVO-X1 served it, with when it was read
+                stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+                (wt / QUEUE).write_text(f"<!-- saved {stamp} -->\n{queue}")
+                files.append(QUEUE)
+            git("add", *files, cwd=wt)
             if not git("diff", "--cached", "--quiet", cwd=wt, check=False).returncode:
                 print("routing log: nothing new")
                 return 0
             added = len(rows(merged)) - len(rows(branch or ""))
-            git("commit", "-q", "-m", f"routing log: +{added} run(s)\n\nCo-Authored-By: Claude <noreply@anthropic.com>", cwd=wt)
+            what = f"+{added} run(s)" + (", topic queue" if queue is not None else "")
+            git("commit", "-q", "-m", f"routing log: {what}\n\nCo-Authored-By: Claude <noreply@anthropic.com>", cwd=wt)
             git("push", "-q", "origin", f"HEAD:refs/heads/{BRANCH}", cwd=wt)
-            print(f"routing log: pushed {added} new row(s) to {BRANCH} ({len(rows(merged))} total)")
+            print(f"routing log: pushed {what} to {BRANCH} ({len(rows(merged))} rows total)")
         finally:
             git("worktree", "remove", "--force", str(wt), check=False)
+    return 0
+
+
+def saved_queue(now: datetime | None = None) -> tuple[str, float] | None:
+    """The last saved topic queue and its age in days, or None if there's none (or no network)."""
+    if git("fetch", "-q", "origin", f"{BRANCH}:refs/remotes/origin/{BRANCH}", check=False).returncode:
+        return None
+    shown = git("show", f"origin/{BRANCH}:{QUEUE}", check=False)
+    if shown.returncode:
+        return None
+    m = re.match(r"<!-- saved (\S+) -->\n", shown.stdout)
+    if not m:
+        return None
+    age = ((now or datetime.now(timezone.utc)) - datetime.fromisoformat(m.group(1))).total_seconds() / 86400
+    return shown.stdout[m.end():], age
+
+
+def queue() -> int:
+    got = saved_queue()
+    if got is None:
+        print(f"no saved topic queue on {BRANCH}", file=sys.stderr)
+        return 1
+    text, age = got
+    if age > QUEUE_MAX_DAYS:
+        print(f"the saved topic queue is {age:.1f} days old (more than {QUEUE_MAX_DAYS}); too stale to use",
+              file=sys.stderr)
+        return 1
+    print(f"<!-- saved topic queue, {age:.1f} days old -->")
+    print(text, end="")
     return 0
 
 
@@ -95,6 +136,12 @@ def _local() -> str:
 
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
-    if cmd not in ("merge", "publish"):
-        sys.exit(__doc__)
-    sys.exit(merge() if cmd == "merge" else publish())
+    if cmd == "merge":
+        sys.exit(merge())
+    if cmd == "publish":
+        sys.exit(publish())
+    if cmd == "save-queue" and len(sys.argv) == 3:
+        sys.exit(publish(queue=Path(sys.argv[2]).read_text()))
+    if cmd == "queue":
+        sys.exit(queue())
+    sys.exit(__doc__)
