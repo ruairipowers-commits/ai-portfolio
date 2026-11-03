@@ -12,7 +12,7 @@ on:
 permissions: {contents: write, pull-requests: write, issues: write, actions: write}
 concurrency: {group: publish-approved, cancel-in-progress: false}
 jobs:
-  publish:
+  publish-approved:      # named so deploy/selfhost/update.sh doesn't count it as CI for main's head
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
