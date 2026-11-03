@@ -43,7 +43,8 @@ ci_state() {   # success | pending | failure for one commit, from GitHub's check
 import json, sys, time, datetime as dt
 try:
     runs = [r for r in json.load(sys.stdin)["check_runs"]
-            if not r["name"].startswith("Dependabot")]     # dependency-update jobs, not CI for this commit
+            if not r["name"].startswith(("Dependabot", "publish-approved"))]
+            # not CI for this commit: dependency-update jobs, and the hourly post publisher (it runs on the head of main)
 except Exception:
     print("pending"); sys.exit()          # GitHub unreachable or rate-limited: try again next tick
 bad = {"failure", "cancelled", "timed_out", "action_required", "startup_failure"}
