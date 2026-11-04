@@ -16,7 +16,7 @@ flowchart LR
     CK -->|fail| W
     CK --> P{Owner publishes?<br/>HITL-02}
     P --> L[(Published level<br/>versions · YAML)]
-    L --> T[Learner site<br/>tracker, levels, quizzes<br/>— no model on this path]
+    L --> T[Learner site<br/>tracker, levels, quizzes<br/>— glossary Find out more is the only model call]
     T --> SC[Scoring · code<br/>server-side key,<br/>shuffled draws, retries]
     SC --> U[Unlock next level<br/>quiz passed + project done]
     U -->|first learner| W

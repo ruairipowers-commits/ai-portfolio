@@ -13,7 +13,7 @@
   {% for sec in lv.sections %}<a href="#{{ sec.id }}">{{ sec.heading }}</a>{% endfor %}
   <a href="#project">Project</a><a href="#quiz">Quiz</a>{% if not preview %}<a href="#feedback">Feedback</a>{% endif %}
 </nav>
-<article class="content">
+<article class="content" data-glossary data-root="{{ R }}" data-course="{{ c.slug }}" data-signed-in="{{ 1 if user else 0 }}">
 {% for sec in lv.sections %}
 <section id="{{ sec.id }}"><h2>{{ sec.heading }}</h2>{{ sec.body|md|safe }}
 {% if sec.id == 'modules' %}
@@ -67,4 +67,7 @@
 </section>
 {% endif %}
 <p class="small muted">Source: {{ lv.source.page }}{% if lv.source.docs %} · <a href="{{ lv.source.docs }}" rel="noopener">official docs</a>{% endif %}. Approved by {{ lv.provenance.approved_by or 'pending' }}.</p>
+<script type="application/json" id="glossary-terms">{{ terms|tojson }}</script>
+<script src="{{ R }}/static/glossary.js" defer></script>
+<p class="small muted">Tip: highlight any word or acronym on this page to look it up. <a href="{{ R }}/glossary">Glossary</a></p>
 {% endblock %}

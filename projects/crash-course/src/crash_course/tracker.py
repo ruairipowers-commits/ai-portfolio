@@ -1,4 +1,4 @@
-"""Enrolment, unlocks and completion — plain code, no model anywhere on a learner's path.
+"""Enrolment, unlocks and completion — plain code, no model anywhere in progress or unlocks.
 
 Rules (config `completion`): a level is complete when its quiz has been passed at least once (Intermediate: every
 module check and the final test) AND its project is marked done. Completing a level unlocks the next. A level that
@@ -21,8 +21,70 @@ def enroll(conn, s: Settings, learner_id: int, course: str) -> None:
     if course not in catalog.all_courses(conn):
         raise NotAllowed("unknown course")
     if not one(conn, "SELECT 1 FROM enrollments WHERE learner_id=? AND course=?", learner_id, course):
-        insert(conn, "enrollments", learner_id=learner_id, course=course, enrolled_at=now())
+        last = one(conn, "SELECT MAX(position) p FROM enrollments WHERE learner_id=?", learner_id)["p"]
+        insert(conn, "enrollments", learner_id=learner_id, course=course, enrolled_at=now(),
+               position=(last or len(_ordered(conn, learner_id))) + 1)
     unlock(conn, s, learner_id, course, LEVELS[0])
+
+
+# ---------------------------------------------------------------- the learner's own focus
+PRIORITIES = ("high", "normal", "low")
+SORTS = ("mine", "priority", "progress", "recent")
+
+
+def _ordered(conn, learner_id: int) -> list[str]:
+    """The learner's own order: by position (set when they move a course), then by when they signed up."""
+    return [r["course"] for r in rows(conn, "SELECT course FROM enrollments WHERE learner_id=? "
+                                            "ORDER BY position IS NULL, position, enrolled_at", learner_id)]
+
+
+def set_focus(conn, learner_id: int, course: str, favorite: bool | None = None, priority: str | None = None) -> None:
+    if not one(conn, "SELECT 1 FROM enrollments WHERE learner_id=? AND course=?", learner_id, course):
+        raise NotAllowed("not on your tracker")
+    if favorite is not None:
+        conn.execute("UPDATE enrollments SET favorite=? WHERE learner_id=? AND course=?",
+                     (int(favorite), learner_id, course))
+    if priority is not None:
+        if priority not in PRIORITIES:
+            raise NotAllowed("unknown priority")
+        conn.execute("UPDATE enrollments SET priority=? WHERE learner_id=? AND course=?", (priority, learner_id, course))
+
+
+def move(conn, learner_id: int, course: str, where: str) -> None:
+    """Move a course up, down, to the top or to the bottom of the learner's own order (positions are renumbered)."""
+    order = _ordered(conn, learner_id)
+    if course not in order:
+        raise NotAllowed("not on your tracker")
+    i = order.index(course)
+    order.pop(i)
+    j = {"up": max(i - 1, 0), "down": min(i + 1, len(order)), "top": 0, "bottom": len(order)}.get(where)
+    if j is None:
+        raise NotAllowed("unknown move")
+    order.insert(j, course)
+    for n, slug in enumerate(order, 1):
+        conn.execute("UPDATE enrollments SET position=? WHERE learner_id=? AND course=?", (n, learner_id, slug))
+
+
+def sort_entries(entries: list[dict], how: str) -> list[dict]:
+    """`mine`: the learner's order. `priority`: high first, favourites first within each. `progress`: most levels
+    complete first. `recent`: newest sign-up first. Ties keep the learner's order."""
+    rank = {p: i for i, p in enumerate(PRIORITIES)}
+    if how == "priority":
+        return sorted(entries, key=lambda e: (rank.get(e["priority"], 1), not e["favorite"]))
+    if how == "progress":
+        return sorted(entries, key=lambda e: -e["done"])
+    if how == "recent":
+        return sorted(entries, key=lambda e: (e["enrolled_at"], e.get("added", 0)), reverse=True)
+    return entries
+
+
+def up_next(entries: list[dict]) -> dict | None:
+    """The level to open next: in the learner's order, favourites first, the first level that's open and not done."""
+    for e in sorted(entries, key=lambda e: not e["favorite"]):          # stable: keeps the learner's order
+        for lv in e["levels"]:
+            if lv["state"] == "unlocked":
+                return {"course": e["course"], "level": lv}
+    return None
 
 
 def unlock(conn, s: Settings, learner_id: int, course: str, level: str) -> None:
@@ -84,7 +146,9 @@ def state(conn, s: Settings, learner_id: int) -> list[dict]:
     """Everything the tracker page shows: one entry per enrolled course, three levels each."""
     courses = catalog.all_courses(conn)
     out = []
-    for e in rows(conn, "SELECT * FROM enrollments WHERE learner_id=? ORDER BY enrolled_at", learner_id):
+    for e in rows(conn, "SELECT rowid AS rid, * FROM enrollments WHERE learner_id=? "
+                        "ORDER BY position IS NULL, position, enrolled_at",
+                  learner_id):
         c = courses.get(e["course"])
         if not c:
             continue
@@ -111,5 +175,7 @@ def state(conn, s: Settings, learner_id: int) -> list[dict]:
                 "attempts": (one(conn, "SELECT COUNT(*) n FROM attempts WHERE learner_id=? AND course=? AND level=? "
                                        "AND submitted_at IS NOT NULL", learner_id, c.slug, name) or {}).get("n", 0),
             })
-        out.append({"course": c, "levels": levels, "done": sum(lv_["state"] == "complete" for lv_ in levels)})
+        out.append({"course": c, "levels": levels, "done": sum(lv_["state"] == "complete" for lv_ in levels),
+                    "favorite": bool(e.get("favorite")), "priority": e.get("priority") or "normal",
+                    "enrolled_at": e["enrolled_at"] or "", "added": e["rid"]})
     return out

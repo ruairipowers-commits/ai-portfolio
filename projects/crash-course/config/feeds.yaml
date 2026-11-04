@@ -1,0 +1,40 @@
+# Release feeds for the feeds scanner (news.scanner: feeds). Per course, any of:
+#   - github: owner/repo     → https://github.com/owner/repo/releases.atom
+#   - pypi: package          → https://pypi.org/rss/project/package/releases.xml
+#   - rss: https://…         → any RSS or Atom feed
+# Pre-releases (rc, alpha, beta, dev, preview) are skipped unless the entry has `prereleases: true`.
+# Courses with no feed here (AWS, Bedrock, SQLite, Hugging Face Spaces…) are covered by the claude scanner only.
+courses:
+  airflow: [{github: apache/airflow}]
+  anthropic: [{github: anthropics/anthropic-sdk-python}]
+  caddy: [{github: caddyserver/caddy}]
+  chartjs: [{github: chartjs/Chart.js}]
+  cloudflare-tunnel: [{github: cloudflare/cloudflared}]
+  dagster: [{github: dagster-io/dagster}]
+  dbt: [{github: dbt-labs/dbt-core}]
+  docker: [{github: moby/moby}]
+  duckdb: [{github: duckdb/duckdb}]
+  fastapi: [{github: fastapi/fastapi}]
+  github-actions: [{github: actions/runner}]
+  jupyter: [{github: jupyterlab/jupyterlab}]
+  langgraph: [{github: langchain-ai/langgraph}]
+  mcp: [{github: modelcontextprotocol/python-sdk}, {github: modelcontextprotocol/typescript-sdk}]
+  metricflow: [{github: dbt-labs/metricflow}]
+  mkdocs-material: [{github: squidfunk/mkdocs-material}]
+  ollama: [{github: ollama/ollama}]
+  openai: [{github: openai/openai-python}]
+  oxigraph: [{github: oxigraph/oxigraph}]
+  pandas: [{github: pandas-dev/pandas}]
+  pgvector: [{github: pgvector/pgvector}]
+  plotly: [{github: plotly/plotly.py}]
+  postgres: [{rss: "https://www.postgresql.org/news.rss"}]
+  prefect: [{github: PrefectHQ/prefect}]
+  pydantic: [{github: pydantic/pydantic}]
+  pymupdf: [{github: pymupdf/PyMuPDF}]
+  python: [{rss: "https://blog.python.org/feeds/posts/default"}]
+  scikit-learn: [{github: scikit-learn/scikit-learn}]
+  seaborn: [{github: mwaskom/seaborn}]
+  sqlite-vec: [{github: asg017/sqlite-vec}]
+  streamlit: [{github: streamlit/streamlit}]
+  terraform: [{github: hashicorp/terraform}]
+  typescript: [{github: microsoft/TypeScript}]

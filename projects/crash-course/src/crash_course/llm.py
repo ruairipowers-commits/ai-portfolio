@@ -136,7 +136,7 @@ class MockProvider:
 
     def complete(self, spec: ModelSpec, system: str, user: str, max_tokens: int) -> tuple[str, int, int]:
         from . import mock
-        for role in ("moderator", "writer", "reviser"):
+        for role in ("moderator", "writer", "reviser", "news", "glossary"):
             if f"ROLE: {role}" in system:
                 text = json.dumps(getattr(mock, role)(_tag_json(user, "request")))
                 return text, estimate_tokens(system + user), estimate_tokens(text)

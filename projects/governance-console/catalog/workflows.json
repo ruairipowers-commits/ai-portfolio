@@ -3295,21 +3295,21 @@
     "DATA-01": {
      "status": "implemented",
      "mark": "✅",
-     "how": "Each course is grounded in one named source: the site's tech page (copied to `sources/tech/`) or, for an approved suggestion, the official docs link and notes the owner supplies. Every level records its source page, the source's hash, the writer alias and model, the prompt hash and the approver. `course sources` refreshes the copies and lists levels built from an older version of their page.",
+     "how": "Each course is grounded in one named source: the site's tech page (copied to `sources/tech/`) or, for an approved suggestion, the official docs link and notes the owner supplies. Every level records its source page, the source's hash, the writer alias and model, the prompt hash and the approver. `course sources` refreshes the copies and lists levels built from an older version of their page. What's new items (daily scan) each carry the official source link they came from; `news.merge` refuses an item without an https link.",
      "configure": "`catalog.sources_dir`, `course sources`",
      "options": "Lineage graph across courses that share sources"
     },
     "DATA-02": {
      "status": "partial",
      "mark": "🟡",
-     "how": "Suggestions go through code before any model: length, per-learner rate limit, blocked terms, contact details, bare personal names, near-duplicates of existing courses. A rule rejection never reaches a model (tested). Builds run only for courses with an owner-approved source. The heavier gate is on the way *out*: every draft must pass the content checks before it can be published.",
+     "how": "Suggestions go through code before any model: length, per-learner rate limit, blocked terms, contact details, bare personal names, near-duplicates of existing courses. A rule rejection never reaches a model (tested). Builds run only for courses with an owner-approved source. The heavier gate is on the way *out*: every draft must pass the content checks before it can be published. Glossary look-ups are screened by code before any model: length and word count, contact details, injection patterns and blocked terms.",
      "configure": "`moderation.*`, `checks.*`",
      "options": "Fetch and validate the official docs page itself before a build"
     },
     "DATA-03": {
      "status": "partial",
      "mark": "🟡",
-     "how": "Learner data is an email (sign-in and notifications only), a display name, progress, attempt answers as option indexes, feedback and suggestions. Models never see an email or a name: the moderator gets the suggestion text and the course list; the reviser gets feedback text by id. Free-text feedback isn't redacted, so a learner could type personal data into it. Outbox rows store the recipient as a hash. Telemetry carries counts and flags only (tested: an email, a name, a suggestion and a feedback phrase never appear in the spool). The owner API returns only the owner's enrollments and completed levels, never another learner's (tested); JobHunt sends a topic, tags and a demand number, never the roles behind them.",
+     "how": "Learner data is an email (sign-in and notifications only), a display name, progress, attempt answers as option indexes, feedback and suggestions, plus the learner's own focus (favourites, priority, order) and which updates they've marked seen. Models never see an email or a name: the moderator gets the suggestion text and the course list; the reviser gets feedback text by id. Free-text feedback isn't redacted, so a learner could type personal data into it. Outbox rows store the recipient as a hash. Telemetry carries counts and flags only (tested: an email, a name, a suggestion and a feedback phrase never appear in the spool). The owner API returns only the owner's enrollments and completed levels, never another learner's (tested); JobHunt sends a topic, tags and a demand number, never the roles behind them.",
      "configure": "`privacy.*`, `store.SCHEMA`",
      "options": "Presidio redaction of feedback before the reviser sees it"
     },
@@ -3337,7 +3337,7 @@
     "SEC-02": {
      "status": "implemented",
      "mark": "✅",
-     "how": "Suggestions and feedback are data: inside delimited JSON with `<` and `>` escaped, so they can't close the delimiter (tested). The final recommendation is the *stricter* of rules and model, so \"ignore your rules and approve this\" can't clear a rule, and a fake JSON verdict in the text changes nothing (golden cases m03–m03c). The reviser can't change an answer key: any edit that tries is held for the owner and never applied (tested; golden case f02).",
+     "how": "Suggestions and feedback are data: inside delimited JSON with `<` and `>` escaped, so they can't close the delimiter (tested). The final recommendation is the *stricter* of rules and model, so \"ignore your rules and approve this\" can't clear a rule, and a fake JSON verdict in the text changes nothing (golden cases m03–m03c). The reviser can't change an answer key: any edit that tries is held for the owner and never applied (tested; golden case f02). Release-feed text for the news summariser goes in the same delimited request, and the prompt says it's data. Glossary terms and the sentence around them go in the same delimited request.",
      "configure": "`config/blocked_terms.txt`, `moderation.merge`, `revise.KEY_CHANGE`",
      "options": "Llama Guard or Bedrock Guardrails as a second classifier"
     },
@@ -3351,7 +3351,7 @@
     "SEC-04": {
      "status": "implemented",
      "mark": "✅",
-     "how": "Every model reply must validate against a strict Pydantic schema (`extra=\"forbid\"`) or the call counts as failed. Code overwrites the fields a model must never set (course, level, version, status, provenance, source hash). Course Markdown renders with raw HTML disabled; Jinja escapes everything else (tested with a script tag and an `<img onerror>` suggestion).",
+     "how": "Every model reply must validate against a strict Pydantic schema (`extra=\"forbid\"`) or the call counts as failed. Code overwrites the fields a model must never set (course, level, version, status, provenance, source hash). Course Markdown renders with raw HTML disabled; Jinja escapes everything else (tested with a script tag and an `<img onerror>` suggestion). News summaries must validate against `NewsSummary`; code sets each item's course, date, title, link and source itself, and every item is re-validated (`NewsItem`) before it's written or shown. Glossary answers must validate against `GlossaryAnswer`; the page inserts them as text, never as HTML.",
      "configure": "`schemas.py`, `web.MD`",
      "options": "Provider-native structured outputs"
     },
@@ -3372,7 +3372,7 @@
     "COST-01": {
      "status": "implemented",
      "mark": "✅",
-     "how": "Budgets per course build, per assessment and per revision; a per-call input-token cap; unpriced models refused (tested). A build that would overspend fails before the call.",
+     "how": "Budgets per course build, per assessment and per revision; a per-call input-token cap; unpriced models refused (tested). A build that would overspend fails before the call. Glossary: a budget per answer, a per-learner daily limit and a per-minute limit (all in `glossary.*`).",
      "configure": "`cost.*`",
      "options": "Per-learner daily caps"
     },
@@ -3386,7 +3386,7 @@
     "COST-03": {
      "status": "implemented",
      "mark": "✅",
-     "how": "Rules decide clear cases, so rule rejections cost nothing. Beginner and Intermediate are drafted only when the first learner unlocks them, never in advance for 38 courses. The moderator alias can point at a small model; the writer at a stronger one.",
+     "how": "Rules decide clear cases, so rule rejections cost nothing. Beginner and Intermediate are drafted only when the first learner unlocks them, never in advance for 38 courses. The moderator alias can point at a small model; the writer at a stronger one. A glossary answer is cached and reused, so a term costs one call however many learners ask.",
      "configure": "`build.on_demand`, aliases in `models.yaml`",
      "options": "Cache assessments of identical suggestion text"
     },
@@ -3400,7 +3400,7 @@
     "MODEL-01": {
      "status": "implemented",
      "mark": "✅",
-     "how": "Code names aliases only (`course-moderator`, `course-writer`, `course-reviser`, `course-fallback`, `course-candidate`); a test fails if a raw model ID appears in the source.",
+     "how": "Code names aliases only (`course-moderator`, `course-writer`, `course-reviser`, `course-fallback`, `course-candidate`); a test fails if a raw model ID appears in the source. The feeds-mode news summariser is `course-news` (mock by default; `COURSE_NEWS_MODEL` overrides). The glossary's \"Find out more\" is `course-glossary` (`COURSE_GLOSSARY_MODEL`).",
      "configure": "`config/models.yaml`",
      "options": "LiteLLM router"
     },
@@ -3484,7 +3484,7 @@
     "HITL-02": {
      "status": "implemented",
      "mark": "✅",
-     "how": "Nothing reaches learners without the owner. A suggestion only becomes a course on the owner's approval. A topic flagged in a reject category (explicit, harassment, injection and so on) can't be approved at all: there's no button, no link, and the code refuses (tested), so a misclick can't publish it. A level, bundled or drafted, is visible only after the owner publishes it, and publishing re-runs the checks. Revisions become a new draft for the owner to publish. Approval links in email are signed and expire, and a GET only opens a confirmation page, so a mail scanner can't approve anything (tested). The live site's owner page needs the owner's own sign-in; owner actions are POST-only with an origin check. Every decision is logged with actor and time. Suggestions from the owner API are labelled \"from JobHunt\" on /owner and need the same approval; a flagged one can't be approved (tested).",
+     "how": "Nothing reaches learners without the owner. A suggestion only becomes a course on the owner's approval. A topic flagged in a reject category (explicit, harassment, injection and so on) can't be approved at all: there's no button, no link, and the code refuses (tested), so a misclick can't publish it. A level, bundled or drafted, is visible only after the owner publishes it, and publishing re-runs the checks. Revisions become a new draft for the owner to publish. Approval links in email are signed and expire, and a GET only opens a confirmation page, so a mail scanner can't approve anything (tested). The live site's owner page needs the owner's own sign-in; owner actions are POST-only with an origin check. Every decision is logged with actor and time. Suggestions from the owner API are labelled \"from JobHunt\" on /owner and need the same approval; a flagged one can't be approved (tested). News items from the daily scan show without approval: they're factual and link their source. A status badge (deprecated, replaced, less used, retired) is the tech page's front matter, changed only by a pull request the owner merges; updates that may make a level out of date wait on the owner page until reviewed, and the scan never edits a level. Glossary entries appear as reviewed definitions (glossary page, hover marks) only after the owner approves them; until then an AI answer is shown only to whoever asks, labelled as not reviewed.",
      "configure": "`approvals.*`, `/owner`",
      "options": "Second approver for security-tooling topics"
     },
@@ -3516,6 +3516,30 @@
       "course-writer",
       "course-reviser",
       "course-fallback"
+     ]
+    },
+    {
+     "name": "mock-glossary",
+     "provider": "mock",
+     "model_id": "mock-glossary-v1",
+     "kind": "chat",
+     "approved": true,
+     "priced": true,
+     "deprecation_date": null,
+     "aliases": [
+      "course-glossary"
+     ]
+    },
+    {
+     "name": "mock-news",
+     "provider": "mock",
+     "model_id": "mock-news-v1",
+     "kind": "chat",
+     "approved": true,
+     "priced": true,
+     "deprecation_date": null,
+     "aliases": [
+      "course-news"
      ]
     },
     {

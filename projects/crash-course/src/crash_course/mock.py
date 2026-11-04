@@ -240,3 +240,43 @@ def reviser(req: dict) -> dict:
     edits = list(dedup.values())[:10]
     return {"edits": edits, "summary": f"{len(edits)} edit(s) from {len(req.get('feedback', []))} feedback items and "
                                        f"{len(req.get('stats', {}))} flagged questions."}
+
+
+# ---------------------------------------------------------------- news (feeds mode summariser)
+BREAKING = re.compile(r"(?i)\b(breaking change|removed|no longer support\w*|migration guide|deprecat\w*)\b")
+EOL = re.compile(r"(?i)\b(end[- ]of[- ]life|eol|sunset\w*|archived|discontinued|no longer maintained)\b")
+MAJOR = re.compile(r"(?<![\d.])v?(\d+)\.0(\.0)?(?![\d.])")
+
+
+def news(req: dict) -> dict:
+    """Summarise one release entry: its first sentence, a kind, and conservative material / status flags. A real
+    model reads the notes properly; this keeps the flow testable offline."""
+    title, text = req.get("title", ""), re.sub(r"\s+", " ", req.get("text", "")).strip()
+    first = (sentences(text)[:1] or [""])[0][:300]
+    summary = first if len(first) >= 10 else f"{req.get('course_title', 'This tool')} published {title}."
+    major = bool(MAJOR.search(title))
+    eol = bool(EOL.search(title))
+    breaking = bool(BREAKING.search(title + " " + text[:2000]))
+    kind = "retirement" if eol else "deprecation" if re.search(r"(?i)deprecat", title) else "release"
+    material = eol or (major and breaking)
+    return {"summary": summary[:400], "kind": kind, "material": material,
+            "affects": ["beginner", "intermediate"] if material else [],
+            "reason": ("End of life announced in the release title." if eol else
+                       "A new major version with breaking changes." if material else ""),
+            "status": "retired" if eol else None}
+
+
+# ---------------------------------------------------------------- glossary ("Find out more")
+def glossary(req: dict) -> dict:
+    """A bundled definition when there is one; otherwise a placeholder that says plainly no model is connected (the
+    caller never caches it). A real model explains any term."""
+    from .glossary import bundled, key
+    term = req.get("term", "")[:60]
+    b = bundled().get(key(term))
+    if b:
+        return {"is_term": True, "term": b["term"], "expansion": b["expansion"], "definition": b["definition"],
+                "more": b.get("more", ""), "course_worthy": False}
+    return {"is_term": True, "term": term or "term", "expansion": "",
+            "definition": f"No explanation yet: this site is running offline without a model, so “{term}” can't be "
+                          "explained here. Add it to the glossary and the owner will write one.",
+            "more": "", "course_worthy": False}

@@ -134,3 +134,42 @@ details summary { cursor: pointer; color: var(--link); margin: 6px 0; }
   color: var(--link); text-decoration: none; margin: 0 4px 4px 0; }
 .tag:hover { border-color: var(--link); }
 .tag.on { background: var(--link); color: #fff; border-color: var(--link); }
+
+/* what's new: news lines, status badges (front matter), the updates table */
+.badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 999px;
+  vertical-align: middle; margin-left: 6px; border: 1px solid currentColor; }
+.st-deprecated, .st-declining { color: var(--warn); } .st-replaced, .st-retired { color: var(--bad); }
+.news-line { margin: 2px 0 0 !important; }
+.kind { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0 7px; }
+.k-deprecation, .k-retirement, .k-security, .k-material { color: var(--warn); border-color: currentColor; }
+table.news { width: 100%; border-collapse: collapse; }
+table.news th, table.news td { text-align: left; vertical-align: top; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+table.news tr.mine { background: color-mix(in srgb, var(--ok) 8%, transparent); }
+table.news tr.seen { opacity: .65; }
+.nowrap { white-space: nowrap; }
+.pill.done { background: var(--ok); color: #fff; }
+nav.main .count { background: var(--bad); color: #fff; border-radius: 999px; font-size: 11px; padding: 0 6px; }
+ul.updates { padding-left: 18px; } ul.updates li { margin-bottom: 8px; }
+@media (max-width: 640px) { table.news th:nth-child(1), table.news td:nth-child(1) { display: none; } }
+
+/* tracker focus: favourites, priority, the learner's own order */
+.upnext { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; border-left: 4px solid var(--ok); }
+.upnext .btn { margin-left: auto; }
+.focusbar { align-items: center; gap: 14px; }
+.track-head .star { background: none; border: 0; font-size: 22px; line-height: 1; cursor: pointer; color: var(--muted); padding: 0 4px 0 0; }
+.track-head .star.on { color: var(--beginner); }
+form.focus { display: inline-flex; gap: 6px; align-items: center; margin: 6px 12px 0 0; }
+form.focus button { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 1px 8px; cursor: pointer; color: var(--ink); font: inherit; font-size: 13px; }
+form.focus select { padding: 2px 6px; width: auto; }
+.prio { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 0 8px; border: 1px solid currentColor; }
+.prio-high { color: var(--bad); } .prio-low { color: var(--muted); }
+.track-head h2 { flex: 1; }
+
+/* glossary: hover definitions and the look-up bubble on course pages */
+.gloss { border-bottom: 1px dotted var(--link); cursor: help; }
+.gloss:focus { outline: 2px solid var(--link); outline-offset: 1px; }
+.gloss-bubble { position: absolute; z-index: 50; max-width: 330px; background: var(--card); color: var(--ink);
+  border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 6px 24px rgba(0,0,0,.18); padding: 10px 12px; font-size: 14px; }
+.gloss-bubble p { margin: 6px 0; }
+.gloss-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+dl.glossary dt { font-weight: 700; margin-top: 14px; } dl.glossary dd { margin: 2px 0 0 0; color: var(--ink); }

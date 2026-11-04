@@ -53,6 +53,15 @@ CREATE TABLE IF NOT EXISTS approvals (           -- HITL-02: every owner decisio
 CREATE TABLE IF NOT EXISTS outbox (
   id INTEGER PRIMARY KEY, to_hash TEXT, kind TEXT, subject TEXT, status TEXT, at TEXT);
 CREATE TABLE IF NOT EXISTS invites (code_hash TEXT PRIMARY KEY, created_at TEXT, used_by INTEGER);
+CREATE TABLE IF NOT EXISTS news_seen (           -- "What's new" items a learner has marked as seen
+  learner_id INTEGER, item_id TEXT, seen_at TEXT, PRIMARY KEY (learner_id, item_id));
+CREATE TABLE IF NOT EXISTS glossary (            -- owner-approved entries and AI drafts (bundled ones: config/glossary.yaml)
+  term_key TEXT PRIMARY KEY, term TEXT, expansion TEXT, definition TEXT, more TEXT, status TEXT, source TEXT,
+  model TEXT, course TEXT, requested_by INTEGER, requested_at TEXT, created_at TEXT, decided_by TEXT, decided_at TEXT);
+CREATE TABLE IF NOT EXISTS glossary_asks (       -- "Find out more" requests, for the per-learner daily limit
+  learner_id INTEGER, term_key TEXT, at TEXT);
+CREATE TABLE IF NOT EXISTS news_reviews (        -- owner: material or status items reviewed / dismissed
+  item_id TEXT PRIMARY KEY, decision TEXT, actor TEXT, at TEXT, note TEXT);
 """
 
 
@@ -86,6 +95,8 @@ def connect(path: Path | None = None):
 # Columns added after the first release; existing databases get them on the next connect.
 COLUMNS = {
     "courses": {"tags": "TEXT"},                     # {"industry": [...], "function": [...], "tech": [...]}
+    "enrollments": {"favorite": "INTEGER DEFAULT 0",  # the learner's own focus: a star, a priority, their order
+                    "priority": "TEXT DEFAULT 'normal'", "position": "INTEGER"},
     "suggestions": {"source": "TEXT DEFAULT 'learner'", "client_ref": "TEXT", "tags": "TEXT", "demand": "REAL"},
 }
 

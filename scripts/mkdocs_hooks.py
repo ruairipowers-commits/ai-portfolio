@@ -7,6 +7,7 @@ Values come from scripts/portfolio_config.py (env in CI, else gh login, else por
 so no personal details need to be committed. Runs on rendered HTML so it also covers
 content pulled in by pymdownx.snippets.
 """
+import json
 import os
 import sys
 from pathlib import Path
@@ -110,12 +111,14 @@ def _tech_index(page_uri: str) -> str:
         rows = [t for t in _TECHS if t.get("category", "Other") == cat]
         if not rows:
             continue
-        out += [f"## {cat}", "", "| Technology | What it is | Official docs |", "|---|---|---|"]
+        out += [f"## {cat}", "", "| Technology | What it is | Latest update | Official docs |", "|---|---|---|---|"]
         for t in sorted(rows, key=lambda t: t.get("title", t["slug"]).lower()):
             rel = posixpath.relpath(f"tech/{t['slug']}.md", here)
             host = re.sub(r"^https?://(www\.)?", "", t.get("docs", "")).split("/")[0]
-            out.append(f"| [{t.get('title', t['slug'])}]({rel}) | {t.get('summary', '')} | "
-                       f"[{host}]({t.get('docs', '')}) |")
+            news = _tech_news(t["slug"], 1)
+            latest = f"{news[0]['date']}: [{_md(news[0]['title'])}]({news[0]['url']})" if news else ""
+            out.append(f"| [{t.get('title', t['slug'])}]({rel}){_status_badge(t)} | {t.get('summary', '')} | "
+                       f"{latest} | [{host}]({t.get('docs', '')}) |")
         out.append("")
     return "\n".join(out)
 
@@ -561,7 +564,7 @@ def on_page_markdown(markdown, page, config, files):
     if "<!-- tech:index -->" in markdown:
         markdown = markdown.replace("<!-- tech:index -->", _tech_index(page.file.src_uri))
     if page.file.src_uri.startswith("tech/") and page.file.src_uri != "tech/index.md":
-        markdown = _crash_course_box(markdown, page)
+        markdown = _tech_updates(_crash_course_box(markdown, page), page)
     # a post's **Stack:** line names its technologies: link each to its page
     markdown = re.sub(r"(?m)^(\*\*Stack:\*\*)(.*)$",
                       lambda m: m.group(1) + link_tech(m.group(2), page.file.src_uri), markdown)
@@ -569,6 +572,65 @@ def on_page_markdown(markdown, page, config, files):
 
 
 _COURSES = Path(__file__).resolve().parents[1] / "projects" / "crash-course" / "courses"
+
+
+_NEWS_FILE = Path(__file__).resolve().parents[1] / "projects" / "crash-course" / "warehouse" / "news" / "items.jsonl"
+_NEWS: list[dict] | None = None
+_STATUS = {"deprecated": "Deprecated", "replaced": "Replaced", "declining": "Less used", "retired": "Retired"}
+
+
+def _tech_news(slug: str, n: int = 5) -> list[dict]:
+    """The crash course's "What's new" items for a technology, newest first (from the course-news branch, merged in by
+    `python scripts/course_news.py pull` before the build; none when that hasn't run)."""
+    global _NEWS
+    if _NEWS is None:
+        _NEWS = []
+        if _NEWS_FILE.exists():
+            for ln in _NEWS_FILE.read_text().splitlines():
+                try:
+                    r = json.loads(ln)
+                except ValueError:
+                    continue
+                if str(r.get("url", "")).startswith("https://") and r.get("date") and r.get("title"):
+                    _NEWS.append(r)
+        _NEWS.sort(key=lambda r: r["date"], reverse=True)
+    return [r for r in _NEWS if r.get("course") == slug][:n]
+
+
+def _md(text: str) -> str:
+    """Plain text safe inside a Markdown link or table cell."""
+    return (str(text).replace("\\", "\\\\").replace("|", "\\|").replace("[", "\\[").replace("]", "\\]")
+            .replace("<", "&lt;").replace(">", "&gt;"))
+
+
+def _status_badge(meta: dict) -> str:
+    st = str(meta.get("status") or "").lower()
+    return f' <span class="tech-status tech-status--{st}">{_STATUS[st]}</span>' if st in _STATUS else ""
+
+
+def _tech_updates(markdown: str, page) -> str:
+    """A technology page gets its lifecycle status (front matter, changed only by a merged PR) under the title, and a
+    "Recent updates" list from the daily scan above its documentation link."""
+    meta, slug = page.meta or {}, Path(page.file.src_uri).stem
+    st = str(meta.get("status") or "").lower()
+    if st in _STATUS:
+        note = _md(meta.get("status_note", ""))
+        by = f" Replaced by **{_md(meta['replaced_by'])}**." if meta.get("replaced_by") else ""
+        src = f" [Source]({meta['status_source']})" if str(meta.get("status_source", "")).startswith("https://") else ""
+        box = f'!!! warning "{_STATUS[st]}"\n    {note}{by}{src}\n\n'
+        markdown = re.sub(r"(?m)^(# .+\n)", lambda m: m.group(1) + "\n" + box, markdown, count=1)
+    items = _tech_news(slug)
+    if not items:
+        return markdown
+    live = demo_url("crash-course", _cfg) if "crash-course" in _cfg["projects"] else ""
+    lines = ["## Recent updates", ""] + [f"- **{r['date']}** · [{_md(r['title'])}]({r['url']}) — {_md(r.get('summary', ''))}"
+                                         for r in items]
+    if live:
+        lines += ["", f"[All updates for {meta.get('title', slug)}]({live.rstrip('/')}/whatsnew?course={slug})"]
+    block = "\n".join(lines) + "\n\n"
+    if "\n## Documentation" in markdown:
+        return markdown.replace("\n## Documentation", "\n" + block + "## Documentation", 1)
+    return markdown.rstrip() + "\n\n" + block
 
 
 def _crash_course_box(markdown: str, page) -> str:

@@ -3,6 +3,35 @@
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
 (or delete them) as they're done. Last updated 4 November 2026.
 
+## 000000000000000000. Crash course: daily "What's new" scan, phases 1–2 of 4 (4 November 2026)
+
+Ruairi's decisions (4 Nov): a daily scan for material changes; news items show without approval (factual, each links
+its official source); status badges (deprecated / replaced / less used / retired) and changes that may make a level
+out of date need him; the scan starts as a scheduled Claude task, switchable to GitHub Actions + a local model;
+glossary "Find out more" AI answers for signed-in learners, rate-limited (phase 4). Branch
+`agent/claude-crash-course-ai-and-agents` (after the version-2 bump of the 12 ai-and-agents levels):
+- `news.py` (validated items, seen marks, owner review), `newsfeeds.py` + `config/feeds.yaml` (feeds mode, `course-news`
+  alias, mock by default), `course news-add | news-scan | news-review | news-sync`; catalog card latest update + status
+  badge, course page "Recent updates", a What's new tab (filters, completed courses highlighted, mark seen, nav count),
+  owner page "Updates to review". Status badges come only from tech-page front matter.
+- `scripts/course_news.py` pull/publish the `course-news` branch; site build pulls it; Technologies index gets a
+  "Latest update" column and each tech page "Recent updates" + its status box. Workflow `course-news.yml` (feeds mode
+  only). Skill `.agents/skills/course-news`.
+- Tests 97 passed (11 new); `course all` and the eval gate pass; `mkdocs build --strict` passes with sample news.
+  GitHub release-feed URLs in feeds.yaml could not be fetched from the build session (proxy); PyPI feeds parse.
+- [ ] Ruairi: review and merge. Then: create the daily scheduled task (Claude, skill `course-news`); set
+      `COURSE_NEWS_URL` on the live service to the raw URL of `course-news/items.jsonl`.
+- Phase 3 done (same branch): tracker favourites (star, "favourites only"), priority (high / normal / low), the
+  learner's own order (up / down / top), sort by order / priority / progress / recently added, and "Up next".
+  103 tests pass (6 new in `tests/test_focus.py`).
+- Phase 4 done (same branch): glossary — highlight a word on a course page → definition (bundled
+  `config/glossary.yaml` + owner-approved), "Find out more" AI answer for signed-in learners (screened, per-minute and
+  daily limits, per-answer budget, kill switch, cached as a labelled draft; alias `course-glossary`, mock by default),
+  "Add to glossary" → owner page (edit, approve / reject), "Suggest as a course" (prefilled), hover definitions,
+  `/glossary`. Governance and README updated: the glossary is the one learner-triggered model call.
+- [ ] Ruairi: point `course-glossary` at a real model (e.g. `COURSE_GLOSSARY_MODEL=claude-haiku` with prices filled in
+      models.yaml); until then "Find out more" shows an offline placeholder for terms not in the glossary.
+
 ## 00000000000000000. Crash course: Beginner + Intermediate for the ai-and-agents batch (4 November 2026)
 
 Branch `agent/claude-crash-course-ai-and-agents`: `beginner.yaml` and `intermediate.yaml` for anthropic, openai,

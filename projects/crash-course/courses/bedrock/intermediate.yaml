@@ -1,6 +1,6 @@
 course: bedrock
 level: intermediate
-version: 1
+version: 2                   # v2 so it supersedes any v1 draft the live writer queued for this level
 title: Amazon Bedrock as the governed production route in 4 hours
 status: draft
 source:

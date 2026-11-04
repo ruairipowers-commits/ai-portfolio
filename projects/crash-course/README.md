@@ -18,7 +18,7 @@ unlocks the next one.
 
 | Who | What they do | What code does | What a model does |
 |---|---|---|---|
-| Learner | registers, signs up, reads, takes quizzes, marks projects done, gives feedback, suggests topics | magic-link sign-in; draws and shuffles questions; scores them on the server; applies the unlock rule; stores everything | nothing — no model on any learner path |
+| Learner | registers, signs up, reads, takes quizzes, marks projects done, gives feedback, suggests topics, looks up terms | magic-link sign-in; draws and shuffles questions; scores them on the server; applies the unlock rule; stores everything | only the glossary's "Find out more" (signed in, rate-limited, budgeted, cached); nothing on quizzes, unlocks or progress |
 | Owner | approves topics, publishes levels, accepts or rejects edits | signed approval links, the `/owner` page, content checks before every publish, an audit row for every decision | — |
 | Worker | — | queues drafts when a learner unlocks a level that doesn't exist yet | the **writer** drafts a level in a strict schema; the **moderator** assesses suggested topics; the **reviser** proposes edits from feedback |
 
@@ -48,6 +48,46 @@ or shorter than 32 characters, the endpoints answer 404.
 | `GET /api/owner/suggestions?refs=a,b` | status of those suggestions: pending / approved (with the course slug) / rejected / duplicate of a course |
 | `GET /api/owner/progress` | the owner's enrollments and completed levels, by course slug |
 | `GET /api/owner/catalog` | slugs, titles, categories, tags |
+
+## What's new (the daily scan)
+
+A daily scan collects releases, new features, deprecations and retirements for every technology with a course, each
+item dated, summarised in a sentence or two and linked to its official source. The items show on the catalog cards
+(latest update), on each course page (recent updates) and on the **What's new** tab: newest first, filterable by
+technology and kind. Signed in, updates for courses you've completed are highlighted and pre-ticked, and you can mark
+them seen (the nav shows how many are unseen). The same items appear on the portfolio's Technologies pages.
+
+| | |
+|---|---|
+| Who scans | `news.scanner: claude` (default): the daily Claude task, skill `.agents/skills/course-news`. `news.scanner: feeds`: `.github/workflows/course-news.yml` reads `config/feeds.yaml` and summarises with the `course-news` alias (e.g. a local model) |
+| Where items live | one JSON line each on the `course-news` branch (`scripts/course_news.py`), never on main; the live service reads `COURSE_NEWS_URL` (that file's raw URL) hourly; the site build pulls the branch |
+| What needs the owner | a **status badge** (deprecated / replaced / less used / retired) is the tech page's front matter, changed only by a PR the scan opens and the owner merges; updates that **may make a level out of date** wait on the owner page (`course news-review`) |
+| Commands | `course news-add FILE`, `course news-scan`, `course news-review`, `course news-sync` |
+
+Course levels are never edited by the scan.
+
+## Glossary
+
+On any course page, highlight a word or acronym (TLS, say) to look it up. Approved terms — a bundled list in
+`config/glossary.yaml` plus terms the owner approves — show their definition, and are marked on every course page with a
+hover definition; `/glossary` lists them. For anything else the pop-up offers:
+
+- **Find out more** (signed in): an AI explanation of the term in the sense the page uses it. This is the one model
+  call a learner can trigger: the term is screened first (length, contact details, injection, blocked words), it's
+  limited per minute and per day, budgeted per answer, stops when the governance console pauses the workflow, and the
+  answer is cached as a draft (labelled "AI-generated, not yet reviewed") so the next learner asking costs nothing.
+  The offline mock never caches its placeholder. Alias `course-glossary` (`COURSE_GLOSSARY_MODEL`).
+- **Add to glossary**: sends the term (with any AI draft) to the owner page, where the owner edits and approves or
+  rejects it.
+- **Suggest as a course**: opens the suggestion form with the term filled in.
+
+## Focus on the tracker
+
+Each course on **My tracker** has a star (favourite), a priority (high / normal / low) and a place in the learner's own
+order (move up, down or to the top; new sign-ups go to the end). The tracker sorts by that order, by priority, by
+progress or by most recently added, filters to favourites, and opens with **Up next**: the next open level of the
+highest-placed favourite (or of the first course when there are none). Plain forms, no JavaScript needed.
+
 
 ## Quickstart
 

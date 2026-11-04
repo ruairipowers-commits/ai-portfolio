@@ -88,8 +88,9 @@ def delete(conn, lid: int) -> None:
     """Delete-my-data: every row that belongs to the learner (DATA-03, OBS-03)."""
     for table, col in (("login_tokens", "learner_id"), ("enrollments", "learner_id"), ("progress", "learner_id"),
                        ("attempts", "learner_id"), ("feedback", "learner_id"), ("suggestions", "learner_id"),
-                       ("learners", "id")):
+                       ("news_seen", "learner_id"), ("glossary_asks", "learner_id"), ("learners", "id")):
         conn.execute(f"DELETE FROM {table} WHERE {col}=?", (lid,))
+    conn.execute("UPDATE glossary SET requested_by=NULL WHERE requested_by=?", (lid,))   # the term stays, unlinked
     telemetry.record("delete_account", items=1)
 
 

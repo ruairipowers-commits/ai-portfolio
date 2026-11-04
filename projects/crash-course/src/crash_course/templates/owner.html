@@ -84,6 +84,38 @@ levels completed {{ stats.completed }} · levels published {{ stats.published }}
 </table></div>
 {% else %}<p class="muted">None waiting.</p>{% endif %}
 
+<h2>Glossary terms to review ({{ glossary_pending|length }})</h2>
+<p class="small muted">Terms learners asked to add, and AI answers to "Find out more" (shown to learners labelled as not
+reviewed). Edit, then approve: approved terms appear on the glossary page and as hover definitions on every course page.</p>
+{% for g in glossary_pending %}
+<form class="card" method="post" action="{{ R }}/owner/action" style="margin-bottom:10px">
+  <input type="hidden" name="kind" value="glossary"><input type="hidden" name="key" value="{{ g.term_key }}">
+  <p class="small muted" style="margin:0">{{ 'Requested by a learner' if g.requested_at else 'AI answer' }}{% if g.course %} · {{ g.course }}{% endif %}{% if g.model %} · {{ g.model }}{% endif %}</p>
+  <label>Term <input name="term" value="{{ g.term }}" maxlength="60"></label>
+  <label>Stands for <input name="expansion" value="{{ g.expansion or '' }}" maxlength="120"></label>
+  <label>Definition <textarea name="definition" rows="2" maxlength="300">{{ g.definition or '' }}</textarea></label>
+  <label>More <textarea name="more" rows="3" maxlength="1500">{{ g.more or '' }}</textarea></label>
+  <button class="btn small" name="decision" value="approve" type="submit">Approve</button>
+  <button class="btn small ghost" name="decision" value="reject" type="submit">Reject</button>
+</form>
+{% else %}<p class="muted small">Nothing to review.</p>{% endfor %}
+
+<h2>Updates to review ({{ news_review|length }})</h2>
+<p class="small muted">From the daily scan: changes that may make a published level out of date, and proposed status
+badges. A badge only appears once its tech page's front matter is changed by a pull request you merge.</p>
+{% for it in news_review %}
+<div class="card" style="margin-bottom:10px">
+  <b>{{ it.course }}</b> · {{ it.date }} · <a href="{{ it.url }}" rel="noopener nofollow">{{ it.title }}</a>
+  {% if it.material %}<span class="kind k-material">may change: {{ it.affects|join(', ') }}</span>{% endif %}
+  {% if it.status %}<span class="badge st-{{ it.status }}">proposed: {{ it.status }}</span>{% endif %}
+  <p class="small" style="margin:6px 0">{{ it.reason or it.summary }}</p>
+  <form class="inline" method="post" action="{{ R }}/owner/action"><input type="hidden" name="kind" value="news">
+    <input type="hidden" name="id" value="{{ it.id }}">
+    <button class="btn small" name="decision" value="reviewed" type="submit">Reviewed</button>
+    <button class="btn small ghost" name="decision" value="dismiss" type="submit">Dismiss</button></form>
+</div>
+{% else %}<p class="muted small">Nothing to review.</p>{% endfor %}
+
 <h2>Edits proposed from feedback</h2>
 {% if not proposals %}<p class="muted">None waiting.</p>{% endif %}
 {% for p in proposals %}

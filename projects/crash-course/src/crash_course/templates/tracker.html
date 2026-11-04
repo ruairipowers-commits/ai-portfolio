@@ -5,13 +5,44 @@
 {% if not courses %}
 <div class="card"><p>You haven't signed up for a course yet.</p><p><a class="btn" href="{{ R }}/catalog">Choose a course</a></p></div>
 {% endif %}
+{% if next %}<div class="card upnext"><span class="small muted">Up next</span>
+  <b>{{ next.course.title }}</b> · {{ next.level.label }} ({{ next.level.minutes|dur }})
+  <a class="btn small" href="{{ R }}/learn/{{ next.course.slug }}/{{ next.level.name }}">Continue</a></div>{% endif %}
+{% if total > 1 %}<form class="search focusbar" method="get" action="{{ R }}/tracker">
+  {% if tag %}<input type="hidden" name="tag" value="{{ tag }}">{% endif %}
+  <label class="small">Order
+  <select name="sort" onchange="this.form.submit()">
+    {% for k, label in [('mine', 'My order'), ('priority', 'Priority'), ('progress', 'Progress'), ('recent', 'Recently added')] %}
+    <option value="{{ k }}" {{ 'selected' if k == sort }}>{{ label }}</option>{% endfor %}
+  </select></label>
+  <label class="small"><input type="checkbox" name="fav" value="1" {{ 'checked' if fav }} onchange="this.form.submit()"> Favourites only ({{ favorites }})</label>
+  <noscript><button class="btn small" type="submit">Apply</button></noscript>
+</form>{% endif %}
 {% if tags %}<div class="tagbar small"><span class="muted">filter:</span>{% for t in tags %}<a class="tag {{ 'on' if t == tag }}" href="{{ R }}/tracker?tag={{ t }}">{{ t }}</a>{% endfor %}{% if tag %}<a class="small" href="{{ R }}/tracker">all {{ total }} courses</a>{% endif %}</div>{% endif %}
 {% for t in courses %}{% set c = t.course %}
 <div class="card track" id="c-{{ c.slug }}">
   <div class="track-head">
+    <form class="inline" method="post" action="{{ R }}/tracker/focus"><input type="hidden" name="course" value="{{ c.slug }}">
+      <input type="hidden" name="back" value="{{ query }}">
+      <button class="star {{ 'on' if t.favorite }}" name="action" value="{{ 'unfavorite' if t.favorite else 'favorite' }}" type="submit"
+        title="{{ 'Remove from favourites' if t.favorite else 'Add to favourites' }}" aria-label="{{ 'Remove from favourites' if t.favorite else 'Add to favourites' }}">{{ '★' if t.favorite else '☆' }}</button></form>
     <h2 style="margin:0"><a href="{{ R }}/course/{{ c.slug }}" style="color:inherit;text-decoration:none">{{ c.title }}</a></h2>
+    {% if t.priority != 'normal' %}<span class="prio prio-{{ t.priority }}">{{ t.priority }} priority</span>{% endif %}
     <span class="small muted">{{ t.done }} of 3 levels complete</span>
   </div>
+  <form class="focus small" method="post" action="{{ R }}/tracker/focus"><input type="hidden" name="course" value="{{ c.slug }}">
+    <input type="hidden" name="back" value="{{ query }}">
+    <label>Priority <select name="action" onchange="this.form.submit()">
+      {% for p in priorities %}<option value="priority:{{ p }}" {{ 'selected' if p == t.priority }}>{{ p }}</option>{% endfor %}
+    </select></label><noscript><button type="submit">Set</button></noscript>
+  </form>
+  {% if sort == 'mine' and not tag and not fav and total > 1 %}
+  <form class="focus small" method="post" action="{{ R }}/tracker/focus"><input type="hidden" name="course" value="{{ c.slug }}">
+    <span class="muted">Move</span>
+    {% if not loop.first %}<button name="action" value="top" type="submit" title="Move to the top">⇈ top</button>
+    <button name="action" value="up" type="submit" title="Move up">↑ up</button>{% endif %}
+    {% if not loop.last %}<button name="action" value="down" type="submit" title="Move down">↓ down</button>{% endif %}
+  </form>{% endif %}
   <div class="bar" style="margin-top:8px" aria-hidden="true"><i style="width:{{ (t.done / 3 * 100)|round }}%"></i></div>
   <div class="levels">
   {% for lv in t.levels %}
