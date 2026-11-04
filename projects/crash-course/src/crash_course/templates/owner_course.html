@@ -1,0 +1,40 @@
+{% extends "base.html" %}{% block title %}{{ c.title }} · Owner · Crash course{% endblock %}
+{% block body %}
+<p class="small muted"><a href="{{ R }}/owner">Owner</a> · <a href="{{ R }}/course/{{ c.slug }}">course page</a></p>
+<h1>{{ c.title }}</h1>
+{% if done %}<p class="note">{{ done }}</p>{% endif %}
+<div class="card">
+{% if withdrawn %}
+  <p style="margin-top:0"><span class="badge st-reworked">Withdrawn</span> by {{ withdrawn.actor }} on {{ withdrawn.at[:10] }}{% if withdrawn.note %} — {{ withdrawn.note }}{% endif %}.
+  Out of the catalog and closed to new sign-ups; {{ learners }} learner(s) already on it keep full access.</p>
+  <form method="post" action="{{ R }}/owner/action"><input type="hidden" name="kind" value="course"><input type="hidden" name="course" value="{{ c.slug }}">
+    <label>Note (optional)</label><input type="text" name="notes" maxlength="300" placeholder="e.g. new Intermediate for v2 of the tool">
+    <p><button class="btn ok small" name="decision" value="release" type="submit">Re-release</button>
+    <span class="small muted">Publish the reworked levels first (drafts on the owner page); learners who finished an older version see what changed.</span></p></form>
+{% else %}
+  <p style="margin-top:0">Open: in the catalog and taking sign-ups. {{ learners }} learner(s) signed up.</p>
+  <form method="post" action="{{ R }}/owner/action"><input type="hidden" name="kind" value="course"><input type="hidden" name="course" value="{{ c.slug }}">
+    <label>Why (optional, kept in the approvals log)</label><input type="text" name="notes" maxlength="300" placeholder="e.g. rework for the tool's new major version">
+    <p><button class="btn ghost small" name="decision" value="withdraw" type="submit">Withdraw for rework</button>
+    <span class="small muted">Takes it out of the catalog and future sign-ups. Learners already on it keep going, with a "being reworked" banner.</span></p></form>
+{% endif %}
+</div>
+{% for name in LEVELS %}
+<h2><span class="pill lv-{{ name }}">{{ s.levels[name].label }}</span></h2>
+{% set cmp = completed.get(name) %}{% if cmp %}<p class="small muted">{{ cmp.n }} learner(s) completed this level{% if cmp.lo %} (earliest version completed: v{{ cmp.lo }}){% endif %}.</p>{% endif %}
+{% if not history[name] %}<p class="muted small">No version yet.</p>{% else %}
+<div class="card" style="padding:0;overflow-x:auto"><table class="tbl versions">
+<thead><tr><th>Version</th><th>Status</th><th>What changed</th><th>Approved</th><th></th></tr></thead><tbody>
+{% for h in history[name] %}<tr>
+  <td>v{{ h.version }}{% if h.current %} <span class="pill st-complete">live</span>{% endif %}<div class="small muted">{{ h.where }}</div></td>
+  <td class="small">{{ h.status }}</td>
+  <td class="small">{{ h.changes or '—' }}{% if h.note %}<div class="muted">{{ h.note }}</div>{% endif %}<div class="muted">{{ h.written_by }}</div></td>
+  <td class="small">{% if h.approved_by %}{{ h.approved_by }}<br>{{ h.approved_at[:10] }}{% else %}<span class="muted">–</span>{% endif %}</td>
+  <td class="actions">{% if h.status == 'published' and not h.current %}
+    <form method="post" action="{{ R }}/owner/action"><input type="hidden" name="kind" value="rollback"><input type="hidden" name="course" value="{{ c.slug }}">
+      <input type="hidden" name="level" value="{{ name }}"><input type="hidden" name="version" value="{{ h.version }}">
+      <button class="btn ghost small" type="submit" title="Publish this version's content again as a new version">Roll back to this</button></form>
+  {% elif h.status == 'draft' and not h.current %}<a class="small" href="{{ R }}/owner/preview/{{ c.slug }}/{{ name }}">review draft</a>{% endif %}</td>
+</tr>{% endfor %}</tbody></table></div>{% endif %}
+{% endfor %}
+{% endblock %}

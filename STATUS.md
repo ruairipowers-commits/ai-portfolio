@@ -3,6 +3,20 @@
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
 (or delete them) as they're done. Last updated 4 November 2026.
 
+## 00000000000000000000. Crash course: every level for every course, withdraw / re-release, level versions (4 November 2026)
+
+Ruairi's decisions (4 Nov): write the 63 missing levels in parallel cloud sessions, each opening its own PR; after a
+new version everyone sees the newest, earlier completers get "Updated to vN" with what changed and keep their
+completion; a withdrawn course keeps its existing learners (full access, "being reworked" banner).
+- Levels: five sessions (tag `crash-course-levels`), branches `agent/claude-crash-course-{data-storage,
+  search-and-data-science, apps-and-languages, infrastructure, orchestration-and-ml}`: Beginner + Intermediate for the
+  31 Familiar-only courses and AWS Intermediate. Each opens a PR; Claude reviews them (checker + pytest). Not merged.
+- Branch `agent/claude-crash-course-withdraw-versions`: `lifecycle.py` (withdraw / re-release in `course_state`,
+  logged to approvals; version history; rollback = re-check and republish an older version as the newest;
+  "Updated to vN" notices from `progress.completed_version`), Level `changes` field, publish form "What changed",
+  `/owner/course/<slug>`, banners on catalog / course / tracker / materials, `/updates/seen`. Tests 123 passed (9 new).
+- [ ] Ruairi: review and merge the six PRs; publish the new levels on the live host (owner page, "Publish all").
+
 ## 000000000000000000. Crash course: daily "What's new" scan, phases 1–2 of 4 (4 November 2026)
 
 Ruairi's decisions (4 Nov): a daily scan for material changes; news items show without approval (factual, each links

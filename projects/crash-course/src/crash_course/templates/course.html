@@ -7,13 +7,18 @@
 {% if c.status != 'active' %}<p class="note"><span class="badge st-{{ c.status }}">{{ STATUS_LABEL[c.status] }}</span>
   {{ c.status_note }}{% if c.replaced_by %} Replaced by <b>{{ c.replaced_by }}</b>.{% endif %}
   {% if c.status_source %}<a href="{{ c.status_source }}" rel="noopener">Source</a>{% endif %}</p>{% endif %}
+{% if withdrawn %}<p class="note reworked"><b>Being reworked.</b> This course is closed to new sign-ups while a new
+  version is prepared.{% if enrolled %} You keep full access and can keep going; your progress stays.{% endif %}</p>{% endif %}
+{% for n in notices %}<p class="note updated"><b>{{ s.levels[n.level].label }} updated to version {{ n.to }}.</b>
+  <a href="{{ R }}/learn/{{ n.course }}/{{ n.level }}">See what changed</a></p>{% endfor %}
 {% if enrolled %}<p><a class="btn" href="{{ R }}/tracker#c-{{ c.slug }}">Go to my tracker</a></p>
+{% elif withdrawn %}
 {% elif user %}<form method="post" action="{{ R }}/enroll"><input type="hidden" name="course" value="{{ c.slug }}"><button class="btn" type="submit">Sign up for this course</button></form>
 {% else %}<p><a class="btn" href="{{ R }}/signin?next=/course/{{ c.slug }}">Register to sign up</a></p>{% endif %}
 <h2>Three levels</h2>
 {% for name in LEVELS %}{% set cfg = s.levels[name] %}
 <div class="card" style="margin-bottom:10px">
-  <span class="pill lv-{{ name }}">{{ cfg.label }} · {{ cfg.minutes|dur }}</span>
+  <span class="pill lv-{{ name }}">{{ cfg.label }} · {{ cfg.minutes|dur }}</span>{% if versions[name] %} <span class="small muted">version {{ versions[name] }}</span>{% endif %}
   <p class="small" style="margin:8px 0 0">{{ BLURB[name] }}</p>
   <p class="small muted" style="margin:4px 0 0">{% if loop.first %}Unlocked when you sign up.{% else %}Unlocks when you pass the {{ s.levels[LEVELS[loop.index0 - 1]].label }} quiz and finish its project.{% endif %}
   {% if lvstatus[name] != 'published' %} Written when the first learner reaches it, then reviewed before it's published.{% endif %}</p>

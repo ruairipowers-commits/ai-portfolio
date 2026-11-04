@@ -29,7 +29,10 @@
     <h2 style="margin:0"><a href="{{ R }}/course/{{ c.slug }}" style="color:inherit;text-decoration:none">{{ c.title }}</a></h2>
     {% if t.priority != 'normal' %}<span class="prio prio-{{ t.priority }}">{{ t.priority }} priority</span>{% endif %}
     <span class="small muted">{{ t.done }} of 3 levels complete</span>
+    {% if c.slug in withdrawn %}<span class="badge st-reworked">Being reworked</span>{% endif %}
   </div>
+  {% if c.slug in withdrawn %}<p class="small muted" style="margin:4px 0">This course is being reworked and is closed to new
+    sign-ups. You keep full access and can keep going.</p>{% endif %}
   <form class="focus small" method="post" action="{{ R }}/tracker/focus"><input type="hidden" name="course" value="{{ c.slug }}">
     <input type="hidden" name="back" value="{{ query }}">
     <label>Priority <select name="action" onchange="this.form.submit()">
@@ -48,6 +51,7 @@
   {% for lv in t.levels %}
     <div class="level lv-{{ lv.name }} {{ 'locked' if lv.state == 'locked' }}">
       <h4>{{ lv.label }} <span class="muted" style="font-weight:400">· {{ lv.minutes|dur }}</span></h4>
+      {% set n = notices.get((c.slug, lv.name)) %}
       <span class="pill st-{{ lv.state }}">{{ {'locked':'Locked','unlocked':'In progress','complete':'Complete','preparing':'Being prepared'}[lv.state] }}</span>
       {% if lv.state in ('unlocked', 'complete') %}
         <div class="meta" style="margin-top:6px">
@@ -55,6 +59,9 @@
           {% if lv.parts > 1 %}Checks passed: {{ lv.parts_passed }} of {{ lv.parts }}<br>{% endif %}
           Project: {% if lv.project_done %}<span class="done">done</span>{% else %}not yet{% endif %}
         </div>
+        {% if n %}<div class="updated small"><b>Updated to v{{ n.to }}</b> — your completion stays.
+          <details><summary>What changed</summary><ul>{% for ch in n.changes %}<li>v{{ ch.version }}{% if ch.at %} ({{ ch.at }}){% endif %}: {{ ch.text or 'No summary given.' }}</li>{% endfor %}</ul></details>
+          <form class="inline" method="post" action="{{ R }}/updates/seen"><input type="hidden" name="course" value="{{ c.slug }}"><input type="hidden" name="level" value="{{ lv.name }}"><button class="linkbtn" type="submit">Got it</button></form></div>{% endif %}
         <a class="btn small" href="{{ R }}/learn/{{ c.slug }}/{{ lv.name }}">{{ 'Review materials' if lv.state == 'complete' else 'Open materials' }}</a>
       {% elif lv.state == 'preparing' %}
         <p class="meta">Unlocked. The material is being written and reviewed; it will appear here once it's approved.</p>

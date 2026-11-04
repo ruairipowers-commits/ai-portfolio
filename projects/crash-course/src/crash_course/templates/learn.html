@@ -7,6 +7,12 @@
   <span class="small muted">~{{ report.stats.minutes }} of {{ report.stats.budget }} min · {{ report.stats.questions }} questions in the bank · written by {{ lv.provenance.written_by }}</span></div>
 {% endif %}
 <p class="small muted">{% if not preview %}<a href="{{ R }}/tracker#c-{{ c.slug }}">My tracker</a>{% else %}<a href="{{ R }}/owner">Owner</a>{% endif %} · {{ c.title }}</p>
+{% if withdrawn and not preview %}<p class="note reworked"><b>Being reworked.</b> This course is closed to new sign-ups
+  while a new version is prepared. You keep full access and can keep going; your progress stays.</p>{% endif %}
+{% if notice and not preview %}<div class="note updated"><b>Updated to version {{ notice.to }}</b>{% if notice.from %} (you completed version {{ notice.from }}){% endif %}.
+  Your completion stays. What changed:
+  <ul class="small">{% for ch in notice.changes %}<li>v{{ ch.version }}{% if ch.at %} ({{ ch.at }}){% endif %}: {{ ch.text or 'No summary given.' }}</li>{% endfor %}</ul>
+  <form class="inline" method="post" action="{{ R }}/updates/seen"><input type="hidden" name="course" value="{{ c.slug }}"><input type="hidden" name="level" value="{{ lv.level }}"><input type="hidden" name="back" value="learn"><button class="btn small ghost" type="submit">Got it</button></form></div>{% endif %}
 <h1>{{ lv.title }}</h1>
 <p><span class="pill lv-{{ lv.level }}">{{ label }} · {{ cfg.minutes|dur }}</span> <span class="small muted">version {{ lv.version }}</span></p>
 <nav class="toc">

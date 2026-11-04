@@ -141,15 +141,23 @@ def runtime_dir(slug: str) -> Path:
     return data_dir() / "warehouse" / "courses" / slug
 
 
-def _versions(slug: str, level: str) -> list[Level]:
-    """Every copy of a level: the bundled file (courses/<slug>/<level>.yaml, in git) and the runtime versions
-    (<data>/warehouse/courses/<slug>/<level>.v<N>.yaml) written by builds, revisions and the owner's publish."""
+def versions_with_source(slug: str, level: str) -> list[tuple[str, Level]]:
+    """Every copy of a level with where it came from: the bundled file (courses/<slug>/<level>.yaml, in git) first,
+    then the runtime versions (<data>/warehouse/courses/<slug>/<level>.v<N>.yaml) written by builds, revisions,
+    rollbacks and the owner's publish, in version order."""
     out = []
-    paths = [root() / "courses" / slug / f"{level}.yaml", *sorted(runtime_dir(slug).glob(f"{level}.v*.yaml"))]
-    for p in paths:
-        if p.exists():
-            out.append(Level.model_validate(yaml.safe_load(p.read_text())))
+    bundled_p = root() / "courses" / slug / f"{level}.yaml"
+    if bundled_p.exists():
+        out.append(("bundled", Level.model_validate(yaml.safe_load(bundled_p.read_text()))))
+    runtime = []
+    for p in runtime_dir(slug).glob(f"{level}.v*.yaml"):
+        runtime.append(Level.model_validate(yaml.safe_load(p.read_text())))
+    out += [("runtime", lv) for lv in sorted(runtime, key=lambda lv: lv.version)]
     return out
+
+
+def _versions(slug: str, level: str) -> list[Level]:
+    return [lv for _where, lv in versions_with_source(slug, level)]
 
 
 def load_level(slug: str, level: str, include_drafts: bool = False) -> Level | None:

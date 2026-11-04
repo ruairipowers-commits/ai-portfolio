@@ -86,6 +86,7 @@ class Level(Strict):
     status: Literal["draft", "published", "rejected"] = "draft"
     source: Source
     provenance: Provenance
+    changes: str = Field(default="", max_length=1000)   # what changed since the previous version (learners see it)
     sections: list[Section] = Field(min_length=1)
     modules: list[Module] = []
     project: Project

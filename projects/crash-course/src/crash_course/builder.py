@@ -105,8 +105,10 @@ def build(conn, s: Settings, slug: str, level: str) -> tuple[Level | None, check
     return lv, rep, ""
 
 
-def publish(conn, s: Settings, slug: str, level: str, actor: str) -> tuple[bool, list[str]]:
-    """The owner publishes a draft. Checks run again here; a failing draft can't be published."""
+def publish(conn, s: Settings, slug: str, level: str, actor: str, changes: str = "") -> tuple[bool, list[str]]:
+    """The owner publishes a draft. Checks run again here; a failing draft can't be published. `changes` (what
+    changed since the published version) is shown to learners who completed an earlier version; if it is empty the
+    draft's own `changes` stays."""
     telemetry.require_enabled("publish", actor=actor)
     lv = catalog.load_level(slug, level, include_drafts=True)
     if not lv or lv.status != "draft":
@@ -115,7 +117,8 @@ def publish(conn, s: Settings, slug: str, level: str, actor: str) -> tuple[bool,
     rep = checks.check_level(lv, course, s)
     if not rep.ok:
         return False, rep.problems
-    lv = lv.model_copy(update={"status": "published", "provenance": lv.provenance.model_copy(
+    lv = lv.model_copy(update={"status": "published", "changes": (changes.strip() or lv.changes)[:1000],
+                               "provenance": lv.provenance.model_copy(
         update={"approved_by": actor, "approved_at": now(), "note": ""})})
     catalog.save_level(lv)
     approval(conn, actor, "level", f"{slug}:{level}:v{lv.version}", "publish")

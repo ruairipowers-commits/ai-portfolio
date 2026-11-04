@@ -60,6 +60,8 @@ CREATE TABLE IF NOT EXISTS glossary (            -- owner-approved entries and A
   model TEXT, course TEXT, requested_by INTEGER, requested_at TEXT, created_at TEXT, decided_by TEXT, decided_at TEXT);
 CREATE TABLE IF NOT EXISTS glossary_asks (       -- "Find out more" requests, for the per-learner daily limit
   learner_id INTEGER, term_key TEXT, at TEXT);
+CREATE TABLE IF NOT EXISTS course_state (         -- owner: a course withdrawn for rework (no row = open)
+  slug TEXT PRIMARY KEY, state TEXT NOT NULL, note TEXT, actor TEXT, at TEXT);
 CREATE TABLE IF NOT EXISTS news_reviews (        -- owner: material or status items reviewed / dismissed
   item_id TEXT PRIMARY KEY, decision TEXT, actor TEXT, at TEXT, note TEXT);
 """
@@ -97,6 +99,8 @@ COLUMNS = {
     "courses": {"tags": "TEXT"},                     # {"industry": [...], "function": [...], "tech": [...]}
     "enrollments": {"favorite": "INTEGER DEFAULT 0",  # the learner's own focus: a star, a priority, their order
                     "priority": "TEXT DEFAULT 'normal'", "position": "INTEGER"},
+    "progress": {"completed_version": "INTEGER",      # the level version the learner completed
+                 "notice_version": "INTEGER"},       # the newest version whose "Updated" notice they dismissed
     "suggestions": {"source": "TEXT DEFAULT 'learner'", "client_ref": "TEXT", "tags": "TEXT", "demand": "REAL"},
 }
 

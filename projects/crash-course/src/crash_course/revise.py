@@ -98,6 +98,7 @@ def apply(lv, edits: list[Edit]):
         "version": catalog.next_version(lv.course, lv.level), "status": "draft",
         "sections": [secs[x.id] for x in lv.sections], "quiz": [quiz[q.id] for q in lv.quiz],
         "modules": mods, "project": project,
+        "changes": ("Clarified from learner feedback: " + "; ".join(e.change for e in edits))[:1000],
         "provenance": lv.provenance.model_copy(update={"note": f"revision of v{lv.version} from learner feedback",
                                                        "approved_by": "", "approved_at": ""})})
 

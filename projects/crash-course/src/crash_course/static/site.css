@@ -173,3 +173,10 @@ form.focus select { padding: 2px 6px; width: auto; }
 .gloss-bubble p { margin: 6px 0; }
 .gloss-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
 dl.glossary dt { font-weight: 700; margin-top: 14px; } dl.glossary dd { margin: 2px 0 0 0; color: var(--ink); }
+/* withdrawn courses and level versions */
+.badge.st-reworked, .st-reworked { color: var(--warn); }
+.note.reworked { border-left-color: var(--warn); }
+.note.updated, .level .updated { border-left: 3px solid var(--brand); }
+.level .updated { margin: 6px 0; padding: 4px 8px; background: var(--card); }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--brand); cursor: pointer; text-decoration: underline; font: inherit; }
+.versions td, .versions th { vertical-align: top; }
