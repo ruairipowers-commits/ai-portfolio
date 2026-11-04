@@ -88,7 +88,7 @@ def delete(conn, lid: int) -> None:
     """Delete-my-data: every row that belongs to the learner (DATA-03, OBS-03)."""
     for table, col in (("login_tokens", "learner_id"), ("enrollments", "learner_id"), ("progress", "learner_id"),
                        ("attempts", "learner_id"), ("feedback", "learner_id"), ("suggestions", "learner_id"),
-                       ("learners", "id")):
+                       ("news_seen", "learner_id"), ("learners", "id")):
         conn.execute(f"DELETE FROM {table} WHERE {col}=?", (lid,))
     telemetry.record("delete_account", items=1)
 

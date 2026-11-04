@@ -55,6 +55,10 @@ class Course:
     aliases: list[str] = field(default_factory=list)
     vendor: str = ""
     tags: dict = field(default_factory=dict)        # {"industry": [...], "function": [...], "tech": [...]}
+    status: str = "active"                # front matter `status:` (deprecated / replaced / declining / retired)
+    replaced_by: str = ""                 # front matter `replaced_by:` — a course slug or a name
+    status_note: str = ""                 # front matter `status_note:` — one sentence, with `status_source:` its link
+    status_source: str = ""
 
     def tag_list(self) -> list[str]:
         return [t for k in TAG_KINDS for t in self.tags.get(k, [])]
@@ -94,7 +98,20 @@ def load_source(path: Path) -> Course:
     return Course(slug=path.stem, title=meta.get("title", path.stem), category=meta.get("category", "Other"),
                   summary=meta.get("summary", ""), docs=meta.get("docs", ""),
                   source_page=f"tech/{path.name}", source_text=plain(md), source_md=md,
-                  aliases=[a for a in meta.get("aliases", []) if isinstance(a, str)], vendor=meta.get("vendor", ""))
+                  aliases=[a for a in meta.get("aliases", []) if isinstance(a, str)], vendor=meta.get("vendor", ""),
+                  **_status(meta))
+
+
+STATUSES = ("active", "deprecated", "replaced", "declining", "retired")
+
+
+def _status(meta: dict) -> dict:
+    """A course's lifecycle badge comes only from its tech page's front matter, which changes by a merged PR."""
+    st = str(meta.get("status") or "active").strip().lower()
+    src = str(meta.get("status_source") or "")
+    return {"status": st if st in STATUSES else "active", "replaced_by": str(meta.get("replaced_by") or "")[:60],
+            "status_note": str(meta.get("status_note") or "")[:300],
+            "status_source": src if src.startswith("https://") else ""}
 
 
 def bundled() -> dict[str, Course]:

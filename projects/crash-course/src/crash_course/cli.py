@@ -306,6 +306,64 @@ def cmd_prune(a):
     print(f"deleted {n} inactive learner(s)")
 
 
+# ---------------------------------------------------------------- what's new (the daily scan)
+def _news_file(a) -> Path:
+    from . import news
+    return Path(a.file) if getattr(a, "file", None) else news.items_path()
+
+
+def cmd_news_add(a):
+    """Validate news items (a JSON list, or one object per line) and add the new ones to the news file."""
+    from . import catalog, news
+    raw = (sys.stdin.read() if a.items == "-" else Path(a.items).read_text()).strip()
+    items = json.loads(raw) if raw.startswith("[") else [json.loads(ln) for ln in raw.splitlines() if ln.strip()]
+    res = news.merge(items, _news_file(a), known_courses=set(catalog.bundled()))
+    print(f"added {res['added']}, already there {res['skipped']}, rejected {len(res['errors'])}")
+    for e in res["errors"]:
+        print("  -", e)
+    sys.exit(1 if res["errors"] else 0)          # the scan fixes or drops rejected items and runs it again
+
+
+def cmd_news_scan(a):
+    """Feeds mode: read config/feeds.yaml, summarise new entries, add them to the news file."""
+    from . import catalog, news, newsfeeds
+    from .store import connect
+    s = _s()
+    if s["news"]["scanner"] != "feeds" and not a.force:
+        print(f"news.scanner is {s['news']['scanner']!r}: the feeds scan is off (use --force to run it anyway)")
+        return
+    path = _news_file(a)
+    with connect() as conn:
+        items, problems = newsfeeds.scan(conn, s, catalog.all_courses(conn), news.load(path), only=a.course or None)
+    res = news.merge(items, path, known_courses=set(catalog.bundled()))
+    print(f"{len(items)} new item(s) found; added {res['added']}, already there {res['skipped']}")
+    for pr in problems + res["errors"]:
+        print("  -", pr)
+
+
+def cmd_news_review(a):
+    """Items the owner should look at: material changes (levels that may be out of date) and proposed statuses."""
+    from . import news
+    from .store import connect
+    items = news.load(_news_file(a))
+    with connect() as conn:
+        if a.done:
+            news.review(conn, a.done, "dismissed" if a.dismiss else "reviewed", a.reviewer)
+            print(f"{a.done}: {'dismissed' if a.dismiss else 'reviewed'}")
+            return
+        todo = news.to_review(conn, items)
+    print(f"{len(items)} item(s) in the news file; {len(todo)} to review")
+    for it in todo:
+        flags = ", ".join(x for x in (f"material: {'/'.join(it['affects'])}" if it["material"] else "",
+                                      f"proposed status: {it['status']}" if it["status"] else "") if x)
+        print(f"  {it['id']}  {it['date']}  {it['course']}: {it['title']}  [{flags}]\n      {it['reason'] or it['summary']}\n      {it['url']}")
+
+
+def cmd_news_sync(a):
+    from . import news
+    print(news.sync(_s(), force=True))
+
+
 # ---------------------------------------------------------------- the offline end-to-end run
 def cmd_all(a):
     """Offline end to end on a fresh data folder: checks, learners, quizzes, unlocks, an on-demand build that the
@@ -401,6 +459,24 @@ def main(argv=None):
     x.set_defaults(fn=cmd_report)
     x = sp.add_parser("prune", help="delete learners inactive past the retention period")
     x.set_defaults(fn=cmd_prune)
+
+    x = sp.add_parser("news-add", help="add news items (JSON list or JSON lines) after validating them")
+    x.add_argument("items", help="file, or - for stdin")
+    x.add_argument("--file", help="news file to add to (default: the data folder's)")
+    x.set_defaults(fn=cmd_news_add)
+    x = sp.add_parser("news-scan", help="feeds mode: read release feeds and add new items")
+    x.add_argument("--file")
+    x.add_argument("--course", action="append", help="only this course (repeatable)")
+    x.add_argument("--force", action="store_true", help="run even when news.scanner is not feeds")
+    x.set_defaults(fn=cmd_news_scan)
+    x = sp.add_parser("news-review", help="owner: material changes and proposed statuses to look at")
+    x.add_argument("--file")
+    x.add_argument("--done", help="mark this item id reviewed")
+    x.add_argument("--dismiss", action="store_true")
+    x.add_argument("--reviewer", default="owner")
+    x.set_defaults(fn=cmd_news_review)
+    x = sp.add_parser("news-sync", help="live service: refresh the news file from COURSE_NEWS_URL now")
+    x.set_defaults(fn=cmd_news_sync)
 
     x = sp.add_parser("all", help="offline end-to-end run on a fresh data folder")
     x.add_argument("--seed", type=int, default=7)

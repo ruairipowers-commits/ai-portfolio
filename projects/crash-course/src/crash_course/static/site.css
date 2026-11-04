@@ -134,3 +134,20 @@ details summary { cursor: pointer; color: var(--link); margin: 6px 0; }
   color: var(--link); text-decoration: none; margin: 0 4px 4px 0; }
 .tag:hover { border-color: var(--link); }
 .tag.on { background: var(--link); color: #fff; border-color: var(--link); }
+
+/* what's new: news lines, status badges (front matter), the updates table */
+.badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 999px;
+  vertical-align: middle; margin-left: 6px; border: 1px solid currentColor; }
+.st-deprecated, .st-declining { color: var(--warn); } .st-replaced, .st-retired { color: var(--bad); }
+.news-line { margin: 2px 0 0 !important; }
+.kind { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0 7px; }
+.k-deprecation, .k-retirement, .k-security, .k-material { color: var(--warn); border-color: currentColor; }
+table.news { width: 100%; border-collapse: collapse; }
+table.news th, table.news td { text-align: left; vertical-align: top; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+table.news tr.mine { background: color-mix(in srgb, var(--ok) 8%, transparent); }
+table.news tr.seen { opacity: .65; }
+.nowrap { white-space: nowrap; }
+.pill.done { background: var(--ok); color: #fff; }
+nav.main .count { background: var(--bad); color: #fff; border-radius: 999px; font-size: 11px; padding: 0 6px; }
+ul.updates { padding-left: 18px; } ul.updates li { margin-bottom: 8px; }
+@media (max-width: 640px) { table.news th:nth-child(1), table.news td:nth-child(1) { display: none; } }

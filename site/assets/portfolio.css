@@ -311,3 +311,9 @@
 /* Blog: post types as a chip row under the heading */
 .md-typeset .post-types { display: flex; flex-wrap: wrap; gap: .4rem; margin: -.4rem 0 1rem; }
 .md-typeset .post-types .post-chip { font-size: .74rem; padding: .25rem .8rem; }
+
+/* technology lifecycle badge (tech page front matter `status:`), set by a merged PR from the crash-course news scan */
+.tech-status { display: inline-block; font-size: .65rem; font-weight: 700; padding: 0 .45em; border-radius: 1em;
+  border: 1px solid currentColor; vertical-align: middle; margin-left: .3em; }
+.tech-status--deprecated, .tech-status--declining { color: #a66a00; }
+.tech-status--replaced, .tech-status--retired { color: #b3423a; }

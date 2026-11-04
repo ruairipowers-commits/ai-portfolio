@@ -25,7 +25,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markdown_it import MarkdownIt
 
-from . import accounts, ai, builder, catalog, checks, demo, jobs, mailer, moderation, ownerapi, quiz, revise, telemetry, tracker
+from . import accounts, ai, builder, catalog, checks, demo, jobs, mailer, moderation, news, ownerapi, quiz, revise, telemetry, tracker
 from .config import LEVELS, PKG, Settings, root
 from .schemas import Assessment
 from .store import connect, insert, now, one, rows
@@ -79,7 +79,11 @@ def create_app(start_worker: bool = False) -> FastAPI:
     tpl = Jinja2Templates(directory=PKG / "templates")
     tpl.env.filters["md"] = lambda text: MD.render(text or "")
     tpl.env.filters["dur"] = lambda m: f"{m} min" if m < 60 else f"{m // 60} hour" + ("s" if m >= 120 else "")
-    tpl.env.globals.update(R=ROOT_PATH, LEVELS=LEVELS, BLURB=LEVEL_BLURB)
+    tpl.env.globals.update(R=ROOT_PATH, LEVELS=LEVELS, BLURB=LEVEL_BLURB, STATUS_LABEL=news.STATUS_LABEL)
+
+    def news_items() -> list[dict]:
+        news.sync(s)                         # no-op unless COURSE_NEWS_URL / news.remote_url is set; hourly at most
+        return news.load()
 
     def me(req: Request) -> dict | None:
         lid = accounts.session_learner(req.cookies.get(COOKIE))
@@ -101,6 +105,9 @@ def create_app(start_worker: bool = False) -> FastAPI:
 
     def page(req: Request, name: str, status: int = 200, **ctx) -> HTMLResponse:
         ctx.setdefault("user", me(req))
+        if ctx["user"] and "news_unseen" not in ctx:   # nav badge: updates on courses you've completed, not yet seen
+            with connect() as conn:
+                ctx["news_unseen"] = news.unseen_count(conn, ctx["user"]["id"], news.load())
         ctx["links"] = demo.links(root())
         ctx["banner"] = demo.banner_html(root(), "Crash course")
         ctx["s"] = s
@@ -143,7 +150,8 @@ def create_app(start_worker: bool = False) -> FastAPI:
             groups.setdefault(c.category, []).append(c)
         tag_groups = {k: sorted({t for c in courses for t in c.tags.get(k, [])}) for k in catalog.TAG_KINDS}
         return page(req, "catalog.html", groups=groups, q=q[:60], cat=cat, tag=tag, mine=mine, total=len(courses),
-                    cats=sorted({c.category for c in courses}), tag_groups=tag_groups, user=u)
+                    cats=sorted({c.category for c in courses}), tag_groups=tag_groups, user=u,
+                    latest=news.latest_by_course(news_items()))
 
     @app.get("/course/{slug}", response_class=HTMLResponse)
     def course_page(req: Request, slug: str):
@@ -153,7 +161,42 @@ def create_app(start_worker: bool = False) -> FastAPI:
             enrolled = bool(u and one(conn, "SELECT 1 FROM enrollments WHERE learner_id=? AND course=?", u["id"], slug))
         if not c:
             return message(req, "Course not found", "There's no course at that address.", 404)
-        return page(req, "course.html", c=c, lvstatus=catalog.level_status(slug), enrolled=enrolled, user=u)
+        return page(req, "course.html", c=c, lvstatus=catalog.level_status(slug), enrolled=enrolled, user=u,
+                    updates=news.for_course(news_items(), slug, s["news"]["course_page_items"]))
+
+    @app.get("/whatsnew", response_class=HTMLResponse)
+    def whatsnew(req: Request, course: str = "", kind: str = "", only: str = "", unseen: str = ""):
+        """Every update, newest first. Signed in: courses you've completed are highlighted and can be filtered, and
+        you can mark items seen."""
+        items, u = news_items(), me(req)
+        courses = catalog.all_courses()
+        done = enrolled = seen = set()
+        if u:
+            with connect() as conn:
+                done = news.completed_courses(conn, u["id"])
+                enrolled = {r["course"] for r in rows(conn, "SELECT course FROM enrollments WHERE learner_id=?", u["id"])}
+                seen = news.seen_ids(conn, u["id"])
+        course, kind = course[:40], kind[:20]
+        only = only if only in ("completed", "enrolled") and u else ""
+        want = done if only == "completed" else enrolled if only == "enrolled" else None
+        shown = [it for it in items if (not course or it["course"] == course) and (not kind or it["kind"] == kind)
+                 and (want is None or it["course"] in want) and not (unseen == "1" and u and it["id"] in seen)]
+        return page(req, "whatsnew.html", items=shown[:300], total=len(items), courses=courses, course=course,
+                    kind=kind, only=only, unseen=unseen == "1", kinds=news.KINDS, done=done, seen=seen, user=u,
+                    with_news=sorted({it["course"] for it in items}), query=req.url.query[:300])
+
+    @app.post("/whatsnew/seen")
+    async def whatsnew_seen(req: Request):
+        u, redirect = need_user(req, "/whatsnew")
+        if redirect:
+            return redirect
+        if not limiter.allow("seen", str(u["id"]), 60, 600):
+            return message(req, "Slow down", "Too many requests. Try again in a few minutes.", 429)
+        f = await req.form()
+        with connect() as conn:
+            news.mark_seen(conn, u["id"], [str(x) for x in f.getlist("id")])
+        back = str(f.get("back", ""))[:300]
+        return go("/whatsnew" + (f"?{back}" if re.fullmatch(r"[A-Za-z0-9_=&%.-]*", back) else ""))
 
     # ------------------------------------------------------------ sign-in
     @app.get("/signin", response_class=HTMLResponse)
@@ -469,7 +512,8 @@ def create_app(start_worker: bool = False) -> FastAPI:
                 waiting.append({"course": r["course"], "title": courses[r["course"]].title, "level": r["level"],
                                 "learners": r["n"], "job": last["status"] if last else "", "why": why[:200]})
         return {"drafts": drafts, "suggestions": sugg, "proposals": props, "feedback": fb, "stats": stats,
-                "jobs": jobs.recent(conn, 10), "waiting": waiting, "no_writer": ai.placeholder_writer_blocked(s)}
+                "jobs": jobs.recent(conn, 10), "waiting": waiting, "no_writer": ai.placeholder_writer_blocked(s),
+                "news_review": news.to_review(conn, news_items())[:50]}
 
     @app.get("/owner", response_class=HTMLResponse)
     def owner_page(req: Request, done: str = ""):
@@ -523,6 +567,11 @@ def create_app(start_worker: bool = False) -> FastAPI:
                                 ok, _ = builder.publish(conn, s, slug, level, actor)
                                 n, bad = n + ok, bad + (not ok)
                     done = f"Published {n} level(s)" + (f"; {bad} failed their checks and stay as drafts" if bad else "")
+                elif kind == "news":
+                    iid = str(f.get("id", ""))[:12]
+                    news.review(conn, iid, "dismissed" if f.get("decision") == "dismiss" else "reviewed", actor,
+                                str(f.get("notes", ""))[:300])
+                    done = f"Update {iid} marked {'dismissed' if f.get('decision') == 'dismiss' else 'reviewed'}"
                 elif kind == "proposal":
                     pid = int(f.get("id", -1))
                     accepted = [int(x) for x in f.getlist("accept")]

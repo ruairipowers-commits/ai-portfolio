@@ -53,6 +53,10 @@ CREATE TABLE IF NOT EXISTS approvals (           -- HITL-02: every owner decisio
 CREATE TABLE IF NOT EXISTS outbox (
   id INTEGER PRIMARY KEY, to_hash TEXT, kind TEXT, subject TEXT, status TEXT, at TEXT);
 CREATE TABLE IF NOT EXISTS invites (code_hash TEXT PRIMARY KEY, created_at TEXT, used_by INTEGER);
+CREATE TABLE IF NOT EXISTS news_seen (           -- "What's new" items a learner has marked as seen
+  learner_id INTEGER, item_id TEXT, seen_at TEXT, PRIMARY KEY (learner_id, item_id));
+CREATE TABLE IF NOT EXISTS news_reviews (        -- owner: material or status items reviewed / dismissed
+  item_id TEXT PRIMARY KEY, decision TEXT, actor TEXT, at TEXT, note TEXT);
 """
 
 

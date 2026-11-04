@@ -4,6 +4,9 @@
 <h1>{{ c.title }} crash course</h1>
 {% if c.tag_list() %}<p class="small">{% for t in c.tag_list() %}<a class="tag" href="{{ R }}/catalog?tag={{ t }}">{{ t }}</a>{% endfor %}</p>{% endif %}
 <p class="lead">{{ c.summary }}</p>
+{% if c.status != 'active' %}<p class="note"><span class="badge st-{{ c.status }}">{{ STATUS_LABEL[c.status] }}</span>
+  {{ c.status_note }}{% if c.replaced_by %} Replaced by <b>{{ c.replaced_by }}</b>.{% endif %}
+  {% if c.status_source %}<a href="{{ c.status_source }}" rel="noopener">Source</a>{% endif %}</p>{% endif %}
 {% if enrolled %}<p><a class="btn" href="{{ R }}/tracker#c-{{ c.slug }}">Go to my tracker</a></p>
 {% elif user %}<form method="post" action="{{ R }}/enroll"><input type="hidden" name="course" value="{{ c.slug }}"><button class="btn" type="submit">Sign up for this course</button></form>
 {% else %}<p><a class="btn" href="{{ R }}/signin?next=/course/{{ c.slug }}">Register to sign up</a></p>{% endif %}
@@ -16,5 +19,10 @@
   {% if lvstatus[name] != 'published' %} Written when the first learner reaches it, then reviewed before it's published.{% endif %}</p>
 </div>
 {% endfor %}
+{% if updates %}<h2>Recent updates</h2>
+<ul class="updates">{% for it in updates %}<li><span class="small muted">{{ it.date }}</span>
+  <a href="{{ it.url }}" rel="noopener nofollow">{{ it.title }}</a> <span class="kind k-{{ it.kind }}">{{ it.kind }}</span>
+  <br><span class="small muted">{{ it.summary }}</span></li>{% endfor %}</ul>
+<p class="small"><a href="{{ R }}/whatsnew?course={{ c.slug }}">All updates for {{ c.title }}</a></p>{% endif %}
 {% if c.docs %}<p class="small">Official documentation: <a href="{{ c.docs }}" rel="noopener">{{ c.docs }}</a></p>{% endif %}
 {% endblock %}

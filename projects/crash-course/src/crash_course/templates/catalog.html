@@ -23,8 +23,12 @@
 <div class="grid">
 {% for c in items %}
   <div class="card course-card" id="c-{{ c.slug }}">
-    <h3><a href="{{ R }}/course/{{ c.slug }}">{{ c.title }}</a></h3>
+    <h3><a href="{{ R }}/course/{{ c.slug }}">{{ c.title }}</a>
+      {% if c.status != 'active' %}<span class="badge st-{{ c.status }}" title="{{ c.status_note }}">{{ STATUS_LABEL[c.status] }}{% if c.replaced_by %} → {{ c.replaced_by }}{% endif %}</span>{% endif %}</h3>
     <p>{{ c.summary }}</p>
+    {% set n = latest.get(c.slug) %}{% if n %}<p class="small news-line"><span class="muted">Latest {{ n.date }}:</span>
+      <a href="{{ n.url }}" rel="noopener nofollow" title="{{ n.summary }}">{{ n.title }}</a>
+      · <a href="{{ R }}/whatsnew?course={{ c.slug }}">all updates</a></p>{% endif %}
     {% if c.tag_list() %}<p class="small">{% for t in c.tag_list() %}<a class="tag {{ 'on' if t == tag }}" href="{{ R }}/catalog?tag={{ t }}">{{ t }}</a>{% endfor %}</p>{% endif %}
     <div class="row">
       {% if c.slug in mine %}<a class="btn small ghost" href="{{ R }}/tracker#c-{{ c.slug }}">On your tracker</a>

@@ -1,0 +1,37 @@
+# Crash course "What's new", feeds mode: when projects/crash-course/config/settings.yaml has `news.scanner: feeds`,
+# read the release feeds in config/feeds.yaml daily, summarise new entries with the `course-news` alias, and push the
+# items to the course-news branch (never to main). With `news.scanner: claude` (the default) the daily Claude task
+# does the scan instead (.agents/skills/course-news) and this workflow exits at the first step.
+# Model: set repository variable COURSE_NEWS_MODEL (e.g. local-qwen) and secret OLLAMA_URL (the EVO-X1's Ollama,
+# reachable from GitHub, behind auth); unset, the offline mock summariser writes each entry's first sentence.
+name: course-news
+on:
+  schedule: [{cron: "17 5 * * *"}]
+  workflow_dispatch:
+permissions: {contents: write}
+concurrency: {group: course-news, cancel-in-progress: false}
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - id: mode
+        run: |
+          echo "scanner=$(python3 -c "import yaml;print(yaml.safe_load(open('projects/crash-course/config/settings.yaml'))['news']['scanner'])")" >> "$GITHUB_OUTPUT"
+      - if: steps.mode.outputs.scanner == 'feeds'
+        uses: actions/setup-python@v7
+        with: {python-version: "3.11"}
+      - if: steps.mode.outputs.scanner == 'feeds'
+        run: pip install -e projects/crash-course
+      - if: steps.mode.outputs.scanner == 'feeds'
+        name: scan feeds and publish to the course-news branch
+        env:
+          COURSE_NEWS_MODEL: ${{ vars.COURSE_NEWS_MODEL }}
+          OLLAMA_URL: ${{ secrets.OLLAMA_URL }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          python scripts/course_news.py pull
+          cd projects/crash-course && course news-scan && cd ../..
+          python scripts/course_news.py publish

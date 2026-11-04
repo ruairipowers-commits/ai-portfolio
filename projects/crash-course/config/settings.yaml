@@ -80,6 +80,22 @@ build:
   regenerate_on_fail: 1      # one retry with the failed checks in the prompt, then flagged for the owner
   on_demand: true            # draft Beginner / Intermediate the first time any learner unlocks them
 
+# ---------------------------------------------------------------- what's new: the daily scan (DATA-01, HITL-02)
+# scanner: who finds the updates. Both write through `course news-add` / news.merge, so items are validated the same.
+#   claude  the daily Claude task (skill .agents/skills/course-news) researches each technology and judges what's material
+#   feeds   `course news-scan` reads release feeds in config/feeds.yaml (GitHub Actions, .github/workflows/course-news.yml)
+#           and summarises them with the course-news alias (point it at a local model, e.g. local-qwen)
+news:
+  scanner: claude
+  branch: course-news        # the scan publishes news/items.jsonl here, never to main (scripts/course_news.py)
+  remote_url: ""             # live service: raw URL of that file (or env COURSE_NEWS_URL)
+  refresh_minutes: 60
+  lookback_days: 45          # the first scan of a course goes back this far; later scans start at its newest item
+  max_items_per_course: 5    # per scan, so a busy release feed can't flood the page
+  summary_alias: course-news
+  max_usd_per_scan: 0.25     # feeds mode: model budget for one daily scan
+  course_page_items: 5
+
 revisions:
   reviser_alias: course-reviser
   min_feedback: 3            # feedback items on a level before a revision is proposed

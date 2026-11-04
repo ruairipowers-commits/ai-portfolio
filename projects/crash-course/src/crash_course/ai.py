@@ -46,7 +46,7 @@ def registry() -> Registry:
 def alias_for(role_alias: str) -> str:
     """Env override per role, e.g. COURSE_WRITER_MODEL=local-qwen (a model name or alias)."""
     env = {"course-writer": "COURSE_WRITER_MODEL", "course-moderator": "COURSE_MODERATOR_MODEL",
-           "course-reviser": "COURSE_REVISER_MODEL"}.get(role_alias)
+           "course-reviser": "COURSE_REVISER_MODEL", "course-news": "COURSE_NEWS_MODEL"}.get(role_alias)
     return os.getenv(env) if env and os.getenv(env) else role_alias
 
 

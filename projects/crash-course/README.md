@@ -49,6 +49,23 @@ or shorter than 32 characters, the endpoints answer 404.
 | `GET /api/owner/progress` | the owner's enrollments and completed levels, by course slug |
 | `GET /api/owner/catalog` | slugs, titles, categories, tags |
 
+## What's new (the daily scan)
+
+A daily scan collects releases, new features, deprecations and retirements for every technology with a course, each
+item dated, summarised in a sentence or two and linked to its official source. The items show on the catalog cards
+(latest update), on each course page (recent updates) and on the **What's new** tab: newest first, filterable by
+technology and kind. Signed in, updates for courses you've completed are highlighted and pre-ticked, and you can mark
+them seen (the nav shows how many are unseen). The same items appear on the portfolio's Technologies pages.
+
+| | |
+|---|---|
+| Who scans | `news.scanner: claude` (default): the daily Claude task, skill `.agents/skills/course-news`. `news.scanner: feeds`: `.github/workflows/course-news.yml` reads `config/feeds.yaml` and summarises with the `course-news` alias (e.g. a local model) |
+| Where items live | one JSON line each on the `course-news` branch (`scripts/course_news.py`), never on main; the live service reads `COURSE_NEWS_URL` (that file's raw URL) hourly; the site build pulls the branch |
+| What needs the owner | a **status badge** (deprecated / replaced / less used / retired) is the tech page's front matter, changed only by a PR the scan opens and the owner merges; updates that **may make a level out of date** wait on the owner page (`course news-review`) |
+| Commands | `course news-add FILE`, `course news-scan`, `course news-review`, `course news-sync` |
+
+Course levels are never edited by the scan.
+
 ## Quickstart
 
 ```bash

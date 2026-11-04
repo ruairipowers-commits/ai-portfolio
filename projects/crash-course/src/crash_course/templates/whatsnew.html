@@ -1,0 +1,49 @@
+{% extends "base.html" %}{% block title %}What's new · Crash course{% endblock %}
+{% block body %}
+<h1>What's new</h1>
+<p class="lead">Releases, new features, deprecations and retirements for the technologies on this site, newest first.
+Collected daily from each project's own release notes and announcements; every item links its source.</p>
+<form class="search" method="get" action="{{ R }}/whatsnew">
+  <select name="course" aria-label="Technology" onchange="this.form.submit()">
+    <option value="">All technologies</option>
+    {% for slug in with_news %}<option value="{{ slug }}" {{ 'selected' if slug == course }}>{{ courses[slug].title if slug in courses else slug }}</option>{% endfor %}
+  </select>
+  <select name="kind" aria-label="Kind" onchange="this.form.submit()">
+    <option value="">All kinds</option>
+    {% for k in kinds %}<option value="{{ k }}" {{ 'selected' if k == kind }}>{{ k }}</option>{% endfor %}
+  </select>
+  {% if user %}
+  <select name="only" aria-label="Which courses" onchange="this.form.submit()">
+    <option value="">Every course</option>
+    <option value="completed" {{ 'selected' if only == 'completed' }}>Courses I've completed</option>
+    <option value="enrolled" {{ 'selected' if only == 'enrolled' }}>Courses on my tracker</option>
+  </select>
+  <label class="small"><input type="checkbox" name="unseen" value="1" {{ 'checked' if unseen }} onchange="this.form.submit()"> Unseen only</label>
+  {% endif %}
+</form>
+{% if not user %}<p class="small muted"><a href="{{ R }}/signin?next=/whatsnew">Sign in</a> to highlight updates for courses you've completed and mark them as seen.</p>{% endif %}
+{% if not items %}<p class="muted">{% if total %}Nothing matches these filters.{% else %}No updates collected yet. The daily scan adds them here.{% endif %}</p>
+{% else %}
+<form method="post" action="{{ R }}/whatsnew/seen" id="seen-form">
+<input type="hidden" name="back" value="{{ query }}">
+<table class="news">
+  <thead><tr><th>Date</th><th>Technology</th><th>Update</th>{% if user %}<th class="small">Seen</th>{% endif %}</tr></thead>
+  <tbody>
+  {% for it in items %}{% set mine = it.course in done %}{% set was_seen = it.id in seen %}
+  <tr class="{{ 'mine' if mine }} {{ 'seen' if was_seen }}">
+    <td class="nowrap small">{{ it.date }}</td>
+    <td><a href="{{ R }}/course/{{ it.course }}">{{ courses[it.course].title if it.course in courses else it.course }}</a>
+      {% if mine %}<br><span class="pill done small">completed</span>{% endif %}</td>
+    <td><a href="{{ it.url }}" rel="noopener nofollow">{{ it.title }}</a> <span class="kind k-{{ it.kind }}">{{ it.kind }}</span>
+      {% if it.material %}<span class="kind k-material" title="May make {{ it.affects|join(', ') }} out of date: {{ it.reason }}">may change the course</span>{% endif %}
+      <br><span class="small muted">{{ it.summary }}</span></td>
+    {% if user %}<td>{% if was_seen %}<span class="small muted">✓</span>{% else %}<input type="checkbox" name="id" value="{{ it.id }}" aria-label="Mark seen" {{ 'checked' if mine }}>{% endif %}</td>{% endif %}
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% if user %}<p><button class="btn small" type="submit">Mark ticked as seen</button>
+  <span class="small muted">Updates for courses you've completed are ticked for you.</span></p>{% endif %}
+</form>
+{% endif %}
+{% endblock %}
