@@ -20,7 +20,8 @@ glossary "Find out more" AI answers for signed-in learners, rate-limited (phase 
 - Tests 97 passed (11 new); `course all` and the eval gate pass; `mkdocs build --strict` passes with sample news.
   GitHub release-feed URLs in feeds.yaml could not be fetched from the build session (proxy); PyPI feeds parse.
 - [ ] Ruairi: review and merge. Then: create the daily scheduled task (Claude, skill `course-news`); set
-      `COURSE_NEWS_URL` on the live service to the raw URL of `course-news/items.jsonl`.
+      `COURSE_NEWS_URL` on the live service — 4 Nov: `scripts/demos.py` sets it for the crash-course container
+      (and passes `COURSE_GLOSSARY_MODEL` / `ANTHROPIC_API_KEY` from `.env`); the daily scan task runs at 04:23 UTC.
 - Phase 3 done (same branch): tracker favourites (star, "favourites only"), priority (high / normal / low), the
   learner's own order (up / down / top), sort by order / priority / progress / recently added, and "Up next".
   103 tests pass (6 new in `tests/test_focus.py`).

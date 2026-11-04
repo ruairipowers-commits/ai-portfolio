@@ -245,6 +245,8 @@ demo:
   - COURSE_OWNER_EMAIL
   - COURSE_PUBLIC_URL
   - COURSE_OWNER_API_TOKEN       # the owner API for JobHunt (unset = off)
+  - COURSE_GLOSSARY_MODEL        # the glossary's "Find out more" model (unset = offline placeholder)
+  - ANTHROPIC_API_KEY            # only if a course alias points at a Claude model
 
 links:
   repo: ''

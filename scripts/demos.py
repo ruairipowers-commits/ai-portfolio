@@ -74,6 +74,10 @@ def app_env(app: dict, c: dict, with_prefix: bool) -> dict[str, str]:
         env["ROOT_PATH"] = app["path"]
     if app["slug"] != CONSOLE:
         env["GOVERNANCE_URL"] = governance_url(c)
+    if app["slug"] == "crash-course" and c.get("github_owner"):
+        # "What's new" items: the daily scan publishes them to the course-news branch; the app refreshes hourly
+        env["COURSE_NEWS_URL"] = (f"https://raw.githubusercontent.com/{c['github_owner']}/"
+                                  f"{c.get('repo_name', 'ai-portfolio')}/course-news/items.jsonl")
     if app["kind"] == "fastapi":
         env.update({"PORTFOLIO_SITE_URL": c["site_url"], "PORTFOLIO_GITHUB_OWNER": c["github_owner"],
                     "PORTFOLIO_DEMOS_URL": c["demos_url"], "PORTFOLIO_DEMOS_TARGET": c["demos_target"],
