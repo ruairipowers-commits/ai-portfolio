@@ -1,7 +1,17 @@
 # Status — open items
 
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
-(or delete them) as they're done. Last updated 3 November 2026.
+(or delete them) as they're done. Last updated 4 November 2026.
+
+## 00000000000000000. Crash course: Beginner + Intermediate for the ai-and-agents batch (4 November 2026)
+
+Branch `agent/claude-crash-course-ai-and-agents`: `beginner.yaml` and `intermediate.yaml` for anthropic, openai,
+bedrock, ollama, langgraph and mcp (status `draft`). All 12 pass `course check` (Beginner ~44–45 min, 19 questions;
+Intermediate ~221–222 min, 5 modules × 5 checks + 30 final). Every project runs offline: LangGraph and MCP
+for real, Anthropic and OpenAI with a mock plus a check against a fake HTTP transport, Bedrock with botocore's
+Stubber. Ollama code was checked against a stub of its API only (no Ollama binary here).
+- [ ] Ruairi: review and publish (`course publish`), merge the PR. Model IDs are taken from the tech pages and SDK
+      docs; re-check them when publishing.
 
 ## 0000000000000000. Daily posts keep coming when the EVO-X1 is offline (3 November 2026)
 

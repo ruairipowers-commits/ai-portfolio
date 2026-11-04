@@ -1,0 +1,453 @@
+course: bedrock
+level: beginner
+version: 1
+title: Amazon Bedrock model-neutral calls in 1 hour
+status: draft
+source:
+  page: tech/bedrock.md
+  docs: https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html
+provenance:
+  written_by: Claude (build session, 3 Nov 2026), from the site's Amazon Bedrock page and the Familiar level
+sections:
+- id: recap
+  heading: Where Familiar left you
+  body: |
+    - Amazon Bedrock is AWS's managed service for calling foundation models from Amazon and other providers,
+      including Anthropic and OpenAI, inside your AWS account's security, logging and billing.
+    - You call models through the `bedrock-runtime` endpoint with the AWS SDK.
+    - The **Converse API** is the model-neutral interface: the same request shape works across models, so a swap is
+      mostly a change of model ID.
+    - Around the models sit managed pieces such as **Knowledge Bases** for retrieval.
+    - The draw for a firm on AWS is governance: IAM on who can invoke which model, AWS audit logging, one bill.
+    - The trade-offs: availability varies by region, and new models can arrive later than on the provider's own API.
+
+    This hour makes that concrete. You will learn the ten terms you meet on day one, set up credentials and model
+    access safely, and build a small script that sends the same summarisation request to two different models
+    through Converse, logs tokens and latency for each, and handles the errors you will actually see. An offline
+    mode uses botocore's Stubber, which checks every request against the real Bedrock service definition, so you
+    can do the whole project without an AWS account.
+- id: core_terms
+  heading: The 10 terms you need
+  body: |
+    1. **bedrock-runtime.** The endpoint for calling models (`converse`, `converse_stream`, `invoke_model`). The
+       separate `bedrock` endpoint is for managing the service: listing models, guardrails, customisation.
+    2. **Model ID.** The identifier of a model on Bedrock, such as `anthropic.claude-opus-4-7`. Copy it from the
+       console or `list_foundation_models`; do not guess it.
+    3. **Inference profile.** An ID that routes calls for a model, sometimes across several regions. Some models
+       must be called through an inference profile ID rather than the base model ID; the console shows which.
+    4. **Model access.** Models must be enabled for your account, per region, before you can call them. An
+       `AccessDeniedException` on a first call usually means access is not set up yet.
+    5. **Region.** Bedrock runs per region, and model and feature availability varies by region. Pick one and check
+       your model is there.
+    6. **Converse API.** One request shape for every model: `messages` with content blocks, an optional `system`,
+       `inferenceConfig` for limits, and optional `toolConfig` for tool use.
+    7. **Content blocks.** Messages hold a list of blocks such as `{"text": ...}`, images, documents, tool use and tool
+       results. The reply's text is in `output.message.content`.
+    8. **Stop reason.** Why the model stopped: `end_turn`, `max_tokens`, `tool_use` and others, such as when a
+       guardrail intervenes. Check it before trusting the content.
+    9. **Usage and metrics.** Every Converse response reports input and output tokens and a latency in
+       milliseconds. Tokens drive cost; latency drives user experience.
+    10. **IAM permission.** Calls are authorised by IAM like any AWS service. A role that can call one model needs
+        `bedrock:InvokeModel` on that model's ARN, and nothing broader.
+- id: setup
+  heading: Set up (10 minutes)
+  body: |
+    1. Check **Python 3.10 or newer**, make a folder and a virtual environment, and run `pip install -U boto3`.
+    2. **No AWS account, or not ready to use one?** Set `OFFLINE=1` and skip to the project. Everything below is for
+       real calls.
+    3. Use a sandbox account, never production. Sign the CLI in with short-lived credentials
+       (`aws configure sso`, then `aws sso login`), not an access key in a file.
+    4. In the Bedrock console, choose a region (the examples use us-east-1) and enable access to two models from
+       different providers. Some providers ask for a short use-case form first.
+    5. Copy each model's ID, or the inference profile ID the console shows for it, into the `MODEL_A` and `MODEL_B`
+       environment variables.
+    6. Set an AWS Budget with an email alert before running anything, as in the AWS course.
+
+    **You are ready when** `aws sts get-caller-identity` shows your sandbox role (not root), and
+    `aws bedrock list-foundation-models --region us-east-1 --query "modelSummaries[].modelId"` lists the models you
+    enabled — or when you have chosen `OFFLINE=1`.
+- id: guided_project
+  heading: 'Guided project: one request, two models (30 minutes)'
+  body: |
+    The Converse API makes model swaps cheap. You will prove it: one function sends a summarisation request for an
+    alternative-data vendor note, and a loop calls it with two model IDs behind two aliases, `summary-a` and
+    `summary-b`. The request code does not change between them; only the model ID does. For each call you print the
+    stop reason, input and output tokens and latency, and write one log line.
+
+    The code and steps are in the project below.
+
+    While you work, notice three things:
+
+    - **The request shape is identical.** `system`, `messages` with content blocks and `inferenceConfig` are the
+      same for both models. That is what lets a model registry point an alias at a different Bedrock model
+      without touching business code.
+    - **Errors are AWS errors.** A missing permission, a model not enabled, a bad ID or throttling all arrive as
+      `ClientError` with a code you can log and act on.
+    - **The offline stub is strict.** botocore's Stubber validates your request parameters against Bedrock's real
+      API definition, so a misspelt field fails offline exactly as it would against AWS.
+
+    **How one call flows.** boto3 signs the request with your AWS credentials; Bedrock checks IAM for
+    `bedrock:InvokeModel` on the model; the model runs in the region you chose; the response carries the message,
+    stop reason, usage and metrics. The call appears in your account's AWS logging and on your AWS bill, which is
+    the governance story from Familiar.
+
+    **Where this goes next.** In this portfolio, Bedrock is one provider behind the alt-data triage model registry,
+    and the trade-ops agent's AWS path uses Bedrock as its model provider. Both rely on exactly this property: same
+    code, different model ID.
+- id: mistakes
+  heading: Common mistakes and how to spot them
+  body: |
+    - **Model access not enabled.** `AccessDeniedException` on a model you have IAM permission for usually means
+      access is not set up for that model in that region. Check the console's model access page.
+    - **Wrong region.** A model listed in one region may not exist in another. Match `region_name` to where you
+      enabled access.
+    - **Base ID where a profile is required.** A `ValidationException` saying on-demand throughput is not supported
+      for the model means it must be called through an inference profile ID. Copy that ID from the console.
+    - **Guessed model IDs.** IDs have exact formats and versions. Copy them; keep them in config.
+    - **Long-lived access keys.** Use SSO for yourself and IAM roles for applications, as in the AWS course.
+    - **Wildcard permissions.** `bedrock:*` on `*` works on the first try and survives into production. Grant
+      `bedrock:InvokeModel` on the specific model ARNs.
+    - **Ignoring throttling.** A `ThrottlingException` means you hit a quota. Let boto3 retry, slow down, and check the
+      service quotas for your account.
+    - **Assuming every feature is everywhere.** Tool use, documents and other features vary by model and region.
+      Test the features you rely on, on the model and region you will use.
+- id: cheat_sheet
+  heading: Cheat sheet
+  body: |
+    | Task | Code or command |
+    |---|---|
+    | Runtime client | `boto3.client("bedrock-runtime", region_name="us-east-1")` |
+    | Call a model | `client.converse(modelId=..., messages=[...], system=[...], inferenceConfig={...})` |
+    | Read the text | `response["output"]["message"]["content"]` (join the `text` blocks) |
+    | Why it stopped | `response["stopReason"]` |
+    | Tokens and latency | `response["usage"]`, `response["metrics"]["latencyMs"]` |
+    | Stream the reply | `client.converse_stream(...)` |
+    | List models | `aws bedrock list-foundation-models --region us-east-1` |
+    | Catch AWS errors | `except botocore.exceptions.ClientError as e: e.response["Error"]["Code"]` |
+    | Test offline | `botocore.stub.Stubber(client)` with `add_response("converse", ...)` |
+
+    | Error code | Usual cause |
+    |---|---|
+    | `AccessDeniedException` | no IAM permission, or model access not enabled |
+    | `ValidationException` | bad parameter or ID, or the model needs an inference profile |
+    | `ResourceNotFoundException` | model ID not found in this region |
+    | `ThrottlingException` | quota hit; back off |
+- id: interview
+  heading: Five beginner interview questions
+  body: |
+    - **"Why call Claude through Bedrock rather than directly?"** Governance: IAM on who can invoke which model, AWS
+      logging, one bill and contract, no separate vendor key. Trade-off: availability varies by region and new models
+      can arrive later.
+    - **"What is the Converse API and why does it matter?"** One model-neutral request shape, so switching models is
+      mostly a model ID change; good answers connect this to a model registry with aliases.
+    - **"How would you give an application access to one model?"** An IAM role on the compute with
+      `bedrock:InvokeModel` on that model's ARN; no access keys.
+    - **"Your first call fails with AccessDenied. What do you check?"** IAM permissions, then model access for that
+      model and region, then that the region and ID match.
+    - **"How do you test Bedrock code without paying for calls?"** Stub the client (botocore's Stubber) so requests are
+      validated and canned responses returned; keep a small eval for real runs.
+
+    Red flags interviewers listen for: `bedrock:*` on `*`, hard-coded access keys, and assuming every model is in
+    every region.
+- id: next_steps
+  heading: Where to go next
+  body: |
+    - [Amazon Bedrock documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html) — the
+      official user guide from Amazon Web Services.
+    - [Get started with the API](https://docs.aws.amazon.com/bedrock/latest/userguide/getting-started-api.html) —
+      credentials, model access and a first call.
+    - [boto3 bedrock-runtime reference](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock-runtime.html)
+      — every runtime operation and its parameters.
+    - Within the guide, read the **Converse API** and **Knowledge Bases** chapters next.
+
+    The Intermediate level goes deeper: Converse in depth, tool use through Converse, IAM, network and logging
+    controls, Knowledge Bases for retrieval, and running Bedrock as the production route behind a model registry.
+project:
+  title: Send one request to two models through Converse
+  kind: runnable
+  minutes: 30
+  goal: Call two different Bedrock models with the same Converse request behind two aliases, log tokens and latency for
+    each, handle AWS errors, and run the whole thing offline with botocore's Stubber when you have no account.
+  steps:
+  - Save the code below as `summarise.py` in a virtual environment with boto3 installed.
+  - Run it offline first with `OFFLINE=1 python summarise.py`. Read the two stubbed results and `calls.jsonl`.
+  - In the code, change `maxTokens` to the string "300" and run offline again. Read the parameter validation error the
+    Stubber raises, then change it back.
+  - With an account, export MODEL_A and MODEL_B with the IDs (or inference profile IDs) you enabled, and run
+    `python summarise.py`.
+  - Compare the two models' summaries, token counts and latency.
+  - Set MODEL_B to a model you have not enabled and run again. Read the error code and message, and say what you would
+    check first.
+  - Write the IAM policy statement an application role would need to call only MODEL_A (Action bedrock:InvokeModel,
+    Resource that model's ARN). You do not need to apply it.
+  code: |
+    """Summarise a vendor note with two models through Bedrock's Converse API, logging usage and latency.
+
+    OFFLINE=1 uses botocore's Stubber: requests are checked against the real Bedrock service model, and canned
+    responses come back, so the code runs with no AWS account.
+    """
+    import json
+    import os
+
+    import boto3
+    from botocore.exceptions import ClientError
+
+    REGION = os.environ.get("AWS_REGION", "us-east-1")
+    MODELS = {  # alias -> Bedrock model ID or inference profile ID; copy IDs your account can use from the console
+        "summary-a": os.environ.get("MODEL_A", "anthropic.claude-opus-4-7"),
+        "summary-b": os.environ.get("MODEL_B", "amazon.nova-lite-v1:0"),
+    }
+    NOTE = ("Vendor: Northwind Footfall. Daily store-visit counts for 1,200 US retail tickers, history back to 2016, "
+            "delivered by 09:00 ET. No personal data.")
+    SYSTEM = [{"text": "You summarise alternative-data vendor notes for a research team. Use only facts in the note."}]
+
+
+    def make_client():
+        client = boto3.client("bedrock-runtime", region_name=REGION)
+        if os.environ.get("OFFLINE") == "1":
+            from botocore.stub import ANY, Stubber
+            stub = Stubber(client)
+            for i, alias in enumerate(MODELS):
+                stub.add_response("converse", {
+                    "output": {"message": {"role": "assistant", "content": [{"text": f"[stub {alias}] - Daily US "
+                               "store visits for 1,200 tickers\n- History from 2016\n- No personal data"}]}},
+                    "stopReason": "end_turn",
+                    "usage": {"inputTokens": 80 + i, "outputTokens": 30 + i, "totalTokens": 110 + 2 * i},
+                    "metrics": {"latencyMs": 400 + 100 * i}},
+                    {"modelId": MODELS[alias], "messages": ANY, "system": ANY, "inferenceConfig": ANY})
+            stub.activate()
+        return client
+
+
+    def summarise(client, model_id: str) -> dict:
+        response = client.converse(
+            modelId=model_id,
+            system=SYSTEM,
+            messages=[{"role": "user", "content": [{"text": f"<note>{NOTE}</note>\nSummarise in three bullets."}]}],
+            inferenceConfig={"maxTokens": 300, "temperature": 0},
+        )
+        text = "".join(c.get("text", "") for c in response["output"]["message"]["content"])
+        return {"text": text, "stop_reason": response["stopReason"], **response["usage"],
+                "latency_ms": response["metrics"]["latencyMs"]}
+
+
+    if __name__ == "__main__":
+        client = make_client()
+        for alias, model_id in MODELS.items():
+            try:
+                r = summarise(client, model_id)
+            except ClientError as e:                           # AccessDenied, Validation, Throttling, ...
+                print(f"{alias}: {e.response['Error']['Code']}: {e.response['Error']['Message']}")
+                continue
+            print(f"== {alias} ({model_id}) stop={r['stop_reason']} tokens={r['inputTokens']}/{r['outputTokens']} "
+                  f"latency={r['latency_ms']}ms\n{r['text']}")
+            with open("calls.jsonl", "a") as f:
+                f.write(json.dumps({"alias": alias, "model_id": model_id, **{k: v for k, v in r.items() if k != "text"}}) + "\n")
+  language: python
+  expected: |
+    With OFFLINE=1:
+    == summary-a (anthropic.claude-opus-4-7) stop=end_turn tokens=80/30 latency=400ms
+    [stub summary-a] - Daily US store visits for 1,200 tickers
+    - History from 2016
+    - No personal data
+    == summary-b (amazon.nova-lite-v1:0) stop=end_turn tokens=81/31 latency=500ms
+    [stub summary-b] - Daily US store visits for 1,200 tickers
+    - History from 2016
+    - No personal data
+    calls.jsonl gains one line per alias. With an account, the same format with each model's own summary, token counts
+    and latency; a model you have not enabled prints an error code such as AccessDeniedException instead of crashing.
+  done_when:
+  - Both aliases return a summary with stop reason, tokens and latency, offline (and with an account, from Bedrock).
+  - The wrong-type maxTokens fails in the Stubber, showing that requests are validated against the real API.
+  - You wrote a policy statement that allows bedrock:InvokeModel on one model ARN and nothing else.
+quiz:
+- id: q1
+  prompt: Which endpoint do you use to call models?
+  options:
+  - bedrock-runtime
+  - bedrock (the management endpoint)
+  - s3
+  - iam
+  answer: 0
+  explanation: bedrock-runtime is for calling models; the separate bedrock endpoint is for managing the service.
+  evidence: The endpoint for calling models (converse, converse_stream, invoke_model).
+- id: q2
+  prompt: What makes model swaps cheap with the Converse API?
+  options:
+  - The same request shape works across models, so a swap is mostly a model ID change
+  - Every model has the same price
+  - Converse picks the best model automatically
+  - Models share one API key
+  answer: 0
+  explanation: The request code does not change between models.
+  evidence: the same request shape works across models, so a swap is mostly a change of model ID
+- id: q3
+  prompt: A first call fails with AccessDeniedException although IAM allows it. What is a likely cause?
+  options:
+  - Model access is not set up for that model in that region
+  - The model is too large
+  - The note is too long
+  - boto3 is out of date
+  answer: 0
+  explanation: Models must be enabled per account and region.
+  evidence: An AccessDeniedException on a first call usually means access is not set up yet.
+- id: q4
+  prompt: A ValidationException says on-demand throughput is not supported for the model. What should you do?
+  options:
+  - Call it through an inference profile ID copied from the console
+  - Raise maxTokens
+  - Switch to a different SDK
+  - Remove the system prompt
+  answer: 0
+  explanation: Some models must be called through an inference profile.
+  evidence: means it must be called through an inference profile ID. Copy that ID from the console.
+- id: q5
+  prompt: Why does the region matter?
+  options:
+  - Model and feature availability varies by region
+  - Prices are identical everywhere, so it does not matter
+  - Only us-east-1 supports Converse
+  - Regions only affect billing
+  answer: 0
+  explanation: Pick a region and check your model is there.
+  evidence: Bedrock runs per region, and model and feature availability varies by region.
+- id: q6
+  prompt: Where is the reply's text in a Converse response?
+  options:
+  - In output.message.content, as text blocks
+  - In usage
+  - In metrics.latencyMs
+  - In the HTTP headers
+  answer: 0
+  explanation: Join the text blocks.
+  evidence: The reply's text is in output.message.content.
+- id: q7
+  prompt: What does a Converse response report besides the message?
+  options:
+  - Stop reason, input and output tokens, and latency in milliseconds
+  - The model's training data
+  - The user's IAM policy
+  - A bill for the month
+  answer: 0
+  explanation: Tokens drive cost; latency drives user experience.
+  evidence: Every Converse response reports input and output tokens and a latency in milliseconds.
+- id: q8
+  prompt: What IAM permission does a role need to call one model?
+  options:
+  - bedrock:InvokeModel on that model's ARN
+  - bedrock:* on *
+  - s3:GetObject on every bucket
+  - Administrator access
+  answer: 0
+  explanation: Grant the action on the specific model ARN, nothing broader.
+  evidence: A role that can call one model needs bedrock:InvokeModel on that model's ARN, and nothing broader.
+- id: q9
+  prompt: What does botocore's Stubber add to offline testing?
+  options:
+  - It validates request parameters against Bedrock's real API definition and returns canned responses
+  - It calls the real model for free
+  - It generates summaries with a local model
+  - It skips parameter checks
+  answer: 0
+  explanation: A misspelt field fails offline exactly as it would against AWS.
+  evidence: botocore's Stubber validates your request parameters against Bedrock's real API definition
+- id: q10
+  prompt: How do errors from Bedrock arrive in boto3?
+  options:
+  - As ClientError with a code you can log and act on
+  - As empty responses
+  - As text inside the model's reply
+  - They are silently retried forever
+  answer: 0
+  explanation: Missing permission, model not enabled, bad ID or throttling all arrive this way.
+  evidence: arrive as ClientError with a code you can log and act on
+- id: q11
+  prompt: A ThrottlingException appears in a batch run. What should you do?
+  options:
+  - Let boto3 retry, slow down, and check the service quotas
+  - Switch to the root user
+  - Create a new account
+  - Remove the inferenceConfig
+  answer: 0
+  explanation: Throttling means you hit a quota.
+  evidence: Let boto3 retry, slow down, and check the service quotas for your account.
+- id: q12
+  prompt: How should you sign the CLI in for this project?
+  options:
+  - aws configure sso and aws sso login, for short-lived credentials
+  - Paste a root access key into a file
+  - Share a colleague's key
+  - No credentials are needed for real calls
+  answer: 0
+  explanation: Use SSO for yourself and roles for applications.
+  evidence: Sign the CLI in with short-lived credentials
+- id: q13
+  prompt: Where should model IDs come from?
+  options:
+  - Copied from the console or list_foundation_models, and kept in config
+  - Guessed from the model's marketing name
+  - Generated at random
+  - From the model's reply
+  answer: 0
+  explanation: IDs have exact formats and versions.
+  evidence: Copy it from the console or list_foundation_models; do not guess it.
+- id: q14
+  prompt: What appears in your AWS account when a Bedrock call is made?
+  options:
+  - The call in your account's AWS logging and on your AWS bill
+  - Nothing; Bedrock calls are invisible
+  - A new IAM user
+  - A copy of the model in S3
+  answer: 0
+  explanation: That is the governance story.
+  evidence: The call appears in your account's AWS logging and on your AWS bill
+- id: q15
+  prompt: Which portfolio project's AWS path uses Bedrock as the model provider for an agent on ECS Fargate?
+  options:
+  - The trade-ops exception agent
+  - The daily puzzle
+  - The speaking coach
+  - The launch tracker
+  answer: 0
+  explanation: Its AWS path runs the agent on ECS Fargate with Bedrock.
+  evidence: 'Trade-ops exception agent: the AWS path runs the agent on ECS Fargate with Bedrock as the model provider.'
+- id: q16
+  prompt: Which interview answer is a red flag?
+  options:
+  - '"We grant bedrock:* on * so it always works."'
+  - '"Each app role can invoke only its model ARNs."'
+  - '"We check region availability before choosing a model."'
+  - '"Bedrock calls are stubbed in tests."'
+  answer: 0
+  explanation: Wildcard permissions survive into production.
+  evidence: 'Red flags interviewers listen for: bedrock:* on *, hard-coded access keys, and assuming every model is in every region.'
+- id: q17
+  prompt: What are the trade-offs of Bedrock mentioned on the tech page?
+  options:
+  - Availability varies by region, and new models can reach Bedrock later than the provider's own API
+  - It cannot call Anthropic models
+  - It has no logging
+  - It needs a separate vendor key per model
+  answer: 0
+  explanation: Weigh them against the governance benefits.
+  evidence: New models can reach Bedrock later than the provider's own API
+- id: q18
+  prompt: What is an inference profile?
+  options:
+  - An ID that routes calls for a model, sometimes across several regions
+  - A user's IAM role
+  - A pricing plan
+  - A prompt template
+  answer: 0
+  explanation: Some models must be called through one.
+  evidence: An ID that routes calls for a model, sometimes across several regions.
+- id: q19
+  prompt: What should you do before running real Bedrock calls in a sandbox account?
+  options:
+  - Set an AWS Budget with an email alert
+  - Enable every model in every region
+  - Grant bedrock:* to everyone
+  - Turn off logging
+  answer: 0
+  explanation: A budget is the backstop for unexpected spend.
+  evidence: Set an AWS Budget with an email alert before running anything
