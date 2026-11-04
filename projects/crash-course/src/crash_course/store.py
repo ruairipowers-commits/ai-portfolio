@@ -55,6 +55,11 @@ CREATE TABLE IF NOT EXISTS outbox (
 CREATE TABLE IF NOT EXISTS invites (code_hash TEXT PRIMARY KEY, created_at TEXT, used_by INTEGER);
 CREATE TABLE IF NOT EXISTS news_seen (           -- "What's new" items a learner has marked as seen
   learner_id INTEGER, item_id TEXT, seen_at TEXT, PRIMARY KEY (learner_id, item_id));
+CREATE TABLE IF NOT EXISTS glossary (            -- owner-approved entries and AI drafts (bundled ones: config/glossary.yaml)
+  term_key TEXT PRIMARY KEY, term TEXT, expansion TEXT, definition TEXT, more TEXT, status TEXT, source TEXT,
+  model TEXT, course TEXT, requested_by INTEGER, requested_at TEXT, created_at TEXT, decided_by TEXT, decided_at TEXT);
+CREATE TABLE IF NOT EXISTS glossary_asks (       -- "Find out more" requests, for the per-learner daily limit
+  learner_id INTEGER, term_key TEXT, at TEXT);
 CREATE TABLE IF NOT EXISTS news_reviews (        -- owner: material or status items reviewed / dismissed
   item_id TEXT PRIMARY KEY, decision TEXT, actor TEXT, at TEXT, note TEXT);
 """

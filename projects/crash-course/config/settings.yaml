@@ -80,6 +80,19 @@ build:
   regenerate_on_fail: 1      # one retry with the failed checks in the prompt, then flagged for the owner
   on_demand: true            # draft Beginner / Intermediate the first time any learner unlocks them
 
+# ---------------------------------------------------------------- glossary (highlight a word on a course page)
+# "Find out more" is the one model call a learner can trigger: signed in, rate-limited, budgeted, kill switch,
+# cached as a draft for the owner to approve (Ruairi's decision, 4 November 2026).
+glossary:
+  alias: course-glossary
+  per_minute: 5              # explanations per learner per minute
+  per_learner_per_day: 20
+  max_usd_per_answer: 0.01
+  context_chars: 300         # the sentence around the highlight, sent with the term
+  max_term_chars: 60
+  max_term_words: 5
+  max_hover_terms: 400       # approved terms marked on a course page
+
 # ---------------------------------------------------------------- what's new: the daily scan (DATA-01, HITL-02)
 # scanner: who finds the updates. Both write through `course news-add` / news.merge, so items are validated the same.
 #   claude  the daily Claude task (skill .agents/skills/course-news) researches each technology and judges what's material

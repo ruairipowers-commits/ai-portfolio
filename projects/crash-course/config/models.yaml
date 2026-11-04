@@ -11,6 +11,7 @@ aliases:
   course-reviser: mock-writer
   course-fallback: mock-writer
   course-candidate: mock-moderator
+  course-glossary: mock-glossary # "Find out more" on course pages (signed-in learners, rate-limited); try claude-haiku
   course-news: mock-news         # feeds-mode news summaries (the claude scanner writes its own); try local-qwen
 
 models:
@@ -19,6 +20,14 @@ models:
     model_id: mock-writer-v1
     input_per_mtok: 1.00   # simulated, so the cost report has numbers to show
     output_per_mtok: 5.00
+    deprecation_date: null
+    approved: true
+
+  mock-glossary:           # offline glossary: bundled definitions, else a clearly labelled placeholder (never cached)
+    provider: mock
+    model_id: mock-glossary-v1
+    input_per_mtok: 0.25
+    output_per_mtok: 1.25
     deprecation_date: null
     approved: true
 

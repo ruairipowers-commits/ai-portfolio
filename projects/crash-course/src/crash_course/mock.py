@@ -264,3 +264,19 @@ def news(req: dict) -> dict:
             "reason": ("End of life announced in the release title." if eol else
                        "A new major version with breaking changes." if material else ""),
             "status": "retired" if eol else None}
+
+
+# ---------------------------------------------------------------- glossary ("Find out more")
+def glossary(req: dict) -> dict:
+    """A bundled definition when there is one; otherwise a placeholder that says plainly no model is connected (the
+    caller never caches it). A real model explains any term."""
+    from .glossary import bundled, key
+    term = req.get("term", "")[:60]
+    b = bundled().get(key(term))
+    if b:
+        return {"is_term": True, "term": b["term"], "expansion": b["expansion"], "definition": b["definition"],
+                "more": b.get("more", ""), "course_worthy": False}
+    return {"is_term": True, "term": term or "term", "expansion": "",
+            "definition": f"No explanation yet: this site is running offline without a model, so “{term}” can't be "
+                          "explained here. Add it to the glossary and the owner will write one.",
+            "more": "", "course_worthy": False}

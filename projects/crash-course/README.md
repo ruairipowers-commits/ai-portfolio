@@ -18,7 +18,7 @@ unlocks the next one.
 
 | Who | What they do | What code does | What a model does |
 |---|---|---|---|
-| Learner | registers, signs up, reads, takes quizzes, marks projects done, gives feedback, suggests topics | magic-link sign-in; draws and shuffles questions; scores them on the server; applies the unlock rule; stores everything | nothing — no model on any learner path |
+| Learner | registers, signs up, reads, takes quizzes, marks projects done, gives feedback, suggests topics, looks up terms | magic-link sign-in; draws and shuffles questions; scores them on the server; applies the unlock rule; stores everything | only the glossary's "Find out more" (signed in, rate-limited, budgeted, cached); nothing on quizzes, unlocks or progress |
 | Owner | approves topics, publishes levels, accepts or rejects edits | signed approval links, the `/owner` page, content checks before every publish, an audit row for every decision | — |
 | Worker | — | queues drafts when a learner unlocks a level that doesn't exist yet | the **writer** drafts a level in a strict schema; the **moderator** assesses suggested topics; the **reviser** proposes edits from feedback |
 
@@ -65,6 +65,21 @@ them seen (the nav shows how many are unseen). The same items appear on the port
 | Commands | `course news-add FILE`, `course news-scan`, `course news-review`, `course news-sync` |
 
 Course levels are never edited by the scan.
+
+## Glossary
+
+On any course page, highlight a word or acronym (TLS, say) to look it up. Approved terms — a bundled list in
+`config/glossary.yaml` plus terms the owner approves — show their definition, and are marked on every course page with a
+hover definition; `/glossary` lists them. For anything else the pop-up offers:
+
+- **Find out more** (signed in): an AI explanation of the term in the sense the page uses it. This is the one model
+  call a learner can trigger: the term is screened first (length, contact details, injection, blocked words), it's
+  limited per minute and per day, budgeted per answer, stops when the governance console pauses the workflow, and the
+  answer is cached as a draft (labelled "AI-generated, not yet reviewed") so the next learner asking costs nothing.
+  The offline mock never caches its placeholder. Alias `course-glossary` (`COURSE_GLOSSARY_MODEL`).
+- **Add to glossary**: sends the term (with any AI draft) to the owner page, where the owner edits and approves or
+  rejects it.
+- **Suggest as a course**: opens the suggestion form with the term filled in.
 
 ## Focus on the tracker
 

@@ -1,0 +1,55 @@
+# Bundled glossary: reviewed in git like the courses, so these show as approved definitions on every course page.
+# Owner-approved entries from the site (owner page → Glossary) are added to these at run time.
+terms:
+  - term: API
+    expansion: Application Programming Interface
+    definition: A defined way for one piece of software to ask another to do something or return data, such as an HTTP endpoint or a library's functions.
+  - term: SDK
+    expansion: Software Development Kit
+    definition: A package of libraries, tools and examples for building against a platform or API in a particular language.
+  - term: CLI
+    expansion: Command-Line Interface
+    definition: A program you control by typing commands in a terminal rather than clicking in a graphical interface.
+  - term: HTTP
+    expansion: Hypertext Transfer Protocol
+    definition: The request-and-response protocol browsers and APIs use to exchange data over the web.
+  - term: TLS
+    expansion: Transport Layer Security
+    definition: A cryptographic protocol that encrypts and authenticates data sent over a network, such as HTTPS traffic between a browser and a server.
+    more: When a client connects, TLS runs a handshake in which the server proves its identity with a certificate and both sides agree on keys; data is then encrypted and protected against tampering. HTTPS is HTTP running over TLS. It replaced the older SSL protocol, a name that is still used loosely.
+  - term: JSON
+    expansion: JavaScript Object Notation
+    definition: A plain-text format for structured data made of objects (key-value pairs), arrays, strings, numbers, booleans and null.
+  - term: JSON Schema
+    definition: A JSON document that describes the shape of other JSON data — its fields, types and rules — so data can be validated against it.
+  - term: YAML
+    definition: A human-readable text format for configuration and data that uses indentation instead of braces.
+  - term: SQL
+    expansion: Structured Query Language
+    definition: The standard language for querying and changing data in relational databases.
+  - term: LLM
+    expansion: Large Language Model
+    definition: A neural network trained on large amounts of text to predict and generate language; the kind of model behind chat assistants.
+  - term: RAG
+    expansion: Retrieval-Augmented Generation
+    definition: A pattern where relevant passages are retrieved from your own documents and given to a language model so its answer is grounded in them.
+  - term: embedding
+    definition: A list of numbers that represents the meaning of a piece of text, so that similar meanings sit close together and can be searched.
+  - term: token
+    definition: A small piece of text, often part of a word, that a language model reads and writes; usage and cost are counted in tokens.
+  - term: IAM
+    expansion: Identity and Access Management
+    definition: The system that controls who or what can do which actions on which resources, through identities, roles and policies.
+  - term: CI/CD
+    expansion: Continuous Integration / Continuous Delivery
+    definition: Automatically building and testing every change (CI) and releasing it through a repeatable pipeline (CD).
+  - term: JSON-RPC
+    definition: A lightweight protocol for calling remote procedures with JSON messages, each a request with a method and parameters, answered by a result or an error.
+  - term: idempotent
+    definition: An operation that has the same effect whether it runs once or several times, so a retry can't do something twice.
+  - term: quantization
+    definition: Storing a model's weights with fewer bits so it fits in less memory and runs faster, at some cost in quality.
+  - term: checkpointer
+    definition: In LangGraph, the component that saves a graph's state after each step so a run can pause, resume or be inspected.
+  - term: inference profile
+    definition: In Amazon Bedrock, an ID that routes calls for a model, sometimes across several regions; some models must be called through one.

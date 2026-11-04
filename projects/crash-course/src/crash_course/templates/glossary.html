@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% block title %}Glossary · Crash course{% endblock %}{% block wrapclass %}narrow{% endblock %}
+{% block body %}
+<h1>Glossary</h1>
+<p class="lead">Terms used across the courses, reviewed before they appear here. On any course page, highlight a word
+to look it up; signed in, you can ask for an explanation or add it to this glossary.</p>
+<form class="search" method="get" action="{{ R }}/glossary">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search {{ total }} terms" aria-label="Search the glossary">
+  <button class="btn" type="submit">Search</button>
+</form>
+{% if not terms %}<p class="muted">No terms match.</p>{% endif %}
+<dl class="glossary">
+{% for t in terms %}<dt id="{{ t.term|lower|replace(' ', '-') }}">{{ t.term }}{% if t.expansion %} <span class="muted">— {{ t.expansion }}</span>{% endif %}</dt>
+  <dd>{{ t.definition }}</dd>{% endfor %}
+</dl>
+{% endblock %}

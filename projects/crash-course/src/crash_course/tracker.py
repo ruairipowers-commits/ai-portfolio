@@ -1,4 +1,4 @@
-"""Enrolment, unlocks and completion — plain code, no model anywhere on a learner's path.
+"""Enrolment, unlocks and completion — plain code, no model anywhere in progress or unlocks.
 
 Rules (config `completion`): a level is complete when its quiz has been passed at least once (Intermediate: every
 module check and the final test) AND its project is marked done. Completing a level unlocks the next. A level that

@@ -24,9 +24,13 @@ glossary "Find out more" AI answers for signed-in learners, rate-limited (phase 
 - Phase 3 done (same branch): tracker favourites (star, "favourites only"), priority (high / normal / low), the
   learner's own order (up / down / top), sort by order / priority / progress / recently added, and "Up next".
   103 tests pass (6 new in `tests/test_focus.py`).
-- [ ] Phase 4: glossary (highlight → definition, add to glossary,
-      suggest as a course, "Find out more" AI answer for signed-in learners, rate-limited, cached as owner-approved
-      entries; hover definitions).
+- Phase 4 done (same branch): glossary — highlight a word on a course page → definition (bundled
+  `config/glossary.yaml` + owner-approved), "Find out more" AI answer for signed-in learners (screened, per-minute and
+  daily limits, per-answer budget, kill switch, cached as a labelled draft; alias `course-glossary`, mock by default),
+  "Add to glossary" → owner page (edit, approve / reject), "Suggest as a course" (prefilled), hover definitions,
+  `/glossary`. Governance and README updated: the glossary is the one learner-triggered model call.
+- [ ] Ruairi: point `course-glossary` at a real model (e.g. `COURSE_GLOSSARY_MODEL=claude-haiku` with prices filled in
+      models.yaml); until then "Find out more" shows an offline placeholder for terms not in the glossary.
 
 ## 00000000000000000. Crash course: Beginner + Intermediate for the ai-and-agents batch (4 November 2026)
 

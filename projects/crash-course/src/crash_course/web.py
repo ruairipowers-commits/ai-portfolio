@@ -3,7 +3,8 @@
     course serve            → http://localhost:8810   (ROOT_PATH=/crash-course behind the demos proxy)
 
 Rules enforced here and in the modules it calls, not only in templates:
-  - no model call on any learner request; builds and revisions run in the background worker
+  - one model call a learner can trigger: the glossary's "Find out more" (signed in, rate-limited, budgeted, kill
+    switch, cached); builds and revisions run in the background worker
   - quiz pages carry a token, prompts and shuffled options only — never which option is correct (NFR-1)
   - materials, quizzes and project check-offs need the level to be unlocked for the signed-in learner
   - owner decisions need a valid, unexpired signature AND a POST from the confirmation page (no GET side effects)
@@ -25,7 +26,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markdown_it import MarkdownIt
 
-from . import accounts, ai, builder, catalog, checks, demo, jobs, mailer, moderation, news, ownerapi, quiz, revise, telemetry, tracker
+from . import accounts, ai, builder, catalog, checks, demo, glossary, jobs, mailer, moderation, news, ownerapi, quiz, revise, telemetry, tracker
 from .config import LEVELS, PKG, Settings, root
 from .schemas import Assessment
 from .store import connect, insert, now, one, rows
@@ -313,8 +314,10 @@ def create_app(start_worker: bool = False) -> FastAPI:
                            403, ("/tracker", "Go to my tracker"))
         passed = set(json.loads(p["modules_passed"] or "[]")) | ({"final"} if p["quiz_passed_at"] else set())
         telemetry.record("learn", items=1, detail={"level": level})
+        with connect() as conn:
+            terms = glossary.approved_terms(conn, s["glossary"]["max_hover_terms"])
         return page(req, "learn.html", lv=lv, p=p, c=c, passed=passed, attempts=attempts, user=u,
-                    parts=tracker.quiz_parts(lv), label=s.level(level)["label"], cfg=s.level(level))
+                    parts=tracker.quiz_parts(lv), label=s.level(level)["label"], cfg=s.level(level), terms=terms)
 
     @app.post("/project/{slug}/{level}")
     def project_done(req: Request, slug: str, level: str):
@@ -394,11 +397,77 @@ def create_app(start_worker: bool = False) -> FastAPI:
                        (f"/learn/{slug}/{level}", "Back to the level"))
 
     @app.get("/suggest", response_class=HTMLResponse)
-    def suggest_form(req: Request):
+    def suggest_form(req: Request, topic: str = ""):
         u, redirect = need_user(req, "/suggest")
         if redirect:
             return redirect
-        return page(req, "suggest.html", user=u)
+        return page(req, "suggest.html", user=u, topic=topic[: s["moderation"]["max_chars"]])
+
+    # ------------------------------------------------------------ glossary (highlight a word on a course page)
+    @app.get("/glossary", response_class=HTMLResponse)
+    def glossary_page(req: Request, q: str = ""):
+        with connect() as conn:
+            terms = sorted(glossary.approved_terms(conn, 10_000), key=lambda t: t["term"].casefold())
+        ql = q.strip().casefold()[:60]
+        shown = [t for t in terms if not ql or ql in t["term"].casefold() or ql in t["expansion"].casefold()]
+        return page(req, "glossary.html", terms=shown, q=q[:60], total=len(terms))
+
+    def _gloss_entry(e: dict | None) -> dict:
+        if not e:
+            return {"found": False}
+        return {"found": bool(e.get("definition")), "term": e["term"], "expansion": e.get("expansion") or "",
+                "definition": e.get("definition") or "", "more": e.get("more") or "",
+                "reviewed": e.get("status") == "approved", "status": e.get("status", "")}
+
+    @app.get("/api/glossary/lookup")
+    def glossary_lookup(req: Request, term: str = ""):
+        if not limiter.allow("gloss-lookup", client_ip(req), 60, 60):
+            return JSONResponse({"error": "slow down"}, status_code=429)
+        try:
+            t = glossary.check_term(term, s)
+        except glossary.Refused as e:
+            return JSONResponse({"error": str(e)}, status_code=400)
+        with connect() as conn:
+            return JSONResponse({"term": t, **_gloss_entry(glossary.lookup(conn, t)), "signed_in": bool(me(req))})
+
+    @app.post("/api/glossary/explain")
+    async def glossary_explain(req: Request):
+        u = me(req)
+        if not u:
+            return JSONResponse({"error": "sign in to ask for an explanation"}, status_code=401)
+        if not same_origin(req):
+            return JSONResponse({"error": "forbidden"}, status_code=403)
+        if not limiter.allow("gloss-explain", str(u["id"]), s["glossary"]["per_minute"], 60):
+            return JSONResponse({"error": "too many explanations in a minute; wait a moment"}, status_code=429)
+        f = await req.form()
+        course = catalog.all_courses().get(str(f.get("course", ""))[:40])
+        try:
+            with connect() as conn:
+                e = glossary.explain(conn, s, u["id"], str(f.get("term", ""))[:120], course.title if course else "",
+                                     str(f.get("context", ""))[:1000])
+        except glossary.Refused as err:
+            return JSONResponse({"error": str(err)}, status_code=400)
+        except telemetry.WorkflowDisabled:
+            return JSONResponse({"error": "explanations are paused right now"}, status_code=503)
+        if e.get("status") == "not_a_term":
+            return JSONResponse({"term": e["term"], "found": False, "not_a_term": True})
+        return JSONResponse({**_gloss_entry(e), "course_worthy": bool(e.get("course_worthy")),
+                             "more_ai": bool(e.get("more_ai"))})
+
+    @app.post("/api/glossary/add")
+    async def glossary_add(req: Request):
+        u = me(req)
+        if not u:
+            return JSONResponse({"error": "sign in to add a term"}, status_code=401)
+        if not same_origin(req) or not limiter.allow("gloss-add", str(u["id"]), 20, 3600):
+            return JSONResponse({"error": "not now"}, status_code=429)
+        f = await req.form()
+        try:
+            with connect() as conn:
+                msg = glossary.request_add(conn, s, u["id"], str(f.get("term", ""))[:120], str(f.get("course", ""))[:40])
+        except glossary.Refused as err:
+            return JSONResponse({"error": str(err)}, status_code=400)
+        return JSONResponse({"ok": True, "message": msg})
 
     @app.post("/suggest", response_class=HTMLResponse)
     def suggest(req: Request, topic: str = Form("")):
@@ -541,7 +610,7 @@ def create_app(start_worker: bool = False) -> FastAPI:
                                 "learners": r["n"], "job": last["status"] if last else "", "why": why[:200]})
         return {"drafts": drafts, "suggestions": sugg, "proposals": props, "feedback": fb, "stats": stats,
                 "jobs": jobs.recent(conn, 10), "waiting": waiting, "no_writer": ai.placeholder_writer_blocked(s),
-                "news_review": news.to_review(conn, news_items())[:50]}
+                "news_review": news.to_review(conn, news_items())[:50], "glossary_pending": glossary.pending(conn)}
 
     @app.get("/owner", response_class=HTMLResponse)
     def owner_page(req: Request, done: str = ""):
@@ -595,6 +664,12 @@ def create_app(start_worker: bool = False) -> FastAPI:
                                 ok, _ = builder.publish(conn, s, slug, level, actor)
                                 n, bad = n + ok, bad + (not ok)
                     done = f"Published {n} level(s)" + (f"; {bad} failed their checks and stay as drafts" if bad else "")
+                elif kind == "glossary":
+                    tk = str(f.get("key", ""))[:60]
+                    decision = "approve" if f.get("decision") == "approve" else "reject"
+                    glossary.decide(conn, tk, decision, actor, str(f.get("term", "")), str(f.get("expansion", "")),
+                                    str(f.get("definition", "")), str(f.get("more", "")))
+                    done = f"Glossary: {tk} {'approved' if decision == 'approve' else 'rejected'}"
                 elif kind == "news":
                     iid = str(f.get("id", ""))[:12]
                     news.review(conn, iid, "dismissed" if f.get("decision") == "dismiss" else "reviewed", actor,
