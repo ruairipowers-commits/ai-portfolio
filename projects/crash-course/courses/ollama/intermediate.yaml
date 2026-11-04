@@ -1,0 +1,1250 @@
+course: ollama
+level: intermediate
+version: 1
+title: Ollama local models in production in 4 hours
+status: draft
+source:
+  page: tech/ollama.md
+  docs: https://docs.ollama.com/
+provenance:
+  written_by: Claude (build session, 3 Nov 2026), from the site's Ollama page and the Familiar level
+sections:
+- id: modules
+  heading: How the four hours fit together
+  body: |
+    Beginner had you build a named variant and call it for structured output. This level is about the decisions
+    that come next: which model fits the hardware, how to use the APIs properly, how to add local search, how to
+    prove a local model is good enough, and how to run Ollama as a service other people rely on. Five modules, each
+    with an exercise and a five-question check (pass mark 80%), then a 90-minute capstone and a final test.
+
+    | Module | What you learn | Time |
+    |---|---|---|
+    | m1 Models, memory and hardware | sizes, quantization, context memory, CPU and GPU, reading `ollama ps` | 20 min |
+    | m2 The APIs in depth | streaming, options, keep-alive, structured output, tools, the OpenAI-compatible endpoint | 20 min |
+    | m3 Embeddings and local search | `/api/embed`, similarity, a small index, keeping data on the machine | 20 min |
+    | m4 Evaluating local against hosted | aliases, golden sets, quality, latency and cost, a gate | 20 min |
+    | m5 Running Ollama as a service | binding, auth in front, concurrency, Docker, updates, monitoring | 20 min |
+
+    **Pacing.** m1 first: everything else depends on a model that fits. m2 and m3 can go in either order. m4 sets
+    up the capstone. Pull two models before you start (a small and a medium one, such as `llama3.2:1b` and
+    `llama3.2`), plus an embedding model for m3, so you can work offline.
+- id: production
+  heading: Running Ollama for real
+  body: |
+    Running a model locally moves the provider's job onto you: capacity, uptime, security and upgrades.
+
+    **Security.**
+    - The API has no authentication of its own. Keep it on localhost, or put a reverse proxy with authentication
+      and TLS in front. Never expose port 11434 to the internet.
+    - Restrict who can pull and create models on a shared server; a model is a large file from the internet.
+    - Check each model's licence before commercial use, and record which model and tag each workload uses.
+
+    **Capacity and scaling.**
+    - Memory decides everything: the model's weights plus the memory for its context window, per loaded model.
+    - Concurrency settings let one server handle several requests at once, but each extra parallel request costs
+      context memory. Measure throughput under realistic load before promising a service level.
+    - For more load, run more machines behind a load balancer; each one needs its own copy of the models.
+
+    **Reliability.**
+    - The first request after a model unloads pays the load time. Set keep-alive to match your traffic, or warm the
+      model at start-up.
+    - Health-check with `/api/version`, and check the model you need is listed in `/api/tags`.
+    - Give callers a timeout and a fallback (another alias, a rules-based mock, or a clear error), so an overloaded
+      box degrades gracefully.
+
+    **Cost.** No per-token bill, but hardware, power and your time are real. Compare cost per correct answer, not
+    per token: a cheap local model that needs a person to fix a third of its answers is not cheap.
+
+    **Observability.** Log per call: alias, model and tag, prompt and output token counts (`prompt_eval_count`,
+    `eval_count`), load and total durations, and the outcome of your own validation.
+
+    **Upgrades.** Pin Ollama's version and each model's tag. When you upgrade either, re-run your golden set before
+    switching traffic; a new build or a re-pulled tag can change outputs.
+- id: alternatives
+  heading: Alternatives and when to pick each
+  body: |
+    | Option | What it is | Pick it when |
+    |---|---|---|
+    | A hosted API (Anthropic, OpenAI) | frontier models over the internet | you need the strongest reasoning and the data policy allows it |
+    | A cloud route (Amazon Bedrock and similar) | hosted models inside your cloud account | data must stay in your cloud account and you want hosted quality |
+    | llama.cpp directly | the open-source inference library many local tools build on | you want the lowest-level control or an unusual build |
+    | vLLM or another serving engine | high-throughput serving for GPU servers | many concurrent users on dedicated GPUs |
+    | LM Studio or similar desktop apps | a desktop app for local models | individuals exploring models with a GUI |
+    | Ollama | one install, pull-and-run models, a simple local API | development, offline work, narrow tasks where data must stay on the box, and small shared servers |
+
+    Many teams use more than one: Ollama for development and private narrow tasks, a hosted or cloud model for the
+    hard cases, all behind one model registry so switching is a configuration change.
+- id: in_portfolio
+  heading: How this portfolio uses Ollama
+  body: |
+    The tech page lists a blog search and chat assistant that uses Ollama to run local open models on the home
+    server. That project, **site-assistant**, is in the repository:
+
+    - **Local answers with citations.** Answers stream from a local model through Ollama and cite the blog sections
+      they used. With no model reachable it falls back to quoting the best passages, an extractive mock that needs
+      no generation.
+    - **A model registry.** Code asks for the alias `chat`; `config/models.yaml` maps it to an Ollama model and marks
+      it approved, priced at $0 per token. `OLLAMA_URL` and `OLLAMA_MODEL` override the defaults.
+    - **Thinking off for speed.** The registry sets `think: false`, so reasoning models answer directly, which is
+      much faster and enough for answers grounded in retrieved text.
+    - **Benchmarking on the real box.** `siteassist bench MODEL [MODEL …]` compares Ollama models on the machine that
+      serves them: load time, time to first word, tokens per second and the answers they give.
+    - **Governed like the rest.** Rate limits and a daily token budget apply, and the governance console can switch
+      answering off while search keeps working.
+
+    The other projects default to an offline mock model. Alt-data vendor triage shows the model registry pattern a
+    local provider plugs into, alongside mock, Anthropic, OpenAI and Bedrock entries. The daily blog pipeline also
+    drafts posts with a local model on the EVO-X1 home server and logs a comparison against Claude.
+- id: capstone
+  heading: 'Capstone: a local model bake-off with a gate (90 minutes)'
+  body: |
+    You will build the evaluation harness that decides whether a local model is good enough for a narrow task. A
+    registry maps aliases to providers and models; a golden set of labelled settlement-break notes is run through
+    each alias; the harness reports accuracy, median latency, output tokens and cost, and applies a pass/fail gate.
+    A rules-based mock is included as a baseline that needs no model at all. Then you choose, with evidence.
+
+    | Criterion | What good looks like |
+    |---|---|
+    | Registry | Code refers only to aliases; models and tags live in one place |
+    | Golden set | At least 10 labelled cases covering every category, including an "other" trap |
+    | Determinism | Temperature 0 and a fixed seed, so reruns are comparable |
+    | Metrics | Accuracy, median latency, output tokens and cost per alias, printed as a table |
+    | Robustness | An unreachable server or bad reply counts as a wrong answer, never a crash |
+    | Gate | A written threshold for accuracy and latency; each alias marked PASS or FAIL |
+    | Decision | A short note: which alias you would ship, why, and what you would watch |
+- id: interview
+  heading: Scenario interview questions
+  body: |
+    - **"Compliance won't let research notes leave the building. What would you propose?"** A local model through
+      Ollama on a firm-controlled machine, scoped to narrow tasks (classification, short summaries), behind the same
+      registry as hosted models, with a golden set proving it is good enough and auth in front of the API.
+    - **"The local model is slow at peak times."** Check `ollama ps` for CPU spill-over, reduce context size, try a
+      smaller or more quantized tag, tune concurrency, keep the model loaded, and add a second machine if needed.
+    - **"How do you decide between a 1B and an 8B model?"** Run both on the same golden set; compare accuracy,
+      latency and memory; pick the smallest that clears the gate, and keep the gate in CI.
+    - **"A team wants semantic search over internal PDFs, privately."** Local embeddings with Ollama, a small vector
+      index on the same machine, the same embedding model for documents and queries, and answers that cite sources.
+    - **"Someone wants to expose Ollama to the whole office."** A reverse proxy with authentication and TLS, rate
+      limits, logging, pinned models and versions, and a health check; never the raw port.
+    - **"Is local free?"** No per-token cost, but hardware, power and operations time; compare cost per correct
+      answer.
+- id: further_learning
+  heading: Further learning
+  body: |
+    - [Ollama documentation](https://docs.ollama.com/) — the official docs from Ollama, including the API reference
+      and FAQ.
+    - [Ollama model library](https://ollama.com/library) — models, sizes, tags and licences.
+    - [Ollama on GitHub](https://github.com/ollama/ollama) — source, releases and issues.
+    - [llama.cpp on GitHub](https://github.com/ggml-org/llama.cpp) — the inference project Ollama built on.
+modules:
+- id: m1
+  title: Models, memory and hardware
+  minutes: 20
+  body: |
+    The single most important question with local models is "does it fit?". A model that fits in fast memory is
+    usable; one that does not crawls. This module gives you the tools to answer that before you download 20 GB.
+
+    ### What uses memory
+
+    Two things:
+
+    1. **The weights.** Roughly the number of parameters times the bytes per weight. At 16-bit precision each
+       weight takes 2 bytes; at 4-bit, about half a byte. So an 8B model needs roughly 16 GB at 16-bit and roughly
+       4–5 GB at 4-bit, before overheads. Treat these as estimates and check the size the library lists for each tag.
+    2. **The context.** The model keeps a cache for every token in its context window. Doubling `num_ctx` roughly
+       doubles that cache. A long context on a large model can need several GB on its own.
+
+    Add them up, leave room for the operating system and other apps, and compare with your GPU memory (or unified
+    memory on machines that share it) and RAM.
+
+    ### CPU, GPU and the spill-over
+
+    Ollama uses a GPU when one is available and the model fits; otherwise it runs some or all layers on the CPU.
+    Partial offload works but is much slower than running fully on the GPU. `ollama ps` shows each loaded model's
+    size and where it is running, for example "100% GPU" or a CPU/GPU split. A split is the first thing to look for
+    when something is unexpectedly slow.
+
+    ### Quantization in practice
+
+    Most library models come in several tags: different sizes, and often different quantization levels. Lower-bit
+    quantizations are smaller and faster but lose some quality; the loss is usually small at moderate levels and
+    larger at the most aggressive ones, and it varies by model and task. The only reliable way to choose is to run
+    your own golden set (m4) on the tags you are considering.
+
+    ### Choosing a model
+
+    Start from the task, not the leaderboard:
+
+    | Task | Start with |
+    |---|---|
+    | Classification, routing, short extraction | a small model (around 1B–4B) |
+    | Summaries of short text, query rewriting | a small to medium model |
+    | Answers grounded in retrieved passages | a medium model (around 7B–9B) with enough context |
+    | Embeddings for search | a dedicated embedding model |
+    | Hard reasoning, long multi-step work | consider a hosted or cloud model instead |
+
+    Then check three things for each candidate: the licence, the size against your hardware, and the context
+    length the task needs. The site-assistant project in this portfolio benchmarks candidate models on the machine
+    that actually serves them, because numbers from another machine do not transfer.
+
+    ### Reading speed numbers
+
+    Two speeds matter and they are different:
+
+    - **Prompt processing** (`prompt_eval_count` / `prompt_eval_duration` in the reply): how fast the model reads
+      your input. Long prompts make this dominate.
+    - **Generation** (`eval_count` / `eval_duration`): tokens per second while writing the answer.
+
+    The reply also carries `load_duration` (time spent loading the model, large on the first call) and
+    `total_duration`. Durations are in nanoseconds. Report all of them when you compare models, and measure after a
+    warm-up call so load time does not distort the result.
+
+    ### A sizing worksheet
+
+    1. Pick the candidate model and tag; note its listed size.
+    2. Decide the context the task needs (prompt plus answer, with some margin).
+    3. Load it with that context and run `ollama ps`: is it fully on the GPU?
+    4. Run ten representative prompts after a warm-up; record median generation speed and total time.
+    5. Repeat for the next smaller or more quantized tag, and keep the smallest that meets your quality gate.
+
+    ### When local is the wrong answer
+
+    If no model that fits your hardware clears the quality bar, that is a result, not a failure. Use a cloud route
+    for that task and keep local models for the narrow jobs they do well. Being able to say this with numbers is
+    what makes a local-model proposal credible to a risk or budget owner.
+
+    ### Common hardware situations
+
+    - **A laptop with no discrete GPU.** Everything runs on the CPU. Small models are usable for classification
+      and short summaries; expect generation to be noticeably slower than on a GPU, and keep context short.
+    - **A laptop or desktop with unified memory.** The GPU shares system memory, so larger models fit than the
+      GPU's name suggests, but the model competes with everything else you have open.
+    - **A desktop or server with a discrete GPU.** Fast when the model fits in GPU memory; slow when it spills.
+      Pick the largest model and context that fit fully, not the largest that loads.
+    - **A shared home or office server.** The case in m5: several users, several models, and the need to keep
+      memory for the model that matters most.
+  exercise: |
+    Fill in the sizing worksheet for two tags you have pulled (for example `llama3.2:1b` and `llama3.2`). For each,
+    record the listed size, where `ollama ps` says it runs, and median generation tokens per second over ten prompts
+    after a warm-up. Done when you have a two-row table and can say which you would choose for a classification task
+    and why, with the numbers from your own machine.
+  check:
+  - id: m1q1
+    prompt: What are the two main uses of memory when running a local model?
+    options:
+    - The weights and the cache for the context window
+    - The download cache and the log files
+    - The licence and the Modelfile
+    - The HTTP server and the CLI
+    answer: 0
+    explanation: Weights scale with parameters and precision; the context cache scales with num_ctx.
+    evidence: The model keeps a cache for every token in its context window.
+  - id: m1q2
+    prompt: Roughly how much memory do an 8B model's weights need at 4-bit quantization?
+    options:
+    - About 4–5 GB before overheads
+    - About 64 GB
+    - About 500 MB
+    - The same as at 16-bit
+    answer: 0
+    explanation: About half a byte per weight at 4-bit; check the listed size for each tag.
+    evidence: roughly 4–5 GB at 4-bit, before overheads
+  - id: m1q3
+    prompt: A model is unexpectedly slow. What should you look for in ollama ps first?
+    options:
+    - A CPU/GPU split, meaning the model did not fit fully on the GPU
+    - The model's licence
+    - The number of downloaded models
+    - The Modelfile's system prompt
+    answer: 0
+    explanation: Partial offload works but is much slower than running fully on the GPU.
+    evidence: A split is the first thing to look for when something is unexpectedly slow.
+  - id: m1q4
+    prompt: What is the only reliable way to choose between quantization levels for your task?
+    options:
+    - Run your own golden set on the tags you are considering
+    - Pick the smallest file
+    - Pick the largest file
+    - Use the tag with the most downloads
+    answer: 0
+    explanation: Quality loss varies by model and task.
+    evidence: The only reliable way to choose is to run your own golden set (m4) on the tags you are considering.
+  - id: m1q5
+    prompt: Why measure speed after a warm-up call?
+    options:
+    - So load time does not distort the result
+    - Because the first call always fails
+    - To download the model
+    - To reset the context window
+    answer: 0
+    explanation: The first call includes load_duration.
+    evidence: measure after a warm-up call so load time does not distort the result
+- id: m2
+  title: The APIs in depth
+  minutes: 20
+  body: |
+    The native API is small and stable enough to call with nothing but the standard library, which is what the
+    Beginner project did. This module covers the parts you need for real applications.
+
+    ### Streaming
+
+    `/api/chat` and `/api/generate` stream by default: the reply is one JSON object per line, each with a piece of
+    the message, and the last one has `"done": true` plus the token counts and durations. Streaming lets a user see
+    the answer appear; for batch jobs, `"stream": false` is simpler.
+
+    ```python
+    import json, urllib.request
+
+    req = urllib.request.Request("http://localhost:11434/api/chat", data=json.dumps({
+        "model": "llama3.2", "messages": [{"role": "user", "content": "Explain T+1 in two sentences."}],
+    }).encode(), headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req) as resp:
+        for line in resp:
+            chunk = json.loads(line)
+            print(chunk["message"]["content"], end="", flush=True)
+            if chunk.get("done"):
+                print("\n", chunk["eval_count"], "tokens")
+    ```
+
+    ### Options
+
+    The `options` object sets model parameters per request, overriding the Modelfile:
+
+    - `temperature` — 0 for repeatable classification and extraction; higher for varied drafting.
+    - `seed` — with temperature 0, makes reruns as repeatable as the runtime allows, which matters for evals.
+    - `num_ctx` — the context window for this request; larger costs memory (m1).
+    - `num_predict` — a cap on output tokens, a cheap guard against runaway answers.
+
+    ### Keep-alive
+
+    `keep_alive` on a request (or the `OLLAMA_KEEP_ALIVE` setting on the server) controls how long the model stays
+    loaded after the call. Longer keeps latency low for steady traffic at the cost of holding memory; `0` unloads
+    immediately. A request with only a model name and no prompt loads the model, which is a simple way to warm it.
+
+    ### Structured output
+
+    `"format": "json"` asks for any valid JSON; `"format": <JSON Schema>` constrains the reply to that schema. Pair it
+    with an instruction in the prompt that describes the fields, temperature 0, and validation in your code. Treat a
+    parse failure or an out-of-range value as a failed call that your code handles (retry once, then fall back or
+    escalate).
+
+    ### Tool calling
+
+    For models that support it, `/api/chat` accepts a `tools` list of function definitions, and the reply's message
+    can contain `tool_calls` instead of text. Your code runs the function and sends the result back as a message
+    with the `tool` role. The pattern is the same as with hosted APIs, and so are the rules: give read-only tools,
+    validate arguments, cap the loop. Small local models are less reliable at multi-step tool use than frontier
+    models, so keep tool lists short and test them.
+
+    ### Thinking models
+
+    Some models produce a reasoning phase before the answer. Ollama lets you turn this on or off per request with a
+    `think` setting on models that support it. Off is much faster and is often enough for grounded tasks; the
+    site-assistant registry sets `think: false` for exactly that reason.
+
+    ### The OpenAI-compatible endpoint
+
+    Ollama serves an OpenAI-style API under `/v1`, so code written for the OpenAI SDK can use a local model by
+    changing the base URL and model name (the SDK needs some API key string, which Ollama ignores). This is how a
+    local model slots into a model registry as one more provider alias. Two cautions: not every native feature or
+    option maps across, and behaviour can differ in details such as defaults, so test the calls you rely on.
+
+    ### Other endpoints worth knowing
+
+    | Endpoint | Use |
+    |---|---|
+    | `GET /api/tags` | list local models (good for a readiness check) |
+    | `GET /api/ps` | list loaded models |
+    | `POST /api/show` | a model's details, parameters and Modelfile |
+    | `POST /api/embed` | embeddings (m3) |
+    | `GET /api/version` | the server's version (health check) |
+
+    There is also an official Python library (`pip install ollama`) that wraps these calls; it is convenient, but
+    the HTTP API is what everything else speaks, so learn that first.
+
+    ### Errors to handle
+
+    - **Connection refused:** the server is down; fail fast and use your fallback.
+    - **Model not found:** the alias points at a model that is not pulled; this is a deployment bug, so alert rather
+      than retry.
+    - **Timeouts:** a long prompt on a slow box, or a cold load. Set a timeout that covers a load plus a normal
+      reply, and log which one it was from the durations when the call does return.
+    - **Out-of-range answers:** handled by your validation, as in Beginner.
+
+    Wrap these in one small client function, the way the portfolio's model registries do, so every caller gets the
+    same retries, logging and fallback.
+  exercise: |
+    Write a streaming chat call that prints tokens as they arrive and, from the final chunk, prints prompt tokens,
+    output tokens, load duration and generation tokens per second. Then run the same prompt through the `/v1`
+    OpenAI-compatible endpoint with the OpenAI SDK (base URL `http://localhost:11434/v1`). Done when both work
+    offline, the streamed version shows the four numbers, and you can name one difference you noticed between the two
+    APIs.
+  check:
+  - id: m2q1
+    prompt: In a streamed /api/chat reply, where do the token counts and durations appear?
+    options:
+    - In the last JSON object, the one with done set to true
+    - In an HTTP header on the first line
+    - In a separate endpoint called after the stream
+    - They are not available when streaming
+    answer: 0
+    explanation: Each line carries a piece of the message; the final one carries the counts.
+    evidence: 'the last one has "done": true plus the token counts and durations'
+  - id: m2q2
+    prompt: Which options make an eval run as repeatable as possible?
+    options:
+    - temperature 0 and a fixed seed
+    - A high temperature and no seed
+    - A larger num_ctx only
+    - Streaming turned on
+    answer: 0
+    explanation: Repeatable runs make comparisons between models fair.
+    evidence: with temperature 0, makes reruns as repeatable as the runtime allows, which matters for evals
+  - id: m2q3
+    prompt: What does keep_alive set to 0 do?
+    options:
+    - Unloads the model immediately after the call
+    - Keeps the model loaded forever
+    - Disables streaming
+    - Removes the model from disk
+    answer: 0
+    explanation: Longer keep-alive holds memory to keep latency low.
+    evidence: Longer keeps latency low for steady traffic at the cost of holding memory; 0 unloads immediately.
+  - id: m2q4
+    prompt: How should code treat a reply that fails to parse against the requested schema?
+    options:
+    - As a failed call to handle — retry once, then fall back or escalate
+    - As a correct answer with a typo
+    - As a reason to raise the temperature
+    - As proof the model is broken and should be deleted
+    answer: 0
+    explanation: Structured output reduces failures but your code still handles them.
+    evidence: Treat a parse failure or an out-of-range value as a failed call that your code handles
+  - id: m2q5
+    prompt: What is a caution with Ollama's OpenAI-compatible endpoint?
+    options:
+    - Not every native feature or option maps across, so test the calls you rely on
+    - It sends data to OpenAI
+    - It only works with images
+    - It requires a paid OpenAI key that Ollama checks
+    answer: 0
+    explanation: The SDK needs some key string, which Ollama ignores; behaviour can differ in details.
+    evidence: not every native feature or option maps across
+- id: m3
+  title: Embeddings and local search
+  minutes: 20
+  body: |
+    Embeddings turn text into vectors so that similar meanings sit close together. With a local embedding model,
+    you can build semantic search over private documents without any text leaving the machine — one of the
+    use cases on the tech page.
+
+    ### Getting vectors
+
+    Pull a dedicated embedding model (the library has several; `nomic-embed-text` is a common choice) and call
+    `/api/embed` with one string or a list:
+
+    ```python
+    import json, math, urllib.request
+
+    def embed(texts: list[str], model: str = "nomic-embed-text") -> list[list[float]]:
+        req = urllib.request.Request("http://localhost:11434/api/embed",
+                                     data=json.dumps({"model": model, "input": texts}).encode(),
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req) as resp:
+            return json.load(resp)["embeddings"]
+
+    def cosine(a: list[float], b: list[float]) -> float:
+        dot = sum(x * y for x, y in zip(a, b))
+        return dot / (math.sqrt(sum(x * x for x in a)) * math.sqrt(sum(y * y for y in b)))
+    ```
+
+    Sending a list in one request is much faster than one request per string.
+
+    ### A tiny index
+
+    For a few thousand chunks, a list of vectors and a linear scan is fast enough:
+
+    ```python
+    docs = ["SSIs must be confirmed by phone before any change.",
+            "Failed trades are reviewed by an analyst before rebooking.",
+            "Allocations must sum to the block quantity."]
+    vectors = embed(docs)
+
+    def search(query: str, k: int = 2) -> list[tuple[float, str]]:
+        q = embed([query])[0]
+        return sorted(((cosine(q, v), d) for v, d in zip(vectors, docs)), reverse=True)[:k]
+
+    print(search("Can a broker email change our bank details?"))
+    ```
+
+    Beyond that, store vectors in a proper index: an extension in a database you already run, such as pgvector in
+    Postgres or sqlite-vec in SQLite, both of which have pages on this site.
+
+    ### Rules that save pain
+
+    - **Same model for documents and queries.** Vectors from different models are not comparable. Record the
+      embedding model and tag with the index, and rebuild the index if you change either.
+    - **Chunk sensibly.** Embed passages of a few sentences to a few paragraphs, with the document title and
+      section in each chunk, rather than whole documents. Very long inputs are cut at the model's context length.
+    - **Keep the source.** Store each chunk's document ID and position so answers can cite where they came from.
+    - **Normalise once.** If you normalise vectors to unit length when indexing, cosine similarity becomes a dot
+      product, which is cheaper.
+
+    ### From search to answers
+
+    Retrieval plus a chat model gives grounded answers: retrieve the top passages, put them in the prompt with
+    their sources, ask the model to answer only from them and cite them, and refuse when nothing relevant is found.
+    Small local models do this well when the passages are good, because the hard part — finding the right text —
+    is done by search. The site-assistant project follows this shape: it searches the blog and asks a local model
+    to answer with citations, and falls back to quoting the best passages when no model is available.
+
+    ### Measuring retrieval
+
+    Before tuning prompts, check that search finds the right passages. Write ten questions with the passage that
+    should answer each, and measure how often it appears in the top k ("hit at k"). If retrieval is poor, no model
+    will answer well. site-assistant keeps a retrieval golden set with a hit-at-6 gate for this reason.
+
+    ### Privacy, honestly
+
+    Local embeddings keep text on the machine, but the index is now a copy of your documents in another form.
+    Protect it like the documents: same access rules, same retention, and remove entries when a document is
+    withdrawn.
+
+    ### Embedding cost and speed
+
+    Embedding is usually much cheaper than generation: there is no answer to write, only one pass over the input.
+    Indexing a few thousand passages on a laptop is a coffee-break job, and query-time embedding of one short
+    question is fast. Re-embedding the whole corpus is the expensive step, so only do it when the model or the
+    chunking changes, and keep the old index until the new one passes your hit-at-k check.
+  exercise: |
+    Pull an embedding model, embed ten short policy or FAQ passages of your own, and write a `search(query, k)`
+    function. Write five test questions with the passage each should find. Done when you report hit-at-2 for your five
+    questions, the index records which embedding model built it, and nothing in the exercise needed a network
+    connection after the pull.
+  check:
+  - id: m3q1
+    prompt: Why must documents and queries use the same embedding model?
+    options:
+    - Vectors from different models are not comparable
+    - Different models are slower
+    - The API rejects mixed models
+    - Queries must be shorter than documents
+    answer: 0
+    explanation: Record the model with the index and rebuild if it changes.
+    evidence: Vectors from different models are not comparable.
+  - id: m3q2
+    prompt: What is a quick way to speed up embedding many strings?
+    options:
+    - Send them as a list in one request
+    - Send one request per character
+    - Raise the temperature
+    - Turn streaming on
+    answer: 0
+    explanation: Batching cuts per-request overhead.
+    evidence: Sending a list in one request is much faster than one request per string.
+  - id: m3q3
+    prompt: What should each stored chunk keep so answers can cite sources?
+    options:
+    - Its document ID and position
+    - The model's temperature
+    - The user's IP address
+    - Nothing beyond the vector
+    answer: 0
+    explanation: Keeping the source lets answers cite where they came from.
+    evidence: Store each chunk's document ID and position so answers can cite where they came from.
+  - id: m3q4
+    prompt: Retrieval keeps missing the right passage. What follows?
+    options:
+    - No model will answer well until retrieval improves
+    - A bigger chat model will fix it
+    - Raising num_predict will fix it
+    - The embedding model must be deleted
+    answer: 0
+    explanation: Measure hit at k before tuning prompts.
+    evidence: If retrieval is poor, no model will answer well.
+  - id: m3q5
+    prompt: How should a local vector index be protected?
+    options:
+    - Like the documents it was built from — same access rules and retention
+    - It needs no protection because vectors are unreadable
+    - Only with a stronger embedding model
+    - By making it public so it can be audited
+    answer: 0
+    explanation: The index is a copy of your documents in another form.
+    evidence: Protect it like the documents
+- id: m4
+  title: Evaluating a local model against a hosted one
+  minutes: 20
+  body: |
+    "The local model seems fine" is not a decision a risk or budget owner can sign. A small, honest evaluation is.
+    This module builds the method; the capstone builds the harness.
+
+    ### Put every model behind an alias
+
+    Code should ask for `triage-primary`, not `llama3.2:1b` or a hosted model ID. A registry maps aliases to a
+    provider, a model and a tag. That gives you three things: comparing models is a configuration change; moving
+    production from one model to another is one edit after an eval passes; and every log line can record exactly
+    which model answered. The alt-data triage project uses this pattern with mock, Anthropic, OpenAI and Bedrock
+    entries, and site-assistant's registry maps its `chat` alias to an Ollama model. Because Ollama has an
+    OpenAI-compatible endpoint, adding it to an existing registry is usually a few lines.
+
+    ### Build a golden set
+
+    - **Real-looking inputs.** Take them from the task, with anything sensitive replaced.
+    - **Labels a person agrees with.** Have someone who does the job check them.
+    - **Cover every category,** including the boring "other" and at least one trap that looks like a category but
+      is not.
+    - **Start small.** Ten to thirty cases find the big differences; grow the set when you find a failure in
+      production, by adding that case.
+
+    ### Measure four things
+
+    1. **Quality.** Accuracy for classification; for extraction, field-level accuracy; for free text, a rubric
+       checked by a person or a carefully tested grader.
+    2. **Latency.** Median and a high percentile, measured after warm-up, on the machine that will serve it.
+    3. **Throughput.** If many requests arrive together, measure under that load, not one at a time.
+    4. **Cost.** Per-token price for hosted models; for local, the hardware and running cost spread over volume.
+       Compare cost per correct answer.
+
+    ### Make it fair
+
+    - Same prompt, same golden set, same validation for every alias.
+    - Temperature 0 and a fixed seed where supported.
+    - A failure (timeout, unparseable reply) counts as wrong, never as a crash that skips the case.
+    - Run more than once if results vary, and report the spread.
+
+    ### Include a baseline
+
+    Always include the simplest thing that could work: keyword rules or a mock. If rules score 85% and a model
+    scores 87%, the model may not be worth its operating cost. If rules score 40% and the model 90%, you have a
+    strong case. In the capstone, a keyword-rules alias plays this part.
+
+    ### Write the gate down first
+
+    Decide the thresholds before you see results — for example "accuracy at least 80% and median latency under 5
+    seconds on the serving box" — and put them in code. Then the decision is the gate's, not whoever is most
+    enthusiastic. Keep the gate in CI so a model or prompt change that drops below it is caught.
+
+    ### Reading results honestly
+
+    Small local models are well behind frontier hosted models on harder reasoning. On narrow tasks the gap can be
+    small or absent. The useful output of an evaluation is often a split: the local model handles the common
+    cases, and hard or low-confidence cases go to a hosted or cloud model, or to a person. The daily blog pipeline
+    in this portfolio logs a local-versus-Claude comparison on every run for exactly this kind of decision, and its
+    first paired results showed the local drafts did not reduce Claude's editing work.
+
+    ### Report the decision
+
+    A one-page note: the task, the golden set, the table of results per alias, the gate, the choice, and what you
+    will monitor in production (accuracy on a sample checked by people, latency, failure rate).
+
+    ### After go-live
+
+    The eval does not end at launch. Sample a few real cases a week, have a person label them, and add any the
+    model got wrong to the golden set. Re-run the gate on every model, tag, prompt or Ollama upgrade. When the
+    gate fails, the registry makes rolling back a one-line change. Over time the golden set becomes the most
+    valuable artefact of the project, because it encodes what "good" means for this task.
+  exercise: |
+    Write a golden set of ten labelled settlement-break notes covering all five categories, including one "other"
+    trap. Run it by hand through two local models with temperature 0, and through simple keyword rules. Done when you
+    have a table of accuracy for the three, a gate you wrote down before running, and a two-sentence recommendation.
+  check:
+  - id: m4q1
+    prompt: Why should code ask for an alias rather than a model ID?
+    options:
+    - Comparing or switching models becomes a configuration change, and logs can record which model answered
+    - Aliases make models faster
+    - Model IDs are secret
+    - Ollama only accepts aliases
+    answer: 0
+    explanation: A registry maps aliases to provider, model and tag in one place.
+    evidence: comparing models is a configuration change
+  - id: m4q2
+    prompt: In a fair comparison, how is a timeout or unparseable reply counted?
+    options:
+    - As wrong, never as a crash that skips the case
+    - It is skipped
+    - It is counted as correct
+    - The whole run is discarded
+    answer: 0
+    explanation: Skipping failures flatters unreliable models.
+    evidence: A failure (timeout, unparseable reply) counts as wrong, never as a crash that skips the case.
+  - id: m4q3
+    prompt: Why include a keyword-rules baseline?
+    options:
+    - If rules score close to the model, the model may not be worth its operating cost
+    - Rules are always better than models
+    - The gate needs at least three aliases
+    - Baselines make the model more accurate
+    answer: 0
+    explanation: The simplest thing that could work sets the bar.
+    evidence: If rules score 85% and a model scores 87%, the model may not be worth its operating cost.
+  - id: m4q4
+    prompt: When should you set the gate's thresholds?
+    options:
+    - Before you see the results, written in code
+    - After the results, to fit the best model
+    - Never; decide by feel
+    - Only after production launch
+    answer: 0
+    explanation: Then the decision is the gate's, not the most enthusiastic person's.
+    evidence: Decide the thresholds before you see results
+  - id: m4q5
+    prompt: What is a common, useful outcome of evaluating a local model?
+    options:
+    - A split, where the local model handles common cases and hard ones go to a hosted model or a person
+    - Proof that local models beat frontier models on every task
+    - Proof that local models are never useful
+    - A decision to stop measuring
+    answer: 0
+    explanation: Narrow tasks can suit local models; hard cases can be routed elsewhere.
+    evidence: The useful output of an evaluation is often a split
+- id: m5
+  title: Running Ollama as a service
+  minutes: 20
+  body: |
+    On a laptop, Ollama is a developer tool. On a shared machine, it is a service that other people's work depends
+    on. That changes what you need to think about.
+
+    ### Binding and access
+
+    By default the server listens on localhost only. `OLLAMA_HOST` changes the address it binds to; setting it to
+    all interfaces makes the API reachable from the network, and the API has no authentication. The safe patterns:
+
+    - Keep Ollama on localhost and run the application that uses it on the same machine (site-assistant's
+      self-hosted stack runs Ollama as its own container next to the app).
+    - Or put a reverse proxy in front that requires authentication, terminates TLS and applies rate limits, and only
+      let the proxy reach Ollama.
+    - Restrict who can call pull, create and delete endpoints; most callers only need chat and embed.
+
+    ### Concurrency and memory
+
+    Server settings control how many requests one model handles at once and how many models can be loaded together
+    (`OLLAMA_NUM_PARALLEL` and `OLLAMA_MAX_LOADED_MODELS` in the FAQ). More parallel requests raise throughput but
+    each needs its own context memory, so the model may no longer fit on the GPU. Change one setting at a time and
+    measure throughput and latency under realistic load.
+
+    ### Containers
+
+    The official `ollama/ollama` image runs the server in Docker. Mount a volume for the model store so models
+    survive container restarts, pass the GPU through if you have one, and keep the port on an internal network.
+    Decide how models get onto the box: pulled at start-up (simple, needs a network connection), or baked into an
+    image or a volume (repeatable, works offline). site-assistant pulls its model the first time it starts.
+
+    ### Keeping it warm
+
+    The first request after a model unloads waits for it to load. For a service, either raise keep-alive so the
+    model stays loaded during working hours, or warm it at start-up with a request that has the model name and no
+    prompt. Watch memory: a model kept loaded is memory nothing else can use.
+
+    ### Health and monitoring
+
+    - **Liveness:** `GET /api/version` answers.
+    - **Readiness:** the model you need appears in `GET /api/tags`, and a tiny test request succeeds.
+    - **Metrics to log per call:** alias, model and tag, prompt and output tokens, load, prompt and generation
+      durations, and your own validation result.
+    - **Alerts:** error rate, latency above your target, and memory pressure or CPU spill-over.
+
+    ### Updates
+
+    Ollama and models both change. Pin the server version in your container image and the model by tag. When you
+    upgrade either, run the golden set from m4 on a staging box first and switch only if the gate still passes.
+    Re-pulling a tag can bring a changed model, so treat a re-pull like an upgrade.
+
+    ### Governance on top
+
+    The model server is one part of a governed workflow, not the whole of it. Rate limits per user, a daily token
+    budget, a kill switch, logging of questions and answers, and a retention period belong in the application in
+    front of Ollama. site-assistant applies rate limits and a daily token budget, and reports each question to the
+    governance console, which can switch answering off while search keeps working.
+
+    ### A go-live checklist
+
+    1. API reachable only through an authenticated proxy or from the same machine.
+    2. Models and server version pinned; licences recorded.
+    3. Golden set passes on the serving hardware.
+    4. Keep-alive and concurrency tuned and measured under load.
+    5. Health checks, per-call logs and alerts in place.
+    6. A fallback for callers when the server is busy or down.
+
+    ### When to stop self-hosting
+
+    A shared Ollama box is a good fit for a team, a lab or a home server. When demand grows to many concurrent
+    users, strict uptime targets or many models at once, the operational load grows with it. At that point compare
+    a dedicated serving engine on GPU servers, or a cloud route, using the same golden set and cost-per-correct-
+    answer measure from m4. The registry pattern means the application does not need to change when the answer
+    does.
+  exercise: |
+    Write a short service plan for running Ollama for a team of ten: how it is reached (proxy and auth), which
+    models and tags, keep-alive and concurrency settings with your reasoning, health checks, what is logged, and the
+    upgrade procedure. If you have Docker, run the `ollama/ollama` image with a named volume and confirm a pulled
+    model survives a container restart. Done when the plan covers every item of the go-live checklist.
+  check:
+  - id: m5q1
+    prompt: What happens if OLLAMA_HOST is set to all interfaces with nothing in front?
+    options:
+    - The API becomes reachable from the network with no authentication
+    - Ollama requires a password automatically
+    - Models are deleted
+    - Only embeddings are exposed
+    answer: 0
+    explanation: Keep it on localhost or put an authenticated proxy in front.
+    evidence: setting it to all interfaces makes the API reachable from the network, and the API has no authentication
+  - id: m5q2
+    prompt: What is the cost of raising parallel requests per model?
+    options:
+    - Each needs its own context memory, so the model may no longer fit on the GPU
+    - It disables streaming
+    - It changes the model's licence
+    - It removes keep-alive
+    answer: 0
+    explanation: Change one setting at a time and measure.
+    evidence: each needs its own context memory, so the model may no longer fit on the GPU
+  - id: m5q3
+    prompt: Why mount a volume for the model store when running the Ollama container?
+    options:
+    - So models survive container restarts
+    - So the API gets authentication
+    - So models run faster on CPU
+    - Because the image has no network access
+    answer: 0
+    explanation: Otherwise every restart re-pulls the models.
+    evidence: Mount a volume for the model store so models survive container restarts
+  - id: m5q4
+    prompt: Which is a good readiness check?
+    options:
+    - The model you need appears in /api/tags and a tiny test request succeeds
+    - The process ID exists
+    - The port number is 11434
+    - The log file is not empty
+    answer: 0
+    explanation: Liveness is /api/version; readiness checks the model is usable.
+    evidence: the model you need appears in GET /api/tags, and a tiny test request succeeds
+  - id: m5q5
+    prompt: How should you treat re-pulling a model tag on a production box?
+    options:
+    - Like an upgrade — run the golden set on staging first
+    - As routine, with no checks needed
+    - As a way to fix authentication
+    - As a rollback
+    answer: 0
+    explanation: Re-pulling a tag can bring a changed model.
+    evidence: Re-pulling a tag can bring a changed model, so treat a re-pull like an upgrade.
+project:
+  title: A local model bake-off with a pass/fail gate
+  kind: runnable
+  minutes: 90
+  goal: Build a harness that runs a labelled golden set through several model aliases (two local Ollama models and a
+    rules baseline), reports accuracy, median latency, tokens and cost, and marks each alias PASS or FAIL against a gate
+    written in advance.
+  steps:
+  - Pull the models you will compare while online (for example `ollama pull llama3.2:1b` and `ollama pull llama3.2`).
+    Everything after this runs offline.
+  - Write your gate down first — the reference uses accuracy at least 80% and median latency at most 5 seconds.
+  - Save the code below as `bench.py`. Edit REGISTRY so the Ollama aliases point at the tags you pulled.
+  - Read GOLDEN and add at least two cases of your own, including a trap.
+  - Run `python bench.py triage-rules` first. It needs no model and shows the baseline.
+  - Run `python bench.py` for all aliases. Warm each model first with a single `ollama run <model> "hi"` so load time
+    does not count.
+  - Stop the Ollama server and run `python bench.py triage-small`. It should report 0% and FAIL, not crash.
+  - Run each alias twice and note whether accuracy changes.
+  - Write a five-line decision note — which alias you would ship for this task, why, and what you would monitor.
+  code: |
+    """Compare models behind aliases on a labelled set: accuracy, latency, speed and a pass/fail gate."""
+    import json
+    import os
+    import statistics
+    import sys
+    import time
+    import urllib.request
+
+    OLLAMA = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+    REGISTRY = {                                  # alias -> provider and model; code only ever uses aliases
+        "triage-small": {"provider": "ollama", "model": "llama3.2:1b"},
+        "triage-medium": {"provider": "ollama", "model": "llama3.2"},
+        "triage-rules": {"provider": "mock", "model": "keyword-rules-v1"},
+    }
+    CATEGORIES = ["quantity_mismatch", "price_mismatch", "missing_ssi", "late_confirm", "other"]
+    SYSTEM = ("You classify settlement-break notes for a middle-office team. Reply only with JSON that has a "
+              "category and a one-sentence reason. Categories: " + ", ".join(CATEGORIES) + ".")
+    SCHEMA = {"type": "object", "required": ["category", "reason"],
+              "properties": {"category": {"type": "string", "enum": CATEGORIES}, "reason": {"type": "string"}}}
+    GOLDEN = [
+        ("Broker confirm shows 900 shares, our booking says 1,000.", "quantity_mismatch"),
+        ("Allocation split sums to 4,800 but the block was 5,000.", "quantity_mismatch"),
+        ("Confirm price 101.25 vs booked 101.52.", "price_mismatch"),
+        ("Commission on the confirm differs from our fee schedule, net amount off.", "price_mismatch"),
+        ("No standing settlement instructions on file for this custodian.", "missing_ssi"),
+        ("Custodian rejected: beneficiary account details missing.", "missing_ssi"),
+        ("Confirm received two days after trade date.", "late_confirm"),
+        ("Still waiting for the broker's affirmation at end of day.", "late_confirm"),
+        ("Client called to ask about the weather in Singapore.", "other"),
+        ("Trade booked under the wrong fund code.", "other"),
+    ]
+    GATE = {"min_accuracy": 0.8, "max_p50_seconds": 5.0}
+
+
+    def mock_complete(note: str) -> dict:
+        n = note.lower()
+        for words, cat in [(("shares", "sums", "quantity"), "quantity_mismatch"), (("price", "commission"), "price_mismatch"),
+                           (("instructions", "account details"), "missing_ssi"), (("days after", "waiting"), "late_confirm")]:
+            if any(w in n for w in words):
+                return {"category": cat, "reason": "keyword rule"}
+        return {"category": "other", "reason": "no rule matched"}
+
+
+    def ollama_complete(model: str, note: str) -> dict:
+        body = {"model": model, "stream": False, "format": SCHEMA, "options": {"temperature": 0, "seed": 7},
+                "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": note}]}
+        req = urllib.request.Request(OLLAMA + "/api/chat", data=json.dumps(body).encode(),
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=300) as resp:
+            reply = json.load(resp)
+        out = json.loads(reply["message"]["content"])
+        out["tokens"] = reply.get("eval_count", 0)
+        return out
+
+
+    def run(alias: str) -> dict:
+        spec = REGISTRY[alias]
+        correct, latencies, tokens = 0, [], 0
+        for note, label in GOLDEN:
+            t0 = time.perf_counter()
+            try:
+                out = mock_complete(note) if spec["provider"] == "mock" else ollama_complete(spec["model"], note)
+            except Exception as e:                    # a failure counts as wrong, never as a crash
+                out = {"category": "error", "reason": str(e)[:80]}
+            latencies.append(time.perf_counter() - t0)
+            tokens += out.get("tokens", 0)
+            correct += out.get("category") == label
+        acc = correct / len(GOLDEN)
+        p50 = statistics.median(latencies)
+        passed = acc >= GATE["min_accuracy"] and p50 <= GATE["max_p50_seconds"]
+        return {"alias": alias, "model": spec["model"], "accuracy": acc, "p50_s": round(p50, 2),
+                "tokens_out": tokens, "cost_usd": 0.0, "gate": "PASS" if passed else "FAIL"}
+
+
+    if __name__ == "__main__":
+        aliases = sys.argv[1:] or list(REGISTRY)
+        print(f"{'alias':<14} {'model':<18} {'acc':>5} {'p50 s':>6} {'tokens':>7} {'cost':>5}  gate")
+        for a in aliases:
+            r = run(a)
+            print(f"{r['alias']:<14} {r['model']:<18} {r['accuracy']:>5.0%} {r['p50_s']:>6} {r['tokens_out']:>7} "
+                  f"{r['cost_usd']:>5.2f}  {r['gate']}")
+  language: python
+  expected: |
+    $ python bench.py triage-rules
+    alias          model                acc  p50 s  tokens  cost  gate
+    triage-rules   keyword-rules-v1    100%    0.0       0  0.00  PASS
+    $ python bench.py
+    One row per alias in the same format. The model rows' accuracy, latency and token counts depend on your models
+    and hardware. The rules baseline scores 100% on the built-in cases because its keywords were written for them;
+    your own added cases are the fairer test.
+    With the server stopped, triage-small shows 0% accuracy, 0 tokens and FAIL, and the script exits normally.
+  done_when:
+  - The table prints a row per alias with accuracy, median latency, tokens, cost and PASS or FAIL against your
+    pre-written gate.
+  - Stopping the server makes the Ollama aliases fail cleanly instead of crashing the harness.
+  - You wrote a decision note that names the alias you would ship and cites your own numbers, including how your added
+    cases changed the rules baseline's score.
+quiz:
+- id: f1
+  prompt: What decides whether a local model is usable on a machine?
+  options:
+  - Whether it fits in fast memory, weights plus context
+  - The model's popularity
+  - The speed of the internet connection
+  - The length of its name
+  answer: 0
+  explanation: A model that fits in fast memory is usable; one that does not crawls.
+  evidence: A model that fits in fast memory is usable; one that does not crawls.
+- id: f2
+  prompt: Doubling num_ctx roughly does what to the context cache?
+  options:
+  - Doubles it
+  - Halves it
+  - Leaves it unchanged
+  - Removes it
+  answer: 0
+  explanation: The cache grows with every token in the context window.
+  evidence: Doubling num_ctx roughly doubles that cache.
+- id: f3
+  prompt: Which reply fields measure generation speed?
+  options:
+  - eval_count and eval_duration
+  - prompt_eval_count and load_duration
+  - total_duration only
+  - model and created_at
+  answer: 0
+  explanation: Prompt processing and generation are measured separately.
+  evidence: 'Generation (eval_count / eval_duration): tokens per second while writing the answer.'
+- id: f4
+  prompt: For hard reasoning and long multi-step work, what does the module suggest?
+  options:
+  - Consider a hosted or cloud model instead
+  - The smallest local model
+  - A dedicated embedding model
+  - Turning streaming off
+  answer: 0
+  explanation: Small local models trail frontier models on hard reasoning.
+  evidence: consider a hosted or cloud model instead
+- id: f5
+  prompt: Why does site-assistant benchmark models on the machine that serves them?
+  options:
+  - Numbers from another machine do not transfer
+  - Ollama only runs benchmarks on servers
+  - The licence requires it
+  - Benchmarks need internet access
+  answer: 0
+  explanation: Speed depends heavily on the specific GPU and memory.
+  evidence: because numbers from another machine do not transfer
+- id: f6
+  prompt: What does num_predict do?
+  options:
+  - Caps the number of output tokens
+  - Sets the number of parallel requests
+  - Predicts the best model
+  - Sets the context window
+  answer: 0
+  explanation: A cheap guard against runaway answers.
+  evidence: a cap on output tokens, a cheap guard against runaway answers
+- id: f7
+  prompt: How can you warm a model so the first user does not wait for it to load?
+  options:
+  - Send a request with only the model name and no prompt
+  - Delete and re-pull it
+  - Set keep_alive to 0
+  - Restart the server
+  answer: 0
+  explanation: A request with only the model name loads it.
+  evidence: A request with only a model name and no prompt loads the model
+- id: f8
+  prompt: How does Ollama return a tool call from /api/chat?
+  options:
+  - The reply's message contains tool_calls; your code runs the function and sends the result back with the tool role
+  - Ollama runs the function itself
+  - As a separate HTTP request to your server
+  - Tool calls are not supported
+  answer: 0
+  explanation: The pattern matches hosted APIs, with the same rules on read-only tools and caps.
+  evidence: the reply's message can contain tool_calls instead of text
+- id: f9
+  prompt: Why does site-assistant set think to false?
+  options:
+  - Answering directly is much faster and enough for answers grounded in retrieved text
+  - Thinking models cannot cite sources
+  - Thinking is only available on hosted models
+  - It saves disk space
+  answer: 0
+  explanation: Reasoning phases cost time that grounded answers do not need.
+  evidence: so reasoning models answer directly, which is much faster and enough for answers grounded in retrieved text
+- id: f10
+  prompt: What does the OpenAI SDK need when pointed at Ollama's /v1 endpoint?
+  options:
+  - The base URL, a local model name, and some API key string that Ollama ignores
+  - A real OpenAI key
+  - A Modelfile
+  - A Docker image
+  answer: 0
+  explanation: Change the base URL and model name; Ollama ignores the key.
+  evidence: the SDK needs some API key string, which Ollama ignores
+- id: f11
+  prompt: Which endpoint is a good liveness check?
+  options:
+  - GET /api/version
+  - POST /api/create
+  - DELETE /api/delete
+  - POST /api/pull
+  answer: 0
+  explanation: Liveness is the server answering; readiness checks the model.
+  evidence: Health-check with /api/version, and check the model you need is listed in /api/tags.
+- id: f12
+  prompt: How large an index can a list of vectors and a linear scan handle comfortably?
+  options:
+  - A few thousand chunks
+  - Only ten chunks
+  - Billions of chunks
+  - It cannot work without a database
+  answer: 0
+  explanation: Beyond that, use an index such as pgvector or sqlite-vec.
+  evidence: For a few thousand chunks, a list of vectors and a linear scan is fast enough
+- id: f13
+  prompt: What should you do if you change the embedding model?
+  options:
+  - Rebuild the index
+  - Nothing; old vectors still work
+  - Only re-embed new queries
+  - Raise the temperature
+  answer: 0
+  explanation: Vectors from different models are not comparable.
+  evidence: rebuild the index if you change either
+- id: f14
+  prompt: Why do small local models answer well from retrieved passages?
+  options:
+  - The hard part — finding the right text — is done by search
+  - Retrieval makes them larger
+  - They memorise the documents
+  - Retrieval turns on thinking
+  answer: 0
+  explanation: Good passages make the generation task narrow.
+  evidence: because the hard part — finding the right text — is done by search
+- id: f15
+  prompt: What retrieval gate does site-assistant use?
+  options:
+  - A golden set with a hit-at-6 gate
+  - A speed test only
+  - No gate
+  - A cost cap of $1 per day
+  answer: 0
+  explanation: Retrieval quality is checked before tuning prompts.
+  evidence: site-assistant keeps a retrieval golden set with a hit-at-6 gate
+- id: f16
+  prompt: Which providers sit behind the alt-data triage model registry?
+  options:
+  - Mock, Anthropic, OpenAI and Bedrock
+  - Only Ollama
+  - Only a mock
+  - Ollama and llama.cpp
+  answer: 0
+  explanation: A local provider would plug into the same registry pattern.
+  evidence: alongside mock, Anthropic, OpenAI and Bedrock entries
+- id: f17
+  prompt: What makes a golden set's labels trustworthy?
+  options:
+  - Someone who does the job checks them
+  - The model writes them
+  - They are generated at random
+  - They come from a public benchmark
+  answer: 0
+  explanation: Labels a person agrees with make the eval meaningful.
+  evidence: Have someone who does the job check them.
+- id: f18
+  prompt: How should cost be compared between local and hosted models?
+  options:
+  - Cost per correct answer, including hardware and running cost for local
+  - Per-token price only, with local as free
+  - By model file size
+  - By download time
+  answer: 0
+  explanation: A cheap model that needs many corrections is not cheap.
+  evidence: Compare cost per correct answer.
+- id: f19
+  prompt: What did the first paired results in the daily blog pipeline show?
+  options:
+  - The local drafts did not reduce Claude's editing work
+  - The local model replaced Claude entirely
+  - Local drafts were perfect
+  - No comparison was logged
+  answer: 0
+  explanation: Logging a comparison on every run supports an evidence-based decision.
+  evidence: its first paired results showed the local drafts did not reduce Claude's editing work
+- id: f20
+  prompt: Which is the safe way to share Ollama with a team?
+  options:
+  - A reverse proxy with authentication, TLS and rate limits in front, with only the proxy able to reach Ollama
+  - Open port 11434 to the office network
+  - Email the model file to each person
+  - Run it with OLLAMA_HOST on all interfaces
+  answer: 0
+  explanation: The API has no authentication of its own.
+  evidence: put a reverse proxy in front that requires authentication, terminates TLS and applies rate limits
+- id: f21
+  prompt: Which endpoints should most callers of a shared server be limited to?
+  options:
+  - Chat and embed
+  - Pull, create and delete
+  - Every endpoint
+  - None
+  answer: 0
+  explanation: Restrict who can pull, create and delete models.
+  evidence: most callers only need chat and embed
+- id: f22
+  prompt: What are the two ways to get models onto a service box?
+  options:
+  - Pull at start-up, or bake them into an image or volume
+  - Copy them from a hosted API, or train them
+  - Stream them per request, or embed them in the code
+  - Only by hand over SSH
+  answer: 0
+  explanation: Pulling is simple but needs a network; baking is repeatable and offline.
+  evidence: pulled at start-up (simple, needs a network connection), or baked into an image or a volume
+- id: f23
+  prompt: Where do rate limits, budgets and a kill switch belong?
+  options:
+  - In the application in front of Ollama
+  - Inside the model weights
+  - In the Modelfile
+  - Nowhere; Ollama handles them
+  answer: 0
+  explanation: The model server is one part of a governed workflow.
+  evidence: belong in the application in front of Ollama
+- id: f24
+  prompt: In the capstone, what happens when the server is stopped?
+  options:
+  - The Ollama aliases score 0% and FAIL, and the script exits normally
+  - The script crashes with a traceback
+  - The rules alias also fails
+  - The script waits forever
+  answer: 0
+  explanation: Failures count as wrong answers, never as crashes.
+  evidence: With the server stopped, triage-small shows 0% accuracy, 0 tokens and FAIL, and the script exits normally.
+- id: f25
+  prompt: When is Ollama the right choice over vLLM?
+  options:
+  - Development, offline work, private narrow tasks and small shared servers
+  - Many concurrent users on dedicated GPU clusters
+  - The hardest reasoning tasks
+  - Hosted access to frontier models
+  answer: 0
+  explanation: vLLM targets high-throughput serving on dedicated GPUs.
+  evidence: development, offline work, narrow tasks where data must stay on the box, and small shared servers
+- id: f26
+  prompt: What should a per-call log record for a local model?
+  options:
+  - Alias, model and tag, token counts, durations and the validation outcome
+  - Only errors
+  - The user's password
+  - Only the reply text
+  answer: 0
+  explanation: Logs show which model answered, how fast and whether it passed validation.
+  evidence: 'Log per call: alias, model and tag, prompt and output token counts'
+- id: f27
+  prompt: Why must a golden set include an "other" trap case?
+  options:
+  - To check the model does not force everything into a real category
+  - Because the API requires five categories
+  - To make the accuracy higher
+  - To test the network
+  answer: 0
+  explanation: Cover every category, including a trap that looks like one but is not.
+  evidence: at least one trap that looks like a category but is not
+- id: f28
+  prompt: If no model that fits your hardware clears the quality bar, what is the right response?
+  options:
+  - Treat it as a result and use a cloud route for that task
+  - Lower the bar until one passes
+  - Buy the largest model and hope
+  - Stop evaluating
+  answer: 0
+  explanation: Being able to say this with numbers makes the proposal credible.
+  evidence: that is a result, not a failure. Use a cloud route for that task
+- id: f29
+  prompt: What is a privacy caution about a local vector index?
+  options:
+  - It is a copy of your documents in another form
+  - It sends text to the model provider
+  - It can be read only by the model
+  - It deletes the source documents
+  answer: 0
+  explanation: Protect it like the documents, with the same access and retention.
+  evidence: the index is now a copy of your documents in another form
+- id: f30
+  prompt: What should you do before upgrading Ollama on a production box?
+  options:
+  - Run the golden set on a staging box and switch only if the gate still passes
+  - Upgrade and check later
+  - Delete all models first
+  - Change every alias
+  answer: 0
+  explanation: A new build or re-pulled tag can change outputs.
+  evidence: run the golden set from m4 on a staging box first and switch only if the gate still passes
