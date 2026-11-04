@@ -1,0 +1,7 @@
+{
+  "model": "gpt-oss:20b",
+  "temperature": 0.4,
+  "think": "low",
+  "num_ctx": 8192,
+  "label": "my-post"
+}
