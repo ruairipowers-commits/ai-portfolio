@@ -90,6 +90,8 @@ def connect(path: Path | None = None):
 # Columns added after the first release; existing databases get them on the next connect.
 COLUMNS = {
     "courses": {"tags": "TEXT"},                     # {"industry": [...], "function": [...], "tech": [...]}
+    "enrollments": {"favorite": "INTEGER DEFAULT 0",  # the learner's own focus: a star, a priority, their order
+                    "priority": "TEXT DEFAULT 'normal'", "position": "INTEGER"},
     "suggestions": {"source": "TEXT DEFAULT 'learner'", "client_ref": "TEXT", "tags": "TEXT", "demand": "REAL"},
 }
 

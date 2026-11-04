@@ -254,7 +254,7 @@ def create_app(start_worker: bool = False) -> FastAPI:
         return go(f"/tracker#c-{course}")
 
     @app.get("/tracker", response_class=HTMLResponse)
-    def tracker_page(req: Request, tag: str = ""):
+    def tracker_page(req: Request, tag: str = "", sort: str = "mine", fav: str = ""):
         u, redirect = need_user(req, "/tracker")
         if redirect:
             return redirect
@@ -263,9 +263,37 @@ def create_app(start_worker: bool = False) -> FastAPI:
             mine = rows(conn, "SELECT id, text, status, created_at, course_slug FROM suggestions WHERE learner_id=? "
                               "ORDER BY id DESC LIMIT 10", u["id"])
         tag = tag.strip().lower()[:30]
+        sort = sort if sort in tracker.SORTS else "mine"
         tags = sorted({t for e in st for t in e["course"].tag_list()})
-        shown = [e for e in st if not tag or tag in e["course"].tag_list()]
-        return page(req, "tracker.html", courses=shown, suggestions=mine, user=u, tags=tags, tag=tag, total=len(st))
+        shown = [e for e in st if (not tag or tag in e["course"].tag_list()) and (fav != "1" or e["favorite"])]
+        query = "&".join(f"{k}={v}" for k, v in (("tag", tag), ("sort", sort if sort != "mine" else ""),
+                                                 ("fav", "1" if fav == "1" else "")) if v)
+        return page(req, "tracker.html", courses=tracker.sort_entries(shown, sort), suggestions=mine, user=u, tags=tags,
+                    tag=tag, total=len(st), sort=sort, fav=fav == "1", query=query, next=tracker.up_next(st),
+                    priorities=tracker.PRIORITIES, favorites=sum(e["favorite"] for e in st))
+
+    @app.post("/tracker/focus")
+    def tracker_focus(req: Request, course: str = Form(...), action: str = Form(...), back: str = Form("")):
+        """Star, priority and the learner's own order for one course on their tracker."""
+        u, redirect = need_user(req, "/tracker")
+        if redirect:
+            return redirect
+        if not limiter.allow("focus", str(u["id"]), 120, 600):
+            return message(req, "Slow down", "Too many changes. Try again in a few minutes.", 429)
+        try:
+            with connect() as conn:
+                if action in ("favorite", "unfavorite"):
+                    tracker.set_focus(conn, u["id"], course, favorite=action == "favorite")
+                elif action.startswith("priority:"):
+                    tracker.set_focus(conn, u["id"], course, priority=action.split(":", 1)[1])
+                elif action in ("up", "down", "top", "bottom"):
+                    tracker.move(conn, u["id"], course, action)
+                else:
+                    raise NotAllowed("unknown action")
+        except NotAllowed as e:
+            return message(req, "Can't do that", str(e).capitalize() + ".", 400)
+        back = back if re.fullmatch(r"[a-z0-9=&-]*", back[:120]) else ""
+        return go("/tracker" + (f"?{back}" if back else "") + f"#c-{course}")
 
     @app.get("/learn/{slug}/{level}", response_class=HTMLResponse)
     def learn(req: Request, slug: str, level: str):

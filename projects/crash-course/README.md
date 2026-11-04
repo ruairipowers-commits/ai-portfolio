@@ -66,6 +66,14 @@ them seen (the nav shows how many are unseen). The same items appear on the port
 
 Course levels are never edited by the scan.
 
+## Focus on the tracker
+
+Each course on **My tracker** has a star (favourite), a priority (high / normal / low) and a place in the learner's own
+order (move up, down or to the top; new sign-ups go to the end). The tracker sorts by that order, by priority, by
+progress or by most recently added, filters to favourites, and opens with **Up next**: the next open level of the
+highest-placed favourite (or of the first course when there are none). Plain forms, no JavaScript needed.
+
+
 ## Quickstart
 
 ```bash

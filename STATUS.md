@@ -21,7 +21,10 @@ glossary "Find out more" AI answers for signed-in learners, rate-limited (phase 
   GitHub release-feed URLs in feeds.yaml could not be fetched from the build session (proxy); PyPI feeds parse.
 - [ ] Ruairi: review and merge. Then: create the daily scheduled task (Claude, skill `course-news`); set
       `COURSE_NEWS_URL` on the live service to the raw URL of `course-news/items.jsonl`.
-- [ ] Phase 3: tracker favourites, priority and ordering. Phase 4: glossary (highlight → definition, add to glossary,
+- Phase 3 done (same branch): tracker favourites (star, "favourites only"), priority (high / normal / low), the
+  learner's own order (up / down / top), sort by order / priority / progress / recently added, and "Up next".
+  103 tests pass (6 new in `tests/test_focus.py`).
+- [ ] Phase 4: glossary (highlight → definition, add to glossary,
       suggest as a course, "Find out more" AI answer for signed-in learners, rate-limited, cached as owner-approved
       entries; hover definitions).
 
