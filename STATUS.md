@@ -1,7 +1,26 @@
 # Status — open items
 
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
-(or delete them) as they're done. Last updated 2 November 2026.
+(or delete them) as they're done. Last updated 3 November 2026.
+
+## 0000000000000000. Daily posts keep coming when the EVO-X1 is offline (3 November 2026)
+
+Ruairi's decision (3 Nov): a post every day matters more than every post being drafted locally. Branch
+`agent/claude-daily-post-fallback`:
+- daily-post skill, step 3b: when the EVO-X1 tools are missing or every draft attempt fails, Claude drafts the post
+  from the brief. Its last line says Claude wrote it while the server was offline; the PR gets the `claude-draft`
+  label; the run is logged as `claude-only` with `--note "fallback: …"` (it never forms a pair, so the comparison
+  stays like for like).
+- The queue: each run saves the EVO-X1's queue to the `routing-log` branch (`scripts/routing_log.py save-queue`);
+  a run that can't reach the EVO-X1 reads that copy (`routing_log.py queue`, up to 7 days old). Topics already
+  turned into PRs are skipped as before.
+- The Approve / Archive email still comes from the editorial service on the EVO-X1, so on an offline day it arrives
+  once the service is back.
+- Blog page intro says Claude drafts on days the server is offline. Gate test added for the fallback line.
+- [ ] Ruairi: approve the push, then merge. Until it's merged, runs follow main's skill and stop when the EVO-X1 is
+      unreachable.
+- The "Daily blog post" scheduled task's prompt now defers to the skill (keep five in hand, Approve / Archive, the
+  fallback) and no longer carries the queue URL (3 Nov). The task still requires the Mac.
 
 ## 000000000000000. Approve / archive posts from the email; one approved post a day (2 November 2026)
 
@@ -22,8 +41,6 @@ Branch `agent/claude-email-approval`:
       service on the EVO-X1.
 - [ ] Ruairi: add the `editorial_queue` tool to infra-setups (file + steps from the chat of 2 Nov; this session could
       not attach infra-setups or open dev-sandbox), redeploy the EVO-X1 MCP server, restart Claude Desktop.
-- [ ] Update the "Daily blog post" scheduled task's prompt (needs approval on the Mac): drop the queue URL, say "keep
-      five posts in hand", Approve/Archive replaces merging.
 - [ ] If `main` has branch protection that requires a review, the workflow's merge is refused (it warns and tries the
       next); allow GitHub Actions to merge, or the publish step stays manual.
 

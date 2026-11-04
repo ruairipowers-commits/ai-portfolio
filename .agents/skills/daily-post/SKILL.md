@@ -1,6 +1,6 @@
 ---
 name: daily-post
-description: Daily blog posts from the top of the editorial queue, enough to keep five approved-or-waiting posts in hand — a local model on the EVO-X1 drafts each, Claude reviews and edits it, code gates it, and it opens a pull request that emails Ruairi the post with Approve / Archive links (ready-to-publish or needs-work), tagged AutoPublished. Logs the local-vs-Claude comparison. Used by the daily scheduled task.
+description: Daily blog posts from the top of the editorial queue, enough to keep five approved-or-waiting posts in hand — a local model on the EVO-X1 drafts each (Claude drafts it when the EVO-X1 can't be reached), Claude reviews and edits it, code gates it, and it opens a pull request that emails Ruairi the post with Approve / Archive links (ready-to-publish or needs-work), tagged AutoPublished. Logs the local-vs-Claude comparison. Used by the daily scheduled task.
 ---
 
 # Daily posts: local draft → Claude review → code gate → pull request → Ruairi approves or archives from the email
@@ -10,6 +10,11 @@ brief it, review and edit its draft, and a separate **editor** subagent scores t
 ready (`editorial gate`). Either way it arrives as a pull request, and the editorial service emails Ruairi the whole
 post with **Approve** and **Archive** links. Nothing publishes without his decision: `publish-approved.yml` merges one
 approved post a day, oldest approval first (his decision, 2 November 2026). You never merge.
+
+**When the EVO-X1 can't be reached** (its tools are missing, or every draft attempt fails), the run still makes its
+posts: you read the saved copy of the queue (step 1) and write the draft yourself (step 3b), and the post's last line
+and the run log say so. Ruairi's decision, 3 November 2026: a post every day matters more than every post being
+drafted locally.
 
 Read first: `CLAUDE.md`, `factory/style-guide.md`, `projects/editorial-agents/prompts/local-writer.v1.md` (the local
 model's brief), `projects/editorial-agents/prompts/editor.v1.md` (the editor's rubric). Standing rule: never say or
@@ -30,7 +35,11 @@ Zero: stop; nothing to report.
 ## 1. Take the topic
 
 - Read the queue with the EVO-X1 tool `mcp__remote-devices__evo-x1__editorial_queue` (it reads the editorial service on
-  that machine, so no web fetch or approval prompt is needed). Only if that tool is missing and someone is in the chat,
+  that machine, so no web fetch or approval prompt is needed). Save its Markdown to `drafts/queue.md` and keep a copy
+  for days the EVO-X1 is offline: `python scripts/routing_log.py save-queue drafts/queue.md` (it goes to the
+  `routing-log` branch, never `main`).
+- If that tool is missing: `python scripts/routing_log.py queue` prints the last saved copy, up to 7 days old. Say in
+  the final message that you used it, and how old it was. Only if there's no usable copy and someone is in the chat,
   fall back to WebFetch on `EDITORIAL_QUEUE_URL` from the prompt; never write that URL into any file. Take the Markdown
   verbatim. The first topic is next: Ruairi's picks first, then readers' votes, then rank. Note its `id`, title, link,
   summary, angle, sectors and votes.
@@ -62,8 +71,18 @@ Zero: stop; nothing to report.
 - Save `response` **exactly as returned** to `drafts/<slug>/local.md` and the whole result JSON to
   `drafts/<slug>/local-metrics.json` (it carries Ollama's exact token counts and timings). Never touch the draft up:
   the comparison measures what you change.
-- If the EVO-X1 tools are missing or every attempt fails: the computer is off or unreachable. Stop, open nothing,
-  and report it. Don't write the draft yourself in its place.
+- If the EVO-X1 tools are missing or every attempt fails: the computer is off or unreachable. Go to step 3b.
+
+## 3b. Claude draft (only when the EVO-X1 can't be reached)
+
+- Note why (`tools missing`, or each failed job's `status` and `error`); it goes in the run log, the PR and the final
+  message.
+- Write the post yourself from the brief and the sources, straight to `site/blog/posts/<slug>.md`, with the same shape
+  and front matter as step 4. Skip step 4's review (there's no local draft to review) and step 6 (there's nothing
+  to compare).
+- Last line, in italics, exactly: *Drafted with AI agents: Claude wrote the first draft from a topic my scout found
+  (my own server was offline that day), it passed every automated check, and I approved it for publishing.*
+- Then steps 5, 7 (its step 3b line) and 8 as usual.
 
 ## 4. Review and edit (you)
 
@@ -110,6 +129,16 @@ editorial routing log --arm local-review --topic <id> --slug <slug> --final site
   --defects <n> --editor-min <lowest final editor score> [--checks-first-pass] [--rewritten] [--published]
 ```
 
+If you wrote the draft yourself (step 3b), log only this, with `--final` the post itself:
+
+```bash
+editorial routing log --arm claude-only --topic <id> --slug <slug> --final site/blog/posts/<slug>.md \
+  --review drafts/<slug>/brief.md --read drafts/<slug>/sources/*.txt --note "fallback: <why>" \
+  --editor-min <lowest final editor score> [--checks-first-pass] [--published]
+```
+
+It counts with the claude-only runs, which is what it was; with no local draft on the topic, it never counts as a pair.
+
 If the comparison arm ran:
 
 ```bash
@@ -136,6 +165,7 @@ step 7), with the usual `Co-Authored-By` trailer. Push. Open the PR with
 Topic: `<topic id>`
 Source: <topic link> · votes: <n> · picked by Ruairi: yes|no
 Local model: <model> · <seconds> s · defects found in review: <n> · rewritten: yes|no
+(step 3b instead: Local model: none, EVO-X1 unreachable (<why>) · drafted by Claude)
 
 <!-- scorecard -->
 <final code-check table, plus one row per editor criterion>
@@ -146,9 +176,12 @@ Gate: PUBLISH | HOLD — <reasons if held>
 
 - **Gate said PUBLISH:** label the PR `draft-post` **and** `ready-to-publish` (create labels if missing).
 - **Gate said HOLD:** label the PR `draft-post` **and** `needs-work`, with the gate's reasons at the top of the body.
+- **Drafted by Claude (step 3b):** also label it `claude-draft`, so the email and the PR list show which posts weren't
+  drafted locally.
 
 Either way the editorial service emails Ruairi the whole post with Approve / Archive links within ~30 minutes (they act on the
-`Topic:` line, so keep it exactly as above). He may approve a held post; that's his call.
+`Topic:` line, so keep it exactly as above). The service runs on the EVO-X1, so on a day it's offline that email
+arrives once it's back. He may approve a held post; that's his call.
 
 Never merge any PR, never push to `main` directly, never change files other than the post and the run log. Never touch
 the `approved` / `archived` labels: `publish-approved.yml` sets them from his decisions.
@@ -156,5 +189,6 @@ the `approved` / `archived` labels: `publish-approved.yml` sets them from his de
 ## 9. Finish
 
 Final message: how many posts were in hand and how many this run wrote; for each, the topic and its votes, the PR
-link, READY or HELD (and why), the local model's time and the review's defect count, whether the comparison arm ran,
-and anything left out for lack of a source.
+link, READY or HELD (and why), the local model's time and the review's defect count (or that Claude drafted it, and
+why), whether the comparison arm ran, whether the queue came from the saved copy (and its age), and anything left out
+for lack of a source.

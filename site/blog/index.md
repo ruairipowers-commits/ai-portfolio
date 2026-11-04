@@ -8,8 +8,8 @@ icon: material/post-outline
 <div class="info-tip__panel" id="blog-about" role="note" hidden>
 <p>New posts most days. Every write-up on the site is here, newest first: AI insights, the industry projects, AI
 governance, personal projects and the classes. Posts tagged <strong>AutoPublished</strong> come from the daily
-pipeline: a local model on my own server drafts them, Claude reviews and edits them, code checks them, and I approve
-each one before it goes live.</p>
+pipeline: a local model on my own server drafts them (Claude does, on a day the server is offline, and the post says
+so), Claude reviews and edits them, code checks them, and I approve each one before it goes live.</p>
 <p>Each post is tagged with its topics and who it's for. Pick a type, a topic, your role or a date range to narrow the
 list. Each post also carries finer keywords.</p>
 </div>

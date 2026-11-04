@@ -23,6 +23,13 @@ def test_publishes_only_when_everything_passes(tmp_path):
     assert g["publish"] and g["editor_min"] == 4 and not g["reasons"]
 
 
+def test_a_post_claude_drafted_when_the_server_was_offline_can_pass(tmp_path):
+    # the daily-post skill's step 3b closing line (SKILL.md); the gate treats it like any other post
+    disc = ("Drafted with AI agents: Claude wrote the first draft from a topic my scout found (my own server was "
+            "offline that day), it passed every automated check, and I approved it for publishing.")
+    assert review.gate(_post(tmp_path, disc=disc), GOOD, published=[])["publish"]
+
+
 def test_holds_on_any_doubt(tmp_path):
     low = json.loads(json.dumps(GOOD))
     low["criteria"][0]["score"] = 3
