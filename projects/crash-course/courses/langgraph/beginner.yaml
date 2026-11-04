@@ -1,0 +1,460 @@
+course: langgraph
+level: beginner
+version: 1
+title: LangGraph approval-gated agents in 1 hour
+status: draft
+source:
+  page: tech/langgraph.md
+  docs: https://docs.langchain.com/oss/python/langgraph/overview
+provenance:
+  written_by: Claude (build session, 3 Nov 2026), from the site's LangGraph page and the Familiar level
+sections:
+- id: recap
+  heading: Where Familiar left you
+  body: |
+    - LangGraph builds agents as **explicit graphs**: a state object, nodes that are plain functions, and edges.
+    - **Conditional edges** route on what a step decided, so a run's path is visible and reviewable.
+    - A **checkpointer** saves the state after each step, keyed by a **thread ID**.
+    - `interrupt()` pauses a run with its state saved; `Command(resume=...)` on the same thread ID carries on.
+    - It is a library, not a hosted service: you pick the model client, the checkpointer backend and where it runs.
+
+    This hour turns those ideas into a working pattern you can reuse: a small agent that investigates a trade
+    exception, proposes a fix, and **cannot write anything until a person approves**. You will learn the ten terms
+    you meet on day one, set up a clean environment, build the graph, pause it, inspect its saved state and resume
+    it. Everything runs offline with a mock model step, so there is no API key and no cost.
+- id: core_terms
+  heading: The 10 terms you need
+  body: |
+    1. **State.** The shared data every node reads and updates, usually a `TypedDict` or a Pydantic model. Design it
+       first: it is the contract between steps and what the checkpointer saves.
+    2. **Node.** A plain Python function that takes the state and returns a dict of updates. A node returns only
+       the keys it changes; LangGraph merges them into the state.
+    3. **Edge.** A fixed connection from one node to the next. `START` and `END` are special names for the entry
+       and exit of the graph.
+    4. **Conditional edge.** A routing function that reads the state and returns the name of the next node (or
+       `END`). This is where a model's decision turns into control flow you can see.
+    5. **Reducer.** A rule for how a node's update merges into a state key. By default an update replaces the
+       value; with a reducer such as `add_messages` (used by `MessagesState`) new messages are appended instead.
+    6. **StateGraph and compile.** `StateGraph(State)` is the builder you add nodes and edges to. `compile()` checks
+       the wiring and returns a runnable graph with `invoke` and `stream`.
+    7. **Checkpointer.** The object that writes the state after each step. `InMemorySaver` is for learning and
+       tests; SQLite and Postgres checkpointers keep state across restarts.
+    8. **Thread ID.** The key a checkpointer files a run under, passed as
+       `{"configurable": {"thread_id": "..."}}`. Same thread ID means the same run's history; a new one starts fresh.
+    9. **Interrupt.** Calling `interrupt(payload)` inside a node stops the run and hands the payload to the caller.
+       Without a checkpointer there is nothing to resume from, so interrupts need one.
+    10. **Command(resume=...).** What you pass to `invoke` to continue an interrupted run. The value becomes the
+        return value of `interrupt()` inside the paused node, which then runs again from its start.
+- id: setup
+  heading: Set up a clean environment (10 minutes)
+  body: |
+    1. Check you have **Python 3.10 or newer**: `python3 --version`.
+    2. Make a folder and a virtual environment so this project's packages do not touch anything else:
+       `mkdir lg-approval && cd lg-approval && python3 -m venv .venv && source .venv/bin/activate`
+       (on Windows, `.venv\Scripts\activate`).
+    3. Install the library: `pip install -U langgraph`. That brings the in-memory checkpointer with it. No model
+       SDK and no API key are needed for this hour.
+    4. Run the Familiar hello world once more to confirm the install: a one-node graph that appends a message.
+    5. Open the [interrupts guide](https://docs.langchain.com/oss/python/langgraph/interrupts) in a tab; you will
+       refer to it during the project.
+    6. Optional: `pip install grandalf` if you want `graph.get_graph().print_ascii()` to draw your graph in the
+       terminal.
+
+    **You are ready when** `python -c "from langgraph.types import interrupt, Command; print('ok')"` prints `ok`
+    inside your virtual environment.
+- id: guided_project
+  heading: 'Guided project: an agent that cannot write without approval (30 minutes)'
+  body: |
+    The trade-ops exception agent in this portfolio follows one rule: it can look things up and propose a fix, but
+    nothing is recorded until a named analyst approves. You will build the smallest version of that graph:
+    `lookup` (read the booking and the broker confirm) → `classify` (a mock model step that proposes a fix) →
+    `human_review` (an `interrupt()`) → `execute` (the only node that writes).
+
+    A conditional edge after `classify` skips review when there is no break, so you will also see two different
+    paths through the same graph. The steps and full code are in the project below.
+
+    While you work, notice three things:
+
+    - The first `invoke` returns early with an `__interrupt__` entry, and the outbox is still empty. **The write
+      cannot happen** because the only path to `execute` runs through the paused node.
+    - `graph.get_state(config).next` shows exactly where the run is waiting. That saved state is your audit trail.
+    - Resuming with a different thread ID would not continue the run. **The thread ID is the run's identity.**
+
+    **How one run flows, step by step.** The first `invoke` starts at `START` and runs `lookup`, which adds the two
+    quantities to the state. `classify` compares them and adds a category and a proposal. The routing function reads
+    the category and picks `human_review`. That node calls `interrupt()` with the proposal, and the run stops: the
+    checkpointer has saved the state after every step so far, and `invoke` hands the payload back to your code. In
+    a real system that payload becomes a row in an approval queue or a message to a reviewer.
+
+    The second `invoke` passes `Command(resume="approve")` with the same config. LangGraph loads the saved state,
+    re-enters `human_review` from its first line, and this time `interrupt()` returns `"approve"` instead of
+    pausing. The node stores the decision, the fixed edge leads to `execute`, and the write happens once.
+
+    **Where a real model would go.** Only `classify` would change: it would build a prompt from the state, call a
+    model, and validate the reply before returning it. The graph, the routing and the approval stay the same,
+    which is why the mock is a fair stand-in for learning the control flow.
+- id: mistakes
+  heading: Common mistakes and how to spot them
+  body: |
+    - **No checkpointer.** An `interrupt()` in a graph compiled without one cannot be resumed. If resuming starts
+      from scratch or errors, check `builder.compile(checkpointer=...)`.
+    - **A new thread ID on resume.** Resuming with a different ID looks like a fresh run with no input. Keep the
+      config object and reuse it; log the thread ID with every decision.
+    - **Side effects before the interrupt in the same node.** When a run resumes, the paused node starts again from
+      its first line. Anything before `interrupt()` runs twice. Put writes in a separate node after the review.
+    - **Returning the whole state from a node.** Return only the keys you changed. Returning everything can undo
+      another node's update, especially with reducers.
+    - **Routing function returns a name that is not a node.** You get an error at run time, not at compile time,
+      unless you pass the list of possible targets to `add_conditional_edges`. Always pass it.
+    - **Forgetting the reducer on message lists.** Without `add_messages` (or `MessagesState`), each update
+      replaces the conversation instead of appending to it.
+    - **InMemorySaver in production.** It loses every paused run when the process restarts. Use a SQLite or
+      Postgres checkpointer for anything a person will come back to tomorrow.
+- id: cheat_sheet
+  heading: Cheat sheet
+  body: |
+    | Task | Code |
+    |---|---|
+    | Make a builder | `builder = StateGraph(State)` |
+    | Add a node | `builder.add_node("name", fn)` |
+    | Fixed edge | `builder.add_edge("a", "b")`, with `START` / `END` |
+    | Route on state | `builder.add_conditional_edges("a", route_fn, ["b", END])` |
+    | Compile with memory | `graph = builder.compile(checkpointer=InMemorySaver())` |
+    | Pick a run | `config = {"configurable": {"thread_id": "t-1"}}` |
+    | Run | `graph.invoke(inputs, config)` |
+    | Pause for a person | `answer = interrupt({"proposal": ...})` inside a node |
+    | Resume | `graph.invoke(Command(resume="approve"), config)` |
+    | Where is it waiting? | `graph.get_state(config).next` |
+    | Past steps | `list(graph.get_state_history(config))` |
+
+    | If you need… | Use |
+    |---|---|
+    | A chat history in state | `MessagesState` (has the `add_messages` reducer) |
+    | Durable pauses across restarts | a SQLite or Postgres checkpointer |
+    | Step-by-step output | `graph.stream(inputs, config)` |
+    | A model step without a key | a plain function that returns a fixed answer (a mock) |
+- id: interview
+  heading: Five beginner interview questions
+  body: |
+    - **"What is a node and what does it return?"** A plain function that takes the state and returns a dict of
+      the keys it updates. Strong answers mention reducers and why returning only changed keys matters.
+    - **"How does a graph remember where it was?"** A checkpointer saves state after every step under a thread ID;
+      the same thread ID resumes that run. Mention that in-memory checkpointers are for tests only.
+    - **"How would you stop an agent sending an email without approval?"** Put the send in its own node after an
+      `interrupt()` node, so the only path to it goes through a human decision. Better answers add that the send
+      tool should also check for an approval on its side.
+    - **"What happens to code before `interrupt()` when you resume?"** The node re-runs from the top, so code
+      before the interrupt runs again. Keep it free of side effects.
+    - **"Why use a mock model step?"** Tests and demos run offline, deterministic and free, and the graph's control
+      flow can be checked separately from model quality.
+
+    Red flags interviewers listen for: "the model decides whether to ask for approval", no mention of thread IDs,
+    and writes placed in the same node as the interrupt.
+- id: next_steps
+  heading: Where to go next
+  body: |
+    - [LangGraph documentation](https://docs.langchain.com/oss/python/langgraph/overview) — the official docs from
+      LangChain Inc.
+    - [Interrupts guide](https://docs.langchain.com/oss/python/langgraph/interrupts) — human-in-the-loop patterns,
+      including editing state before resuming.
+    - [Persistence](https://docs.langchain.com/oss/python/langgraph/persistence) — checkpointers, threads and state
+      history.
+    - [LangChain Academy](https://academy.langchain.com/) — free official courses, including an introduction to
+      LangGraph.
+
+    The Intermediate level goes deeper: state design and reducers, tool-calling loops with step and budget caps,
+    durable checkpointers, approval patterns that hold up in an audit, and testing and replaying agent runs.
+project:
+  title: Build an exception agent that waits for approval
+  kind: runnable
+  minutes: 30
+  goal: Build a four-node LangGraph agent that proposes a fix for a trade exception, pauses with interrupt() before
+    the only write, and resumes on a person's decision — offline, with a mock model step.
+  steps:
+  - In your virtual environment, create `approval_agent.py` and paste the code below.
+  - Read the State class first. It is everything the run knows and everything the checkpointer saves.
+  - Read the four nodes. `lookup` and `classify` only read and propose; `execute` is the only node that writes (to
+    the in-memory OUTBOX list).
+  - Find the conditional edge after `classify`. It sends breaks to `human_review` and clean trades straight to END.
+  - Run `python approval_agent.py`. Check that the first invoke pauses and the outbox is empty.
+  - Check that `next node` names `human_review`, then that the resume with "approve" puts one entry in the outbox.
+  - Change the resume value to "reject", run again, and confirm the outbox stays empty.
+  - Change the thread ID used for the resume to a new one and run again. Explain what happens and why.
+  code: |
+    from typing import TypedDict
+
+    from langgraph.checkpoint.memory import InMemorySaver
+    from langgraph.graph import END, START, StateGraph
+    from langgraph.types import Command, interrupt
+
+    OUTBOX: list[str] = []          # stands in for the system the agent writes to
+
+
+    class State(TypedDict, total=False):
+        exception_id: str
+        confirm_qty: int
+        booked_qty: int
+        category: str
+        proposal: str
+        decision: str
+
+
+    def lookup(state: State) -> dict:
+        # deterministic step: in real life, read-only tool calls
+        books = {"EX-1": (1000, 900), "EX-2": (500, 500)}
+        booked, confirmed = books[state["exception_id"]]
+        return {"booked_qty": booked, "confirm_qty": confirmed}
+
+
+    def classify(state: State) -> dict:
+        # mock "model" step: a real agent would ask an LLM here
+        if state["booked_qty"] != state["confirm_qty"]:
+            return {"category": "quantity_mismatch",
+                    "proposal": f"Amend booking {state['exception_id']} to {state['confirm_qty']}"}
+        return {"category": "no_break", "proposal": ""}
+
+
+    def route(state: State) -> str:
+        return "human_review" if state["category"] != "no_break" else END
+
+
+    def human_review(state: State) -> dict:
+        decision = interrupt({"exception_id": state["exception_id"], "proposal": state["proposal"]})
+        return {"decision": decision}
+
+
+    def execute(state: State) -> dict:
+        if state["decision"] == "approve":
+            OUTBOX.append(state["proposal"])
+        return {}
+
+
+    builder = StateGraph(State)
+    builder.add_node("lookup", lookup)
+    builder.add_node("classify", classify)
+    builder.add_node("human_review", human_review)
+    builder.add_node("execute", execute)
+    builder.add_edge(START, "lookup")
+    builder.add_edge("lookup", "classify")
+    builder.add_conditional_edges("classify", route, ["human_review", END])
+    builder.add_edge("human_review", "execute")
+    builder.add_edge("execute", END)
+    graph = builder.compile(checkpointer=InMemorySaver())
+
+    if __name__ == "__main__":
+        config = {"configurable": {"thread_id": "EX-1-run-1"}}
+        result = graph.invoke({"exception_id": "EX-1"}, config)
+        print("paused:", result["__interrupt__"][0].value)
+        print("next node:", graph.get_state(config).next)
+        print("outbox before:", OUTBOX)
+
+        result = graph.invoke(Command(resume="approve"), config)
+        print("decision:", result["decision"])
+        print("outbox after:", OUTBOX)
+
+        clean = graph.invoke({"exception_id": "EX-2"}, {"configurable": {"thread_id": "EX-2-run-1"}})
+        print("EX-2:", clean["category"], "| interrupted:", "__interrupt__" in clean)
+  language: python
+  expected: |
+    paused: {'exception_id': 'EX-1', 'proposal': 'Amend booking EX-1 to 900'}
+    next node: ('human_review',)
+    outbox before: []
+    decision: approve
+    outbox after: ['Amend booking EX-1 to 900']
+    EX-2: no_break | interrupted: False
+  done_when:
+  - The first run pauses at human_review with the outbox still empty, and the approved resume adds exactly one entry.
+  - A "reject" resume leaves the outbox empty.
+  - You can explain why resuming on a new thread ID does not continue the paused run.
+quiz:
+- id: q1
+  prompt: What does a LangGraph node return?
+  options:
+  - A dict of only the state keys it changes, which LangGraph merges into the state
+  - The full state object, always, so nothing is lost
+  - The name of the next node to run
+  - A string that is sent to the model
+  answer: 0
+  explanation: Nodes return updates; LangGraph merges them. Returning everything can undo other updates.
+  evidence: A node returns only the keys it changes; LangGraph merges them into the state.
+- id: q2
+  prompt: Where does a model's decision become visible control flow in a graph?
+  options:
+  - In a conditional edge whose routing function returns the next node's name
+  - In the checkpointer's database file
+  - In the thread ID
+  - In the compile step's error messages
+  answer: 0
+  explanation: A conditional edge reads the state and picks the next node, so the path is explicit.
+  evidence: This is where a model's decision turns into control flow you can see.
+- id: q3
+  prompt: Why does an interrupt need a checkpointer?
+  options:
+  - Without saved state there is nothing to resume from
+  - Interrupts only work with a model API key
+  - The checkpointer sends the approval email
+  - Compile fails without a checkpointer in every graph
+  answer: 0
+  explanation: The run stops at the interrupt; the checkpointer holds its state until the resume.
+  evidence: Without a checkpointer there is nothing to resume from, so interrupts need one.
+- id: q4
+  prompt: You resume a paused run but pass a new thread ID. What happens?
+  options:
+  - It does not continue the paused run; a new thread ID refers to a different run's history
+  - LangGraph finds the paused run automatically
+  - The paused run is deleted
+  - The resume value is applied to every paused run
+  answer: 0
+  explanation: The thread ID is the key the checkpointer files a run under.
+  evidence: Same thread ID means the same run's history; a new one starts fresh.
+- id: q5
+  prompt: When a run resumes after interrupt(), what happens to code earlier in that same node?
+  options:
+  - It runs again, because the paused node starts again from its first line
+  - It is skipped; execution continues on the line after interrupt()
+  - It runs only if the decision was approve
+  - It is moved to the next node automatically
+  answer: 0
+  explanation: Keep code before an interrupt free of side effects; put writes in a later node.
+  evidence: When a run resumes, the paused node starts again from its first line.
+- id: q6
+  prompt: In the guided project, why can the agent not write before approval?
+  options:
+  - The only path to the execute node runs through the paused human_review node
+  - The model is told politely not to write
+  - The OUTBOX list is read-only until approval
+  - The checkpointer blocks all writes
+  answer: 0
+  explanation: The graph's wiring, not the prompt, enforces the approval.
+  evidence: The write cannot happen because the only path to execute runs through the paused node.
+- id: q7
+  prompt: What becomes the return value of interrupt() inside the paused node?
+  options:
+  - The value passed in Command(resume=...)
+  - The payload you passed to interrupt()
+  - The thread ID
+  - Always None
+  answer: 0
+  explanation: The resume value is handed back to the node as interrupt()'s result.
+  evidence: The value becomes the return value of interrupt() inside the paused node
+- id: q8
+  prompt: How do you see where a paused run is waiting?
+  options:
+  - graph.get_state(config).next
+  - graph.compile().next
+  - print(OUTBOX)
+  - builder.add_edge(START, END)
+  answer: 0
+  explanation: The saved state shows the next node to run, which is the paused one.
+  evidence: graph.get_state(config).next shows exactly where the run is waiting.
+- id: q9
+  prompt: What does the add_messages reducer (used by MessagesState) change?
+  options:
+  - New messages are appended to the list instead of replacing it
+  - Messages are sent to the model automatically
+  - Messages are encrypted in the checkpointer
+  - Old messages are deleted after each step
+  answer: 0
+  explanation: By default an update replaces a value; this reducer appends instead.
+  evidence: with a reducer such as add_messages (used by MessagesState) new messages are appended instead.
+- id: q10
+  prompt: Which checkpointer is suitable only for learning and tests?
+  options:
+  - InMemorySaver
+  - A SQLite checkpointer
+  - A Postgres checkpointer
+  - Any checkpointer with a thread ID
+  answer: 0
+  explanation: In-memory state disappears when the process restarts.
+  evidence: InMemorySaver is for learning and tests; SQLite and Postgres checkpointers keep state across restarts.
+- id: q11
+  prompt: Why pass the list of possible targets to add_conditional_edges?
+  options:
+  - So a routing function returning a name that is not a node is caught, instead of failing later at run time
+  - Because LangGraph runs every target in the list
+  - To make the edges run faster
+  - It is required for graphs with a checkpointer
+  answer: 0
+  explanation: Declaring the targets means a routing function that returns an unknown name is caught early.
+  evidence: unless you pass the list of possible targets to add_conditional_edges. Always pass it.
+- id: q12
+  prompt: Where should a side effect such as sending an email go in an approval-gated graph?
+  options:
+  - In a separate node after the review node
+  - Before the interrupt() call in the review node
+  - In the routing function
+  - In the State class definition
+  answer: 0
+  explanation: Code before an interrupt re-runs on resume, so writes belong in a later node.
+  evidence: Anything before interrupt() runs twice. Put writes in a separate node after the review.
+- id: q13
+  prompt: What does compile() do?
+  options:
+  - Checks the wiring and returns a runnable graph with invoke and stream
+  - Downloads a model
+  - Sends the graph to a hosted LangGraph service
+  - Converts the graph to SQL
+  answer: 0
+  explanation: StateGraph is a builder; compile turns it into something you can run.
+  evidence: compile() checks the wiring and returns a runnable graph with invoke and stream.
+- id: q14
+  prompt: How does the first invoke in the project signal that the run paused?
+  options:
+  - The result contains an __interrupt__ entry carrying the interrupt payload
+  - It raises an exception that stops the program
+  - It returns None
+  - It prints a warning and continues to execute
+  answer: 0
+  explanation: The caller gets the payload back so it can show the proposal to a person.
+  evidence: The first invoke returns early with an __interrupt__ entry, and the outbox is still empty.
+- id: q15
+  prompt: Why use a mock model step in this project?
+  options:
+  - Runs are offline, deterministic and free, and control flow is tested separately from model quality
+  - LangGraph cannot call real models
+  - Mock models give better answers than real ones
+  - Mocks are required to use interrupt()
+  answer: 0
+  explanation: A mock lets you test the graph without a key or cost.
+  evidence: Tests and demos run offline, deterministic and free, and the graph's control flow can be checked separately
+    from model quality.
+- id: q16
+  prompt: Which interview answer is a red flag?
+  options:
+  - '"The model decides whether to ask for approval."'
+  - '"The send happens in its own node after the interrupt."'
+  - '"I log the thread ID with every decision."'
+  - '"Production pauses use a Postgres checkpointer."'
+  answer: 0
+  explanation: Approval must be enforced by the graph, not left to the model.
+  evidence: 'Red flags interviewers listen for: "the model decides whether to ask for approval"'
+- id: q17
+  prompt: What is the State in a LangGraph graph?
+  options:
+  - The shared data every node reads and updates, and what the checkpointer saves
+  - The list of nodes and edges
+  - The model's system prompt
+  - A log file of errors
+  answer: 0
+  explanation: Design the state first; it is the contract between steps.
+  evidence: The shared data every node reads and updates, usually a TypedDict or a Pydantic model.
+- id: q18
+  prompt: Which pairing is correct for running and pausing a graph?
+  options:
+  - 'Pass {"configurable": {"thread_id": ...}} to invoke, and call interrupt(payload) inside a node'
+  - Pass the thread ID to compile, and call interrupt in the routing function
+  - Pass the thread ID to StateGraph, and call Command inside a node
+  - Pass nothing; LangGraph picks a thread ID for each approval
+  answer: 0
+  explanation: The config selects the run; interrupt inside a node pauses it.
+  evidence: 'Calling interrupt(payload) inside a node stops the run and hands the payload to the caller.'
+- id: q19
+  prompt: What happens to paused runs held in an InMemorySaver when the process restarts?
+  options:
+  - They are lost
+  - They resume automatically
+  - They are copied to Postgres
+  - They are approved by default
+  answer: 0
+  explanation: In-memory paused runs are lost on restart; use a durable checkpointer for anything a person returns to.
+  evidence: It loses every paused run when the process restarts.
