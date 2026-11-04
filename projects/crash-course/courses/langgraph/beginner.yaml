@@ -1,6 +1,6 @@
 course: langgraph
 level: beginner
-version: 1
+version: 2                   # v2 so it supersedes any v1 draft the live writer queued for this level
 title: LangGraph approval-gated agents in 1 hour
 status: draft
 source:

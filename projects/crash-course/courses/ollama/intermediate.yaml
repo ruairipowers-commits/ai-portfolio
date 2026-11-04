@@ -1,6 +1,6 @@
 course: ollama
 level: intermediate
-version: 1
+version: 2                   # v2 so it supersedes any v1 draft the live writer queued for this level
 title: Ollama local models in production in 4 hours
 status: draft
 source:
