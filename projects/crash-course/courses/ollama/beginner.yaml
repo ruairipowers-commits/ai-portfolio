@@ -1,0 +1,439 @@
+course: ollama
+level: beginner
+version: 1
+title: Ollama local models for real tasks in 1 hour
+status: draft
+source:
+  page: tech/ollama.md
+  docs: https://docs.ollama.com/
+provenance:
+  written_by: Claude (build session, 3 Nov 2026), from the site's Ollama page and the Familiar level
+sections:
+- id: recap
+  heading: Where Familiar left you
+  body: |
+    - Ollama downloads and runs **open-weight models on your own machine**, with quantized weights that fit in
+      ordinary memory.
+    - `ollama pull` fetches a model, `ollama run` chats in the terminal, and a background server exposes an **HTTP
+      API on `localhost:11434`**.
+    - It runs on CPU and uses a GPU when one is available; models are named with a **tag**.
+    - A **Modelfile** pins a system prompt and parameters as a named variant.
+    - There is an **OpenAI-compatible endpoint**, so many clients only need a base-URL change.
+    - Data stays on your hardware, but small local models trail frontier hosted models on hard reasoning.
+
+    This hour moves from "it chats" to "it does a job". You will learn the ten terms you meet on day one, check
+    your machine, then build a small local classifier for settlement-break notes: a Modelfile variant with a fixed
+    system prompt, a JSON-Schema-constrained reply from the HTTP API, validation in your own code, and a speed
+    reading from Ollama's own timings. After the model is pulled, everything runs offline.
+- id: core_terms
+  heading: The 10 terms you need
+  body: |
+    1. **Model name and tag.** `llama3.2` is a name; `llama3.2:1b` adds a tag for a size or variant. With no tag
+       Ollama uses `latest`. Pin the tag you tested.
+    2. **Quantization.** Storing weights with fewer bits so a model fits in less memory and runs faster, at some cost
+       in quality. Library models usually come quantized; different tags can offer different levels.
+    3. **Parameters (model size).** The number of weights, such as 1B, 3B or 8B. Bigger models are usually better
+       and need more memory and time per token.
+    4. **Context window (`num_ctx`).** How many tokens of prompt and reply the model can attend to in one request.
+       Longer contexts use more memory. Text beyond it is cut off.
+    5. **Ollama server.** The background process that loads models and answers the HTTP API. The desktop app and
+       `ollama serve` both start it.
+    6. **`/api/generate` and `/api/chat`.** Two native endpoints: generate takes a single prompt; chat takes a list
+       of messages with roles. Both stream by default; send `"stream": false` for one JSON reply.
+    7. **Modelfile.** A small recipe file: `FROM` a base model, `PARAMETER` lines (such as temperature), and a
+       `SYSTEM` prompt. `ollama create <name> -f Modelfile` builds a named variant from it.
+    8. **Structured output (`format`).** Pass `"format": "json"` or a JSON Schema in the request and Ollama constrains
+       the reply to it. Still validate the result in your code.
+    9. **Keep-alive.** How long a model stays loaded in memory after a request. The first call after a model is
+       unloaded is slow because it loads again. `ollama ps` shows what is loaded.
+    10. **OpenAI-compatible endpoint.** Ollama also serves an OpenAI-style API under `/v1`, so an OpenAI client can
+        use a local model by changing its base URL. Not every feature of the native API maps across.
+- id: setup
+  heading: Set up (10 minutes, plus a download)
+  body: |
+    1. Install Ollama from the official site for macOS, Windows or Linux, and start it (the desktop app, or
+       `ollama serve` in a terminal).
+    2. Check the server: `curl http://localhost:11434/api/version` should return a version number.
+    3. Check memory: as a rough guide, a small model needs a few GB of free RAM (or GPU memory). Close heavy apps.
+    4. Pull a small model once, while you have a network connection: `ollama pull llama3.2` (about 2 GB).
+       `ollama list` should show it.
+    5. Try it: `ollama run llama3.2 "Summarize in one line: settlement failed due to missing SSI."` The first run is
+       slower because it loads the model.
+    6. Run `ollama ps` while the model is loaded, and note its size and whether it is on CPU or GPU.
+    7. Have Python 3.10 or newer. The project uses only the standard library, so there is nothing to install.
+
+    **You are ready when** `ollama list` shows `llama3.2` and `curl http://localhost:11434/api/version` answers.
+    From here on you can disconnect from the network.
+- id: guided_project
+  heading: 'Guided project: a local classifier for settlement-break notes (30 minutes)'
+  body: |
+    Middle-office teams write short notes about failed or unmatched trades. Sorting them into categories is a
+    narrow job that a small local model handles well, and the notes never leave the machine. You will:
+
+    1. Write a **Modelfile** that pins a system prompt and `temperature 0`, and build a variant called
+       `trade-triage`.
+    2. Call it from Python through **`/api/chat`** with a **JSON Schema in `format`**, so the reply is
+       `{"category": ..., "reason": ...}`.
+    3. **Validate** the category against your own list, because a valid shape is not a correct answer.
+    4. Read **`eval_count` and `eval_duration`** from the reply to measure tokens per second on your hardware.
+
+    The Modelfile, code and steps are in the project below.
+
+    While you work, notice three things:
+
+    - **The first call is the slowest.** Loading the model takes time; later calls reuse the loaded model until
+      keep-alive expires.
+    - **The schema fixes the shape, not the judgement.** You may see a plausible but wrong category; that is
+      what an eval set is for, in Intermediate.
+    - **Your numbers are yours.** Tokens per second depend heavily on the CPU, GPU and memory; measure before
+      promising anyone a speed.
+
+    **Why a Modelfile rather than a long prompt in code?** The variant has a name, so the prompt and parameters
+    are versioned in one file and every caller gets the same behaviour. `ollama show trade-triage --modelfile`
+    prints exactly what is inside, which is useful when someone asks "which prompt produced this?".
+
+    **Where this fits in a real system.** In this portfolio's model-registry pattern, `trade-triage` would be one
+    alias among several providers; the same eval set could compare it with a hosted model on quality, speed and
+    cost.
+- id: mistakes
+  heading: Common mistakes and how to spot them
+  body: |
+    - **Server not running.** `Connection refused` on port 11434 means nothing is listening. Start the app or run
+      `ollama serve`.
+    - **Model not found.** The name or tag in your request does not match `ollama list`. Pull it, or fix the tag.
+    - **Out of memory or very slow.** The model is too big for your RAM or GPU memory, so it spills to CPU or swaps.
+      Try a smaller model or tag, close other apps, and check `ollama ps`.
+    - **Forgetting `"stream": false`.** The API streams by default, one JSON object per line. Code that expects a
+      single JSON object fails to parse it.
+    - **Trusting structured output blindly.** `format` makes the reply parse; it does not make it right. Check
+      values against your own list and handle "other".
+    - **Unpinned tags.** `latest` can change when you pull again. Pin the tag you evaluated.
+    - **Long input silently cut.** Input longer than the context window is truncated. Raise `num_ctx` with care
+      (it costs memory) or shorten the input.
+    - **Exposing the API on the network by accident.** By default the server listens on localhost. Changing
+      `OLLAMA_HOST` to listen on all interfaces exposes an API with no authentication; put a proxy with auth in
+      front, or don't.
+    - **Ignoring the licence.** Open models come with different licences; check each one before commercial use.
+- id: cheat_sheet
+  heading: Cheat sheet
+  body: |
+    | Task | Command |
+    |---|---|
+    | Download a model | `ollama pull llama3.2` |
+    | List downloaded models | `ollama list` |
+    | Chat in the terminal | `ollama run llama3.2` |
+    | One-shot prompt | `ollama run llama3.2 "your prompt"` |
+    | What is loaded now? | `ollama ps` |
+    | Inspect a model or variant | `ollama show trade-triage --modelfile` |
+    | Build a variant | `ollama create trade-triage -f Modelfile` |
+    | Remove a model | `ollama rm llama3.2` |
+    | Is the server up? | `curl http://localhost:11434/api/version` |
+
+    | API call | Body essentials |
+    |---|---|
+    | `POST /api/generate` | `model`, `prompt`, `stream: false` |
+    | `POST /api/chat` | `model`, `messages`, `stream: false`, optional `format`, `options` |
+    | `POST /api/embed` | `model`, `input` (text or list) |
+    | `GET /api/tags` | lists local models |
+    | OpenAI-style | base URL `http://localhost:11434/v1` |
+- id: interview
+  heading: Five beginner interview questions
+  body: |
+    - **"Why would you run a model locally?"** Data stays on the machine, no per-token cost once the hardware is
+      paid for, offline development. Strong answers name the trade-off: weaker on hard reasoning, and you own uptime.
+    - **"What is quantization and why does it matter?"** Fewer bits per weight, so a model fits in memory and runs
+      faster, with some quality loss. Mention testing the exact tag you deploy.
+    - **"How do you get reliable JSON from a local model?"** Pass a JSON Schema in `format`, set temperature to 0,
+      then validate the parsed result in your own code and handle failures.
+    - **"How would you plug Ollama into an existing app that uses the OpenAI SDK?"** Point the client's base URL at
+      the `/v1` endpoint and use the local model name; test the features you rely on, since not all map across.
+    - **"What would you check before using an open model commercially?"** Its licence, its size against the
+      hardware, and its quality on your own eval set.
+
+    Red flags interviewers listen for: "local models are as good as frontier models", exposing port 11434 to the
+    internet, and no plan for checking output.
+- id: next_steps
+  heading: Where to go next
+  body: |
+    - [Ollama documentation](https://docs.ollama.com/) — the official docs from Ollama.
+    - [Ollama model library](https://ollama.com/library) — models you can pull, with sizes, tags and licences.
+    - [Ollama on GitHub](https://github.com/ollama/ollama) — source, releases and the API reference.
+
+    The Intermediate level goes deeper: choosing models and quantization for your hardware, the native and
+    OpenAI-compatible APIs in depth, embeddings and local retrieval, evaluating a local model against a hosted one,
+    and running Ollama as a shared service safely.
+project:
+  title: Build a local classifier for settlement-break notes
+  kind: runnable
+  minutes: 30
+  goal: Build a named Ollama variant with a fixed system prompt, call it from Python with a JSON-Schema-constrained
+    reply, validate the result, and measure tokens per second on your machine — all offline once the model is pulled.
+  steps:
+  - 'Create a file called `Modelfile` with these four lines (the SYSTEM text is one line) — `FROM llama3.2`,
+    `PARAMETER temperature 0`, `SYSTEM "You classify settlement-break notes for a middle-office team. Reply only with
+    JSON that has a category and a one-sentence reason. Categories: quantity_mismatch, price_mismatch, missing_ssi,
+    late_confirm, other."`'
+  - Build the variant with `ollama create trade-triage -f Modelfile`, then check it with `ollama show trade-triage
+    --modelfile`.
+  - Try it once in the terminal — `ollama run trade-triage "Confirm shows 900 shares, booking says 1,000."`
+  - Save the Python code below as `triage.py` and run `python triage.py`.
+  - Compare each category with what you would have chosen. Note any you disagree with.
+  - Run it a second time and compare the speed with the first run.
+  - Add a fourth note of your own that should be `price_mismatch` and check the result.
+  - Optional — set OLLAMA_MODEL to another model you have pulled and compare categories and speed.
+  code: |
+    """Classify settlement-break notes with a local model through Ollama's HTTP API (standard library only)."""
+    import json
+    import os
+    import urllib.request
+
+    OLLAMA = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+    MODEL = os.environ.get("OLLAMA_MODEL", "trade-triage")      # the Modelfile variant you created
+    CATEGORIES = ["quantity_mismatch", "price_mismatch", "missing_ssi", "late_confirm", "other"]
+
+    SCHEMA = {
+        "type": "object",
+        "properties": {
+            "category": {"type": "string", "enum": CATEGORIES},
+            "reason": {"type": "string"},
+        },
+        "required": ["category", "reason"],
+    }
+
+    NOTES = [
+        "Broker confirm shows 900 shares, our booking says 1,000.",
+        "Settlement failed: no standing settlement instructions on file for the custodian.",
+        "Confirm received two days after trade date.",
+    ]
+
+
+    def post(path: str, body: dict) -> dict:
+        req = urllib.request.Request(OLLAMA + path, data=json.dumps(body).encode(),
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            return json.load(resp)
+
+
+    def classify(note: str) -> dict:
+        reply = post("/api/chat", {
+            "model": MODEL,
+            "messages": [{"role": "user", "content": note}],
+            "format": SCHEMA,          # constrain the reply to this JSON Schema
+            "stream": False,
+        })
+        result = json.loads(reply["message"]["content"])
+        if result.get("category") not in CATEGORIES:            # validate anyway
+            result = {"category": "other", "reason": "model returned an unknown category"}
+        secs = reply.get("eval_duration", 0) / 1e9
+        result["tokens_out"] = reply.get("eval_count", 0)
+        result["tok_per_s"] = round(result["tokens_out"] / secs, 1) if secs else None
+        return result
+
+
+    if __name__ == "__main__":
+        for note in NOTES:
+            r = classify(note)
+            print(f"{r['category']:<18} {r['tok_per_s']} tok/s  | {note}")
+            print(f"{'':<18} why: {r['reason']}")
+  language: python
+  expected: |
+    Three pairs of lines, one per note, for example:
+    quantity_mismatch  35.2 tok/s  | Broker confirm shows 900 shares, our booking says 1,000.
+                       why: The confirmed quantity differs from the booked quantity.
+    Likely categories are quantity_mismatch, missing_ssi and late_confirm; the reasons and the tokens per second
+    will differ on your machine and model. The first note of the first run takes longest while the model loads.
+  done_when:
+  - ollama show trade-triage --modelfile prints your system prompt and temperature 0.
+  - triage.py prints a valid category, a reason and a tokens-per-second figure for every note, with no network connection.
+  - You can name one note where the model could plausibly be wrong and explain why the schema did not prevent it.
+quiz:
+- id: q1
+  prompt: What happens if you request llama3.2 with no tag?
+  options:
+  - Ollama uses the latest tag, which can change when you pull again
+  - Ollama refuses the request
+  - Ollama picks the largest size available
+  - Ollama picks a random tag
+  answer: 0
+  explanation: With no tag Ollama uses latest; pin the tag you tested.
+  evidence: With no tag Ollama uses latest. Pin the tag you tested.
+- id: q2
+  prompt: What does quantization trade?
+  options:
+  - Some quality for less memory and faster running
+  - Speed for a larger context window
+  - Privacy for lower cost
+  - Accuracy for more parameters
+  answer: 0
+  explanation: Fewer bits per weight make a model smaller and faster, at some cost in quality.
+  evidence: Storing weights with fewer bits so a model fits in less memory and runs faster, at some cost in quality.
+- id: q3
+  prompt: Your code expects one JSON object from /api/chat but fails to parse the reply. What is a likely cause?
+  options:
+  - You did not send "stream" false, so the API streamed one JSON object per line
+  - The model is too small to produce JSON
+  - The server only accepts GET requests
+  - Port 11434 is reserved for embeddings
+  answer: 0
+  explanation: The API streams by default; send stream false for a single reply.
+  evidence: The API streams by default, one JSON object per line.
+- id: q4
+  prompt: What does passing a JSON Schema in format guarantee?
+  options:
+  - The reply follows the schema's shape, but not that the values are right
+  - The answer is correct
+  - The model runs faster
+  - The reply is shorter than 100 tokens
+  answer: 0
+  explanation: Format makes the reply parse; validate values in your own code.
+  evidence: format makes the reply parse; it does not make it right.
+- id: q5
+  prompt: What does a Modelfile let you do?
+  options:
+  - Build a named variant with a base model, parameters and a system prompt
+  - Train a model from scratch on your data
+  - Convert a model to a different licence
+  - Share a model's weights with OpenAI
+  answer: 0
+  explanation: FROM, PARAMETER and SYSTEM lines, built with ollama create.
+  evidence: 'A small recipe file: FROM a base model, PARAMETER lines (such as temperature), and a SYSTEM prompt.'
+- id: q6
+  prompt: Why is the first call to a model often much slower than later calls?
+  options:
+  - The model has to load into memory; later calls reuse it until keep-alive expires
+  - Ollama downloads the model again on every first call
+  - The first call is always run on CPU only
+  - The server rate-limits new clients
+  answer: 0
+  explanation: Loading takes time; keep-alive keeps the model loaded for a while.
+  evidence: Loading the model takes time; later calls reuse the loaded model until keep-alive expires.
+- id: q7
+  prompt: Which command shows which models are loaded right now?
+  options:
+  - ollama ps
+  - ollama list
+  - ollama pull
+  - ollama rm
+  answer: 0
+  explanation: ollama list shows downloaded models; ollama ps shows loaded ones.
+  evidence: ollama ps shows what is loaded.
+- id: q8
+  prompt: Connection refused on port 11434 usually means what?
+  options:
+  - The Ollama server is not running
+  - The model is too large
+  - The JSON Schema is invalid
+  - The licence does not allow commercial use
+  answer: 0
+  explanation: Start the app or run ollama serve.
+  evidence: Connection refused on port 11434 means nothing is listening.
+- id: q9
+  prompt: A model runs very slowly and the machine swaps. What should you try first?
+  options:
+  - A smaller model or tag, closing other apps, and checking ollama ps
+  - A longer context window
+  - Turning streaming off
+  - Removing the system prompt
+  answer: 0
+  explanation: The model is too big for memory, so it spills to CPU or swaps.
+  evidence: Try a smaller model or tag, close other apps, and check ollama ps.
+- id: q10
+  prompt: What happens to input longer than the context window?
+  options:
+  - It is truncated
+  - Ollama raises the window automatically at no cost
+  - It is sent to a hosted model
+  - It is split into several replies
+  answer: 0
+  explanation: Raise num_ctx with care because it costs memory, or shorten the input.
+  evidence: Input longer than the context window is truncated.
+- id: q11
+  prompt: Why is setting OLLAMA_HOST to listen on all interfaces risky?
+  options:
+  - It exposes an API with no authentication to the network
+  - It deletes downloaded models
+  - It disables the GPU
+  - It sends data to Ollama's servers
+  answer: 0
+  explanation: Put a proxy with authentication in front, or keep it on localhost.
+  evidence: Changing OLLAMA_HOST to listen on all interfaces exposes an API with no authentication
+- id: q12
+  prompt: How can an app written for the OpenAI SDK use a local Ollama model?
+  options:
+  - Point the client's base URL at Ollama's /v1 endpoint and use the local model name
+  - Rewrite the app in Go
+  - Upload the model to OpenAI
+  - It cannot; the APIs are incompatible
+  answer: 0
+  explanation: Ollama serves an OpenAI-style API under /v1; test the features you rely on.
+  evidence: so an OpenAI client can use a local model by changing its base URL
+- id: q13
+  prompt: In the project, how do you measure tokens per second?
+  options:
+  - Divide eval_count by eval_duration (converted from nanoseconds to seconds)
+  - Count the characters in the reply
+  - Time the whole Python script
+  - Read it from ollama list
+  answer: 0
+  explanation: The reply carries Ollama's own token count and timing.
+  evidence: Read eval_count and eval_duration from the reply to measure tokens per second on your hardware.
+- id: q14
+  prompt: Why validate the category even though the schema has an enum?
+  options:
+  - A valid shape is not a correct answer, and your code should handle failures safely
+  - The enum is ignored by Ollama
+  - Validation makes the model faster
+  - Python requires it for JSON
+  answer: 0
+  explanation: The schema fixes the shape, not the judgement; check values against your own list.
+  evidence: Validate the category against your own list, because a valid shape is not a correct answer.
+- id: q15
+  prompt: What is the benefit of putting the prompt in a named Modelfile variant?
+  options:
+  - The prompt and parameters are versioned in one file and every caller gets the same behaviour
+  - It makes the model larger
+  - It removes the need for validation
+  - It lets the model use the internet
+  answer: 0
+  explanation: ollama show prints exactly what is inside the variant.
+  evidence: The variant has a name, so the prompt and parameters are versioned in one file and every caller gets the same behaviour.
+- id: q16
+  prompt: What should you check before using an open model commercially?
+  options:
+  - Its licence, its size against the hardware, and its quality on your own eval set
+  - Only its download size
+  - Only its name
+  - Nothing; open models are free for any use
+  answer: 0
+  explanation: Model licences vary; check each one.
+  evidence: Its licence, its size against the hardware, and its quality on your own eval set.
+- id: q17
+  prompt: Which kind of job suits a small local model?
+  options:
+  - Narrow tasks such as classifying short notes
+  - The hardest multi-step reasoning tasks
+  - Replacing every hosted model in a firm
+  - Training new frontier models
+  answer: 0
+  explanation: Small open models trail frontier models on hard reasoning but handle narrow jobs well.
+  evidence: Sorting them into categories is a narrow job that a small local model handles well
+- id: q18
+  prompt: Which interview statement is a red flag?
+  options:
+  - '"Local models are as good as frontier models."'
+  - '"We validate every structured reply."'
+  - '"We pin the tag we evaluated."'
+  - '"Port 11434 stays on localhost."'
+  answer: 0
+  explanation: Interviewers expect you to know the quality trade-off.
+  evidence: 'Red flags interviewers listen for: "local models are as good as frontier models"'
+- id: q19
+  prompt: What is the difference between /api/generate and /api/chat?
+  options:
+  - Generate takes a single prompt; chat takes a list of messages with roles
+  - Generate is for images; chat is for text
+  - Chat only works with the OpenAI SDK
+  - Generate streams and chat never does
+  answer: 0
+  explanation: Both stream by default; chat carries a conversation.
+  evidence: generate takes a single prompt; chat takes a list of messages with roles.

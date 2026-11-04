@@ -1,0 +1,480 @@
+course: mcp
+level: beginner
+version: 1
+title: MCP tool servers and clients in 1 hour
+status: draft
+source:
+  page: tech/mcp.md
+  docs: https://modelcontextprotocol.io/
+provenance:
+  written_by: Claude (build session, 3 Nov 2026), from the site's Model Context Protocol page and the Familiar level
+sections:
+- id: recap
+  heading: Where Familiar left you
+  body: |
+    - MCP is an open standard: write a **server** once, and any MCP-capable **client** can discover and call it.
+    - The **host** is the AI application; it creates one client per connection; each client talks to one server.
+    - Servers expose **tools** (functions the model can call), **resources** (data the app can read) and
+      **prompts** (reusable templates).
+    - Messages are **JSON-RPC 2.0**, over **stdio** (a local child process) or **Streamable HTTP** (remote).
+    - MCP defines how tools are called, not whether the model should call them. Approvals and logging are still
+      yours.
+
+    This hour you build both halves. You will write a small read-only server over a trade book with two tools, a
+    resource and a prompt, then write a client that starts it, discovers what it offers and calls it — the same
+    steps a host such as an IDE or your own agent performs. You will also see how bad input and tool errors come
+    back. Everything runs offline in Python with the official SDK; no model and no key are needed.
+- id: core_terms
+  heading: The 10 terms you need
+  body: |
+    1. **Host, client, server.** The host is the AI application. It creates one client per server connection. The
+       server is the separate program that offers capabilities.
+    2. **Tool.** A function the model can ask the host to call. It has a name, a description the model reads, and
+       an input schema.
+    3. **Input schema.** A JSON Schema that describes a tool's arguments. The SDK builds it from your function's
+       type hints, and arguments that do not match it are rejected before your code runs.
+    4. **Resource.** Read-only data identified by a URI, such as `policy://settlement`. The application decides
+       when to read it; it is context, not an action.
+    5. **Prompt.** A named, parameterised template the server offers, which a host can show to users as a ready-made
+       task.
+    6. **Initialize.** The first exchange on every connection. Client and server agree a protocol version and
+       declare their capabilities before anything else happens.
+    7. **Discovery.** `tools/list`, `resources/list` and `prompts/list` let a client ask what a server offers at run
+       time, so nothing about the server is hard-coded in the host.
+    8. **Tool result and `isError`.** A call returns content blocks (usually text). A failure inside the tool comes
+       back as a normal result with `isError` set, so the model can see what went wrong and try something else.
+    9. **Stdio transport.** The client starts the server as a child process and exchanges JSON-RPC messages over
+       standard input and output. No network, no port. Stdout belongs to the protocol, so logs go to stderr.
+    10. **Streamable HTTP transport.** The server runs as a web service for remote clients, with standard
+        authentication. The protocol layer is the same over both transports.
+- id: setup
+  heading: Set up (10 minutes)
+  body: |
+    1. Check **Python 3.10 or newer**: `python3 --version`.
+    2. Make a folder and a virtual environment:
+       `mkdir mcp-trades && cd mcp-trades && python3 -m venv .venv && source .venv/bin/activate`.
+    3. Install the official SDK: `pip install -U mcp`. This course uses the SDK's current major version, where
+       the high-level server class is `MCPServer` (older 1.x code calls it `FastMCP`). If an import fails, check
+       `pip show mcp` for the version.
+    4. Re-run the Familiar `add` server to confirm the install imports cleanly:
+       `python -c "from mcp.server.mcpserver import MCPServer; print('ok')"`.
+    5. Optional: if you have Node.js, the official **MCP Inspector** (`npx @modelcontextprotocol/inspector`) gives
+       you a web UI for any server. It downloads on first run, so it needs a network connection once.
+
+    **You are ready when** `python -c "from mcp import ClientSession; print('ok')"` prints `ok` in your virtual
+    environment.
+- id: guided_project
+  heading: 'Guided project: a read-only trade-book server and its client (30 minutes)'
+  body: |
+    The trade-ops agent in this portfolio gets all its lookups from an MCP server, so the list of things it can do
+    is a reviewed, versioned file rather than code buried in a prompt. You will build a small version of that
+    boundary: `trades_server.py` offers `get_trade` and `list_failed_trades` (both read-only), a settlement-policy
+    resource and an investigation prompt. Then `client.py` plays the host: it launches the server over stdio,
+    initialises, lists the tools, and calls each capability.
+
+    The full code and steps are in the project below.
+
+    While you work, notice three things:
+
+    - **The client learns the tools at run time.** It prints each tool's name and inputs from `tools/list`; nothing
+      about them is written in the client.
+    - **The schema protects your code.** Passing a number where `trade_id` expects a string is rejected before
+      `get_trade` runs.
+    - **Errors are results, not crashes.** An unknown trade ID comes back with `is_error` true and a message the
+      model could read, and the server keeps running.
+
+    **How one call flows.** The client sends `initialize`; the server answers with its name, protocol version and
+    capabilities. The client sends `tools/list` and gets each tool's name, description and input schema. When it
+    sends `tools/call` with a name and arguments, the SDK validates the arguments against the schema, runs your
+    function, and wraps the return value in content blocks. In a real host, the model would see the tool list,
+    decide to call `get_trade`, and the host would make that same `tools/call` on its behalf.
+
+    **Why read-only first.** A server with only lookups is safe to hand to any agent. Writes need an approval
+    design, which the Intermediate level builds.
+- id: mistakes
+  heading: Common mistakes and how to spot them
+  body: |
+    - **Printing to stdout in a stdio server.** A stray `print()` puts non-JSON text into the JSON-RPC stream. The
+      Python client logs an "Invalid JSON" error for every such line; a stricter client may drop the connection.
+      Log to stderr (`print(..., file=sys.stderr)` or the logging module).
+    - **Vague tool descriptions.** The model chooses tools from their names and descriptions. "Gets data" leads to
+      wrong calls; say what the tool returns and when to use it, and say "read-only" when it is.
+    - **Untyped arguments.** Without type hints the input schema is loose and bad input reaches your code. Type
+      every argument; add constraints such as a regex pattern for IDs.
+    - **Raising generic exceptions for expected failures.** In the Python SDK an unexpected exception is reported
+      without its message. Raise `ToolError` for failures the caller should see, such as "unknown trade".
+    - **One server doing reads and writes for everyone.** Start with read-only tools; give write tools a separate
+      scope and an approval check.
+    - **Wrong command or path in the client's launch settings.** The server never starts and the client waits.
+      Use an absolute path or `sys.executable`, and run the server alone first to see any import error.
+    - **Mixing SDK major versions.** Examples written for 1.x (`FastMCP`, camelCase fields such as `inputSchema` in
+      Python) fail on 2.x. Match examples to `pip show mcp`.
+    - **Trusting third-party servers blindly.** A server you install runs code on your machine and writes text the
+      model reads. Vet it like any dependency.
+- id: cheat_sheet
+  heading: Cheat sheet
+  body: |
+    | Task | Python SDK |
+    |---|---|
+    | Create a server | `server = MCPServer("name")` |
+    | Add a tool | `@server.tool()` on a typed function with a docstring |
+    | Add a resource | `@server.resource("policy://settlement")` |
+    | Add a prompt | `@server.prompt()` on a function returning text |
+    | Report a tool failure | `raise ToolError("message")` |
+    | Run over stdio | `server.run()` |
+    | Launch settings in a client | `StdioServerParameters(command=sys.executable, args=["server.py"])` |
+    | Connect | `stdio_client(params)` then `ClientSession(read, write)` and `await session.initialize()` |
+    | Discover | `await session.list_tools()` / `list_resources()` / `list_prompts()` |
+    | Call | `await session.call_tool("get_trade", {"trade_id": "T-101"})` |
+    | Read / get | `await session.read_resource(uri)` / `await session.get_prompt(name, args)` |
+
+    | Protocol message | What it does |
+    |---|---|
+    | `initialize` | agree version, exchange capabilities |
+    | `tools/list`, `tools/call` | discover and run tools |
+    | `resources/list`, `resources/read` | discover and read data |
+    | `prompts/list`, `prompts/get` | discover and fill templates |
+- id: interview
+  heading: Five beginner interview questions
+  body: |
+    - **"Explain host, client and server."** The host is the AI app; it makes one client per connection; each client
+      talks to one server that exposes tools, resources and prompts. Strong answers add that this lets one server
+      serve many hosts.
+    - **"What is the difference between a tool and a resource?"** A tool is an action the model asks for; a resource
+      is read-only data the application chooses to load. Mention URIs for resources.
+    - **"How are bad arguments handled?"** The input schema, generated from type hints, rejects them before the tool
+      runs; failures inside the tool come back as an error result the model can read.
+    - **"When would you use stdio and when HTTP?"** Stdio for a local server launched by the host, with no network;
+      Streamable HTTP for a shared remote server, with authentication.
+    - **"Does MCP make tool use safe?"** No. It standardises how tools are called. Least privilege, approvals,
+      logging and vetting third-party servers are still on you.
+
+    Red flags interviewers listen for: "the model can call any tool on the server", printing debug output to stdout
+    in a stdio server, and treating a third-party server as trusted by default.
+- id: next_steps
+  heading: Where to go next
+  body: |
+    - [Model Context Protocol documentation](https://modelcontextprotocol.io/) — the official site, with the
+      specification and guides.
+    - [Python SDK on GitHub](https://github.com/modelcontextprotocol/python-sdk) — the official Python SDK, examples
+      and the migration notes between major versions.
+    - [TypeScript SDK server guide](https://ts.sdk.modelcontextprotocol.io/documents/server.html) — the same ideas in
+      TypeScript, the language of this portfolio's trade-ops server.
+    - [MCP Inspector](https://github.com/modelcontextprotocol/inspector) — the official tool for testing servers.
+
+    The Intermediate level goes deeper: the protocol lifecycle, designing tools a model uses well, structured output,
+    transports and deployment, and the security pattern that keeps writes behind a human approval.
+project:
+  title: Build a read-only trade-book MCP server and a client for it
+  kind: runnable
+  minutes: 30
+  goal: Write an MCP server with two read-only tools, a resource and a prompt, then a Python client that launches it over
+    stdio, discovers its capabilities and calls each one — including two calls that fail safely.
+  steps:
+  - In your virtual environment, save the first file below as `trades_server.py` and the second as `client.py` (split at
+    the `# ---- client.py ----` line).
+  - Read the server. Note the docstrings (the model reads them), the type hints (they become the input schema) and
+    `ToolError` for the expected failure.
+  - Run `python trades_server.py` on its own. It waits silently for JSON-RPC on stdin; that is correct. Stop it with Ctrl+C.
+  - Run `python client.py`. The client starts the server itself as a child process.
+  - Compare the output with the expected output. Find the lines for the wrong-type call and the unknown ID.
+  - Add a `print("hello")` to `get_trade`, run the client again, and find the "Invalid JSON" error it causes on
+    stderr. Change it to print to `sys.stderr` and confirm the error is gone.
+  - Add a third read-only tool, `get_ssi(ticker)`, returning a made-up settlement instruction, and confirm the client
+    lists it without any change to `client.py`'s discovery code.
+  - Optional, with Node.js and a network connection — run `npx @modelcontextprotocol/inspector python trades_server.py`
+    and call the tools from the web UI.
+  code: |
+    """A read-only MCP server over a tiny trade book (stdio)."""
+    from mcp.server.mcpserver import MCPServer
+    from mcp.server.mcpserver.exceptions import ToolError
+
+    TRADES = {
+        "T-100": {"ticker": "ACME", "side": "BUY", "qty": 1000, "status": "settled"},
+        "T-101": {"ticker": "GLOBX", "side": "SELL", "qty": 250, "status": "failed"},
+    }
+
+    server = MCPServer("trade-book")
+
+
+    @server.tool()
+    def get_trade(trade_id: str) -> dict:
+        """Look up one trade by ID. Read-only."""
+        if trade_id not in TRADES:
+            raise ToolError(f"unknown trade {trade_id}")
+        return {"trade_id": trade_id, **TRADES[trade_id]}
+
+
+    @server.tool()
+    def list_failed_trades() -> list[str]:
+        """IDs of trades whose settlement failed. Read-only."""
+        return [t for t, row in TRADES.items() if row["status"] == "failed"]
+
+
+    @server.resource("policy://settlement")
+    def settlement_policy() -> str:
+        """The desk's settlement policy, as text the app can read."""
+        return "Failed trades must be reviewed by an analyst before any rebooking."
+
+
+    @server.prompt()
+    def investigate(trade_id: str) -> str:
+        """A reusable prompt for investigating one trade."""
+        return f"Investigate trade {trade_id}. Use get_trade, cite fields, and propose a fix. Do not rebook."
+
+
+    if __name__ == "__main__":
+        server.run()          # stdio by default
+
+    # ---- client.py ----
+    """Start the server as a child process over stdio, discover what it offers, and call it."""
+    import asyncio
+    import sys
+
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+
+    params = StdioServerParameters(command=sys.executable, args=["trades_server.py"])
+
+
+    async def main() -> None:
+        async with stdio_client(params) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+
+                tools = await session.list_tools()
+                for t in tools.tools:
+                    print("tool:", t.name, "| inputs:", list(t.input_schema.get("properties", {})))
+
+                failed = await session.call_tool("list_failed_trades", {})
+                print("failed:", failed.content[0].text)
+
+                trade = await session.call_tool("get_trade", {"trade_id": "T-101"})
+                print("trade:", trade.content[0].text)
+
+                bad = await session.call_tool("get_trade", {"trade_id": 101})
+                print("wrong type -> is_error:", bad.is_error)
+
+                missing = await session.call_tool("get_trade", {"trade_id": "T-999"})
+                print("unknown id -> is_error:", missing.is_error, "|", missing.content[0].text)
+
+                policy = await session.read_resource("policy://settlement")
+                print("resource:", policy.contents[0].text)
+
+                prompt = await session.get_prompt("investigate", {"trade_id": "T-101"})
+                print("prompt:", prompt.messages[0].content.text)
+
+
+    asyncio.run(main())
+  language: python
+  expected: |
+    tool: get_trade | inputs: ['trade_id']
+    tool: list_failed_trades | inputs: []
+    failed: T-101
+    trade: {
+      "trade_id": "T-101",
+      "ticker": "GLOBX",
+      "side": "SELL",
+      "qty": 250,
+      "status": "failed"
+    }
+    wrong type -> is_error: True
+    unknown id -> is_error: True | Error executing tool get_trade: unknown trade T-999
+    resource: Failed trades must be reviewed by an analyst before any rebooking.
+    prompt: Investigate trade T-101. Use get_trade, cite fields, and propose a fix. Do not rebook.
+    (The server's own log lines, such as "Tool 'get_trade' rejected arguments", appear on stderr.)
+  done_when:
+  - The client lists both tools, reads the resource, fills the prompt and prints the trade without any hard-coded tool list.
+  - The wrong-type and unknown-ID calls both come back with is_error True while the server keeps running.
+  - You added get_ssi and the client discovered it, and you can explain why print() to stdout caused an Invalid JSON error.
+quiz:
+- id: q1
+  prompt: In MCP, how many servers does each client talk to?
+  options:
+  - One; the host creates one client per server connection
+  - Every server the host knows about
+  - None; servers talk to the model directly
+  - Two, one for reads and one for writes
+  answer: 0
+  explanation: The host makes one client per connection, and each client talks to one server.
+  evidence: The host creates one client per connection, and each client talks to one server.
+- id: q2
+  prompt: What is the difference between a tool and a resource?
+  options:
+  - A tool is an action the model asks for; a resource is read-only data the application chooses to load
+  - A tool is read-only data; a resource is a function
+  - They are the same thing with different names
+  - Resources can only be used over HTTP
+  answer: 0
+  explanation: Resources are context identified by a URI; tools are actions.
+  evidence: a tool is an action the model asks for; a resource is read-only data the application chooses to load
+- id: q3
+  prompt: Where does the Python SDK get a tool's input schema from?
+  options:
+  - The function's type hints
+  - The model's first reply
+  - A YAML file next to the server
+  - The client's configuration
+  answer: 0
+  explanation: Type hints become the JSON Schema that arguments are checked against.
+  evidence: The SDK builds it from your function's type hints
+- id: q4
+  prompt: A client passes a number where trade_id expects a string. What happens?
+  options:
+  - The call is rejected before get_trade runs
+  - get_trade receives the number and crashes the server
+  - The SDK silently converts it and returns the wrong trade
+  - The connection closes
+  answer: 0
+  explanation: The input schema protects your code from mismatched arguments.
+  evidence: Passing a number where trade_id expects a string is rejected before get_trade runs.
+- id: q5
+  prompt: Why must a stdio server not print debug output to stdout?
+  options:
+  - Stdout carries the JSON-RPC messages, so stray output corrupts the stream
+  - Stdout is slower than stderr
+  - The model reads stdout and gets confused
+  - Python forbids printing in async code
+  answer: 0
+  explanation: Log to stderr instead; stdout belongs to the protocol.
+  evidence: Stdout belongs to the protocol, so logs go to stderr.
+- id: q6
+  prompt: How does a failure inside a tool, such as an unknown ID, come back to the client?
+  options:
+  - As a normal result with an error flag set, so the model can read what went wrong
+  - As a crash that stops the server
+  - As an empty result with no explanation
+  - As a new protocol version
+  answer: 0
+  explanation: Errors are results, not crashes; the server keeps running.
+  evidence: A failure inside the tool comes back as a normal result with isError set
+- id: q7
+  prompt: In the Python SDK, why raise ToolError for an expected failure instead of a generic exception?
+  options:
+  - An unexpected exception is reported without its message, while ToolError's message reaches the caller
+  - Generic exceptions shut the server down permanently
+  - ToolError makes the tool run faster
+  - The schema requires ToolError for every tool
+  answer: 0
+  explanation: Raise ToolError for failures the caller should see.
+  evidence: In the Python SDK an unexpected exception is reported without its message.
+- id: q8
+  prompt: What happens during initialize?
+  options:
+  - Client and server agree a protocol version and declare their capabilities
+  - The model is downloaded
+  - All tools are called once to test them
+  - The server's database is created
+  answer: 0
+  explanation: Initialize is the first exchange on every connection.
+  evidence: Client and server agree a protocol version and declare their capabilities before anything else happens.
+- id: q9
+  prompt: Why does the client in the project contain no hard-coded tool list?
+  options:
+  - It learns the tools at run time from tools/list
+  - It reads them from the model provider
+  - Tools are passed as command-line arguments
+  - MCP forbids clients from knowing tool names
+  answer: 0
+  explanation: Discovery means the host does not need changing when the server adds a tool.
+  evidence: The client learns the tools at run time.
+- id: q10
+  prompt: When is the stdio transport the right choice?
+  options:
+  - For a local server launched by the host, with no network
+  - For a shared remote server used by many teams
+  - Only for servers written in TypeScript
+  - Only when the server has no tools
+  answer: 0
+  explanation: Streamable HTTP suits shared remote servers with authentication.
+  evidence: Stdio for a local server launched by the host, with no network
+- id: q11
+  prompt: The model keeps calling the wrong tool. What is a likely cause?
+  options:
+  - Vague tool descriptions, since the model chooses tools from their names and descriptions
+  - The server uses stdio
+  - The input schema is too strict
+  - The client called initialize
+  answer: 0
+  explanation: Say what a tool returns and when to use it.
+  evidence: The model chooses tools from their names and descriptions.
+- id: q12
+  prompt: Which statement about MCP and safety is accurate?
+  options:
+  - MCP standardises how tools are called; least privilege, approvals and logging are still on you
+  - MCP guarantees the model only makes safe calls
+  - Any MCP server is trusted by default
+  - MCP encrypts tool results so injection is impossible
+  answer: 0
+  explanation: The protocol defines calls, not permissions or approvals.
+  evidence: MCP defines how tools are called, not whether the model should call them.
+- id: q13
+  prompt: What identifies a resource?
+  options:
+  - A URI, such as policy://settlement
+  - A tool name and arguments
+  - The server's process ID
+  - A JSON-RPC error code
+  answer: 0
+  explanation: Resources are read-only data addressed by URI.
+  evidence: Read-only data identified by a URI, such as policy://settlement.
+- id: q14
+  prompt: The client waits forever after starting. What should you check first?
+  options:
+  - The command and path in the launch settings; run the server alone to see any import error
+  - The model's temperature
+  - Whether the resource URI is unique
+  - The prompt template's length
+  answer: 0
+  explanation: If the server never starts, the client waits; use an absolute path or sys.executable.
+  evidence: Use an absolute path or sys.executable, and run the server alone first to see any import error.
+- id: q15
+  prompt: Example code that imports FastMCP fails. What is the likely reason?
+  options:
+  - It was written for the SDK's 1.x line; in the current major version the class is MCPServer
+  - FastMCP only runs on Windows
+  - The server needs a model API key
+  - FastMCP is the client class, not the server
+  answer: 0
+  explanation: Match examples to the installed SDK version.
+  evidence: the high-level server class is MCPServer (older 1.x code calls it FastMCP)
+- id: q16
+  prompt: What is a prompt in MCP?
+  options:
+  - A named, parameterised template the server offers for hosts to show as a ready-made task
+  - The model's hidden system message
+  - A tool that writes data
+  - A log line on stderr
+  answer: 0
+  explanation: Prompts are reusable templates, like the investigate prompt in the project.
+  evidence: A named, parameterised template the server offers
+- id: q17
+  prompt: Why start with read-only tools?
+  options:
+  - A server with only lookups is safe to hand to any agent; writes need an approval design
+  - Write tools are not part of MCP
+  - Read-only tools need no input schema
+  - Read-only tools work without initialize
+  answer: 0
+  explanation: Keep writes behind a separate scope and an approval check.
+  evidence: A server with only lookups is safe to hand to any agent.
+- id: q18
+  prompt: Which interview answer is a red flag?
+  options:
+  - '"The model can call any tool on the server."'
+  - '"Writes are in a separate scope with an approval check."'
+  - '"Logs go to stderr in a stdio server."'
+  - '"We vet third-party servers like dependencies."'
+  answer: 0
+  explanation: Unbounded tool access is exactly what reviewers worry about.
+  evidence: 'Red flags interviewers listen for: "the model can call any tool on the server"'
+- id: q19
+  prompt: What should you do before installing a third-party MCP server?
+  options:
+  - Vet it like any dependency, since it runs code on your machine and writes text the model reads
+  - Nothing; the protocol sandboxes it
+  - Give it write access so it can be tested properly
+  - Only check that its name is unique
+  answer: 0
+  explanation: Third-party servers need the same vetting as any dependency.
+  evidence: A server you install runs code on your machine and writes text the model reads.
