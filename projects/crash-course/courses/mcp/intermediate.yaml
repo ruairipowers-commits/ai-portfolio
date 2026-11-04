@@ -1,0 +1,1312 @@
+course: mcp
+level: intermediate
+version: 1
+title: MCP servers you can trust in production in 4 hours
+status: draft
+source:
+  page: tech/mcp.md
+  docs: https://modelcontextprotocol.io/
+provenance:
+  written_by: Claude (build session, 3 Nov 2026), from the site's Model Context Protocol page and the Familiar level
+sections:
+- id: modules
+  heading: How the four hours fit together
+  body: |
+    Beginner had you build a read-only server and a client that discovers and calls it. This level is about the
+    decisions that make a server safe to put in front of an agent that works with real systems. Five modules, each
+    with an exercise and a five-question check (pass mark 80%), then a 90-minute capstone and a final test.
+
+    | Module | What you learn | Time |
+    |---|---|---|
+    | m1 The protocol underneath | JSON-RPC, the lifecycle, capabilities, versions, what crosses the wire | 20 min |
+    | m2 Designing tools a model uses well | names, descriptions, schemas, structured output, errors, annotations | 20 min |
+    | m3 Resources, prompts and client features | when data should be a resource, prompts as products, sampling and elicitation | 20 min |
+    | m4 Transports and deployment | stdio vs Streamable HTTP, authentication, running and versioning servers | 20 min |
+    | m5 Security and governance | scopes, approval-gated writes, injection, vetting servers, logging | 20 min |
+
+    **Pacing.** m1 and m2 are the foundation; do them first and in order. m3 and m4 are independent. m5 sets up the
+    capstone, so do it last. Keep one virtual environment with `mcp` installed; every example runs offline over
+    stdio with the Python SDK, and the same ideas apply in the TypeScript SDK the trade-ops server uses.
+- id: production
+  heading: Running MCP servers for real
+  body: |
+    An MCP server is a program with access to your systems that an AI application drives. Run it like one.
+
+    **Security.**
+    - Give each server the least access it needs: a read-only database user for lookup tools, a separate process or
+      scope for writes.
+    - Validate every argument beyond the schema where it matters: IDs against a pattern, amounts against limits.
+    - Never trust a write because the model asked for it. Check an approval the server can verify, such as a signed
+      token over the exact fields being written.
+    - Keep secrets in the server's environment, not in tool arguments or results.
+
+    **Reliability.**
+    - Tools should be fast and bounded: time out calls to slow back ends and return an error result instead of
+      hanging the host.
+    - Make writes idempotent with an ID supplied by the caller, so a retry does not write twice.
+    - Return errors as tool results the model can read, and log the details on the server.
+
+    **Scaling.** A stdio server is one process per host connection; that scales with the number of hosts, which is
+    usually fine for local and per-agent use. A shared server over Streamable HTTP scales like any web service:
+    run several instances behind a load balancer, keep them stateless where you can, and put authentication in
+    front.
+
+    **Cost.** MCP itself costs nothing, but every tool result goes into the model's context. Return the fields the
+    model needs, not whole records, and page long lists.
+
+    **Observability.** Log one structured line per call on the server (tool, arguments, caller, duration, outcome)
+    to stderr or your log pipeline. The host should log the same call from its side, with the run or thread ID, so
+    the two can be joined.
+
+    **Upgrades.** The protocol is still evolving between versions, and SDK major versions rename things. Pin the
+    SDK, test the server with a scripted client in CI, and check which protocol versions your hosts support before
+    upgrading.
+- id: alternatives
+  heading: Alternatives and when to pick each
+  body: |
+    | Option | What it is | Pick it when |
+    |---|---|---|
+    | Function definitions in the agent's code | tools defined inline and passed to the model API | one agent, one language, tools nobody else needs |
+    | A provider's built-in or hosted tools | tools the model vendor runs for you | the vendor already offers what you need (such as web search) and data policy allows it |
+    | A plain REST or gRPC API | an ordinary service the agent's code calls | the consumer is regular software, or you want no AI-specific protocol |
+    | OpenAPI-described tools | tool definitions generated from an API spec | you already have a well-described API and one client framework |
+    | An MCP server | a separate process with a declared, discoverable interface | several hosts or agents need the same tools, the tools live in another language or process, or the tool list must be reviewed on its own |
+
+    MCP's value grows with the number of hosts. For a single prototype with two functions, inline tools are less
+    to run. Once a second agent, an IDE or another team wants the same tools, a server pays for itself.
+- id: in_portfolio
+  heading: How this portfolio uses MCP
+  body: |
+    The **trade-ops exception agent** gets every tool from an MCP server written in TypeScript with
+    `@modelcontextprotocol/sdk` over stdio, loaded into its LangGraph agent through langchain-mcp-adapters.
+
+    - **Scopes per process.** The server reads `MCP_TOOL_SCOPE`. With `read`, it registers seven read-only lookup
+      tools on a read-only database handle; that is what the investigating agent gets. With `read,write`, it also
+      registers `record_resolution`.
+    - **The model never sees the write tool.** The investigation starts the server with read scope only, so the write
+      tool does not exist for the model. The write-scoped process is started only when a human decision resumes the
+      graph.
+    - **The write verifies its own approval.** `record_resolution` requires an approval token: an HMAC over the
+      resolution fields, the approver, an approval ID and an expiry, minted by the human-approval step. A missing,
+      expired or mismatched token is refused.
+    - **Schema-checked inputs.** IDs are validated with a pattern in the tool's input schema (zod in TypeScript)
+      before any query runs.
+    - **Errors as results.** Failures come back as tool results with `isError` set, so the agent can escalate
+      instead of crashing; a truncated custodian payload, for example, leads to an escalation, not a guess.
+- id: capstone
+  heading: 'Capstone: a scoped trade-ops server with an approval-gated write (90 minutes)'
+  body: |
+    You will build the pattern above in Python: one server with a read scope and a write scope, structured output
+    for lookups, a pattern-checked ID, logs on stderr, and a write tool that accepts only a valid, unexpired
+    approval token for the exact fix. A harness plays the host: it investigates with read scope, simulates a person
+    approving, then starts a write-scoped process and shows that a tampered fix is refused and the approved one is
+    recorded. Try your own design first; the reference is in the project.
+
+    | Criterion | What good looks like |
+    |---|---|
+    | Scopes | Read scope lists no write tool; write tools register only when the scope includes write |
+    | Tool design | Clear names and descriptions, typed and constrained inputs, structured output for lookups |
+    | Errors | Expected failures raise `ToolError` and come back with `is_error`; the server keeps running |
+    | Approval | The write verifies an HMAC over every written field plus approver and expiry; tampering is refused |
+    | Logging | One JSON line per call and per refusal on stderr; nothing on stdout but protocol |
+    | Idempotency | A repeated approved write does not create a second record (stretch goal) |
+    | Tests | A scripted client checks the tool list per scope, a refusal and a success |
+- id: interview
+  heading: Scenario interview questions
+  body: |
+    - **"Three teams want the same CRM lookups in their agents. How would you build it?"** One MCP server with
+      read-only tools on a read-only account, Streamable HTTP with authentication if remote, discovery so teams do
+      not hard-code tools, and structured output so all three parse results the same way.
+    - **"How do you stop an agent writing without approval if it uses MCP tools?"** Do not give the write tool to the
+      investigating session at all; start a write-scoped connection only after a person decides; have the write tool
+      verify a signed approval over the exact fields.
+    - **"A tool result contains instructions to the model. What do you do?"** Treat results as data: screen and flag
+      them, keep write tools out of reach, and have deterministic policy escalate flagged runs.
+    - **"A popular open-source MCP server would save weeks. What checks first?"** Source and maintainer, what it can
+      access, pinned version, tool descriptions read for hidden instructions, run with least privilege, and the same
+      review as any dependency.
+    - **"The agent is slow and expensive since you added MCP tools."** Look at tool result sizes, return only needed
+      fields, page lists, and cut the number of tools so descriptions take less context.
+    - **"How do you upgrade the SDK safely?"** Pin it, keep a scripted client test of every tool, read the migration
+      notes, and check the protocol versions your hosts support.
+- id: further_learning
+  heading: Further learning
+  body: |
+    - [Model Context Protocol documentation](https://modelcontextprotocol.io/) — the official site, with the
+      specification and guides.
+    - [MCP specification](https://modelcontextprotocol.io/specification) — lifecycle, transports, authorization and
+      every message type.
+    - [Python SDK on GitHub](https://github.com/modelcontextprotocol/python-sdk) — the official Python SDK and its
+      migration notes.
+    - [TypeScript SDK server guide](https://ts.sdk.modelcontextprotocol.io/documents/server.html) — building servers
+      in TypeScript.
+    - [MCP Inspector](https://github.com/modelcontextprotocol/inspector) — the official tool for testing servers.
+modules:
+- id: m1
+  title: The protocol underneath
+  minutes: 20
+  body: |
+    You can use MCP for months through an SDK without reading a single JSON-RPC message. But when a host cannot see
+    your tool, or a call fails with a confusing error, knowing what crosses the wire turns a mystery into a
+    five-minute fix.
+
+    ### JSON-RPC 2.0 in one paragraph
+
+    Every MCP message is a JSON-RPC 2.0 object. A **request** has an `id`, a `method` and `params`, and expects a
+    **response** with the same `id` and either a `result` or an `error`. A **notification** has a method and params
+    but no `id`, and gets no response. That is the whole envelope; MCP defines the methods and their shapes.
+
+    ```json
+    {"jsonrpc": "2.0", "id": 3, "method": "tools/call",
+     "params": {"name": "get_trade", "arguments": {"trade_id": "T-101"}}}
+    ```
+
+    ### The lifecycle
+
+    1. **initialize** (request from client). The client sends the protocol version it wants, its capabilities and
+       its name. The server answers with the version it will use, its capabilities and its name. If they cannot
+       agree a version, the connection should end.
+    2. **notifications/initialized** (notification from client). The client says it is ready. Normal requests
+       start after this.
+    3. **Operation.** `tools/list`, `tools/call`, `resources/read` and the rest, in both directions where the
+       capabilities allow.
+    4. **Shutdown.** For stdio, the client closes the server's input and the process exits; for HTTP, the
+       connection or session ends.
+
+    The SDK's `session.initialize()` does steps 1 and 2 for you. Your Beginner client printed nothing about it, but
+    every connection did it.
+
+    ### Capabilities
+
+    Capabilities are how each side says what it supports. A server that declares `tools` can be asked for
+    `tools/list`; one that declares `resources` with `subscribe` can push updates. A server can also declare
+    `listChanged` for tools, meaning it will send a notification when its tool list changes, so a host knows to list
+    again. Clients declare capabilities too, such as support for sampling or elicitation (m3). Neither side should
+    call a feature the other did not declare.
+
+    In the Python SDK, `init = await session.initialize()` returns the server's answer, so you can inspect
+    `init.protocol_version`, `init.server_info.name` and `init.capabilities`.
+
+    ### Versions
+
+    The specification is versioned by date, and the protocol is still evolving between versions. Hosts and servers
+    negotiate during initialize, and SDKs support a range. When a host cannot connect to your server after an
+    upgrade, compare the protocol versions each side supports before anything else.
+
+    ### Names on the wire and in code
+
+    On the wire, field names are camelCase: `inputSchema`, `isError`, `structuredContent`. SDKs may expose them
+    differently; the current Python SDK uses snake_case attributes (`input_schema`, `is_error`,
+    `structured_content`). When you read the specification, translate.
+
+    ### Errors at two levels
+
+    There are two kinds of failure, and they mean different things:
+
+    - A **protocol error** is a JSON-RPC `error` response: unknown method, malformed request, unknown tool. The host
+      usually treats it as a bug.
+    - A **tool execution error** is a successful response whose result has `isError: true`, with text describing
+      the problem. The model sees it and can adapt: try another ID, ask a person, escalate.
+
+    Design for the second kind. "Unknown trade T-999" as a tool result lets an agent recover; an exception that
+    becomes a protocol error usually ends the step.
+
+    ### Seeing the traffic
+
+    To watch real messages, use the MCP Inspector, or write a tiny client with the SDK and print each result's
+    `model_dump()`. For stdio servers, remember that stderr is free for your own logs; everything on stdout must be
+    protocol.
+
+    ### A worked trace
+
+    Here is what one investigation step looks like as messages, simplified:
+
+    1. Client → server: `initialize` with its version and capabilities. Server → client: its version, name and
+       capabilities (`tools`, `resources`, `prompts`).
+    2. Client → server: `notifications/initialized`. No reply.
+    3. Client → server: `tools/list` (id 2). Server → client: result with each tool's `name`, `description`,
+       `inputSchema` and, for typed returns, `outputSchema`.
+    4. The model, given that list by the host, asks for `get_trade`. Client → server: `tools/call` (id 3) with
+       the arguments. Server → client: result with `content` (text) and `structuredContent`.
+    5. A second call with a bad ID gets a result with `isError: true`, not a JSON-RPC error.
+
+    Debugging is mostly finding which of these steps went wrong. A tool missing from the host's list points to step
+    3 (not registered, wrong scope, or the host did not re-list after a change). A call that never returns points to
+    the server process (it crashed, or something wrote to stdout). A model that calls with wrong arguments points to
+    the schema and description, which is the subject of m2.
+  exercise: |
+    Modify your Beginner client to print the server's initialize answer (protocol version, server name and
+    capabilities) and the full `model_dump()` of one `tools/list` result and one failed `tools/call`. Done when you
+    can point to the tool's input schema, the capabilities the server declared, and the error flag on the failed
+    call, and say which of the two error levels that failure was.
+  check:
+  - id: m1q1
+    prompt: What makes a JSON-RPC message a notification rather than a request?
+    options:
+    - It has no id and gets no response
+    - It has an id and expects a result
+    - It is sent only by servers
+    - It always carries an error
+    answer: 0
+    explanation: Requests carry an id and get a matching response; notifications do not.
+    evidence: A notification has a method and params but no id, and gets no response.
+  - id: m1q2
+    prompt: What does the client send immediately after a successful initialize response?
+    options:
+    - A notifications/initialized notification saying it is ready
+    - A tools/call for every tool
+    - A second initialize with a newer version
+    - Nothing; normal requests start straight away
+    answer: 0
+    explanation: Normal requests start after the initialized notification.
+    evidence: The client says it is ready. Normal requests start after this.
+  - id: m1q3
+    prompt: What does a server's listChanged capability for tools mean?
+    options:
+    - It will send a notification when its tool list changes, so the host knows to list again
+    - Its tools can never change
+    - It lists tools in alphabetical order
+    - It refuses tools/list requests
+    answer: 0
+    explanation: Capabilities declare what each side supports, including change notifications.
+    evidence: meaning it will send a notification when its tool list changes, so a host knows to list again
+  - id: m1q4
+    prompt: A call fails because the trade ID is unknown. Which kind of error should it be?
+    options:
+    - A tool execution error, a result with isError true that the model can read and adapt to
+    - A protocol error that ends the connection
+    - A crash of the server process
+    - No error; return an empty result
+    answer: 0
+    explanation: Design for tool execution errors so the agent can recover.
+    evidence: Design for the second kind.
+  - id: m1q5
+    prompt: A host cannot connect after you upgrade your server's SDK. What should you compare first?
+    options:
+    - The protocol versions each side supports
+    - The tool descriptions
+    - The size of the server's log file
+    - The model's context window
+    answer: 0
+    explanation: Versions are negotiated at initialize, and SDKs support a range.
+    evidence: compare the protocol versions each side supports before anything else
+- id: m2
+  title: Designing tools a model uses well
+  minutes: 20
+  body: |
+    A tool has two audiences. Your code needs it to be safe and predictable; the model needs to understand when to
+    call it and what it will get back. Most "the agent is dumb" complaints are really "the tools were confusing".
+
+    ### Names and descriptions
+
+    The model chooses tools from their names and descriptions. Write them like documentation for a new colleague:
+
+    - **Verb plus object:** `get_trade`, `list_failed_trades`, `record_fix`. Avoid `query`, `do_action`,
+      `helper`.
+    - **Say what comes back and when to use it:** "Look up one trade: booked and confirmed quantities and settlement
+      status." beats "Gets trade data."
+    - **Say what it does not do:** "Read-only." "Does not send the email; queues it." The trade-ops write tool's
+      description says it records an approved resolution and queues, never sends, the email.
+    - **Fewer, sharper tools.** Every tool description takes space in the model's context, and overlapping tools
+      confuse it. Seven focused tools beat twenty overlapping ones.
+
+    ### Inputs
+
+    Type every argument and constrain what you can. In the Python SDK, `pydantic.Field` adds constraints and
+    descriptions to the schema:
+
+    ```python
+    from pydantic import Field
+
+    @server.tool()
+    def get_trade(trade_id: str = Field(pattern=r"^T-\d{3}$", description="Trade ID such as T-101")) -> Trade:
+        """Look up one trade: booked and confirmed quantities and settlement status."""
+    ```
+
+    Now `"101; DROP TABLE"` is rejected before your function runs. In TypeScript the same is done with zod, as in
+    the trade-ops server's `z.string().regex(...)` IDs. Prefer enums for fixed choices, bounds for numbers, and
+    small flat argument lists over nested objects.
+
+    ### Structured output
+
+    If a tool returns a Pydantic model, a `TypedDict` or a dataclass, the Python SDK publishes an **output
+    schema** and returns the result as structured content as well as text:
+
+    ```python
+    class Trade(BaseModel):
+        trade_id: str
+        ticker: str
+        booked_qty: int
+        confirmed_qty: int
+        status: str
+    ```
+
+    A host can then validate the result and use fields directly (`result.structured_content["confirmed_qty"]`)
+    instead of parsing text. In the capstone, the harness builds the proposal straight from structured content.
+
+    ### Errors
+
+    Raise `ToolError("unknown trade T-999")` for expected failures. The message reaches the model as an error
+    result. Any other exception is treated as a crash: the caller gets a generic "Error executing tool" message and
+    the details stay in the server's log, which is the safe default for stack traces and internal names. Write
+    error messages that suggest a next step: "unknown trade T-999; use list_failed_trades to see open items".
+
+    ### Annotations
+
+    Tools can carry hints: `read_only_hint`, `destructive_hint`, `idempotent_hint`, `open_world_hint` (camelCase
+    on the wire). A host can use them, for example to ask for confirmation before a destructive tool. They are
+    **hints, not enforcement**: a server can claim anything. Never rely on a hint for safety; enforce in the server.
+
+    ```python
+    from mcp.types import ToolAnnotations
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True))
+    def get_trade(...): ...
+    ```
+
+    ### Results the model can use
+
+    - Return the fields the model needs, not the whole record; results go into context and cost tokens.
+    - Page long lists with a limit and a cursor argument.
+    - Use stable field names and units (`qty`, not sometimes `quantity`).
+    - Keep results deterministic for the same input, which makes testing and replay possible.
+
+    ### Read and write tools
+
+    Split them. Lookups are safe to give widely. Writes go in their own tool with their own checks, and ideally in
+    their own scope (m5). A single `manage_trade(action=...)` tool that can read or write hides the dangerous part
+    inside an argument.
+
+    ### Reviewing a tool list
+
+    Before an agent gets a server, read its `tools/list` output as the model will see it, and ask five questions:
+    Could a new colleague pick the right tool from the names and descriptions alone? Does every argument have a
+    type and, where it matters, a constraint? Does every lookup say it is read-only, and is it? Are writes separate
+    and scoped? Are results small enough to sit in context comfortably? A tool list that passes this review usually
+    needs much less prompt engineering in the agent, because the interface already says what to do.
+  exercise: |
+    Rewrite your Beginner `get_trade` to return a Pydantic model, constrain `trade_id` with a pattern, add a
+    `read_only_hint` annotation and a description that says what comes back. Done when `tools/list` shows an
+    output schema and the annotation, a call returns `structured_content` with typed fields, and an ID such as
+    `"101; DROP TABLE"` is rejected before your function runs.
+  check:
+  - id: m2q1
+    prompt: Which tool description helps a model most?
+    options:
+    - '"Look up one trade: booked and confirmed quantities and settlement status. Read-only."'
+    - '"Gets trade data."'
+    - '"Helper function."'
+    - '"Call this for anything."'
+    answer: 0
+    explanation: A good description says what the tool returns (a trade's booked and confirmed quantities and status) and that it is read-only.
+    evidence: Say what comes back and when to use it
+  - id: m2q2
+    prompt: What does returning a Pydantic model from a tool give the host in the Python SDK?
+    options:
+    - An output schema and the result as structured content as well as text
+    - Faster network transfer
+    - Automatic approval of writes
+    - A second copy of the tool
+    answer: 0
+    explanation: Hosts can validate and use fields directly instead of parsing text.
+    evidence: the Python SDK publishes an output schema and returns the result as structured content as well as text
+  - id: m2q3
+    prompt: Can a host rely on a tool's read_only_hint for safety?
+    options:
+    - No; annotations are hints, not enforcement, so enforce in the server
+    - Yes; the protocol blocks writes from read-only tools
+    - Yes, if the server is written in Python
+    - Only over Streamable HTTP
+    answer: 0
+    explanation: A server can claim anything in a hint.
+    evidence: They are hints, not enforcement
+  - id: m2q4
+    prompt: What does a non-ToolError exception inside a Python SDK tool return to the caller?
+    options:
+    - A generic error message, with the details kept in the server's log
+    - The full stack trace
+    - Nothing; the server exits
+    - A successful empty result
+    answer: 0
+    explanation: Crash details stay on the server, which is the safe default.
+    evidence: the caller gets a generic "Error executing tool" message and the details stay in the server's log
+  - id: m2q5
+    prompt: Why avoid a single manage_trade(action=...) tool that can read or write?
+    options:
+    - It hides the dangerous part inside an argument
+    - Tools cannot take string arguments
+    - The model cannot call tools with arguments
+    - It returns too little data
+    answer: 0
+    explanation: Split reads and writes so writes get their own checks and scope.
+    evidence: hides the dangerous part inside an argument
+- id: m3
+  title: Resources, prompts and client features
+  minutes: 20
+  body: |
+    Tools get most of the attention, but MCP servers expose three kinds of things, and clients can offer features
+    back to servers. Choosing the right primitive keeps the model's job simpler and gives the application, not the
+    model, control where it should have it.
+
+    ### Who is in control
+
+    A useful way to remember the three server primitives:
+
+    | Primitive | Who decides to use it | Example |
+    |---|---|---|
+    | Tool | the model, through the host | `get_trade` |
+    | Resource | the application (or the user through it) | `policy://settlement` |
+    | Prompt | the user, picking a ready-made task | "Investigate trade T-101" |
+
+    ### Resources
+
+    A resource is read-only data with a URI. Use one when the application should decide what context to load:
+    a policy document, a schema, a runbook, today's open exceptions. The host can list resources, read them, and
+    attach their contents to the model's context, without the model having to ask.
+
+    ```python
+    @server.resource("policy://settlement")
+    def settlement_policy() -> str:
+        """The desk's settlement policy."""
+        return "Failed trades must be reviewed by an analyst before any rebooking."
+    ```
+
+    Resources can also be **templates** with parameters in the URI, such as `trade://{trade_id}`, so one function
+    serves many URIs. A server that declares `subscribe` can notify subscribers when a resource changes.
+
+    When to choose a resource over a tool: if the data is reference material, changes slowly, and the application
+    can decide in advance that it is relevant, make it a resource. If the model needs to decide at run time what to
+    look up, make it a tool.
+
+    ### Prompts
+
+    Prompts are named templates with arguments. A host can show them to users as commands or menu items, which
+    turns "the right way to ask" into a product your team maintains. In a firm, prompts are a good place for the
+    house style of a task: "Investigate trade {trade_id}. Use get_trade, cite fields, and propose a fix. Do not
+    rebook." Version them with the server, and review changes like code.
+
+    ### Client features
+
+    The specification also defines features a **client** can offer to servers, each declared as a capability:
+
+    - **Sampling.** The server asks the client's model to generate text, so a server can use a model without its
+      own API key. The host stays in control and should let a person review such requests.
+    - **Elicitation.** The server asks the user, through the client, for more information in a structured form,
+      such as "which account do you mean?".
+    - **Roots.** The client tells the server which locations (such as folders) it may work within.
+
+    Not every host supports every feature, so check capabilities before relying on one. For governed workflows,
+    treat sampling with care: a server that can drive the host's model is a server that can spend its budget and
+    shape its output.
+
+    ### Designing the surface of a real server
+
+    For a trade-ops server, a sensible split is:
+
+    - **Tools:** lookups the model chooses at run time (`get_booking`, `get_confirm`, `get_ssi`).
+    - **Resources:** the settlement policy and the escalation runbook, which the host attaches to every
+      investigation.
+    - **Prompts:** "Investigate exception {id}" and "Draft broker email for {id}", which analysts can trigger.
+
+    This keeps the tool list short, moves stable context out of tool calls, and makes the common tasks one click.
+
+    ### Context budget
+
+    Everything the host attaches costs tokens on every call. Keep resources concise, prefer summaries with a link
+    to the full document, and attach only what the task needs. A 40-page policy attached to every call is a cost
+    problem and a quality problem.
+
+    ### Change notifications
+
+    Servers can tell clients that things changed. A server that declares `listChanged` for tools, resources or
+    prompts sends a notification when the list changes, and the host should list again. A server that supports
+    resource subscriptions can notify a subscriber when a specific resource's content changes. These matter for
+    long-running hosts such as IDEs and chat apps; for an agent that opens a fresh connection per run, re-listing at
+    the start is usually enough. Either way, never cache a tool list across server versions without checking it.
+  exercise: |
+    Add to your server a resource template `trade://{trade_id}` that returns a one-line summary of a trade, and a
+    second prompt, `draft_email(trade_id)`, that produces the text of a broker-email request. Then, in your client,
+    list resources, resource templates and prompts. Done when the client reads `trade://T-101` and fills both prompts,
+    and you can explain for each of your server's capabilities why it is a tool, a resource or a prompt.
+  check:
+  - id: m3q1
+    prompt: Who decides to use a resource?
+    options:
+    - The application, or the user through it
+    - The model, through a tool call
+    - The server, on its own schedule
+    - Nobody; resources load automatically into every model
+    answer: 0
+    explanation: Tools are model-controlled; resources are application-controlled.
+    evidence: Use one when the application should decide what context to load
+  - id: m3q2
+    prompt: When should data be a resource rather than a tool?
+    options:
+    - When it is reference material that changes slowly and the application can decide in advance it is relevant
+    - When the model must decide at run time what to look up
+    - When the data is written by the server
+    - When the data needs an approval
+    answer: 0
+    explanation: Run-time lookups the model chooses are tools.
+    evidence: if the data is reference material, changes slowly, and the application can decide in advance that it is relevant, make it a resource
+  - id: m3q3
+    prompt: What does sampling let a server do?
+    options:
+    - Ask the client's model to generate text, without its own API key
+    - Read any file on the client's machine
+    - Bypass the host's approvals
+    - Choose which tools the model may call
+    answer: 0
+    explanation: The host stays in control and should let a person review such requests.
+    evidence: The server asks the client's model to generate text, so a server can use a model without its own API key.
+  - id: m3q4
+    prompt: What is a resource template?
+    options:
+    - A resource with parameters in its URI, so one function serves many URIs
+    - A prompt that returns a resource
+    - A tool with no arguments
+    - A copy of the specification
+    answer: 0
+    explanation: For example trade://{trade_id}.
+    evidence: Resources can also be templates with parameters in the URI
+  - id: m3q5
+    prompt: Why keep attached resources concise?
+    options:
+    - Everything the host attaches costs tokens on every call
+    - Resources longer than one line are rejected
+    - Long resources disable tools
+    - The protocol limits resources to 100 characters
+    answer: 0
+    explanation: Attach only what the task needs; long context hurts cost and quality.
+    evidence: Everything the host attaches costs tokens on every call.
+- id: m4
+  title: Transports and deployment
+  minutes: 20
+  body: |
+    The protocol layer is the same over both transports, so a server can start local and move behind HTTP later.
+    What changes is how it is launched, who can reach it, and how callers prove who they are.
+
+    ### Stdio
+
+    The host starts the server as a child process and talks over its standard input and output.
+
+    - **No network, no port.** Nothing to firewall and no listener to attack. That is why the trade-ops agent uses
+      stdio: the server runs next to the agent, with its own environment variables.
+    - **Configuration through the launch.** The host decides the command, the arguments and the environment. The
+      trade-ops runner passes `MCP_TOOL_SCOPE` and, for the write process, the signing key this way.
+    - **One process per connection.** Each host session gets its own server process, which isolates sessions and
+      makes per-session scopes easy.
+    - **Stdout is the protocol.** Logs go to stderr.
+
+    ```python
+    params = StdioServerParameters(command=sys.executable, args=["ops_server.py"],
+                                   env={**os.environ, "MCP_TOOL_SCOPE": "read"})
+    ```
+
+    ### Streamable HTTP
+
+    The server runs as a web service, and clients connect over HTTP. Use it when the server is shared by many hosts,
+    runs on another machine, or needs central operation. In the Python SDK, `server.run(transport="streamable-http")`
+    serves it; in production you usually mount it in an ASGI app behind your normal web stack.
+
+    - **Authentication.** Streamable HTTP supports standard authentication, and the specification describes an
+      authorization flow based on OAuth for remote servers. At minimum, require a credential, use TLS, and map each
+      caller to the permissions it should have.
+    - **Sessions.** The transport can carry a session identifier so related requests are tied together; design
+      tools so that losing a session is harmless.
+    - **The usual web concerns.** Rate limits, request size limits, timeouts, health checks, and running more than
+      one instance.
+
+    ### Choosing
+
+    | Question | Stdio | Streamable HTTP |
+    |---|---|---|
+    | Who runs it? | the host, per connection | you, as a service |
+    | Network exposure | none | an endpoint to protect |
+    | Auth | process isolation and environment | credentials per caller |
+    | Best for | local tools, per-agent scopes, development | shared tools across teams and hosts |
+
+    ### Packaging and launching
+
+    - Pin dependencies and ship the server as a package or container with one documented command.
+    - Read configuration from environment variables; fail fast at start-up if a required one is missing.
+    - For TypeScript servers, compile and run with Node; the trade-ops server is built once (`npm run build`) and
+      the agent launches the built file.
+
+    ### Versioning the server
+
+    Treat the tool list as an interface. Adding a tool or an optional argument is backward compatible; renaming
+    a tool, removing one or changing an argument's type is not. Give the server a version in its name info, keep a
+    changelog, and when you must break something, add the new tool alongside the old one for a release.
+
+    ### Testing in CI
+
+    A scripted client is the best test. Start the server over stdio in the test, initialize, list tools and assert
+    the exact set per scope, call each tool with a good and a bad input, and check results and error flags. The
+    trade-ops server has its own Node tests next to the Python agent's tests, and both run on every change.
+
+    ### Moving a server from stdio to HTTP
+
+    Because the protocol layer is the same, the tools do not change. What does change: configuration that came from
+    the launch environment (such as the scope) must now come from the caller's identity, so map each credential to
+    a scope on the server; process-per-session isolation is gone, so the tools must be safe for concurrent callers;
+    and logs must record which caller made each call. Plan those three changes before you flip the transport, and
+    keep the stdio entry point for local development and tests.
+  exercise: |
+    Write a pytest test that starts your server over stdio twice — once with `MCP_TOOL_SCOPE=read`, once with
+    `read,write` — and asserts the exact tool names in each. Then run the server once with
+    `server.run(transport="streamable-http")` and note the address it reports. Done when the test passes offline and
+    you can list three things you would add before exposing the HTTP version beyond your laptop.
+  check:
+  - id: m4q1
+    prompt: Why does the trade-ops agent use stdio for its MCP server?
+    options:
+    - No network or port, and the host controls the command and environment, including the scope
+    - Stdio is the only transport the TypeScript SDK supports
+    - Stdio is faster than any HTTP server
+    - Stdio servers cannot have write tools
+    answer: 0
+    explanation: Stdio needs no listener, and the launch sets per-process scope.
+    evidence: Nothing to firewall and no listener to attack.
+  - id: m4q2
+    prompt: When is Streamable HTTP the better transport?
+    options:
+    - When the server is shared by many hosts, runs on another machine, or needs central operation
+    - When the server must never be reachable over a network
+    - When each agent needs its own process
+    - When you want no authentication
+    answer: 0
+    explanation: Shared, remote servers fit HTTP with authentication.
+    evidence: Use it when the server is shared by many hosts, runs on another machine, or needs central operation.
+  - id: m4q3
+    prompt: Which change to a server's tools is backward compatible?
+    options:
+    - Adding a tool or an optional argument
+    - Renaming a tool
+    - Removing a tool
+    - Changing an argument's type
+    answer: 0
+    explanation: Treat the tool list as an interface; additions are safe, renames and removals are not.
+    evidence: Adding a tool or an optional argument is backward compatible
+  - id: m4q4
+    prompt: How does a stdio host pass configuration such as a scope to the server?
+    options:
+    - Through the launch — command, arguments and environment variables
+    - Through a tool call after initialize
+    - Through the model's prompt
+    - It cannot; stdio servers have fixed configuration
+    answer: 0
+    explanation: The trade-ops runner passes MCP_TOOL_SCOPE and the signing key this way.
+    evidence: The host decides the command, the arguments and the environment.
+  - id: m4q5
+    prompt: What is the best automated test for an MCP server?
+    options:
+    - A scripted client that starts the server, lists tools per scope and calls each with good and bad input
+    - Reading the source code
+    - Asking a model whether the tools look right
+    - Checking that the process starts
+    answer: 0
+    explanation: A scripted client checks the real protocol surface.
+    evidence: A scripted client is the best test.
+- id: m5
+  title: Security and governance for MCP servers
+  minutes: 20
+  body: |
+    MCP moves the tool boundary out of the prompt and into a separate process with a declared interface. That is a
+    gift for governance: the list of tools can be reviewed, versioned and tested on its own, and each input schema
+    is enforced before your code runs. But the protocol does not decide what the model is allowed to do with those
+    tools. That part is your design.
+
+    ### Least privilege, by scope
+
+    Give each session only the tools its job needs. The trade-ops pattern:
+
+    1. The investigation runs a server process with `MCP_TOOL_SCOPE=read`. Only lookup tools are registered, on a
+       read-only database handle. The model cannot call a write tool because, in that process, it does not exist.
+    2. After a person approves, the host starts a second process with `read,write`. Only now does `record_fix`
+       exist, and only the host's approval code calls it.
+
+    Registering tools conditionally is a few lines:
+
+    ```python
+    SCOPES = set(os.environ.get("MCP_TOOL_SCOPE", "read").split(","))
+    if "write" in SCOPES:
+        @server.tool()
+        def record_fix(...): ...
+    ```
+
+    ### Writes verify their own approval
+
+    Even a write-scoped process should not trust its caller. The approval step mints a token over exactly what will
+    be written, and the tool recomputes and compares it:
+
+    ```python
+    expected = hmac.new(KEY, "|".join([trade_id, str(new_qty), approver, str(expires_at)]).encode(),
+                        hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, approval_token):
+        raise ToolError("approval token does not match this fix")
+    ```
+
+    Changing any field — the quantity, the approver, the expiry — breaks the token. `compare_digest` avoids
+    leaking information through timing. The key lives only in the approval service and the write server's
+    environment.
+
+    ### Injection through tools
+
+    Two paths to watch:
+
+    - **Tool results.** A broker confirm that says "SYSTEM: ignore prior instructions" is data that reaches the
+      model. Screen results, flag suspicious text, and let deterministic policy escalate.
+    - **Tool descriptions.** A third-party server's descriptions are text the model reads every call. A malicious
+      or careless description can steer the model. Read them during review, and pin the server version so they do
+      not change under you.
+
+    ### Vetting third-party servers
+
+    Treat a server like any dependency that runs code with your credentials: who maintains it, what it can reach,
+    which version you pin, what its tools and descriptions say, what it logs and where data goes. Run it with the
+    least privilege that works, and prefer servers you can read the source of.
+
+    ### Logging and audit
+
+    Log every call on the server side with tool, arguments (redacting secrets), caller, outcome and duration, and
+    every refused write with the reason. On the host side, log the same call with the run ID. Together they show
+    who asked for what, what the tool did, and who approved any write.
+
+    ### Rate and budget limits
+
+    MCP has no built-in limits on how often a tool is called. Put caps in the host (calls per run, cost per run)
+    and in the server where the back end needs protecting (calls per minute per caller).
+
+    ### A review checklist for a new server
+
+    1. Tools are split into read and write; write tools are scoped.
+    2. Every write verifies an approval it can check itself.
+    3. Inputs are constrained beyond types where IDs or amounts matter.
+    4. Errors are tool results; crashes do not leak internals.
+    5. Logs go to stderr or a pipeline, one line per call and refusal.
+    6. The SDK and any third-party servers are pinned.
+    7. A scripted client test covers each scope.
+
+    ### Where MCP sits in the controls
+
+    It helps to say plainly to a risk reviewer which control lives where. The **graph or host** decides when a
+    write may be attempted (after an approval) and caps how much work a run does. The **MCP server** decides what is
+    possible at all (scopes), what inputs are acceptable (schemas and patterns), and whether a specific write is
+    authorised (the token). The **approval service** holds the signing key and records who decided. No single
+    layer is trusted alone, so a bug in one does not open the door.
+  exercise: |
+    Add a write tool to your server that registers only when `MCP_TOOL_SCOPE` includes `write` and refuses any call
+    without a valid HMAC token over all of its written fields. Done when the read-scope tool list has no write tool,
+    a call with a token minted for different values is refused with `is_error`, a call with the right token succeeds,
+    and both outcomes appear as JSON lines on stderr.
+  check:
+  - id: m5q1
+    prompt: How does the trade-ops pattern stop the model calling the write tool during an investigation?
+    options:
+    - The investigation's server process runs with read scope, so the write tool does not exist there
+    - The model is told in its prompt not to call it
+    - The write tool has a destructive_hint annotation
+    - The write tool is hidden from tools/list but still callable
+    answer: 0
+    explanation: Least privilege by scope means the tool is never registered for that session.
+    evidence: The model cannot call a write tool because, in that process, it does not exist.
+  - id: m5q2
+    prompt: Why does the write tool recompute an HMAC over the fields it will write?
+    options:
+    - So changing any field — quantity, approver or expiry — breaks the token and the write is refused
+    - To encrypt the database
+    - To speed up the write
+    - To let the model mint its own approvals
+    answer: 0
+    explanation: The token binds the approval to exactly what is written.
+    evidence: Changing any field — the quantity, the approver, the expiry — breaks the token.
+  - id: m5q3
+    prompt: Why read a third-party server's tool descriptions during review?
+    options:
+    - They are text the model reads every call, and a malicious or careless description can steer it
+    - They decide the server's protocol version
+    - They contain the server's API keys
+    - They are only shown to users, never the model
+    answer: 0
+    explanation: Pin the version so descriptions do not change under you.
+    evidence: A malicious or careless description can steer the model.
+  - id: m5q4
+    prompt: Where should call limits go, since MCP has none built in?
+    options:
+    - In the host (calls and cost per run) and in the server where the back end needs protecting
+    - In the tool descriptions
+    - In the JSON-RPC envelope
+    - Nowhere; models stop on their own
+    answer: 0
+    explanation: Caps belong in the host, with server limits to protect back ends.
+    evidence: Put caps in the host (calls per run, cost per run) and in the server where the back end needs protecting
+  - id: m5q5
+    prompt: What does MCP itself give governance?
+    options:
+    - A tool list that can be reviewed, versioned and tested on its own, with input schemas enforced
+    - A decision about what the model is allowed to do
+    - Built-in human approval for every write
+    - Automatic rate limits
+    answer: 0
+    explanation: The protocol defines the interface; permissions and approvals are your design.
+    evidence: the list of tools can be reviewed, versioned and tested on its own
+project:
+  title: A scoped trade-ops MCP server with an approval-gated write
+  kind: runnable
+  minutes: 90
+  goal: Build a Python MCP server with read and write scopes, structured lookups, constrained inputs and a write tool
+    that accepts only a signed, unexpired approval for the exact fix, plus a host harness that proves it.
+  steps:
+  - In a virtual environment with `mcp` installed, create `ops_server.py` and `harness.py` from the code below (split at
+    the `# ---- harness.py ----` line). Try writing your own server first, using the rubric, then compare.
+  - Read the server — the scope check, the Pydantic return type, the pattern on trade_id, logs to stderr, and the write
+    tool registered only in write scope.
+  - Run `python harness.py`. It investigates with read scope, simulates an approval by minting a token, then starts a
+    write-scoped process.
+  - Check the output — read scope lists only get_trade; the injected ID is rejected; the tampered fix is refused; the
+    approved fix is recorded in fixes.jsonl.
+  - Run it again with `2>&1 >/dev/null` to see only the server's JSON log lines.
+  - Stretch — make record_fix idempotent by refusing a second write with the same approval token.
+  - Write a pytest test that asserts the tool list for each scope, one refusal and one success.
+  code: |
+    """Trade-ops MCP server with scopes and an approval-gated write (stdio).
+
+    MCP_TOOL_SCOPE=read        -> read-only tools (what an agent gets)
+    MCP_TOOL_SCOPE=read,write  -> also record_fix, which needs a signed approval token
+    """
+    import hashlib
+    import hmac
+    import json
+    import os
+    import sys
+    import time
+
+    from pydantic import BaseModel, Field
+    from mcp.server.mcpserver import MCPServer
+    from mcp.server.mcpserver.exceptions import ToolError
+    from mcp.types import ToolAnnotations
+
+    SCOPES = set(os.environ.get("MCP_TOOL_SCOPE", "read").split(","))
+    SIGNING_KEY = os.environ.get("APPROVAL_SIGNING_KEY", "").encode()
+    TRADES = {"T-101": {"ticker": "GLOBX", "booked_qty": 250, "confirmed_qty": 200, "status": "failed"}}
+    LEDGER = "fixes.jsonl"
+
+    server = MCPServer("trade-ops", instructions="Read-only lookups for trade exceptions.")
+
+
+    def log(event: str, **fields) -> None:
+        print(json.dumps({"ts": round(time.time()), "event": event, **fields}), file=sys.stderr)  # never stdout
+
+
+    class Trade(BaseModel):
+        trade_id: str
+        ticker: str
+        booked_qty: int
+        confirmed_qty: int
+        status: str
+
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True))
+    def get_trade(trade_id: str = Field(pattern=r"^T-\d{3}$", description="Trade ID such as T-101")) -> Trade:
+        """Look up one trade: booked and confirmed quantities and settlement status."""
+        log("tool_call", tool="get_trade", trade_id=trade_id)
+        if trade_id not in TRADES:
+            raise ToolError(f"unknown trade {trade_id}")
+        return Trade(trade_id=trade_id, **TRADES[trade_id])
+
+
+    def sign(fields: list[str]) -> str:
+        return hmac.new(SIGNING_KEY, "|".join(fields).encode(), hashlib.sha256).hexdigest()
+
+
+    if "write" in SCOPES:
+        @server.tool(annotations=ToolAnnotations(destructive_hint=False, idempotent_hint=True))
+        def record_fix(trade_id: str, new_qty: int, approver: str, expires_at: int, approval_token: str) -> str:
+            """Record an APPROVED quantity fix. Requires a token minted by the human-approval step."""
+            if not SIGNING_KEY:
+                raise ToolError("server has no signing key; writes are disabled")
+            if expires_at < time.time():
+                raise ToolError("approval expired")
+            expected = sign([trade_id, str(new_qty), approver, str(expires_at)])
+            if not hmac.compare_digest(expected, approval_token):
+                log("write_refused", trade_id=trade_id, approver=approver)
+                raise ToolError("approval token does not match this fix")
+            with open(LEDGER, "a") as f:
+                f.write(json.dumps({"trade_id": trade_id, "new_qty": new_qty, "approver": approver}) + "\n")
+            log("write_ok", trade_id=trade_id, approver=approver)
+            return f"recorded fix for {trade_id}"
+
+
+    if __name__ == "__main__":
+        server.run()
+
+    # ---- harness.py ----
+    """Drive the server the way an agent host would: read scope for the investigation, write scope after approval."""
+    import asyncio
+    import hashlib
+    import hmac
+    import os
+    import sys
+    import time
+
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+
+    KEY = "demo-signing-key-change-me"
+
+
+    def params(scope: str) -> StdioServerParameters:
+        env = {**os.environ, "MCP_TOOL_SCOPE": scope, "APPROVAL_SIGNING_KEY": KEY}
+        return StdioServerParameters(command=sys.executable, args=["ops_server.py"], env=env)
+
+
+    def mint(trade_id: str, new_qty: int, approver: str, expires_at: int) -> str:
+        msg = "|".join([trade_id, str(new_qty), approver, str(expires_at)]).encode()
+        return hmac.new(KEY.encode(), msg, hashlib.sha256).hexdigest()
+
+
+    async def main() -> None:
+        # 1. investigation: read scope only
+        async with stdio_client(params("read")) as (r, w), ClientSession(r, w) as s:
+            await s.initialize()
+            names = [t.name for t in (await s.list_tools()).tools]
+            print("read scope tools:", names)
+            trade = (await s.call_tool("get_trade", {"trade_id": "T-101"})).structured_content
+            print("evidence:", trade)
+            bad = await s.call_tool("get_trade", {"trade_id": "101; DROP TABLE"})
+            print("bad id rejected:", bad.is_error)
+            proposal = {"trade_id": "T-101", "new_qty": trade["confirmed_qty"]}
+
+        # 2. a person approves; the approval step mints a token for exactly this fix
+        approver, expires = "a.analyst", int(time.time()) + 600
+        token = mint(proposal["trade_id"], proposal["new_qty"], approver, expires)
+
+        # 3. write scope, started only after the decision
+        async with stdio_client(params("read,write")) as (r, w), ClientSession(r, w) as s:
+            await s.initialize()
+            print("write scope tools:", [t.name for t in (await s.list_tools()).tools])
+            forged = await s.call_tool("record_fix", {**proposal, "new_qty": 999, "approver": approver,
+                                                      "expires_at": expires, "approval_token": token})
+            print("tampered fix:", forged.content[0].text)
+            ok = await s.call_tool("record_fix", {**proposal, "approver": approver,
+                                                  "expires_at": expires, "approval_token": token})
+            print("approved fix:", ok.content[0].text)
+
+
+    asyncio.run(main())
+  language: python
+  expected: |
+    read scope tools: ['get_trade']
+    evidence: {'trade_id': 'T-101', 'ticker': 'GLOBX', 'booked_qty': 250, 'confirmed_qty': 200, 'status': 'failed'}
+    bad id rejected: True
+    write scope tools: ['get_trade', 'record_fix']
+    tampered fix: Error executing tool record_fix: approval token does not match this fix
+    approved fix: recorded fix for T-101
+    fixes.jsonl holds one line: {"trade_id": "T-101", "new_qty": 200, "approver": "a.analyst"}
+    On stderr: JSON lines for tool_call, write_refused and write_ok events.
+  done_when:
+  - Read scope lists no write tool, and the write tool appears only in the write-scoped process.
+  - A fix whose fields differ from the approved ones is refused; the approved fix is recorded exactly once.
+  - A scripted pytest test checks both scopes, a refusal and a success, and passes offline.
+quiz:
+- id: f1
+  prompt: What does a JSON-RPC request carry that a notification does not?
+  options:
+  - An id, so a response with the same id can come back
+  - A method name
+  - Parameters
+  - A protocol version
+  answer: 0
+  explanation: Requests expect a matching response; notifications get none.
+  evidence: A request has an id, a method and params, and expects a response with the same id
+- id: f2
+  prompt: What do client and server exchange in initialize?
+  options:
+  - The protocol version, their capabilities and their names
+  - Every tool's result
+  - The model's system prompt
+  - Their database credentials
+  answer: 0
+  explanation: Version and capabilities are agreed before anything else.
+  evidence: The client sends the protocol version it wants, its capabilities and its name.
+- id: f3
+  prompt: On the wire, how is the tool error flag named?
+  options:
+  - isError, in camelCase; the Python SDK exposes it as is_error
+  - is_error, in snake_case everywhere
+  - errorFlag
+  - status 500
+  answer: 0
+  explanation: Wire names are camelCase; SDKs may translate.
+  evidence: 'On the wire, field names are camelCase: inputSchema, isError, structuredContent.'
+- id: f4
+  prompt: Why prefer tool execution errors over protocol errors for expected failures?
+  options:
+  - The model sees them and can adapt, while a protocol error usually ends the step
+  - Protocol errors are not allowed in MCP
+  - Tool execution errors are faster
+  - Protocol errors expose API keys
+  answer: 0
+  explanation: '"Unknown trade T-999" as a result lets an agent recover.'
+  evidence: an exception that becomes a protocol error usually ends the step
+- id: f5
+  prompt: Why are fewer, sharper tools better than many overlapping ones?
+  options:
+  - Every description takes space in the model's context, and overlapping tools confuse it
+  - MCP limits servers to seven tools
+  - More tools make the server slower to start
+  - Clients can only list ten tools
+  answer: 0
+  explanation: Seven focused tools beat twenty overlapping ones.
+  evidence: Every tool description takes space in the model's context, and overlapping tools confuse it.
+- id: f6
+  prompt: How does the trade-ops TypeScript server constrain trade IDs?
+  options:
+  - With a zod regex in the tool's input schema, checked before any query runs
+  - By asking the model to double-check
+  - With a database trigger after the query
+  - It does not constrain them
+  answer: 0
+  explanation: Schema checks reject bad IDs before code runs.
+  evidence: IDs are validated with a pattern in the tool's input schema (zod in TypeScript) before any query runs.
+- id: f7
+  prompt: What can a host do with structured content from a tool?
+  options:
+  - Validate it and use fields directly instead of parsing text
+  - Nothing; it is only for display
+  - Send it back to the server as a new tool
+  - Use it to approve writes automatically
+  answer: 0
+  explanation: The capstone builds the proposal straight from structured content.
+  evidence: A host can then validate the result and use fields directly
+- id: f8
+  prompt: Which tool annotations exist, and how binding are they?
+  options:
+  - Read-only, destructive, idempotent and open-world hints — none of them enforced by the protocol
+  - Read-only and write-only flags that the protocol enforces
+  - A price annotation that sets the cost per call
+  - Annotations are required and checked by the host
+  answer: 0
+  explanation: Hints help hosts decide, but safety must be enforced in the server.
+  evidence: 'Tools can carry hints: read_only_hint, destructive_hint, idempotent_hint, open_world_hint'
+- id: f9
+  prompt: How should a tool handle a long list of results?
+  options:
+  - Page it with a limit and a cursor argument
+  - Return everything at once
+  - Return only the first item
+  - Write the list to stdout
+  answer: 0
+  explanation: Results go into context and cost tokens.
+  evidence: Page long lists with a limit and a cursor argument.
+- id: f10
+  prompt: Who decides to use an MCP prompt?
+  options:
+  - The user, picking a ready-made task
+  - The model, through a tool call
+  - The server, on start-up
+  - The transport
+  answer: 0
+  explanation: Prompts are user-facing templates; tools are model-controlled.
+  evidence: the user, picking a ready-made task
+- id: f11
+  prompt: What does elicitation let a server do?
+  options:
+  - Ask the user, through the client, for more information in a structured form
+  - Read the user's files without asking
+  - Change the protocol version mid-session
+  - Call another server's tools directly
+  answer: 0
+  explanation: For example "which account do you mean?".
+  evidence: The server asks the user, through the client, for more information in a structured form
+- id: f12
+  prompt: Why treat sampling with care in governed workflows?
+  options:
+  - A server that can drive the host's model can spend its budget and shape its output
+  - Sampling deletes the host's history
+  - Sampling is not part of the specification
+  - Sampling disables tools
+  answer: 0
+  explanation: Check capabilities and keep a person in the loop for such requests.
+  evidence: a server that can drive the host's model is a server that can spend its budget and shape its output
+- id: f13
+  prompt: For a trade-ops server, which is a sensible resource?
+  options:
+  - The settlement policy and escalation runbook, attached to every investigation
+  - get_booking, chosen by the model at run time
+  - record_fix, the write tool
+  - The approval token
+  answer: 0
+  explanation: Stable reference material the application attaches is a resource.
+  evidence: the settlement policy and the escalation runbook, which the host attaches to every investigation
+- id: f14
+  prompt: What is a key property of the stdio transport?
+  options:
+  - One server process per host connection, which isolates sessions and makes per-session scopes easy
+  - It needs an open port and TLS
+  - Many hosts share one process
+  - It only works on Linux
+  answer: 0
+  explanation: Each session gets its own process.
+  evidence: Each host session gets its own server process, which isolates sessions and makes per-session scopes easy.
+- id: f15
+  prompt: What should a Streamable HTTP server have at minimum before it is exposed?
+  options:
+  - A required credential, TLS, and a mapping from each caller to its permissions
+  - Nothing beyond the default settings
+  - Only a longer tool description
+  - A larger context window
+  answer: 0
+  explanation: A remote server is an endpoint to protect.
+  evidence: At minimum, require a credential, use TLS, and map each caller to the permissions it should have.
+- id: f16
+  prompt: How should a server read its configuration?
+  options:
+  - From environment variables, failing fast at start-up if a required one is missing
+  - From the first tool call
+  - From the model's reply
+  - From a hard-coded secret in the source
+  answer: 0
+  explanation: Missing configuration should stop the server, not surface mid-call.
+  evidence: Read configuration from environment variables; fail fast at start-up if a required one is missing.
+- id: f17
+  prompt: You must rename a tool. How do you avoid breaking hosts?
+  options:
+  - Add the new tool alongside the old one for a release, with a version and changelog
+  - Rename it and tell nobody
+  - Change its type silently
+  - Remove the old tool first
+  answer: 0
+  explanation: Renames and removals are breaking changes.
+  evidence: add the new tool alongside the old one for a release
+- id: f18
+  prompt: In the trade-ops pattern, when is the write-scoped server process started?
+  options:
+  - Only when a human decision resumes the graph
+  - At the start of every investigation
+  - When the model asks for it
+  - Once at boot, shared by all runs
+  answer: 0
+  explanation: The investigation never has the write tool.
+  evidence: The write-scoped process is started only when a human decision resumes the graph.
+- id: f19
+  prompt: What does the trade-ops approval token cover?
+  options:
+  - The resolution fields, the approver, an approval ID and an expiry
+  - Only the trade ID
+  - The model's name and version
+  - The server's process ID
+  answer: 0
+  explanation: Binding every field means any change invalidates the approval.
+  evidence: an HMAC over the resolution fields, the approver, an approval ID and an expiry
+- id: f20
+  prompt: Why use hmac.compare_digest to check a token?
+  options:
+  - It avoids leaking information through timing
+  - It is faster than ==
+  - It decrypts the token
+  - It generates a new key
+  answer: 0
+  explanation: A constant-time comparison does not reveal how much of the token matched.
+  evidence: compare_digest avoids leaking information through timing.
+- id: f21
+  prompt: Which two injection paths should you watch with MCP?
+  options:
+  - Tool results and tool descriptions
+  - Protocol versions and capabilities
+  - Stdout and stderr
+  - Resource URIs and prompt names
+  answer: 0
+  explanation: Tool results and tool descriptions are both text the model reads.
+  evidence: A third-party server's descriptions are text the model reads every call.
+- id: f22
+  prompt: Where should every refused write be recorded?
+  options:
+  - In the server's log, with the reason, alongside the host's log of the call
+  - Nowhere; refusals are noise
+  - Only in the model's context
+  - In the tool description
+  answer: 0
+  explanation: Together the logs show who asked for what and who approved any write.
+  evidence: every refused write with the reason
+- id: f23
+  prompt: When is MCP worth it over inline function definitions?
+  options:
+  - When several hosts or agents need the same tools, or the tool list must be reviewed on its own
+  - For a single prototype with two functions
+  - Whenever you use Python
+  - Only when you need a model
+  answer: 0
+  explanation: MCP's value grows with the number of hosts.
+  evidence: several hosts or agents need the same tools, the tools live in another language or process, or the tool list must be reviewed on its own
+- id: f24
+  prompt: How do the trade-ops agent's MCP tools reach its LangGraph agent?
+  options:
+  - Through langchain-mcp-adapters, from a TypeScript server over stdio
+  - Through a hosted MCP registry
+  - By copying the TypeScript code into Python
+  - Over Streamable HTTP from the model provider
+  answer: 0
+  explanation: The adapters turn MCP tools into tools the graph can call.
+  evidence: loaded into its LangGraph agent through langchain-mcp-adapters
+- id: f25
+  prompt: What happens in the trade-ops agent when a custodian payload is truncated?
+  options:
+  - The tool error leads to an escalation, not a guess
+  - The agent guesses the missing fields
+  - The server crashes and restarts
+  - The write proceeds without the data
+  answer: 0
+  explanation: Errors as results let the agent escalate instead of crashing.
+  evidence: a truncated custodian payload, for example, leads to an escalation, not a guess
+- id: f26
+  prompt: Why return only the fields the model needs from a tool?
+  options:
+  - Every tool result goes into the model's context and costs tokens
+  - MCP rejects results with more than five fields
+  - Extra fields break JSON-RPC
+  - The model cannot read nested objects
+  answer: 0
+  explanation: Smaller results cut cost and keep the model focused.
+  evidence: every tool result goes into the model's context
+- id: f27
+  prompt: How should idempotent writes be designed?
+  options:
+  - With an ID supplied by the caller, so a retry does not write twice
+  - By retrying until the database errors
+  - By letting the model decide whether to retry
+  - By writing to stdout first
+  answer: 0
+  explanation: A caller-supplied ID lets the server recognise a repeat.
+  evidence: Make writes idempotent with an ID supplied by the caller, so a retry does not write twice.
+- id: f28
+  prompt: How should you upgrade an MCP SDK safely?
+  options:
+  - Pin it, keep a scripted client test of every tool, read the migration notes and check host protocol support
+  - Always use the latest version unpinned
+  - Upgrade in production first
+  - Rewrite every tool before testing
+  answer: 0
+  explanation: SDK major versions rename things, and the protocol evolves.
+  evidence: Pin the SDK, test the server with a scripted client in CI
+- id: f29
+  prompt: In the capstone harness, what happens to a fix whose quantity differs from the approved one?
+  options:
+  - It is refused because the approval token does not match
+  - It is recorded with a warning
+  - It replaces the approved fix
+  - The server rounds it to the approved value
+  answer: 0
+  explanation: The token is bound to every written field.
+  evidence: 'tampered fix: Error executing tool record_fix: approval token does not match this fix'
+- id: f30
+  prompt: Who should run a stdio MCP server, and who a Streamable HTTP one?
+  options:
+  - The host runs stdio servers per connection; you run HTTP servers as a service
+  - The model runs both
+  - Users run stdio servers by hand; hosts run HTTP servers
+  - Both are always run by the model provider
+  answer: 0
+  explanation: Stdio servers are launched by the host; HTTP servers are operated like any web service.
+  evidence: The host starts the server as a child process and talks over its standard input and output.
