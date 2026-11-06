@@ -20,7 +20,7 @@ import hmac
 import json
 import os
 
-from . import catalog, mailer, moderation, telemetry
+from . import catalog, lifecycle, mailer, moderation, telemetry
 from .config import LEVELS, Settings
 from .store import insert, j, now, one, rows
 
@@ -111,5 +111,7 @@ def progress(conn, s: Settings) -> dict:
 
 
 def catalog_list(conn) -> list[dict]:
+    """Courses open to sign-ups (a withdrawn course is left out until the owner re-releases it)."""
+    gone = lifecycle.withdrawn(conn)
     return [{"slug": c.slug, "title": c.title, "category": c.category, "tags": c.tags}
-            for c in catalog.all_courses(conn).values()]
+            for c in catalog.all_courses(conn).values() if c.slug not in gone]

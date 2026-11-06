@@ -24,14 +24,16 @@
 {% for c in items %}
   <div class="card course-card" id="c-{{ c.slug }}">
     <h3><a href="{{ R }}/course/{{ c.slug }}">{{ c.title }}</a>
-      {% if c.status != 'active' %}<span class="badge st-{{ c.status }}" title="{{ c.status_note }}">{{ STATUS_LABEL[c.status] }}{% if c.replaced_by %} → {{ c.replaced_by }}{% endif %}</span>{% endif %}</h3>
+      {% if c.status != 'active' %}<span class="badge st-{{ c.status }}" title="{{ c.status_note }}">{{ STATUS_LABEL[c.status] }}{% if c.replaced_by %} → {{ c.replaced_by }}{% endif %}</span>{% endif %}
+      {% if c.slug in withdrawn %}<span class="badge st-reworked" title="Closed to new sign-ups while it is reworked">Being reworked</span>{% endif %}</h3>
     <p>{{ c.summary }}</p>
     {% set n = latest.get(c.slug) %}{% if n %}<p class="small news-line"><span class="muted">Latest {{ n.date }}:</span>
       <a href="{{ n.url }}" rel="noopener nofollow" title="{{ n.summary }}">{{ n.title }}</a>
       · <a href="{{ R }}/whatsnew?course={{ c.slug }}">all updates</a></p>{% endif %}
     {% if c.tag_list() %}<p class="small">{% for t in c.tag_list() %}<a class="tag {{ 'on' if t == tag }}" href="{{ R }}/catalog?tag={{ t }}">{{ t }}</a>{% endfor %}</p>{% endif %}
     <div class="row">
-      {% if c.slug in mine %}<a class="btn small ghost" href="{{ R }}/tracker#c-{{ c.slug }}">On your tracker</a>
+      {% if c.slug in withdrawn and c.slug not in mine %}<span class="small muted">Closed to new sign-ups</span>
+      {% elif c.slug in mine %}<a class="btn small ghost" href="{{ R }}/tracker#c-{{ c.slug }}">On your tracker</a>
       {% elif user %}<form class="inline" method="post" action="{{ R }}/enroll"><input type="hidden" name="course" value="{{ c.slug }}"><button class="btn small" type="submit">Sign up</button></form>
       {% else %}<a class="btn small" href="{{ R }}/signin?next=/course/{{ c.slug }}">Sign up</a>{% endif %}
       <a class="small" href="{{ R }}/course/{{ c.slug }}">Details</a>

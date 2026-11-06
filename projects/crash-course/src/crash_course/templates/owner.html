@@ -7,6 +7,21 @@ Nothing reaches learners until you approve it here (or from the links in your em
 <p class="small muted">Learners {{ stats.learners }} · course sign-ups {{ stats.enrolments }} · quiz attempts {{ stats.attempts }} ·
 levels completed {{ stats.completed }} · levels published {{ stats.published }}</p>
 
+<h2>Courses ({{ courses|length }})</h2>
+<p class="small muted">Withdraw a course to rework it: it leaves the catalog and takes no new sign-ups, while learners
+already on it keep full access with a "being reworked" banner. Open a course for its version history and rollback.</p>
+<details{{ ' open' if courses|selectattr('withdrawn')|list }}><summary class="small">Show all courses{% set w = courses|selectattr('withdrawn')|list %}{% if w %} · {{ w|length }} withdrawn{% endif %}</summary>
+<div class="card" style="padding:0;overflow-x:auto"><table class="tbl">
+<thead><tr><th>Course</th><th>Familiar</th><th>Beginner</th><th>Intermediate</th><th>Learners</th><th></th></tr></thead><tbody>
+{% for c in courses %}<tr>
+  <td><a href="{{ R }}/owner/course/{{ c.slug }}">{{ c.title }}</a>{% if c.withdrawn %} <span class="badge st-reworked">Withdrawn</span>{% endif %}</td>
+  {% for name in LEVELS %}<td class="small">{% if c.versions[name] %}v{{ c.versions[name] }}{% else %}<span class="muted">–</span>{% endif %}</td>{% endfor %}
+  <td class="small">{{ c.learners }}</td>
+  <td class="actions"><form method="post" action="{{ R }}/owner/action"><input type="hidden" name="kind" value="course"><input type="hidden" name="course" value="{{ c.slug }}">
+    {% if c.withdrawn %}<button class="btn ok small" name="decision" value="release" type="submit">Re-release</button>
+    {% else %}<button class="btn ghost small" name="decision" value="withdraw" type="submit">Withdraw</button>{% endif %}</form></td>
+</tr>{% endfor %}</tbody></table></div></details>
+
 <h2>Topic suggestions</h2>
 {% set pending = suggestions|selectattr('status', 'equalto', 'pending')|list %}
 {% if not pending %}<p class="muted">None waiting.</p>{% endif %}
@@ -75,7 +90,7 @@ levels completed {{ stats.completed }} · levels published {{ stats.published }}
     <td class="small">~{{ d.minutes }} min<br>{{ d.questions }} questions</td>
     <td class="actions">
       <a class="btn ghost small" href="{{ R }}/owner/preview/{{ d.course }}/{{ d.level }}">Review</a>
-      <form method="post" action="{{ R }}/owner/action"><input type="hidden" name="kind" value="level"><input type="hidden" name="course" value="{{ d.course }}"><input type="hidden" name="level" value="{{ d.level }}"><input type="hidden" name="decision" value="publish"><button class="btn ok small" type="submit" {{ 'disabled' if not d.ok }}>Publish</button></form>
+      <form method="post" action="{{ R }}/owner/action"><input type="hidden" name="kind" value="level"><input type="hidden" name="course" value="{{ d.course }}"><input type="hidden" name="level" value="{{ d.level }}"><input type="hidden" name="decision" value="publish">{% if d.replaces %}<input type="text" name="changes" maxlength="1000" placeholder="What changed since v{{ d.replaces }} (learners who finished it see this)" value="{{ d.changes }}">{% endif %}<button class="btn ok small" type="submit" {{ 'disabled' if not d.ok }}>Publish</button></form>
       <form method="post" action="{{ R }}/owner/action"><input type="hidden" name="kind" value="level"><input type="hidden" name="course" value="{{ d.course }}"><input type="hidden" name="level" value="{{ d.level }}"><input type="hidden" name="decision" value="reject"><button class="btn bad small" type="submit">Reject</button></form>
     </td>
   </tr>

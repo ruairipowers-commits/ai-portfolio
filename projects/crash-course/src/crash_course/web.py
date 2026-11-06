@@ -26,7 +26,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markdown_it import MarkdownIt
 
-from . import accounts, ai, builder, catalog, checks, demo, glossary, jobs, mailer, moderation, news, ownerapi, quiz, revise, telemetry, tracker
+from . import accounts, ai, builder, catalog, checks, demo, glossary, jobs, lifecycle, mailer, moderation, news, ownerapi, quiz, revise, telemetry, tracker
 from .config import LEVELS, PKG, Settings, root
 from .schemas import Assessment
 from .store import connect, insert, now, one, rows
@@ -130,7 +130,8 @@ def create_app(start_worker: bool = False) -> FastAPI:
     @app.get("/", response_class=HTMLResponse)
     def home(req: Request):
         with connect() as conn:
-            courses = catalog.all_courses(conn)
+            gone = lifecycle.withdrawn(conn)
+            courses = {k: c for k, c in catalog.all_courses(conn).items() if k not in gone}
         cats = sorted({c.category for c in courses.values()})
         telemetry.record("visit", event_type="visit")
         return page(req, "home.html", count=len(courses), cats=cats)
@@ -138,9 +139,12 @@ def create_app(start_worker: bool = False) -> FastAPI:
     @app.get("/catalog", response_class=HTMLResponse)
     def catalog_page(req: Request, q: str = "", cat: str = "", tag: str = ""):
         with connect() as conn:
-            courses = list(catalog.all_courses(conn).values())
             u = me(req)
             mine = {r["course"] for r in rows(conn, "SELECT course FROM enrollments WHERE learner_id=?", u["id"])} if u else set()
+            gone = lifecycle.withdrawn(conn)
+            # a withdrawn course is out of the catalog for new sign-ups; its learners (and the owner) still see it
+            courses = [c for c in catalog.all_courses(conn).values()
+                       if c.slug not in gone or c.slug in mine or (u and u["is_owner"])]
         ql = q.strip().lower()[:60]
         tag = tag.strip().lower()[:30]
         shown = [c for c in courses if (not cat or c.category == cat) and (not tag or tag in c.tag_list())
@@ -152,7 +156,7 @@ def create_app(start_worker: bool = False) -> FastAPI:
         tag_groups = {k: sorted({t for c in courses for t in c.tags.get(k, [])}) for k in catalog.TAG_KINDS}
         return page(req, "catalog.html", groups=groups, q=q[:60], cat=cat, tag=tag, mine=mine, total=len(courses),
                     cats=sorted({c.category for c in courses}), tag_groups=tag_groups, user=u,
-                    latest=news.latest_by_course(news_items()))
+                    latest=news.latest_by_course(news_items()), withdrawn=gone)
 
     @app.get("/course/{slug}", response_class=HTMLResponse)
     def course_page(req: Request, slug: str):
@@ -160,10 +164,18 @@ def create_app(start_worker: bool = False) -> FastAPI:
             c = catalog.all_courses(conn).get(slug)
             u = me(req)
             enrolled = bool(u and one(conn, "SELECT 1 FROM enrollments WHERE learner_id=? AND course=?", u["id"], slug))
+            gone = lifecycle.withdrawn(conn).get(slug)
+            notes = lifecycle.notices(conn, u["id"], slug) if enrolled else []
         if not c:
             return message(req, "Course not found", "There's no course at that address.", 404)
+        if gone and not enrolled and not (u and u["is_owner"]):
+            return message(req, "Being reworked", f"The {c.title} course is being reworked and isn't taking new "
+                           "sign-ups right now. It will be back in the catalog when the new version is released.", 404,
+                           ("/catalog", "Browse the catalog"))
+        versions = {name: (lv.version if (lv := catalog.load_level(slug, name)) else None) for name in LEVELS}
         return page(req, "course.html", c=c, lvstatus=catalog.level_status(slug), enrolled=enrolled, user=u,
-                    updates=news.for_course(news_items(), slug, s["news"]["course_page_items"]))
+                    updates=news.for_course(news_items(), slug, s["news"]["course_page_items"]), withdrawn=gone,
+                    versions=versions, notices=notes)
 
     @app.get("/whatsnew", response_class=HTMLResponse)
     def whatsnew(req: Request, course: str = "", kind: str = "", only: str = "", unseen: str = ""):
@@ -261,6 +273,8 @@ def create_app(start_worker: bool = False) -> FastAPI:
             return redirect
         with connect() as conn:
             st = tracker.state(conn, s, u["id"])
+            gone = lifecycle.withdrawn(conn)
+            notes = {(n["course"], n["level"]): n for n in lifecycle.notices(conn, u["id"])}
             mine = rows(conn, "SELECT id, text, status, created_at, course_slug FROM suggestions WHERE learner_id=? "
                               "ORDER BY id DESC LIMIT 10", u["id"])
         tag = tag.strip().lower()[:30]
@@ -271,7 +285,21 @@ def create_app(start_worker: bool = False) -> FastAPI:
                                                  ("fav", "1" if fav == "1" else "")) if v)
         return page(req, "tracker.html", courses=tracker.sort_entries(shown, sort), suggestions=mine, user=u, tags=tags,
                     tag=tag, total=len(st), sort=sort, fav=fav == "1", query=query, next=tracker.up_next(st),
-                    priorities=tracker.PRIORITIES, favorites=sum(e["favorite"] for e in st))
+                    priorities=tracker.PRIORITIES, favorites=sum(e["favorite"] for e in st), withdrawn=gone,
+                    notices=notes)
+
+    @app.post("/updates/seen")
+    def updates_seen(req: Request, course: str = Form(...), level: str = Form(...), back: str = Form("")):
+        """Dismiss the "Updated to vN" notice on a completed level (the completion itself never changes)."""
+        u, redirect = need_user(req, "/tracker")
+        if redirect:
+            return redirect
+        if not same_origin(req):
+            return message(req, "Can't do that", "Please use the button on the page.", 403)
+        with connect() as conn:
+            lifecycle.dismiss(conn, u["id"], course[:60], level[:20])
+        to = f"/learn/{course}/{level}" if back == "learn" and re.fullmatch(r"[a-z0-9-]{1,60}", course) else "/tracker"
+        return go(to + ("" if back == "learn" else f"#c-{course}"))
 
     @app.post("/tracker/focus")
     def tracker_focus(req: Request, course: str = Form(...), action: str = Form(...), back: str = Form("")):
@@ -306,6 +334,8 @@ def create_app(start_worker: bool = False) -> FastAPI:
                 lv = tracker.require_open(conn, u["id"], slug, level)
                 p = tracker.progress(conn, u["id"], slug, level)
                 c = catalog.all_courses(conn)[slug]
+                gone = lifecycle.withdrawn(conn).get(slug)
+                note = lifecycle.notice(conn, p, lv)
                 attempts = rows(conn, "SELECT part, score, total, passed, submitted_at FROM attempts WHERE learner_id=? "
                                       "AND course=? AND level=? AND submitted_at IS NOT NULL ORDER BY id DESC LIMIT 10",
                                 u["id"], slug, level)
@@ -317,7 +347,8 @@ def create_app(start_worker: bool = False) -> FastAPI:
         with connect() as conn:
             terms = glossary.approved_terms(conn, s["glossary"]["max_hover_terms"])
         return page(req, "learn.html", lv=lv, p=p, c=c, passed=passed, attempts=attempts, user=u,
-                    parts=tracker.quiz_parts(lv), label=s.level(level)["label"], cfg=s.level(level), terms=terms)
+                    parts=tracker.quiz_parts(lv), label=s.level(level)["label"], cfg=s.level(level), terms=terms,
+                    withdrawn=gone, notice=note)
 
     @app.post("/project/{slug}/{level}")
     def project_done(req: Request, slug: str, level: str):
@@ -581,7 +612,9 @@ def create_app(start_worker: bool = False) -> FastAPI:
                 if catalog.has_pending_draft(slug, name):
                     lv = catalog.load_level(slug, name, include_drafts=True)
                     rep = checks.check_level(lv, courses[slug], s)
+                    pub = catalog.load_level(slug, name)
                     drafts.append({"course": slug, "title": courses[slug].title, "level": name, "version": lv.version,
+                                   "replaces": pub.version if pub else None, "changes": lv.changes,
                                    "ok": rep.ok, "problems": rep.problems[:3], "minutes": rep.stats["minutes"],
                                    "questions": rep.stats["questions"], "by": lv.provenance.written_by,
                                    "note": lv.provenance.note})
@@ -608,7 +641,14 @@ def create_app(start_worker: bool = False) -> FastAPI:
                 why = (json.loads(last["detail"] or "{}").get("error", "") if last and last["status"] == "failed" else "")
                 waiting.append({"course": r["course"], "title": courses[r["course"]].title, "level": r["level"],
                                 "learners": r["n"], "job": last["status"] if last else "", "why": why[:200]})
-        return {"drafts": drafts, "suggestions": sugg, "proposals": props, "feedback": fb, "stats": stats,
+        gone = lifecycle.withdrawn(conn)
+        enrolled = {r["course"]: r["n"] for r in rows(conn, "SELECT course, COUNT(*) n FROM enrollments GROUP BY course")}
+        course_rows = [{"slug": slug, "title": c.title, "category": c.category, "withdrawn": gone.get(slug),
+                        "learners": enrolled.get(slug, 0),
+                        "versions": {name: (lv.version if (lv := catalog.load_level(slug, name)) else None)
+                                     for name in LEVELS}}
+                       for slug, c in sorted(courses.items(), key=lambda kv: (kv[0] not in gone, kv[1].title.lower()))]
+        return {"courses": course_rows, "drafts": drafts, "suggestions": sugg, "proposals": props, "feedback": fb, "stats": stats,
                 "jobs": jobs.recent(conn, 10), "waiting": waiting, "no_writer": ai.placeholder_writer_blocked(s),
                 "news_review": news.to_review(conn, news_items())[:50], "glossary_pending": glossary.pending(conn)}
 
@@ -622,6 +662,27 @@ def create_app(start_worker: bool = False) -> FastAPI:
         with connect() as conn:
             st = owner_state(conn)
         return page(req, "owner.html", user=u, done=done[:200], **st)
+
+    @app.get("/owner/course/{slug}", response_class=HTMLResponse)
+    def owner_course(req: Request, slug: str, done: str = ""):
+        """One course for the owner: withdraw / re-release, and every level's version history with rollback."""
+        u, redirect = need_user(req, f"/owner/course/{slug}")
+        if redirect:
+            return redirect
+        if not u["is_owner"]:
+            return message(req, "Owner only", "This page is for the course owner.", 403)
+        with connect() as conn:
+            c = catalog.all_courses(conn).get(slug)
+            if not c:
+                return message(req, "Course not found", "There's no course at that address.", 404)
+            gone = lifecycle.withdrawn(conn).get(slug)
+            learners = lifecycle.enrolled_count(conn, slug)
+            done_by_level = {r["level"]: r for r in rows(conn, "SELECT level, COUNT(*) n, MIN(completed_version) lo "
+                                                               "FROM progress WHERE course=? AND completed_at IS NOT NULL "
+                                                               "GROUP BY level", slug)}
+        hist = {name: lifecycle.history(slug, name) for name in LEVELS}
+        return page(req, "owner_course.html", user=u, c=c, withdrawn=gone, learners=learners, history=hist,
+                    completed=done_by_level, done=done[:200])
 
     @app.post("/owner/action")
     async def owner_action(req: Request):
@@ -641,7 +702,7 @@ def create_app(start_worker: bool = False) -> FastAPI:
                 elif kind == "level":
                     slug, level = str(f.get("course", "")), str(f.get("level", ""))
                     if f.get("decision") == "publish":
-                        ok, problems = builder.publish(conn, s, slug, level, actor)
+                        ok, problems = builder.publish(conn, s, slug, level, actor, str(f.get("changes", ""))[:1000])
                         done = f"{slug}/{level} published" if ok else f"{slug}/{level} not published: {problems[0]}"
                     else:
                         builder.reject(conn, s, slug, level, actor, str(f.get("notes", ""))[:300])
@@ -664,6 +725,20 @@ def create_app(start_worker: bool = False) -> FastAPI:
                                 ok, _ = builder.publish(conn, s, slug, level, actor)
                                 n, bad = n + ok, bad + (not ok)
                     done = f"Published {n} level(s)" + (f"; {bad} failed their checks and stay as drafts" if bad else "")
+                elif kind == "course":
+                    slug = str(f.get("course", ""))[:60]
+                    state = "withdrawn" if f.get("decision") == "withdraw" else "active"
+                    lifecycle.set_state(conn, slug, state, actor, str(f.get("notes", "")))
+                    done = (f"{slug} withdrawn: out of the catalog and closed to new sign-ups; its "
+                            f"{lifecycle.enrolled_count(conn, slug)} learner(s) keep access" if state == "withdrawn"
+                            else f"{slug} re-released: back in the catalog and open to sign-ups")
+                elif kind == "rollback":
+                    slug, level = str(f.get("course", ""))[:60], str(f.get("level", ""))[:20]
+                    ok, problems, new_v = lifecycle.rollback(conn, s, slug, level, int(f.get("version", 0) or 0), actor)
+                    done = (f"{slug}/{level}: v{f.get('version')} republished as v{new_v}" if ok
+                            else f"{slug}/{level} not rolled back: {problems[0]}")
+                    if ok:
+                        return go(f"/owner/course/{slug}?done={quote(done[:200])}")
                 elif kind == "glossary":
                     tk = str(f.get("key", ""))[:60]
                     decision = "approve" if f.get("decision") == "approve" else "reject"

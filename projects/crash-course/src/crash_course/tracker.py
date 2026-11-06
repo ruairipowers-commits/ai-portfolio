@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 
-from . import catalog, jobs
+from . import catalog, jobs, lifecycle
 from .config import LEVELS, Settings
 from .store import insert, now, one, rows
 
@@ -21,6 +21,8 @@ def enroll(conn, s: Settings, learner_id: int, course: str) -> None:
     if course not in catalog.all_courses(conn):
         raise NotAllowed("unknown course")
     if not one(conn, "SELECT 1 FROM enrollments WHERE learner_id=? AND course=?", learner_id, course):
+        if lifecycle.is_withdrawn(conn, course):           # closed to new sign-ups; existing learners keep going
+            raise NotAllowed("this course is being reworked and isn't taking new sign-ups right now")
         last = one(conn, "SELECT MAX(position) p FROM enrollments WHERE learner_id=?", learner_id)["p"]
         insert(conn, "enrollments", learner_id=learner_id, course=course, enrolled_at=now(),
                position=(last or len(_ordered(conn, learner_id))) + 1)
@@ -134,8 +136,8 @@ def maybe_complete(conn, s: Settings, learner_id: int, course: str, level: str) 
     quiz_ok = (not s["completion"]["require_quiz_pass"]) or set(quiz_parts(lv)) <= passed
     project_ok = (not s["completion"]["require_project"]) or bool(p["project_done_at"])
     if quiz_ok and project_ok:
-        conn.execute("UPDATE progress SET completed_at=? WHERE learner_id=? AND course=? AND level=?",
-                     (now(), learner_id, course, level))
+        conn.execute("UPDATE progress SET completed_at=?, completed_version=?, notice_version=? WHERE learner_id=? "
+                     "AND course=? AND level=?", (now(), lv.version, lv.version, learner_id, course, level))
         nxt = s.next_level(level)
         if nxt:
             unlock(conn, s, learner_id, course, nxt)

@@ -81,6 +81,24 @@ hover definition; `/glossary` lists them. For anything else the pop-up offers:
   rejects it.
 - **Suggest as a course**: opens the suggestion form with the term filled in.
 
+## Versions, withdrawing and re-releasing
+
+Every level (Familiar, Beginner, Intermediate) is versioned: each file carries `version` and `changes` (what changed
+since the previous version). Learners always get the newest published version, and the course page and materials
+show its number.
+
+- **Updated to vN.** A learner who completed an older version keeps the completion and sees "Updated to vN" on their
+  tracker and in the materials, with what changed in every version since theirs, until they dismiss it.
+- **Publishing a new version.** On the owner page a draft that replaces a published level has a "What changed" field;
+  a revision from learner feedback fills it in from the accepted edits.
+- **History and rollback.** `/owner/course/<slug>` lists every version of each level (bundled or runtime, who approved
+  it and when, what changed). "Roll back to this" re-checks an older published version and publishes its content again
+  as the newest version, so the history only grows and learners' notices still work.
+- **Withdraw for rework.** The owner page's course list (and `/owner/course/<slug>`) can withdraw a course: it leaves
+  the catalog, the course page tells new visitors it's being reworked, sign-up is refused and the owner API's catalog
+  leaves it out. Learners already on it keep full access and keep progressing, with a "being reworked" banner.
+  **Re-release** puts it back. Both are logged to `approvals` (kind `course`).
+
 ## Focus on the tracker
 
 Each course on **My tracker** has a star (favourite), a priority (high / normal / low) and a place in the learner's own
