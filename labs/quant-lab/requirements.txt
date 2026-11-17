@@ -1,0 +1,9 @@
+streamlit>=1.45
+plotly>=5.20
+pandas>=2.1
+numpy>=1.26
+matplotlib>=3.8      # pandas Styler gradients
+pybind11>=2.11
+maturin>=1.5,<2
+setuptools>=64
+pytest>=8
