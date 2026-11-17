@@ -7,8 +7,8 @@ What's in flight, so a new chat can pick up without the old one's history. Newes
 ## 0000000000000000000000. Quant projects: order book, backtester, options engine (17 November 2026)
 
 PR #93 (labs/quant-lab) was merged; the three are now full portfolio projects in `projects/` (featured, after
-data-lifecycle-platform) and `labs/quant-lab/` is removed. Branch `agent/claude-quant-projects`, committed locally,
-**not pushed**.
+data-lifecycle-platform) and `labs/quant-lab/` is removed. Branch `agent/claude-quant-projects`, PR #96 open,
+not merged.
 - `lob-matching-engine` (Rust + pyo3/maturin; surveillance alerts → model narrative → analyst disposition),
   `event-backtester` (Python + C++ kernel; promotion gate on selection-adjusted t, memo checked for gross-as-net and
   disclosures), `options-greeks-engine` (C++; plain-English request → parsed ticket → limits → approval). Each has
@@ -23,7 +23,7 @@ data-lifecycle-platform) and `labs/quant-lab/` is removed. Branch `agent/claude-
   the toolchain from `rust:1-slim-bookworm`), real-model runs (mock only).
 - Noted: pandas 2.3.3 + NumPy 2.5 emits a DeprecationWarning on every `pd.Timedelta`; harmless now, clears with a
   newer pandas.
-- [ ] Ruairi: approve the push and PR for `agent/claude-quant-projects`, then review and merge.
+- [ ] Ruairi: review and merge PR #96.
 - [ ] Ruairi: decide whether the three demos go on the self-hosted demo host (`demos.base_url` is still a placeholder).
 
 ## 00000000000000000000. Crash course: every level for every course, withdraw / re-release, level versions (4 November 2026)
