@@ -1,0 +1,4 @@
+owner                       = "ruairi"
+alert_email                 = "you@example.com"
+monthly_budget_usd          = 25
+approved_bedrock_model_arns = ["arn:aws:bedrock:us-east-1::foundation-model/REPLACE-WITH-MODEL-ID"]

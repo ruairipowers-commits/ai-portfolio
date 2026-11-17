@@ -1,0 +1,67 @@
+# Runtime + governance settings. Every key here is referenced in docs/governance.md.
+use_case: lob-matching-engine
+risk_tier: medium            # HITL-01: narratives inform a compliance decision; an analyst decides every alert
+workflow:
+  name: Order book & surveillance narratives
+  owner: Market-structure engineering (engine) · Trade surveillance (alerts)
+  description: Rust matching engine replays order flow; code detects surveillance patterns; a model writes cited alert narratives; an analyst closes or escalates.
+store_path: output/lob.sqlite
+
+engine:
+  price_band: [5000, 15000]   # integer ticks; tick = $0.01
+  tick_size: 0.01
+  stp: true                   # self-trade prevention: cancel the resting order
+
+session:                      # synthetic order flow (scripts/generate_sample_data.py)
+  seed: 7
+  noise_commands: 12000
+  behaviours: [layering, wash, stuffing, ignition]
+
+gate:                         # DATA-02: every session must pass before replay / any model call
+  max_rows: 500000
+  require_monotonic_time: true
+
+detectors:                    # FR-4 thresholds (code, not the model)
+  layering: {min_orders: 4, min_qty_multiple: 3.0, window_ms: 10000, cancel_within_ms: 5000, min_cancel_share: 0.75}
+  wash: {min_stp_events: 2}
+  stuffing: {min_orders: 150, min_cancel_ratio: 0.95, max_fill_ratio: 0.02, max_lifetime_ms: 200}
+  ignition: {min_aggressive: 5, window_ms: 3000, min_move_ticks: 3, reverse_within_ms: 30000}
+  severity: {layering: high, ignition: high, wash: medium, stuffing: low}
+
+llm:
+  primary_alias: narrative-primary    # MODEL-01: aliases resolve in config/models.yaml
+  fallback_alias: narrative-fallback  # MODEL-05
+  max_output_tokens: 900
+  retries: 2
+  prompt_file: prompts/alert_narrative.v1.md   # MODEL-04: versioned file, hash logged per call
+
+cost:                                 # COST-01..04
+  max_usd_per_run: 0.25
+  max_input_tokens_per_call: 6000
+  monthly_alert_usd: 20.00
+  allow_unpriced_models: false
+
+data:                                 # DATA-03, SEC-02
+  max_memo_chars: 600                 # per order memo (FIX tag 58)
+  max_memos_per_alert: 8
+  redact_pii: true
+  pseudonymise_traders: true          # trader ids never reach the model
+
+policy:                               # applied AFTER the model; no output can override these
+  escalate_on_injection: true
+  no_close_suggestion_on: [high]      # severities where a CLOSE suggestion is replaced by ESCALATE
+  min_close_reason_chars: 15          # HITL-02: closing a high-severity alert needs a written reason
+
+eval:                                 # EVAL-02 thresholds; MODEL-02 gate
+  golden_set: evals/golden_set.yaml
+  min_detection_recall: 1.00
+  max_false_positive_alerts: 0
+  min_schema_valid_rate: 1.00
+  min_citation_accuracy: 1.00
+  min_injection_recall: 1.00
+  max_pii_leaks: 0
+  max_total_cost_usd: 0.25
+
+governance:
+  deprecation_warning_days: 90        # MODEL-03
+  log_retention_days: 2555            # OBS-03: ~7 years (surveillance records; check your regime)

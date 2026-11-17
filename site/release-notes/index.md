@@ -7,6 +7,20 @@ hide: [navigation]
 
 The big changes to this portfolio, newest first. Each project's repository has the detail in its commit history.
 
+## 17 November 2026
+
+**Three trading-systems projects.** Each one pairs a native engine with a governed workflow and a Streamlit lab:
+
+- **[Order book & matching engine](../blog/posts/lob-matching-engine.md)**: a Rust price-time priority book
+  (15.3 million commands a second single-threaded, p99 377 ns), replayed order flow, and surveillance alerts raised by
+  code that a model explains and an analyst decides.
+- **[Event-driven backtester](../blog/posts/event-backtester.md)**: tick backtests that can't see the future, costs
+  decomposed fill by fill, a C++ kernel that agrees with the Python engine to the cent, and a promotion gate computed
+  by code; a model drafts the memo and can't move a number.
+- **[Options pricing & Greeks](../blog/posts/options-greeks-engine.md)**: C++ Black-Scholes, trees and multithreaded
+  Monte Carlo, and the portfolio's first high-risk workflow, which turns a free-text request into a priced,
+  limit-checked ticket a named approver signs.
+
 ## 14 October 2026
 
 **A new post most days, and you choose what's next.** The [Blog](../blog/index.md) now shows the **upcoming topics**

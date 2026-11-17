@@ -1,0 +1,29 @@
+# Hosted demo image. Local equivalent:
+#   docker build -f Dockerfile.space -t lob-demo . && docker run -p 7860:7860 lob-demo
+# Mock model only: no API keys are needed or read. Each visitor gets a private copy of the data.
+# Two stages: the Rust toolchain is only needed to build the engine; the final image doesn't carry it.
+# The toolchain is copied from the official Rust image (no piped install script); both bases are pinned to the same Debian release.
+FROM python:3.11-slim-bookworm AS build
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential && rm -rf /var/lib/apt/lists/*
+COPY --from=rust:1-slim-bookworm /usr/local/rustup /usr/local/rustup
+COPY --from=rust:1-slim-bookworm /usr/local/cargo /usr/local/cargo
+RUN useradd -m -u 1000 user && install -d -o user -g user /app
+USER user
+ENV HOME=/home/user RUSTUP_HOME=/usr/local/rustup CARGO_HOME=/home/user/.cargo \
+    PATH=/usr/local/cargo/bin:/home/user/.local/bin:$PATH
+WORKDIR /app
+COPY --chown=user . .
+RUN pip install --no-cache-dir --user -e ".[ui]"
+# Pre-build the baseline every visitor's sandbox is copied from (synthetic sessions + one run).
+RUN GOVERNANCE_TELEMETRY=off lob-matching-engine all && rm -rf rust/target
+
+FROM python:3.11-slim-bookworm
+RUN useradd -m -u 1000 user && install -d -o user -g user /app
+ENV HOME=/home/user PATH=/home/user/.local/bin:$PATH PYTHONUNBUFFERED=1 PORTFOLIO_DEMO=1
+WORKDIR /app
+COPY --from=build --chown=user /home/user/.local /home/user/.local
+COPY --from=build --chown=user /app /app
+USER user
+EXPOSE 7860
+CMD ["streamlit", "run", "src/lob_matching_engine/ui.py", "--server.port=7860", "--server.address=0.0.0.0", \
+     "--server.headless=true", "--server.enableXsrfProtection=false", "--server.enableCORS=false"]

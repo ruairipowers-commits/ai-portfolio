@@ -1,0 +1,13 @@
+.env
+output/
+data/
+warehouse/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.venv/
+build/
+target/
+*.so
+infra/aws/.terraform/
+*.tfstate*

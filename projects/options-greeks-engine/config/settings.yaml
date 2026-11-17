@@ -1,0 +1,58 @@
+# Runtime + governance settings. Every key here is referenced in docs/governance.md.
+use_case: options-greeks-engine
+risk_tier: high              # HITL-01: leveraged positions, potentially unlimited loss; nothing sent; a named approver signs every ticket
+workflow:
+  name: Option trade request → priced, limit-checked ticket
+  owner: Derivatives trading (requests) · Risk desk (approval) · Quant dev (pricing engine)
+  description: A model parses a free-text request into legs and explains the ticket's risk; code validates legs against the listed chain, prices them with the C++ engine, checks permissions and limits; a risk approver signs. No order is ever sent.
+store_path: output/options.sqlite
+market_file: config/market.yaml
+accounts_file: config/accounts.yaml
+
+pricing:
+  method: bsm                # bsm | lr_tree | mc   (the others are shown as a cross-check)
+  tree_steps: 801
+  mc_paths: 200000
+  scenario_spot: [-0.20, -0.10, -0.05, 0.0, 0.05, 0.10, 0.20]
+  scenario_vol: [-0.05, 0.0, 0.05]
+  payoff_range: [0.0, 3.0]   # × spot, for max loss / max profit at the first expiry
+  limit_price_tolerance: 0.05   # warn (don't block) if fair value is worse than the request's limit by more than this
+
+request:                     # DATA-03, SEC-02
+  max_chars: 600
+  redact_pii: true
+  max_legs: 4
+
+llm:
+  parse_alias: parse-primary
+  explain_alias: explain-primary
+  fallback_alias: parse-fallback
+  max_output_tokens: 900
+  retries: 2
+  parse_prompt: prompts/parse_request.v1.md       # MODEL-04
+  explain_prompt: prompts/risk_explanation.v1.md
+
+cost:                        # COST-01..04
+  max_usd_per_run: 0.10
+  max_input_tokens_per_call: 5000
+  monthly_alert_usd: 20.00
+  allow_unpriced_models: false
+
+policy:
+  block_on_injection: true
+  block_on_citation_errors: true
+  min_approval_reason_chars: 10
+
+eval:
+  golden_set: evals/golden_set.yaml
+  min_case_pass_rate: 1.00
+  min_parse_exact_rate: 1.00
+  min_schema_valid_rate: 1.00
+  min_citation_accuracy: 1.00
+  min_injection_recall: 1.00
+  min_block_recall: 1.00       # every must-block case blocked
+  max_total_cost_usd: 0.10
+
+governance:
+  deprecation_warning_days: 90
+  log_retention_days: 2555

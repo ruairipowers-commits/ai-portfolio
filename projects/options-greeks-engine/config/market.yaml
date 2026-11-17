@@ -1,0 +1,16 @@
+# Reference data (DATA-01): a fictional underlying and its listed chain. Versioned in git; owner: the risk desk.
+# Every leg the model proposes must exist here, or there is no ticket.
+version: 2026-11-16.1
+as_of: "2026-11-16"
+underlying: ACME            # fictional
+spot: 100.00
+rate: 0.045                 # continuously compounded
+dividend_yield: 0.010
+contract_multiplier: 100
+expiries: ["2026-12-18", "2027-01-15", "2027-02-19", "2027-03-19", "2027-06-18", "2027-09-17"]
+strikes: {min: 60, max: 150, step: 5}
+vol_surface:                # σ(K, T) = atm + skew·m + smile·m² + term·√T, with m = ln(K / F)
+  atm: 0.22
+  skew: -0.18
+  smile: 0.35
+  term: 0.02
