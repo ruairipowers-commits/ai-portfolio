@@ -1,0 +1,28 @@
+# EVAL-03 / SEC-06: every push builds the C++ kernel, runs the tests (incl. the Python-vs-C++ parity suite), the offline end-to-end run,
+# the eval gate (mock model, zero cost) and a dependency scan.
+name: ci
+on: [push, pull_request]
+permissions: {contents: read}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install -e ".[ui,dev]" pip-audit
+      - run: pytest -q
+      - run: event-backtester all && event-backtester eval
+      - run: pip-audit --skip-editable || true          # report-only; make blocking once triaged
+      - uses: actions/upload-artifact@v4
+        with: {name: backtest-output, path: output/}
+  live-eval:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install -e ".[anthropic]"
+      - run: event-backtester eval --alias memo-candidate --baseline memo-primary
+        env: {ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}"}

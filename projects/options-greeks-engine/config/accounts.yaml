@@ -1,0 +1,17 @@
+# Fictional accounts with permissions and limits (HITL-01: the high-risk controls are code, not the model).
+#   permission: long_only    → no short option legs at all
+#               defined_risk → short legs allowed only if the structure's maximum loss is finite
+#               full         → any structure; limits still apply
+accounts:
+  LO-01:
+    name: Long-only equity fund
+    permission: long_only
+    limits: {max_contracts_per_leg: 200, max_premium_usd: 250000, max_loss_usd: 250000, max_abs_delta_shares: 20000, max_abs_vega_usd: 15000}
+  DR-02:
+    name: Defined-risk overlay
+    permission: defined_risk
+    limits: {max_contracts_per_leg: 500, max_premium_usd: 500000, max_loss_usd: 500000, max_abs_delta_shares: 40000, max_abs_vega_usd: 25000}
+  FL-03:
+    name: Multi-strategy book
+    permission: full
+    limits: {max_contracts_per_leg: 1000, max_premium_usd: 1000000, max_loss_usd: 1000000, max_abs_delta_shares: 75000, max_abs_vega_usd: 40000}

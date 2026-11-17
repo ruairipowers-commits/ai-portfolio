@@ -1,19 +1,30 @@
 # Status — open items
 
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
-(or delete them) as they're done. Last updated 4 November 2026.
+(or delete them) as they're done. Last updated 17 November 2026.
 
 
-## 000000000000000000000. Quant lab: order book, backtester, options engine (16 November 2026)
+## 0000000000000000000000. Quant projects: order book, backtester, options engine (17 November 2026)
 
-Three learning projects with multi-page Streamlit apps, in `labs/quant-lab/` (outside `projects/`, so they don't
-yet go through the per-project CI matrix or governance mapping). Branch `agent/claude-quant-lab`, PR open, not merged.
-- Rust limit order book & matching engine (pyo3); event-driven backtester (Python + C++ kernels, cross-checked to the
-  cent); options pricing & Greeks engine (C++, multithreaded MC). `labs/quant-lab/build.sh` builds all three; 26 pytest
-  + 8 Rust tests pass; repo pentest clean for the folder.
-- [ ] Ruairi: review and merge the PR.
-- [ ] Ruairi: decide whether to promote any of the three to full portfolio projects (spec, governance mapping,
-  mock provider, post) via the portfolio-project skill, and whether to self-host the apps on the EVO-X1.
+PR #93 (labs/quant-lab) was merged; the three are now full portfolio projects in `projects/` (featured, after
+data-lifecycle-platform) and `labs/quant-lab/` is removed. Branch `agent/claude-quant-projects`, PR #96 open,
+not merged.
+- `lob-matching-engine` (Rust + pyo3/maturin; surveillance alerts → model narrative → analyst disposition),
+  `event-backtester` (Python + C++ kernel; promotion gate on selection-adjusted t, memo checked for gross-as-net and
+  disclosures), `options-greeks-engine` (C++; plain-English request → parsed ticket → limits → approval). Each has
+  spec, mock model, registry, evals, audit store, telemetry, governance mapping (30/30), AWS doc + Terraform, CI,
+  Dockerfiles, post (17 Nov) and release-notes entry.
+- Verified here: pytest 43 / 46 / 43 + 8 Rust tests; `check_governance` 30 × 15 OK; mkdocs --strict OK;
+  `publish_project.sh` dry run OK for all three; repo pentest has no new findings; all three apps clicked through in
+  headless Chrome (run, break-it, output) with no exceptions.
+- Fixed on the way: `publish_project.sh` failed for every project while demos are unconfigured (`#` in the
+  `#demos-not-configured` fallback broke sed) — values are now escaped.
+- Not validated here: Terraform (`terraform` not installed), Docker image builds (no daemon; the LOB images now copy
+  the toolchain from `rust:1-slim-bookworm`), real-model runs (mock only).
+- Noted: pandas 2.3.3 + NumPy 2.5 emits a DeprecationWarning on every `pd.Timedelta`; harmless now, clears with a
+  newer pandas.
+- [ ] Ruairi: review and merge PR #96.
+- [ ] Ruairi: decide whether the three demos go on the self-hosted demo host (`demos.base_url` is still a placeholder).
 
 ## 00000000000000000000. Crash course: every level for every course, withdraw / re-release, level versions (4 November 2026)
 

@@ -1,0 +1,68 @@
+# Runtime + governance settings. Every key here is referenced in docs/governance.md.
+use_case: event-backtester
+risk_tier: medium            # HITL-01: supports a promotion decision; no orders; a PM approves every promotion
+workflow:
+  name: Strategy research memo & promotion gate
+  owner: Quant research (engine) · Investment committee / PM (promotion)
+  description: Event-driven tick backtests with realistic costs; code computes the promotion gate; a model drafts the research memo; a PM approves or rejects promotion to paper trading.
+store_path: output/backtester.sqlite
+dataset_path: data/ticks/default.parquet
+
+dataset:                     # synthetic ticks (scripts/generate_sample_data.py); a trend is planted so the positive path shows
+  days: 120
+  ticks_per_day: 4000
+  trend_strength: 0.025      # set 0 for a random walk: nothing should pass the gate
+  seed: 11
+
+gate:                        # DATA-02: ticks must pass before any backtest or model call
+  min_ticks: 1000
+  max_gap_minutes: 120       # inside a session
+  max_spread_bps: 200
+
+promotion:                   # FR-4: computed by code; the model can't change them
+  min_fills: 30
+  min_selection_adjusted_t: 2.0   # net Sharpe × √years − √(2 ln N trials)
+  min_oos_sharpe: 0.0
+  max_degradation: 0.75           # OOS Sharpe must keep ≥ 25% of in-sample when in-sample > 0
+  holdout_share: 0.30             # last 30% of days are out of sample
+  stress_cost_multiple: 2.0       # net Sharpe must stay > 0 at 2× commission, slippage and impact
+
+llm:
+  primary_alias: memo-primary       # MODEL-01
+  fallback_alias: memo-fallback     # MODEL-05
+  max_output_tokens: 1200
+  retries: 2
+  prompt_file: prompts/research_memo.v1.md   # MODEL-04
+
+cost:                                # COST-01..04
+  max_usd_per_run: 0.25
+  max_input_tokens_per_call: 6000
+  monthly_alert_usd: 20.00
+  allow_unpriced_models: false
+
+data:                                # DATA-03, SEC-02
+  max_notes_chars: 2000
+  redact_pii: true
+
+memo:                                # compliance: hypothetical-performance presentation
+  required_disclosures:
+    - hypothetical
+    - net of modelled costs
+    - past performance
+
+policy:                              # applied AFTER the model
+  block_on_injection: true
+  block_on_citation_errors: true
+
+eval:                                # EVAL-02 thresholds; MODEL-02 gate
+  golden_set: evals/golden_set.yaml
+  min_case_pass_rate: 1.00
+  min_schema_valid_rate: 1.00
+  min_citation_accuracy_clean: 1.00  # on cases without adversarial notes
+  min_injection_recall: 1.00
+  min_compliance_catch_rate: 1.00
+  max_total_cost_usd: 0.25
+
+governance:
+  deprecation_warning_days: 90       # MODEL-03
+  log_retention_days: 2555           # OBS-03
