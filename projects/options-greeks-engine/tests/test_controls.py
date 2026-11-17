@@ -106,3 +106,20 @@ def test_budget_blocks_overspend():
 def test_unapproved_model_refused():
     with pytest.raises(RegistryError):
         Registry(ROOT / "config" / "models.yaml").resolve("openai-default")
+
+
+@pytest.mark.parametrize("text,status,ask", [
+    ("Buy 2 ACME 105 calls expiring December", "OK", None),     # strike before the month
+    ("Buy 2 ACME December 105 calls", "OK", None),
+    ("buy 2 calls expiring December", "CLARIFY", "strike"),     # the quantity is not a strike
+    ("buy ACME 105 calls in December", "CLARIFY", "quantity"),
+    ("Buy 2 ACME 105 calls", "CLARIFY", "expiry"),
+])
+def test_mock_parser_names_what_is_missing(text, status, ask):
+    from options_greeks_engine.mock_model import _parse
+    out = _parse(MK.chain_summary(), text)
+    assert out["status"] == status
+    if ask:
+        assert out["clarification"] == f"Please confirm the {ask}."
+    else:
+        assert [(l["side"], l["quantity"], l["option_type"], l["strike"]) for l in out["legs"]] == [("BUY", 2, "CALL", 105.0)]

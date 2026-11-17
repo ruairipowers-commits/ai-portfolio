@@ -30,13 +30,18 @@ def _parse(chain: dict, req: str) -> dict:
     qty = re.search(r"\b(buy|sell|long|short|write|purchase)\s+(\d+)\b", t)
     pair = re.search(r"\b(\d+(?:\.\d+)?)\s*/\s*(\d+(?:\.\d+)?)\b", t)
     single = re.search(rf"\b(?:{WORD_MONTHS})[a-z]*\s+(\d+(?:\.\d+)?)\s*(?:strike\s*)?(calls?|puts?|straddles?)\b", t)
+    if not single and qty:   # "buy 2 ACME 105 calls expiring December": strike before the month; look after the quantity
+        single = re.compile(r"\b(\d+(?:\.\d+)?)\s*(?:strike\s*)?(calls?|puts?|straddles?)\b").search(t, qty.end())
     lim = re.search(r"(?:max(?:imum)?\s+debit|debit of|for a|for)\s+\$?(\d+(?:\.\d+)?)\s*(debit|credit)?", t)
     credit = re.search(r"(\d+(?:\.\d+)?)\s*credit", t)
     missing = [k for k, v in [("side", side), ("expiry", expiry), ("quantity", qty)] if not v]
     if missing or not (pair or single):
-        has_strike = pair or single or re.search(r"\b\d+(?:\.\d+)?\s*(?:strike\s*)?(?:calls?|puts?|straddles?|strangles?)\b", t)
+        has_strike = pair or single or re.compile(r"\b\d+(?:\.\d+)?\s*(?:strike\s*)?(?:calls?|puts?|straddles?|strangles?)\b").search(
+            t, qty.end() if qty else 0)
         what = missing + ([] if has_strike else ["strike"])
-        return {"status": "CLARIFY", "legs": [], "clarification": f"Please confirm the {', '.join(what)}.", "notes": []}
+        ask = (f"Please confirm the {', '.join(what)}." if what else
+               "Please restate the order as side, quantity, strike, call or put, and expiry month.")
+        return {"status": "CLARIFY", "legs": [], "clarification": ask, "notes": []}
     n = int(qty.group(2))
     legs = []
     buy, sell = ("BUY", "SELL") if side == "BUY" else ("SELL", "BUY")
