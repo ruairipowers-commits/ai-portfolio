@@ -1,0 +1,27 @@
+[package]
+name = "lob_engine"
+version = "0.1.0"
+edition = "2021"
+description = "Price-time priority limit order book and matching engine with Python bindings"
+license = "MIT"
+
+[lib]
+name = "lob_engine"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "lob-bench"
+path = "src/bin/bench.rs"
+
+[features]
+default = []
+python = ["pyo3"]
+
+[dependencies]
+pyo3 = { version = "0.23", features = ["extension-module", "abi3-py39"], optional = true }
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+debug = false

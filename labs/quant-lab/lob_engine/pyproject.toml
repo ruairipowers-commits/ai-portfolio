@@ -1,0 +1,13 @@
+[build-system]
+requires = ["maturin>=1.5,<2"]
+build-backend = "maturin"
+
+[project]
+name = "lob_engine"
+version = "0.1.0"
+requires-python = ">=3.9"
+description = "Rust limit order book & matching engine (price-time priority) with Python bindings"
+
+[tool.maturin]
+features = ["python"]
+module-name = "lob_engine"

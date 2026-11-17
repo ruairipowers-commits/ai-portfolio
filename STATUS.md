@@ -3,6 +3,18 @@
 What's in flight, so a new chat can pick up without the old one's history. Newest context first; tick items off
 (or delete them) as they're done. Last updated 4 November 2026.
 
+
+## Quant lab: order book, backtester, options engine (16 November 2026)
+
+Three learning projects with multi-page Streamlit apps, in `labs/quant-lab/` (outside `projects/`, so they don't
+yet go through the per-project CI matrix or governance mapping). Branch `agent/claude-quant-lab`, PR open, not merged.
+- Rust limit order book & matching engine (pyo3); event-driven backtester (Python + C++ kernels, cross-checked to the
+  cent); options pricing & Greeks engine (C++, multithreaded MC). `labs/quant-lab/build.sh` builds all three; 26 pytest
+  + 8 Rust tests pass; repo pentest clean for the folder.
+- [ ] Ruairi: review and merge the PR.
+- [ ] Ruairi: decide whether to promote any of the three to full portfolio projects (spec, governance mapping,
+  mock provider, post) via the portfolio-project skill, and whether to self-host the apps on the EVO-X1.
+
 ## 00000000000000000000. Crash course: every level for every course, withdraw / re-release, level versions (4 November 2026)
 
 Ruairi's decisions (4 Nov): write the 63 missing levels in parallel cloud sessions, each opening its own PR; after a
