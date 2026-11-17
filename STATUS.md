@@ -4,7 +4,7 @@ What's in flight, so a new chat can pick up without the old one's history. Newes
 (or delete them) as they're done. Last updated 4 November 2026.
 
 
-## Quant lab: order book, backtester, options engine (16 November 2026)
+## 000000000000000000000. Quant lab: order book, backtester, options engine (16 November 2026)
 
 Three learning projects with multi-page Streamlit apps, in `labs/quant-lab/` (outside `projects/`, so they don't
 yet go through the per-project CI matrix or governance mapping). Branch `agent/claude-quant-lab`, PR open, not merged.
