@@ -498,7 +498,7 @@ def _build_stats() -> str:
 # ---------------------------------------------------------------- Markdown lint: lists that would render as run-on text
 import logging as _logging  # noqa: E402
 _log = _logging.getLogger("mkdocs.plugins.portfolio")
-_LIST = re.compile(r"^(\s*)([-*]|\d+\.)\s")
+_LIST = re.compile(r"^(\s*)([-*]|\d{1,3}\.)\s")   # 1–3 digits: a wrapped line starting "2027. " is a year, not a list
 
 
 def _in_list_before(lines: list[str], j: int) -> bool:
