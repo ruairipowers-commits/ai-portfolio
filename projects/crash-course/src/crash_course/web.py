@@ -505,7 +505,7 @@ def create_app(start_worker: bool = False) -> FastAPI:
         u, redirect = need_user(req, "/suggest")
         if redirect:
             return redirect
-        if not limiter.allow("suggest", client_ip(req), 10, 86400):
+        if not u["is_owner"] and not limiter.allow("suggest", client_ip(req), 10, 86400):
             return message(req, "Slow down", "Too many suggestions from here today.", 429)
         try:
             with connect() as conn:

@@ -56,7 +56,7 @@ checks:
 moderation:
   max_chars: 200
   min_chars: 3
-  per_learner_per_day: 3
+  per_learner_per_day: 3     # learners only; the owner has no daily limit (still screened and assessed)
   reject_categories: [sexual, hate, harassment, violence, self_harm, illegal, personal_data, injection]
   review_categories: [weapons, drugs, security_tooling, medical, financial_advice]
   duplicate_threshold: 0.5   # token Jaccard with an existing course slug/title/alias → needs-review, duplicate_of
