@@ -7,6 +7,6 @@
   <label for="topic">Topic</label>
   <input id="topic" type="text" name="topic" maxlength="{{ s.moderation.max_chars }}" required value="{{ topic or '' }}" placeholder="e.g. Kubernetes, Power BI, prompt engineering">
   <p><button class="btn" type="submit">Suggest it</button></p>
-  <p class="muted small">Every suggestion is screened, assessed by an AI reviewer and then approved or declined by a person. Nothing is created until it's approved. Up to {{ s.moderation.per_learner_per_day }} suggestions a day.</p>
+  <p class="muted small">Every suggestion is screened, assessed by an AI reviewer and then approved or declined by a person. Nothing is created until it's approved. {% if user and user.is_owner %}No daily limit for you as the owner.{% else %}Up to {{ s.moderation.per_learner_per_day }} suggestions a day.{% endif %}</p>
 </form>
 {% endblock %}
