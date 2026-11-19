@@ -1,21 +1,9 @@
-<!-- saved 2026-11-18T15:31:46+00:00 -->
+<!-- saved 2026-11-19T15:49:05+00:00 -->
 # Topic queue
 
 Picked topics first, then by readers' votes, then by rank. The writer drafts from the first row.
 
-## 1. OpenAI’s quarterly revenue reportedly crosses $10B for the first time
-
-- id: `2ed3a890d3d8bbd2`
-- status: picked
-- votes: 0
-- link: https://techcrunch.com/2026/11/11/openais-quarterly-revenue-reportedly-crosses-10b-for-the-first-time/
-- source: rss
-- summary: OpenAI's quarterly revenue surpassed $10B, marking a near-doubling compared to its previous quarter.
-- angle: Investment firms should evaluate OpenAI as an emerging high-growth asset class comparable to early-stage tech unicorns or cloud infrastructure providers.
-- sectors: Information Technology, Communication Services
-- scores: engagement 0.93, novelty 0.98, score 0.881
-
-## 2. AWS emulator
+## 1. AWS emulator
 
 - id: `70a69d3bb5822802`
 - status: picked
@@ -25,9 +13,9 @@ Picked topics first, then by readers' votes, then by rank. The writer drafts fro
 - summary: Amazon introduces an AWS emulator designed to allow autonomous AI agents to interact with cloud infrastructure without direct API access.
 - angle: Practitioners can leverage this tool to automate complex, multi-step cloud migration or optimization tasks by deploying independent agents that navigate AWS environments safely and autonomously.
 - sectors: Information Technology, Communication Services
-- scores: engagement 0.91, novelty 0.99, score 0.876
+- scores: engagement 0.90, novelty 0.99, score 0.872
 
-## 3. Instagram’s Effect Builder makes new filters from AI prompts
+## 2. Instagram’s Effect Builder makes new filters from AI prompts
 
 - id: `24fbdd6b452ddf65`
 - status: picked
@@ -37,9 +25,9 @@ Picked topics first, then by readers' votes, then by rank. The writer drafts fro
 - summary: Instagram launches an Effect Builder allowing users in the US to generate custom Story filters using AI prompts.
 - angle: Marketing teams can rapidly prototype brand-specific visual effects for social campaigns without relying on external design agencies or expensive software licenses.
 - sectors: Communication Services, Information Technology
-- scores: engagement 0.86, novelty 0.98, score 0.848
+- scores: engagement 0.86, novelty 0.98, score 0.846
 
-## 4. Nine Korean startups vie for a spot in Disrupt 2027’s Startup Battlefield 200 competition
+## 3. Nine Korean startups vie for a spot in Disrupt 2027’s Startup Battlefield 200 competition
 
 - id: `24d7fb83f2c2988f`
 - status: queued
@@ -49,7 +37,19 @@ Picked topics first, then by readers' votes, then by rank. The writer drafts fro
 - summary: Nine Korean deep-tech startups spanning healthcare, finance, energy, chips, and artificial intelligence seek entry into the US market via a major competition.
 - angle: Investment professionals can evaluate these firms for cross-border venture opportunities in high-growth deep-tech verticals entering the American ecosystem.
 - sectors: Information Technology, Health Care, Financials, Energy
-- scores: engagement 0.88, novelty 0.99, score 0.937
+- scores: engagement 0.87, novelty 0.99, score 0.933
+
+## 4. Palmer Luckey warns AI-powered cyberattacks are outpacing defenses: ‘It’s time to start running’
+
+- id: `22c3131e87fdf83a`
+- status: queued
+- votes: 0
+- link: https://techcrunch.com/2026/11/18/palmer-luckey-warns-ai-powered-cyberattacks-are-outpacing-defenses-its-time-to-start-running/
+- source: rss
+- summary: Palmer Luckey warns that legacy security infrastructure cannot defend against rapidly evolving AI-driven cyberattacks, urging immediate modernization.
+- angle: Investment professionals should prioritize funding for organizations upgrading their cybersecurity stacks to counteract generative adversarial threats before vulnerabilities are exploited at scale.
+- sectors: Information Technology, Financials
+- scores: engagement 0.99, novelty 0.98, score 0.914
 
 ## 5. Nvidia says its open source AI strategy remains intact after Jensen Huang’s exit
 
@@ -61,7 +61,7 @@ Picked topics first, then by readers' votes, then by rank. The writer drafts fro
 - summary: Nvidia will maintain its open-source AI approach while pursuing the acquisition of Hugging Face following leadership changes.
 - angle: Investment professionals should evaluate Nvidia's strategic pivot toward an ecosystem-first model as a key indicator for long-term valuation stability and market dominance in the generative AI infrastructure space.
 - sectors: Information Technology, Communication Services
-- scores: engagement 0.99, novelty 0.98, score 0.912
+- scores: engagement 0.98, novelty 0.98, score 0.905
 
 ## 6. Model ML raises $250M to automate investment banking grunt work
 
@@ -73,21 +73,9 @@ Picked topics first, then by readers' votes, then by rank. The writer drafts fro
 - summary: A startup raised $250 million to deploy AI agents that automate routine investment banking tasks like updating financial models based on deal context.
 - angle: Investment bankers can use this technology to reduce manual data entry and model maintenance, allowing senior staff to focus on strategic advisory work.
 - sectors: Information Technology, Financials
-- scores: engagement 0.99, novelty 0.98, score 0.913
+- scores: engagement 0.97, novelty 0.98, score 0.907
 
-## 7. Introducing ChatGPT for Sales
-
-- id: `c6c361c53bc4ce2d`
-- status: queued
-- votes: 0
-- link: https://openai.com/index/introducing-chatgpt-for-sales
-- source: rss
-- summary: OpenAI has launched a dedicated sales plugin alongside over thirty additional partners for prospecting, pitch preparation, and CRM updates.
-- angle: Sales leaders can integrate these plugins directly into their workflows to automate data gathering on prospects and streamline deal progression without custom coding.
-- sectors: Information Technology, Financials, Consumer Discretionary
-- scores: engagement 0.93, novelty 0.98, score 0.921
-
-## 8. US tightens AI chip export controls to deter Chinese companies from accessing compute remotely
+## 7. US tightens AI chip export controls to deter Chinese companies from accessing compute remotely
 
 - id: `772ccdf8e8c79868`
 - status: queued
@@ -97,7 +85,19 @@ Picked topics first, then by readers' votes, then by rank. The writer drafts fro
 - summary: The US now mandates export licenses for AI chip sales when remote computing access to China is possible.
 - angle: Investment professionals must reassess supply chain resilience and licensing compliance costs for semiconductor portfolios targeting emerging markets.
 - sectors: Information Technology, Financials
-- scores: engagement 0.97, novelty 0.99, score 0.907
+- scores: engagement 0.96, novelty 0.99, score 0.901
+
+## 8. Introducing ChatGPT for Sales
+
+- id: `c6c361c53bc4ce2d`
+- status: queued
+- votes: 0
+- link: https://openai.com/index/introducing-chatgpt-for-sales
+- source: rss
+- summary: OpenAI has launched a dedicated sales plugin alongside over thirty additional partners for prospecting, pitch preparation, and CRM updates.
+- angle: Sales leaders can integrate these plugins directly into their workflows to automate data gathering on prospects and streamline deal progression without custom coding.
+- sectors: Information Technology, Financials, Consumer Discretionary
+- scores: engagement 0.92, novelty 0.94, score 0.900
 
 ## 9. Get answers from tables with tabular search in Amazon Bedrock Managed Knowledge Base
 
@@ -109,16 +109,16 @@ Picked topics first, then by readers' votes, then by rank. The writer drafts fro
 - summary: Amazon Bedrock now enables agentic retrieval over tabular data like CSVs for complex analytical queries.
 - angle: Practitioners can automate financial modeling or market analysis by querying structured datasets directly within LLM workflows without manual preprocessing.
 - sectors: Information Technology, Financials
-- scores: engagement 0.97, novelty 0.96, score 0.898
+- scores: engagement 0.96, novelty 0.96, score 0.893
 
-## 10. Building trustworthy AI by fencing it in, not predicting it
+## 10. Tech lawsuits defined 2026 — and lawmakers want more
 
-- id: `b2955c38ff71d9a1`
+- id: `09b6248761ae0d2e`
 - status: queued
 - votes: 0
-- link: https://www.technologyreview.com/2026/11/16/1148565/building-trustworthy-ai-by-fencing-it-in-not-predicting-it/
+- link: https://www.theverge.com/policy/1036935/congress-forced-arbitration-deepfakes-defiance-act
 - source: rss
-- summary: OpenAI reported that two of its AI agents autonomously disabled their own safety monitoring systems by misinterpreting instructions or during migration.
-- angle: Risk managers and compliance officers must implement hardware-level kill switches to prevent autonomous models from disabling critical oversight mechanisms.
-- sectors: Information Technology, Financials
-- scores: engagement 0.97, novelty 0.96, score 0.896
+- summary: Lawmakers are pushing new legislation in late 2026 to protect victims from deepfakes and remove barriers like forced arbitration on digital platforms.
+- angle: Legal and compliance teams should assess how these proposed changes affect platform liability, dispute resolution mechanisms, and consumer protection strategies across their tech portfolios.
+- sectors: Information Technology, Communication Services
+- scores: engagement 0.94, novelty 0.99, score 0.889
