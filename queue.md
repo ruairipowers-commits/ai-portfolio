@@ -1,21 +1,9 @@
-<!-- saved 2026-11-19T15:49:05+00:00 -->
+<!-- saved 2026-11-20T15:00:04+00:00 -->
 # Topic queue
 
 Picked topics first, then by readers' votes, then by rank. The writer drafts from the first row.
 
-## 1. AWS emulator
-
-- id: `70a69d3bb5822802`
-- status: picked
-- votes: 0
-- link: https://github.com/aws/aws-emulator
-- source: hacker_news
-- summary: Amazon introduces an AWS emulator designed to allow autonomous AI agents to interact with cloud infrastructure without direct API access.
-- angle: Practitioners can leverage this tool to automate complex, multi-step cloud migration or optimization tasks by deploying independent agents that navigate AWS environments safely and autonomously.
-- sectors: Information Technology, Communication Services
-- scores: engagement 0.90, novelty 0.99, score 0.872
-
-## 2. Instagram’s Effect Builder makes new filters from AI prompts
+## 1. Instagram’s Effect Builder makes new filters from AI prompts
 
 - id: `24fbdd6b452ddf65`
 - status: picked
@@ -25,9 +13,9 @@ Picked topics first, then by readers' votes, then by rank. The writer drafts fro
 - summary: Instagram launches an Effect Builder allowing users in the US to generate custom Story filters using AI prompts.
 - angle: Marketing teams can rapidly prototype brand-specific visual effects for social campaigns without relying on external design agencies or expensive software licenses.
 - sectors: Communication Services, Information Technology
-- scores: engagement 0.86, novelty 0.98, score 0.846
+- scores: engagement 0.85, novelty 0.98, score 0.843
 
-## 3. Nine Korean startups vie for a spot in Disrupt 2027’s Startup Battlefield 200 competition
+## 2. Nine Korean startups vie for a spot in Disrupt 2027’s Startup Battlefield 200 competition
 
 - id: `24d7fb83f2c2988f`
 - status: queued
@@ -37,7 +25,19 @@ Picked topics first, then by readers' votes, then by rank. The writer drafts fro
 - summary: Nine Korean deep-tech startups spanning healthcare, finance, energy, chips, and artificial intelligence seek entry into the US market via a major competition.
 - angle: Investment professionals can evaluate these firms for cross-border venture opportunities in high-growth deep-tech verticals entering the American ecosystem.
 - sectors: Information Technology, Health Care, Financials, Energy
-- scores: engagement 0.87, novelty 0.99, score 0.933
+- scores: engagement 0.87, novelty 0.99, score 0.929
+
+## 3. Protect agent tool calls with Skyflow and Amazon Bedrock AgentCore Gateway
+
+- id: `7e9fc57c134e72d2`
+- status: queued
+- votes: 0
+- link: https://aws.amazon.com/blogs/machine-learning/protect-agent-tool-calls-with-skyflow-and-amazon-bedrock-agentcore-gateway/
+- source: rss
+- summary: Skyflow integrates as a gateway interceptor to automatically de-identify sensitive data in AI agent tool calls before they reach external models or logs.
+- angle: Practitioners can deploy this solution immediately within existing infrastructure to ensure compliance with privacy regulations without requiring code modifications to their AI agents.
+- sectors: Information Technology, Financials
+- scores: engagement 0.99, novelty 0.97, score 0.910
 
 ## 4. Palmer Luckey warns AI-powered cyberattacks are outpacing defenses: ‘It’s time to start running’
 
@@ -49,9 +49,21 @@ Picked topics first, then by readers' votes, then by rank. The writer drafts fro
 - summary: Palmer Luckey warns that legacy security infrastructure cannot defend against rapidly evolving AI-driven cyberattacks, urging immediate modernization.
 - angle: Investment professionals should prioritize funding for organizations upgrading their cybersecurity stacks to counteract generative adversarial threats before vulnerabilities are exploited at scale.
 - sectors: Information Technology, Financials
-- scores: engagement 0.99, novelty 0.98, score 0.914
+- scores: engagement 0.98, novelty 0.98, score 0.908
 
-## 5. Nvidia says its open source AI strategy remains intact after Jensen Huang’s exit
+## 5. Amazon SageMaker AI now detects latency drift, idle GPUs, and missed optimizations on your inference endpoints
+
+- id: `2fc66815c5be68f1`
+- status: queued
+- votes: 0
+- link: https://aws.amazon.com/blogs/machine-learning/amazon-sagemaker-ai-now-detects-latency-drift-idle-gpus-and-missed-optimizations-on-your-inference-endpoints/
+- source: rss
+- summary: Amazon SageMaker AI now automatically monitors inference endpoints for latency drift and idle resources, offering actionable cost-performance improvements.
+- angle: Practitioners can immediately reduce cloud spend by adopting these default monitoring features to eliminate wasted GPU capacity without manual tuning.
+- sectors: Information Technology, Communication Services
+- scores: engagement 0.99, novelty 0.97, score 0.910
+
+## 6. Nvidia says its open source AI strategy remains intact after Jensen Huang’s exit
 
 - id: `8f07365d378cd3fa`
 - status: queued
@@ -61,9 +73,9 @@ Picked topics first, then by readers' votes, then by rank. The writer drafts fro
 - summary: Nvidia will maintain its open-source AI approach while pursuing the acquisition of Hugging Face following leadership changes.
 - angle: Investment professionals should evaluate Nvidia's strategic pivot toward an ecosystem-first model as a key indicator for long-term valuation stability and market dominance in the generative AI infrastructure space.
 - sectors: Information Technology, Communication Services
-- scores: engagement 0.98, novelty 0.98, score 0.905
+- scores: engagement 0.96, novelty 0.98, score 0.899
 
-## 6. Model ML raises $250M to automate investment banking grunt work
+## 7. Model ML raises $250M to automate investment banking grunt work
 
 - id: `776157cf22e3ea27`
 - status: queued
@@ -73,9 +85,9 @@ Picked topics first, then by readers' votes, then by rank. The writer drafts fro
 - summary: A startup raised $250 million to deploy AI agents that automate routine investment banking tasks like updating financial models based on deal context.
 - angle: Investment bankers can use this technology to reduce manual data entry and model maintenance, allowing senior staff to focus on strategic advisory work.
 - sectors: Information Technology, Financials
-- scores: engagement 0.97, novelty 0.98, score 0.907
+- scores: engagement 0.96, novelty 0.98, score 0.901
 
-## 7. US tightens AI chip export controls to deter Chinese companies from accessing compute remotely
+## 8. US tightens AI chip export controls to deter Chinese companies from accessing compute remotely
 
 - id: `772ccdf8e8c79868`
 - status: queued
@@ -85,40 +97,28 @@ Picked topics first, then by readers' votes, then by rank. The writer drafts fro
 - summary: The US now mandates export licenses for AI chip sales when remote computing access to China is possible.
 - angle: Investment professionals must reassess supply chain resilience and licensing compliance costs for semiconductor portfolios targeting emerging markets.
 - sectors: Information Technology, Financials
-- scores: engagement 0.96, novelty 0.99, score 0.901
+- scores: engagement 0.95, novelty 0.99, score 0.896
 
-## 8. Introducing ChatGPT for Sales
+## 9. Meta’s new Muse Charm device may cost $300
 
-- id: `c6c361c53bc4ce2d`
+- id: `e60f4e5e7cf4b021`
 - status: queued
 - votes: 0
-- link: https://openai.com/index/introducing-chatgpt-for-sales
+- link: https://techcrunch.com/2026/11/19/metas-new-muse-charm-device-may-cost-300/
 - source: rss
-- summary: OpenAI has launched a dedicated sales plugin alongside over thirty additional partners for prospecting, pitch preparation, and CRM updates.
-- angle: Sales leaders can integrate these plugins directly into their workflows to automate data gathering on prospects and streamline deal progression without custom coding.
-- sectors: Information Technology, Financials, Consumer Discretionary
-- scores: engagement 0.92, novelty 0.94, score 0.900
+- summary: Meta is developing a new AI-powered wearable device called Muse Charm with an estimated price of $300.
+- angle: Investment firms should evaluate Meta's hardware roadmap for potential revenue diversification beyond its core advertising business and assess the competitive landscape in consumer AI wearables.
+- sectors: Information Technology, Consumer Discretionary
+- scores: engagement 0.94, novelty 0.99, score 0.891
 
-## 9. Get answers from tables with tabular search in Amazon Bedrock Managed Knowledge Base
+## 10. Walter Isaacson on curiosity and creativity in the AI age.
 
-- id: `cc69239e629b14a0`
+- id: `2adef6bfeca022c8`
 - status: queued
 - votes: 0
-- link: https://aws.amazon.com/blogs/machine-learning/get-answers-from-tables-with-tabular-search-in-amazon-bedrock-managed-knowledge-base/
+- link: https://blog.google/innovation-and-ai/technology/ai/dialogues-walter-isaacson/
 - source: rss
-- summary: Amazon Bedrock now enables agentic retrieval over tabular data like CSVs for complex analytical queries.
-- angle: Practitioners can automate financial modeling or market analysis by querying structured datasets directly within LLM workflows without manual preprocessing.
+- summary: Walter Isaacson discusses leveraging historical insights on innovation to maintain human judgment alongside artificial intelligence.
+- angle: Investment professionals can apply these principles when evaluating companies that integrate AI while preserving core creative or strategic decision-making capabilities.
 - sectors: Information Technology, Financials
-- scores: engagement 0.96, novelty 0.96, score 0.893
-
-## 10. Tech lawsuits defined 2026 — and lawmakers want more
-
-- id: `09b6248761ae0d2e`
-- status: queued
-- votes: 0
-- link: https://www.theverge.com/policy/1036935/congress-forced-arbitration-deepfakes-defiance-act
-- source: rss
-- summary: Lawmakers are pushing new legislation in late 2026 to protect victims from deepfakes and remove barriers like forced arbitration on digital platforms.
-- angle: Legal and compliance teams should assess how these proposed changes affect platform liability, dispute resolution mechanisms, and consumer protection strategies across their tech portfolios.
-- sectors: Information Technology, Communication Services
-- scores: engagement 0.94, novelty 0.99, score 0.889
+- scores: engagement 0.94, novelty 0.98, score 0.888
