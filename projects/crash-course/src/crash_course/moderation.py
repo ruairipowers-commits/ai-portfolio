@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import re
 
-from . import ai, catalog, mailer, telemetry
+from . import accounts, ai, catalog, mailer, telemetry
 from .config import Settings
 from .schemas import Assessment
 from .store import insert, j, now, one
@@ -121,11 +121,14 @@ def assess(conn, s: Settings, text: str) -> tuple[Assessment, dict]:
 
 
 def suggest(conn, s: Settings, learner_id: int, text: str) -> dict:
-    """Store a suggestion, assess it, and ask the owner. Returns the suggestion row."""
+    """Store a suggestion, assess it, and ask the owner. Returns the suggestion row.
+    The daily limit applies to learners, not the owner; the owner's suggestions are still screened and assessed."""
     today = now()[:10]
     n = one(conn, "SELECT COUNT(*) n FROM suggestions WHERE learner_id=? AND substr(created_at,1,10)=?",
             learner_id, today)["n"]
-    if n >= s["moderation"]["per_learner_per_day"]:
+    who = one(conn, "SELECT email FROM learners WHERE id=?", learner_id)
+    is_owner = bool(who) and accounts.is_owner_email(s, who["email"])
+    if not is_owner and n >= s["moderation"]["per_learner_per_day"]:
         raise ValueError(f"limit of {s['moderation']['per_learner_per_day']} suggestions a day reached")
     a, scr = assess(conn, s, text)
     sid = insert(conn, "suggestions", learner_id=learner_id, text=text.strip()[:s["moderation"]["max_chars"]],
